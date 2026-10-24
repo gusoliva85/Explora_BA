@@ -10,3 +10,9 @@ Thumbs.db
 *.blend1
 *.blend2
 capturas/
+
+# Resultados de Playwright
+test-results/
+playwright-report/
+blob-report/
+.playwright/
