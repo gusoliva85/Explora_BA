@@ -24,58 +24,59 @@ import { device } from '../core/device.js';
  * COSTO
  * ---------------------------------------------------------------------------
  * Nada de esto es gratis, y el objetivo sigue siendo 30 FPS en un telefono
- * modesto. Por eso hay dos perfiles:
+ * modesto. Por eso hay dos perfiles, y los dos conservan lo que de verdad
+ * define la imagen:
  *
- *   ALTO (escritorio): todo encendido, incluido SSAO y suavizado temporal.
- *   MOVIL:             bloom, mapeo de tonos, grading y viñeta. SSAO y TAA
- *                      apagados, que son los dos que mas cuestan, y la
- *                      escena se renderiza a una fraccion de la resolucion
- *                      con reenfoque al final.
+ *   NORMAL  la escena se renderiza al 85% de la resolucion y se reenfoca
+ *           al final, sin suavizado temporal y con menos muestras de
+ *           oclusion ambiental. Es el perfil por omision.
  *
- * El perfil se puede forzar con `?calidad=alta` o `?calidad=movil` para
- * poder comparar los dos en el mismo equipo.
+ *   ALTA    resolucion completa, suavizado temporal, mas muestras de
+ *           oclusion y sombras de mas resolucion con una cascada extra.
+ *
+ * Lo que NO se saca en NORMAL es la oclusion ambiental. Cuesta, pero de dia
+ * es la unica herramienta que apoya los objetos en el piso: sin ella, un
+ * low-poly claro se ve como recortes de papel pegados unos sobre otros.
+ *
+ * El perfil se elige desde el menu de pausa y se aplica EN VIVO, o se
+ * fuerza con `?calidad=alta` o `?calidad=normal`.
  */
 
-export const Calidad = {
-  ALTA: 'alta',
-  MOVIL: 'movil'
-};
+import { ajustes, Calidad } from '../core/settings.js';
 
-/** Elige el perfil: lo que diga la URL, y si no, el tipo de dispositivo. */
+export { Calidad };
+
+/** El perfil efectivo: lo que diga la URL, y si no, lo elegido o el defecto. */
 export function calidadElegida() {
-  const pedida = new URLSearchParams(location.search).get('calidad');
-  if (pedida === Calidad.ALTA || pedida === Calidad.MOVIL) return pedida;
-  return device.isTouch ? Calidad.MOVIL : Calidad.ALTA;
+  return ajustes.get('calidad');
 }
 
 /**
- * Monta el pipeline sobre una camara.
+ * Aplica un perfil de calidad a un pipeline ya montado.
  *
- * @param {pc.AppBase} app
- * @param {pc.Entity} cameraEntity
- * @param {string} [calidad]
- * @returns {{frame: pc.CameraFrame, calidad: string}}
+ * Esta separado de `montarPostProceso` para que se pueda cambiar la
+ * calidad EN VIVO, sin recargar: el jugador toca el boton y ve la
+ * diferencia en el acto. Si hubiera que recargar, nadie compararia nunca
+ * los dos perfiles y el ajuste seria decorativo.
+ *
+ * @param {pc.CameraFrame} frame
+ * @param {string} calidad
+ * @param {pc.Entity} [sol] para ajustar tambien la resolucion de sombras
  */
-export function montarPostProceso(app, cameraEntity, calidad = calidadElegida()) {
+export function aplicarCalidad(frame, calidad, sol) {
   const alta = calidad === Calidad.ALTA;
-  const frame = new pc.CameraFrame(app, cameraEntity.camera);
 
   // --- Formato del buffer ---------------------------------------------------
-  // Coma flotante igual que de noche: no por el bloom, sino porque el sol
-  // y el cielo juntos exceden el rango de 8 bits y sin HDR los claros se
-  // recortan en bloques planos.
+  // Coma flotante siempre: el sol y el cielo juntos exceden el rango de 8
+  // bits y sin HDR los claros se recortan en bloques planos.
   frame.rendering.renderFormats = [pc.PIXELFORMAT_111110F, pc.PIXELFORMAT_RGBA16F];
 
   // Renderizar por debajo de la resolucion nativa y reenfocar al final es,
-  // lejos, el ajuste que mas FPS devuelve en movil por menos perdida visual.
+  // lejos, el ajuste que mas FPS devuelve por menos perdida visual.
   frame.rendering.renderTargetScale = alta ? 1.0 : 0.85;
-  // Enfoque alto: es lo que le devuelve el filo a los bordes despues de
-  // renderizar por debajo de la resolucion nativa, y en un low-poly el
+  // Enfoque alto: le devuelve el filo a los bordes, y en un low-poly el
   // filo del borde ES el detalle.
   frame.rendering.sharpness = alta ? 0.5 : 0.75;
-
-  // Suavizado por multimuestreo. Con TAA encendido no hace falta y seria
-  // pagar dos veces por lo mismo.
   frame.rendering.samples = alta ? 1 : 2;
 
   /*
@@ -94,8 +95,8 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
    * cordon. Sin ella un low-poly claro se ve como recortes de papel
    * pegados unos sobre otros.
    *
-   * Encendida tambien en movil: cuesta, pero es lo que mas aporta por
-   * milisegundo gastado.
+   * Encendida tambien en el perfil normal: cuesta, pero es lo que mas
+   * aporta por milisegundo gastado.
    */
   frame.ssao.type = pc.SSAOTYPE_LIGHTING;
   frame.ssao.blurEnabled = true;
@@ -105,33 +106,21 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
   frame.ssao.power = 5;
 
   // --- Bloom ----------------------------------------------------------------
-  /*
-   * Casi apagado, y a proposito. De dia no hay nada que brille mas que el
-   * cielo; un bloom alto solo lava la imagen y se come la definicion. Lo
-   * poco que queda sirve para que el borde de una pared al sol no corte
-   * de forma dura contra la sombra.
-   */
+  // Casi apagado: de dia no hay nada que brille mas que el cielo, y un
+  // bloom alto solo lava la imagen y se come la definicion.
   frame.bloom.intensity = 0.012;
   frame.bloom.blurLevel = alta ? 12 : 8;
   frame.bloom.threshold = 1.1;
 
   // --- Grading --------------------------------------------------------------
-  /*
-   * Un empujon chico de contraste y saturacion. Nada de tinte: cualquier
-   * desvio de color se nota enseguida en una escena clara, y el pedido es
-   * que los colores sean los que son, algo apagados pero francos.
-   */
   frame.grading.enabled = true;
   frame.grading.brightness = 1.02;
   frame.grading.contrast = 1.08;
   frame.grading.saturation = 1.1;
   frame.grading.tint = new pc.Color(1, 1, 1);
 
-  /*
-   * Realce selectivo. Lo importante aca es `shadows`: levanta las zonas en
-   * sombra sin tocar el resto, que es exactamente lo que hace falta para
-   * que la vereda del lado sombreado se siga leyendo.
-   */
+  // Lo importante es `shadows`: levanta las zonas en sombra sin tocar el
+  // resto, que es lo que hace falta para que la vereda sombreada se lea.
   frame.colorEnhance.enabled = true;
   frame.colorEnhance.shadows = 0.22;
   frame.colorEnhance.highlights = -0.12;
@@ -139,8 +128,7 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
   frame.colorEnhance.midtones = 0.02;
 
   // --- Viñeta ---------------------------------------------------------------
-  // Apenas perceptible. Enmarca sin oscurecer: cerrar los bordes de dia es
-  // justo lo contrario de lo que se busca.
+  // Apenas perceptible. Enmarca sin oscurecer.
   frame.vignette.intensity = 0.3;
   frame.vignette.inner = 0.85;
   frame.vignette.outer = 2.1;
@@ -148,16 +136,35 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
   frame.vignette.color = new pc.Color(0.18, 0.2, 0.24);
 
   // --- Suavizado temporal ---------------------------------------------------
-  // Limpia los bordes escalonados acumulando varios cuadros. En movil
+  // Limpia los bordes escalonados acumulando cuadros. En el perfil normal
   // produce estelas cuando la camara se mueve rapido y no compensa.
   frame.taa.enabled = alta;
   frame.taa.jitter = 0.5;
 
-  // --- Aberracion cromatica -------------------------------------------------
-  // Apagada. En una imagen clara y de bordes netos se ve como un defecto,
-  // no como estilo.
+  // Aberracion cromatica apagada: en una imagen clara y de bordes netos se
+  // ve como un defecto, no como estilo.
   frame.fringing.enabled = false;
 
+  // Sombras: mas resolucion y una cascada mas en alta.
+  if (sol?.light) {
+    sol.light.shadowResolution = alta ? 2048 : 1024;
+    sol.light.numCascades = alta ? 3 : 2;
+  }
+
   frame.update();
+  return calidad;
+}
+
+/**
+ * Monta el pipeline sobre una camara.
+ *
+ * @param {pc.AppBase} app
+ * @param {pc.Entity} cameraEntity
+ * @param {pc.Entity} [sol]
+ * @returns {{frame: pc.CameraFrame, calidad: string}}
+ */
+export function montarPostProceso(app, cameraEntity, sol) {
+  const frame = new pc.CameraFrame(app, cameraEntity.camera);
+  const calidad = aplicarCalidad(frame, calidadElegida(), sol);
   return { frame, calidad };
 }

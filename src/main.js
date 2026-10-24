@@ -18,7 +18,8 @@ import { WeaponController } from './combat/weaponController.js';
 import { CombatFx } from './combat/combatFx.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
-import { calidadElegida, Calidad } from './render/postProcess.js';
+import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
+import { ajustes } from './core/settings.js';
 
 /** El perfil de calidad decide tambien la resolucion de las sombras. */
 const calidadAlta = () => calidadElegida() === Calidad.ALTA;
@@ -54,10 +55,17 @@ const app = new pc.Application(canvas, {
 app.setCanvasFillMode(pc.FILLMODE_FILL_WINDOW);
 app.setCanvasResolution(pc.RESOLUTION_AUTO);
 // Tope de densidad de pixeles: un telefono a 3x renderiza 9 veces mas que a 1x.
-// En celular se recorta mas: un telefono a 3x renderiza 9 veces mas pixeles
-// que a 1x, y es el ajuste que mas FPS devuelve por menos perdida visual.
-const dprCap = device.isTouch ? Math.min(PERF.maxDevicePixelRatio, 1.75) : PERF.maxDevicePixelRatio;
-app.graphicsDevice.maxPixelRatio = Math.min(devicePixelRatio, dprCap);
+/*
+ * Tope de densidad de pixeles.
+ *
+ * Un telefono a 3x renderiza nueve veces mas pixeles que a 1x. Recortarlo
+ * es el ajuste que mas FPS devuelve por menos perdida visual, y por eso
+ * depende del perfil de calidad y no del tipo de aparato: alguien puede
+ * elegir NORMAL en una computadora para que vaya mas suelto.
+ */
+const topeDpr = () =>
+  calidadElegida() === Calidad.ALTA ? PERF.maxDevicePixelRatio : Math.min(PERF.maxDevicePixelRatio, 1.75);
+app.graphicsDevice.maxPixelRatio = Math.min(devicePixelRatio, topeDpr());
 addEventListener('resize', () => app.resizeCanvas());
 
 // --- Sistemas base ---------------------------------------------------------
@@ -76,7 +84,7 @@ const input = new InputManager(canvas);
  * Ver src/world/lighting.js para el porque de cada numero.
  */
 const matsLuz = crearMaterialesLuz();
-montarLuzAmbiente(app, calidadAlta());
+const sol = montarLuzAmbiente(app, calidadAlta());
 
 /*
  * Bruma de distancia, muy suave y del color del horizonte.
@@ -105,7 +113,7 @@ app.root.addChild(cameraEntity);
 
 // Pipeline de imagen: HDR, oclusion ambiental, bloom, mapeo de tonos,
 // grading y viñeta. Sin esto la escena nocturna se ve plana y sucia.
-const { frame: postProceso, calidad } = montarPostProceso(app, cameraEntity);
+const { frame: postProceso, calidad } = montarPostProceso(app, cameraEntity, sol);
 console.info(`[render] perfil de calidad: ${calidad}`);
 
 // Suelo de respaldo, por si el jugador se sale del trazado de calles.
@@ -358,17 +366,35 @@ input.bindHudButton(byId('btn-run'), 'run');
 input.bindHudButton(byId('btn-attack'), 'attack');
 input.bindHudButton(byId('btn-interact'), 'interact');
 
-// Conmutador de modo de entrada: deja revisar el HUD de celular desde la PC.
-function refreshDeviceUi() {
+/*
+ * Ajustes del menu de pausa.
+ *
+ * Los dos se guardan y los dos se aplican EN VIVO. El de calidad sobre
+ * todo: si hubiera que recargar para verlo, nadie compararia nunca los dos
+ * perfiles y el ajuste seria decorativo.
+ */
+function refreshAjustesUi() {
   byId('input-mode-label').textContent = device.isTouch ? 'TACTIL' : 'TECLADO';
-  byId('device-info').textContent = device.describe();
+  byId('calidad-label').textContent =
+    ajustes.get('calidad') === Calidad.ALTA ? 'ALTA' : 'NORMAL';
+  byId('device-info').textContent = `${device.describe()} · ${calidadElegida()}`;
 }
+
 byId('btn-toggle-input').addEventListener('click', () => {
   device.toggleForcedMode();
-  refreshDeviceUi();
+  refreshAjustesUi();
 });
-device.onChange(refreshDeviceUi);
-refreshDeviceUi();
+
+byId('btn-toggle-calidad').addEventListener('click', () => {
+  const nueva = ajustes.alternar('calidad');
+  aplicarCalidad(postProceso, nueva, sol);
+  // El tope de densidad de pixeles tambien depende del perfil.
+  app.graphicsDevice.maxPixelRatio = Math.min(devicePixelRatio, topeDpr());
+  refreshAjustesUi();
+});
+
+device.onChange(refreshAjustesUi);
+refreshAjustesUi();
 
 addEventListener('keydown', (e) => {
   if (e.code !== 'Escape') return;

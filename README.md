@@ -39,9 +39,29 @@ además muestra la dirección para abrirlo desde el celular.
 | Pausa | `Esc` | Botón |
 | Diagnóstico | `F1` | Tres dedos |
 
-El juego **detecta solo** si está en un celular y muestra los controles que
-correspondan. Para ver la interfaz táctil desde la computadora:
-`http://localhost:5173/?input=touch`.
+El juego **arranca siempre en modo táctil**, también en la computadora.
+Está diseñado para el celular (D-15), y ahí es lo correcto; en la
+computadora no estorba, porque el teclado y el mouse siguen funcionando
+igual. Lo único que cambia es que se dibujan los botones en pantalla.
+
+### Ajustes
+
+En el **menú de pausa** hay dos, y los dos se guardan:
+
+| Ajuste | Opciones | |
+|---|---|---|
+| Controles | Táctil / Teclado | Cambia qué se dibuja en pantalla |
+| Calidad | Normal / Alta | Se aplica **en vivo**, sin recargar |
+
+**Normal** renderiza al 85 % de la resolución y la reenfoca, sin suavizado
+temporal. **Alta** va a resolución completa, con suavizado temporal, más
+muestras de oclusión ambiental y sombras de más resolución.
+
+Lo que no se saca en Normal es la oclusión ambiental: cuesta, pero de día
+es lo único que apoya los objetos en el piso.
+
+También se pueden forzar por URL, que gana sobre lo guardado:
+`?input=desktop`, `?calidad=alta`.
 
 El diagnóstico muestra FPS, llamadas de dibujo y, con zombis en pantalla,
 su cono de visión y su estado.

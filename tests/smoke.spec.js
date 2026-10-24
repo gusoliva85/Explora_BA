@@ -215,20 +215,13 @@ test('la pausa congela la simulacion', async ({ page }) => {
    Deteccion de dispositivo: celular vs escritorio
    ========================================================================= */
 
-test('en escritorio muestra ayudas de teclado y oculta los botones tactiles', async ({ page }) => {
+test('arranca en modo tactil, aunque sea una computadora', async ({ page }) => {
+  /*
+   * Es la decision deliberada: el juego se diseña para el celular y
+   * arranca en tactil siempre. En la computadora el teclado sigue
+   * funcionando igual; lo unico que cambia es que se dibujan los botones.
+   */
   await page.goto('/');
-
-  await expect(page.locator('body')).toHaveClass(/is-desktop/);
-  await expect(page.locator('.desktop-only').first()).toBeVisible();
-  await expect(page.locator('.touch-only').first()).toBeHidden();
-
-  await page.locator('#btn-start').click();
-  await expect(page.locator('#joystick')).toBeHidden();
-  await expect(page.locator('.action-cluster')).toBeHidden();
-});
-
-test('forzar el modo tactil por URL cambia el HUD sin recargar nada mas', async ({ page }) => {
-  await page.goto('/?input=touch');
 
   await expect(page.locator('body')).toHaveClass(/is-touch/);
   await expect(page.locator('.touch-only').first()).toBeVisible();
@@ -236,7 +229,18 @@ test('forzar el modo tactil por URL cambia el HUD sin recargar nada mas', async 
 
   await page.locator('#btn-start').click();
   await expect(page.locator('#joystick')).toBeVisible();
-  await expect(page.locator('#btn-attack')).toBeVisible();
+  await expect(page.locator('.action-cluster')).toBeVisible();
+});
+
+test('forzar el modo teclado por URL cambia el HUD', async ({ page }) => {
+  await page.goto('/?input=desktop');
+
+  await expect(page.locator('body')).toHaveClass(/is-desktop/);
+  await expect(page.locator('.desktop-only').first()).toBeVisible();
+  await expect(page.locator('.touch-only').first()).toBeHidden();
+
+  await page.locator('#btn-start').click();
+  await expect(page.locator('#joystick')).toBeHidden();
 });
 
 test('el boton de la pausa alterna entre los dos esquemas de control', async ({ page }) => {
@@ -244,11 +248,64 @@ test('el boton de la pausa alterna entre los dos esquemas de control', async ({ 
   await page.locator('#btn-start').click();
   await page.locator('#btn-pause').click();
 
-  await expect(page.locator('#input-mode-label')).toHaveText('TECLADO');
-  await page.locator('#btn-toggle-input').click();
   await expect(page.locator('#input-mode-label')).toHaveText('TACTIL');
-  await expect(page.locator('body')).toHaveClass(/is-touch/);
+  await page.locator('#btn-toggle-input').click();
+  await expect(page.locator('#input-mode-label')).toHaveText('TECLADO');
+  await expect(page.locator('body')).toHaveClass(/is-desktop/);
 
   await page.locator('#btn-toggle-input').click();
+  await expect(page.locator('body')).toHaveClass(/is-touch/);
+});
+
+test('los ajustes se guardan y sobreviven a recargar', async ({ page }) => {
+  /*
+   * Es lo que importa al probar en el celular: elegir una vez y que quede.
+   * Sin esto, cada vez que se recarga hay que volver a tocar el boton.
+   */
+  await page.goto('/');
+  await page.locator('#btn-start').click();
+  await page.locator('#btn-pause').click();
+
+  await expect(page.locator('#calidad-label')).toHaveText('NORMAL');
+  await page.locator('#btn-toggle-calidad').click();
+  await expect(page.locator('#calidad-label')).toHaveText('ALTA');
+
+  await page.locator('#btn-toggle-input').click();
+  await expect(page.locator('#input-mode-label')).toHaveText('TECLADO');
+
+  // Recargar: la eleccion tiene que seguir ahi.
+  await page.reload();
+  await page.locator('#btn-start').click();
+  await page.locator('#btn-pause').click();
+
+  await expect(page.locator('#calidad-label')).toHaveText('ALTA');
+  await expect(page.locator('#input-mode-label')).toHaveText('TECLADO');
   await expect(page.locator('body')).toHaveClass(/is-desktop/);
+});
+
+test('cambiar la calidad se aplica en vivo, sin recargar', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('#btn-start').click();
+
+  const antes = await page.evaluate(() => ({
+    taa: globalThis.game.postProceso.taa.enabled,
+    escala: globalThis.game.postProceso.rendering.renderTargetScale
+  }));
+
+  await page.locator('#btn-pause').click();
+  await page.locator('#btn-toggle-calidad').click();
+  await page.locator('#btn-resume').click();
+  await page.waitForTimeout(300);
+
+  const despues = await page.evaluate(() => ({
+    taa: globalThis.game.postProceso.taa.enabled,
+    escala: globalThis.game.postProceso.rendering.renderTargetScale
+  }));
+
+  // NORMAL renderiza por debajo de la nativa y sin suavizado temporal;
+  // ALTA hace las dos cosas al reves.
+  expect(antes.taa).toBe(false);
+  expect(antes.escala).toBeLessThan(1);
+  expect(despues.taa).toBe(true);
+  expect(despues.escala).toBe(1);
 });

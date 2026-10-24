@@ -109,9 +109,14 @@
           <h2 class="title-sm">PAUSA</h2>
           <button id="btn-resume" class="btn btn-primary">CONTINUAR</button>
           <button id="btn-restart-pause" class="btn">REINICIAR MISION</button>
-          <!-- Herramienta de desarrollo: permite ver el HUD de celular en la
-               PC sin levantar el telefono. Se saca antes de publicar. -->
-          <button id="btn-toggle-input" class="btn">PROBAR CONTROLES: <span id="input-mode-label">?</span></button>
+          <!-- Ajustes. Lo que se elige aca se guarda y sobrevive a cerrar
+               la pestaña, que es lo que importa al probar en el celular. -->
+          <button id="btn-toggle-input" class="btn">
+            CONTROLES: <span id="input-mode-label">?</span>
+          </button>
+          <button id="btn-toggle-calidad" class="btn">
+            CALIDAD: <span id="calidad-label">?</span>
+          </button>
           <p class="hint" id="device-info"></p>
         </div>
       </section>

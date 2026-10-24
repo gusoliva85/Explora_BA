@@ -28,10 +28,12 @@
  * telefono, y por eso tambien hay un boton en el menu de pausa.
  */
 
-/** Modos de entrada posibles. */
+import { ajustes, Controles } from './settings.js';
+
+/** Modos de entrada posibles. Son los mismos valores que guarda `ajustes`. */
 export const InputMode = {
-  TOUCH: 'touch',
-  DESKTOP: 'desktop'
+  TOUCH: Controles.TACTIL,
+  DESKTOP: Controles.TECLADO
 };
 
 /** Ancho por encima del cual, aunque sea tactil, tratamos la pantalla como grande. */
@@ -41,11 +43,6 @@ class Device {
   constructor() {
     /** @type {Set<Function>} */
     this.listeners = new Set();
-
-    const params = new URLSearchParams(location.search);
-    const forced = params.get('input');
-    /** Modo forzado por URL o por el menu; null = detectar solo. */
-    this.forcedMode = forced === 'touch' || forced === 'desktop' ? forced : null;
 
     this.mode = this.#detectMode();
     this.orientation = this.#detectOrientation();
@@ -104,10 +101,26 @@ class Device {
 
   // --- Estado derivado -----------------------------------------------------
 
+  /**
+   * El modo sale de los AJUSTES, no de la deteccion.
+   *
+   * La deteccion por capacidades sigue existiendo y sigue siendo correcta
+   * —es lo que explica el comentario de arriba—, pero ya no decide: el
+   * juego se diseña para el celular y arranca en tactil siempre (ver
+   * POR_OMISION en settings.js).
+   *
+   * En la computadora esto no estorba: el teclado y el mouse siguen
+   * funcionando, porque la capa de entrada escucha las dos cosas siempre.
+   * Lo unico que cambia es que se dibujan los botones en pantalla.
+   *
+   * La deteccion queda disponible en `modoDetectado` para el diagnostico.
+   */
   #detectMode() {
-    if (this.forcedMode) return this.forcedMode;
-    // Dos de las tres señales alcanzan: una notebook tactil tiene puntero
-    // grueso disponible pero conserva hover y pantalla grande.
+    return ajustes.get('controles');
+  }
+
+  /** Lo que diria la deteccion automatica. Solo informativo. */
+  get modoDetectado() {
     const signals = [this.hasCoarsePointer, this.cannotHover, this.hasPhoneSizedScreen];
     return signals.filter(Boolean).length >= 2 ? InputMode.TOUCH : InputMode.DESKTOP;
   }
@@ -158,18 +171,20 @@ class Device {
     for (const fn of this.listeners) fn(this, previous);
   }
 
-  /** Fuerza un modo, o pasa `null` para volver a la deteccion automatica. */
+  /** Fija el esquema de controles y lo guarda. */
   setForcedMode(mode) {
-    this.forcedMode = mode;
+    ajustes.set('controles', mode);
     this.refresh();
-    // Si el modo forzado coincide con el detectado, refresh() no dispara
-    // nada; aplicamos las clases igual para que el HUD quede consistente.
+    // Si el valor nuevo coincide con el que ya habia, refresh() no dispara
+    // nada; se aplican las clases igual para que el HUD quede consistente.
     this.#applyBodyClasses();
   }
 
-  /** Alterna entre tactil y escritorio. Lo usa el boton de prueba de la pausa. */
+  /** Alterna entre tactil y teclado. Lo usa el boton del menu de pausa. */
   toggleForcedMode() {
-    this.setForcedMode(this.isTouch ? InputMode.DESKTOP : InputMode.TOUCH);
+    ajustes.alternar('controles');
+    this.refresh();
+    this.#applyBodyClasses();
     return this.mode;
   }
 
@@ -218,7 +233,7 @@ class Device {
   describe() {
     return [
       this.mode,
-      this.forcedMode ? '(forzado)' : '',
+      this.modoDetectado !== this.mode ? 'det:' + this.modoDetectado : '',
       this.orientation,
       `${innerWidth}x${innerHeight}`,
       this.isIOS ? 'iOS' : this.isAndroid ? 'Android' : ''
