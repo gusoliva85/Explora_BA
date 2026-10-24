@@ -13,12 +13,14 @@ import { MissionManager } from './missions/missionManager.js';
 import { Hud } from './ui/hud.js';
 import { mission001 } from './config/mission001.js';
 import { montarPostProceso } from './render/postProcess.js';
+import { SpawnManager } from './enemies/spawnManager.js';
+import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
 import { calidadElegida, Calidad } from './render/postProcess.js';
 
 /** El perfil de calidad decide tambien la resolucion de las sombras. */
 const calidadAlta = () => calidadElegida() === Calidad.ALTA;
-import { PERF, UNITS, CAMERA } from './config/balance.js';
+import { PERF, UNITS, CAMERA, PLAYER, ZOMBIE_STANDARD } from './config/balance.js';
 
 /**
  * ===========================================================================
@@ -197,6 +199,14 @@ const builder = new WorldBuilder(app, collision, matsLuz);
 const built = builder.build(mission001);
 const mission = new MissionManager(mission001, bus);
 
+/*
+ * Los zombis. Se preparan una vez: las entidades se crean aca y despues
+ * solo se encienden y se apagan. Ver spawnManager.js para el porque.
+ */
+const zombis = new SpawnManager(app, collision, builder.mats, bus);
+zombis.preparar(mission001);
+console.info(`[zombis] ${zombis.stats.total} puestos repartidos en el mapa`);
+
 console.info(
   `[mundo] ${built.stats.boxes} cajas, ${built.stats.colliders} colisionadores, ` +
     `${built.markers.length} marcadores`
@@ -209,6 +219,7 @@ function startMission({ fromCheckpoint = false } = {}) {
   const sp = fromCheckpoint ? mission.respawn : mission001.spawn;
 
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
+  zombis.reiniciar();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -345,6 +356,16 @@ app.on('update', (rawDt) => {
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
     camera.setStreetHeading(mission.streetHeading(player.position));
     actualizarBrujula();
+
+    const p = player.position;
+    zombis.update(dt, { x: p.x, z: p.z }, player.health > 0, (daño, zombi) => {
+      const golpeo = player.applyDamage(daño, 'zombi');
+      if (golpeo) {
+        // El sacudon escala con el daño: una mordida de doce no puede
+        // sentirse igual que un golpe de cuarenta.
+        camera.sacudir(0.18 + (daño / 100) * 0.5, 0.32);
+      }
+    });
   }
 
   // La camara se actualiza siempre: en pausa y en los resultados la escena
@@ -356,8 +377,16 @@ app.on('update', (rawDt) => {
   debug.set('pos', `${player.position.x.toFixed(1)}, ${player.position.z.toFixed(1)}`);
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
+  debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
   debug.set('equipo', device.describe());
+
+  // Conos de vision y estado de cada zombi. Solo con el diagnostico
+  // encendido: dibujarlo siempre costaria lineas por zombi por cuadro.
+  if (debug.visible) {
+    const pj = player.position;
+    dibujarDiagnosticoZombis(app, zombis, { x: pj.x, z: pj.z });
+  }
   debug.update(rawDt);
 
   input.endFrame();
@@ -372,5 +401,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad
+  postProceso, calidad, zombis,
+  // Los numeros de balance, para poder verificarlos desde una prueba.
+  balance: { PLAYER, CAMERA, UNITS, PERF, ZOMBIE_STANDARD }
 };

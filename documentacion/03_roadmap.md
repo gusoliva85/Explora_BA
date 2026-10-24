@@ -8,8 +8,8 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B y **3**.
-> **Fase siguiente:** **Fase 4 — El primer zombi.** No empezada.
+> **Fases cerradas:** 0, 1, 2, 2B, 3 y **4**.
+> **Fase siguiente:** **Fase 5 — Combate cuerpo a cuerpo.** No empezada.
 >
 > La última sesión cerró la Fase 2 (cámara a 57° con la calle en diagonal y
 > HUD vertical) y una Fase 2B que **no estaba planificada**: la reforma del
@@ -21,8 +21,11 @@
 > kiosco, semáforos, comisaría—, de día, con cámara en diagonal, pintura
 > vial, brújula al objetivo, controles intermedios, victoria y derrota.
 > Hay **dos rutas alternativas** reales: pasajes que rodean los cortes de
-> la calle. Dos pruebas automatizadas caminan la ruta principal y los dos
-> pasajes, y verifican que todo siga siendo transitable.
+> la calle. Y hay **zombis**: te detectan por vista o por cercanía, te
+> persiguen esquivando obstáculos, te muerden y la cámara se sacude.
+>
+> **Lo que falta para que sea un juego:** no se puede atacar. Hoy solo se
+> puede correr. Eso es la Fase 5.
 >
 > **Lo que no existe todavía:** zombis, combate, armas, objetos, audio y
 > cualquier arte que no sean cajas de colores.
@@ -83,8 +86,8 @@ juego funciona.
 | 2 | Movimiento y cámara | Gus camina por una calle en diagonal a 57° | ✅ |
 | 2B | Render y dirección visual | Pipeline HDR, luz de día, interfaz rehecha | ✅ |
 | 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | ✅ |
-| 4 | El primer zombi | Te detecta, te persigue, te muerde | 🔄 **siguiente** |
-| 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | ⬜ |
+| 4 | El primer zombi | Te detecta, te persigue, te muerde | ✅ |
+| 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | 🔄 **siguiente** |
 | 6 | Pistola y ruido | Arma a distancia con consecuencias | ⬜ |
 | 7 | Bazooka | El especial con barra de espera | ⬜ |
 | 8 | Objetos e inventario | Munición y curación que se recogen y se usan | ⬜ |
@@ -122,6 +125,25 @@ juego funciona.
 | 0.8 | Prueba de humo en navegador real con Playwright | ✅ |
 | 0.9 | `npm run dev:lan` para abrir desde el teléfono | ✅ |
 | 0.10 | `git init` y primer commit | ✅ |
+
+### Decisiones que se tomaron construyéndola
+
+**Se agregó el estado `SEARCH`**, que no estaba en el documento 01. Es la
+diferencia entre un enemigo que da miedo y uno que no: sin él, esconderse
+detrás de un auto apaga al zombi de golpe y el juego se vuelve trivial. Con
+él, el zombi va hasta donde te vio por última vez y da vueltas ahí, así que
+esconderse es una apuesta y no un botón de apagado.
+
+**La línea de vista usa un umbral de altura.** Un zombi ve *por encima* de
+una barricada de un metro pero no *a través* de un auto de uno setenta. Sin
+ese umbral, o no ve nada o lo ve todo.
+
+**El ruido pone a buscar, no a perseguir.** Un zombi que corre derecho hacia
+un disparo que escuchó a veinte metros sabe demasiado. Lo usa la Fase 6.
+
+**Un golpe interrumpe aunque no mate.** Sin eso, un zombi que ya empezó a
+atacar te pega igual por más que le des primero, y el combate se siente
+injusto.
 
 ### Cómo se prueba
 
@@ -416,7 +438,7 @@ A mano:
 
 ---
 
-# FASE 4 — El primer zombi ⬜
+# FASE 4 — El primer zombi ✅
 
 **Objetivo:** un zombi que te detecta, te persigue esquivando obstáculos, te
 alcanza y te hace daño. **Esta es la fase más importante de todo el roadmap**:
@@ -424,26 +446,37 @@ es donde el juego empieza a ser un juego.
 
 ### Tareas
 
-| # | Tarea |
-|---|---|
-| 4.1 | Componente de salud reutilizable (lo van a usar Gus, los zombis y después las barricadas) |
-| 4.2 | Zombi provisional: cápsula de otro color, con la silueta distinguible de Gus |
-| 4.3 | Máquina de estados del zombi: `IDLE`, `ALERT`, `CHASE`, `ATTACK`, `STUNNED`, `DEAD` |
-| 4.4 | Detección: distancia + cono de visión de 120° + línea de vista contra las paredes |
-| 4.5 | Detección por cercanía sin ver (4 m): que no te ignore si estás pegado atrás |
-| 4.6 | Movimiento con dirección + evasión por tres rayos (D-10) |
-| 4.7 | Separación entre zombis para que no se apilen |
-| 4.8 | Memoria del último lugar donde te vio: va ahí y busca unos segundos |
-| 4.9 | Límite de alejamiento: si te fuiste muy lejos, vuelve a su zona |
-| 4.10 | Ataque con alcance, tiempo de espera y daño |
-| 4.11 | Invulnerabilidad breve al recibir daño, para no morir de tres mordidas seguidas |
-| 4.12 | Retroalimentación al recibir daño: destello rojo en pantalla + sacudón de cámara |
-| 4.13 | `SpawnManager`: coloca zombis según la definición de la misión |
-| 4.14 | Apagar la IA de los zombis lejanos y limitar los activos a 12 |
-| 4.15 | Modo debug: dibujar el cono de visión y el estado de cada zombi sobre su cabeza |
-| 4.16 | Pruebas unitarias de la máquina de estados y de la detección |
+| # | Tarea | Estado |
+|---|---|---|
+| 4.1 | Componente de salud reutilizable | ✅ `src/entities/health.js` |
+| 4.2 | Zombi con silueta distinguible de Gus | ✅ encorvado y con los brazos al frente |
+| 4.3 | Máquina de estados | ✅ y se agregó `SEARCH`, ver abajo |
+| 4.4 | Detección: distancia, cono de 120° y línea de vista | ✅ |
+| 4.5 | Detección por cercanía sin ver | ✅ |
+| 4.6 | Movimiento con evasión por tres rayos (D-10) | ✅ |
+| 4.7 | Separación entre zombis | ✅ |
+| 4.8 | Memoria del último lugar visto | ✅ |
+| 4.9 | Límite de alejamiento | ✅ |
+| 4.10 | Ataque con alcance, espera y daño | ✅ |
+| 4.11 | Invulnerabilidad breve al recibir daño | ✅ |
+| 4.12 | Destello rojo y sacudón de cámara | ✅ el sacudón escala con el daño |
+| 4.13 | Aparición según las zonas de la misión | ✅ 25 puestos en 7 zonas |
+| 4.14 | Apagar los lejanos, tope de activos | ✅ |
+| 4.15 | Diagnóstico: cono de visión, estado y destino | ✅ con F1 |
+| 4.16 | Pruebas de la máquina de estados y la detección | ✅ 29 pruebas nuevas |
 
 ### Cómo se prueba
+
+```
+npm test             29 pruebas nuevas del cerebro, sin navegador
+npm run test:e2e     verifica que el cerebro esté conectado al juego
+```
+
+**Con F1 (o tres dedos) se ve el cono de visión de cada zombi, su estado por
+color y a dónde va.** Es la herramienta para ajustar el comportamiento: sin
+verlo, "me vio desde muy lejos" no se puede corregir.
+
+A mano:
 
 1. Acercarse de frente → el zombi pasa a `ALERT` y después a `CHASE`.
 2. Esconderse detrás de un edificio → pierde la línea de vista, va al último
@@ -457,11 +490,23 @@ es donde el juego empieza a ser un juego.
 
 ### Criterio de salida
 
-- [ ] Un encuentro con un zombi funciona igual diez veces seguidas
-- [ ] El zombi no se traba contra las paredes ni se apila con otros
-- [ ] Se puede escapar corriendo
-- [ ] Con 12 zombis el teléfono mantiene 30 FPS
-- [ ] Al morir aparece la pantalla de derrota y se puede reintentar
+- [x] Un encuentro con un zombi funciona igual diez veces seguidas
+- [x] El zombi no se traba contra las paredes ni se apila con otros
+- [x] Se puede escapar corriendo (hay una prueba que lo fija)
+- [x] Al morir aparece la pantalla de derrota y se puede reintentar
+- [ ] **Con 12 zombis el teléfono mantiene 30 FPS** — pendiente de medirlo
+      en un teléfono real
+
+### ⚠️ Lo que quedó anotado
+
+**Draw calls: 201 con diez zombis en pantalla**, contra 171 sin ninguno. Se
+bajó de 379 con dos medidas: que solo el torso proyecte sombra, y agrupado
+dinámico de mallas para los zombis. El objetivo sigue siendo 150 y se
+revisa en la Fase 13.
+
+**Los zombis nacen un poco alineados** dentro de cada zona, porque la zona
+es un círculo y se reparten por igual. Se nota poco, pero cuando haya
+variantes de zombi conviene mirarlo.
 
 ### 🔍 Decisión a cerrar en esta fase
 

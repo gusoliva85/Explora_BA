@@ -69,15 +69,32 @@ test('el toque mueve al jugador con el joystick virtual', async ({ page }) => {
   await page.locator('#game-canvas').dispatchEvent('pointermove', {
     pointerId: 1, pointerType: 'touch', clientX: 60, clientY: 420, isPrimary: true
   });
-  await page.waitForTimeout(700);
+
+  /*
+   * Se espera a que se haya movido, no se mide cuanto se movio en un tiempo
+   * fijo. Esta prueba corre con WebGL por software, y como el bucle acota
+   * el dt a 1/15 de segundo, cuando la escena pesa —por ejemplo al sumar
+   * zombis— el reloj del juego avanza bastante mas lento que el de pared.
+   * Medir metros por segundo real daria un numero que depende de cuanto
+   * cargada este la maquina de pruebas y no del juego.
+   */
+  await page.waitForFunction(
+    (inicio) => {
+      const p = globalThis.game.player.position;
+      return Math.hypot(p.x - inicio.x, p.z - inicio.z) > 1.0;
+    },
+    before,
+    { timeout: 20000 }
+  );
+
   await page.locator('#game-canvas').dispatchEvent('pointerup', {
     pointerId: 1, pointerType: 'touch', clientX: 60, clientY: 420, isPrimary: true
   });
 
+  // Y el joystick tiene que haberlo mandado hacia adelante, no a cualquier lado.
   const after = await page.evaluate(() => {
     const p = globalThis.game.player.position;
     return { x: p.x, z: p.z };
   });
-  const moved = Math.hypot(after.x - before.x, after.z - before.z);
-  expect(moved).toBeGreaterThan(0.5);
+  expect(after.z).toBeLessThan(before.z);
 });

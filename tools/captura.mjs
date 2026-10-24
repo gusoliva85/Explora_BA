@@ -49,6 +49,12 @@ if (px !== undefined && pz !== undefined) {
 }
 
 // Caminar un poco hacia adelante, para que no quede quieto en el spawn.
+// Diagnostico opcional: sexto argumento 'debug'.
+if (process.argv[6] === 'debug') {
+  await page.keyboard.press('F1');
+  await page.waitForTimeout(200);
+}
+
 await page.keyboard.down('KeyW');
 await page.waitForTimeout(segundos * 1000);
 await page.keyboard.up('KeyW');

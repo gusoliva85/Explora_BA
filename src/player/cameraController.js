@@ -52,6 +52,11 @@ export class CameraController {
 
     this._desired = new pc.Vec3();
 
+    /** Sacudon activo: cuanto queda y con que fuerza. */
+    this.sacudonRestante = 0;
+    this.sacudonFuerza = 0;
+    this._semillaSacudon = 0;
+
     addEventListener(
       'wheel',
       (e) => {
@@ -73,6 +78,26 @@ export class CameraController {
    */
   setStreetHeading(headingDegrees) {
     this.targetYaw = normalizarAngulo(headingDegrees + CAMERA.diagonalOffsetDegrees);
+  }
+
+  /**
+   * Sacude la camara.
+   *
+   * Es la forma mas barata y mas efectiva de comunicar un impacto. Sin
+   * esto, recibir una mordida es un numero que baja en una esquina de la
+   * pantalla; con esto, se siente.
+   *
+   * El sacudon decae de forma cuadratica: empieza fuerte y se apaga
+   * rapido. Un decaimiento lineal se siente como un temblor que no termina.
+   *
+   * @param {number} fuerza en metros de desplazamiento maximo
+   * @param {number} duracion en segundos
+   */
+  sacudir(fuerza = 0.35, duracion = 0.35) {
+    this.sacudonFuerza = Math.max(this.sacudonFuerza, fuerza);
+    this.sacudonRestante = Math.max(this.sacudonRestante, duracion);
+    this.sacudonDuracion = duracion;
+    this._semillaSacudon = Math.random() * 1000;
   }
 
   /** Lleva la camara de una a la diagonal, sin animacion (spawn, reinicio). */
@@ -153,11 +178,24 @@ export class CameraController {
     }
 
     const scale = dist / this.distance;
-    this.camera.setPosition(
-      this.focus.x + offX * scale,
-      this.focus.y + offY * scale,
-      this.focus.z + offZ * scale
-    );
+    let px = this.focus.x + offX * scale;
+    let py = this.focus.y + offY * scale;
+    let pz = this.focus.z + offZ * scale;
+
+    if (this.sacudonRestante > 0) {
+      this.sacudonRestante -= dt;
+      const k = Math.max(0, this.sacudonRestante / (this.sacudonDuracion || 1));
+      const amplitud = this.sacudonFuerza * k * k;
+      // Dos frecuencias distintas por eje: con una sola, el movimiento se
+      // lee como una oscilacion regular en vez de como un golpe.
+      const t = this._semillaSacudon + (this.sacudonDuracion - this.sacudonRestante) * 60;
+      px += Math.sin(t * 1.7) * amplitud;
+      py += Math.sin(t * 2.3) * amplitud * 0.6;
+      pz += Math.cos(t * 1.9) * amplitud;
+      if (this.sacudonRestante <= 0) this.sacudonFuerza = 0;
+    }
+
+    this.camera.setPosition(px, py, pz);
     this.camera.lookAt(this.focus);
   }
 
