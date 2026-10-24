@@ -34,6 +34,15 @@ export const COLORS = {
   sidewalk: [0.62, 0.6, 0.56],
   sidewalkAlt: [0.58, 0.565, 0.53],
   curb: [0.7, 0.68, 0.64],
+  /*
+   * Piso de pasaje: adoquin oscuro.
+   *
+   * Tiene que separarse CLARAMENTE de la vereda, que es 0.62. Con un tono
+   * parecido, la boca del pasaje no se lee como entrada desde la vereda de
+   * enfrente: parece un hueco mas entre dos edificios. Siendo mucho mas
+   * oscuro, el contraste solo ya dice "por aca se entra a otra cosa".
+   */
+  pasaje: [0.33, 0.3, 0.27],
   /** Pintura vial: blanco sucio, nunca blanco puro. */
   paint: [0.82, 0.8, 0.74],
   paintYellow: [0.8, 0.66, 0.2],
@@ -105,14 +114,31 @@ export const COLORS = {
 };
 
 /** Acabados: cuanto brilla y cuanto de metal tiene cada superficie. */
+/*
+ * Acabados.
+ *
+ * Son POCOS a proposito. Cada combinacion distinta de color y acabado crea
+ * un material, y cada material rompe el agrupado de mallas: dos cajas del
+ * mismo color pero con brillo distinto ya no se pueden fundir en una.
+ *
+ * Antes habia siete acabados mates con brillos entre 0.04 y 0.2, una
+ * diferencia que nadie distingue en pantalla pero que multiplicaba los
+ * materiales. Ahora los mates son uno solo. Los nombres viejos se
+ * conservan apuntando al mismo objeto, para que el codigo siga leyendose
+ * como lo que representa (tela, madera, hoja) sin costar nada.
+ */
+const MATE = { gloss: 0.07, metalness: 0.0 };
+
 export const ACABADO = {
   asfalto: { gloss: 0.12, metalness: 0.0 },
-  vereda: { gloss: 0.08, metalness: 0.0 },
-  revoque: { gloss: 0.05, metalness: 0.0 },
-  tela: { gloss: 0.06, metalness: 0.0 },
-  hoja: { gloss: 0.04, metalness: 0.0 },
-  madera: { gloss: 0.1, metalness: 0.0 },
-  pintura: { gloss: 0.2, metalness: 0.0 },
+  // Todos estos son el mismo material: la diferencia de brillo entre un
+  // revoque y un toldo de lona no se ve a veinte metros de distancia.
+  revoque: MATE,
+  vereda: MATE,
+  tela: MATE,
+  hoja: MATE,
+  madera: MATE,
+  pintura: MATE,
   // Las unicas superficies con brillo. Si todo brilla, nada destaca.
   chapa: { gloss: 0.55, metalness: 0.45 },
   persiana: { gloss: 0.3, metalness: 0.5 },

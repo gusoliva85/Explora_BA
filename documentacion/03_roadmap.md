@@ -8,9 +8,8 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2 y 2B.
-> **Fase en curso:** **Fase 3 — El mapa de la Misión 001.** Avanzada, con
-> cuatro tareas pendientes anotadas abajo.
+> **Fases cerradas:** 0, 1, 2, 2B y **3**.
+> **Fase siguiente:** **Fase 4 — El primer zombi.** No empezada.
 >
 > La última sesión cerró la Fase 2 (cámara a 57° con la calle en diagonal y
 > HUD vertical) y una Fase 2B que **no estaba planificada**: la reforma del
@@ -21,8 +20,9 @@
 > pobladas —árboles, autos, taxis, colectivos, barricadas, contenedores,
 > kiosco, semáforos, comisaría—, de día, con cámara en diagonal, pintura
 > vial, brújula al objetivo, controles intermedios, victoria y derrota.
-> Una prueba automatizada camina la ruta entera y verifica que sea
-> transitable con todos los obstáculos puestos.
+> Hay **dos rutas alternativas** reales: pasajes que rodean los cortes de
+> la calle. Dos pruebas automatizadas caminan la ruta principal y los dos
+> pasajes, y verifican que todo siga siendo transitable.
 >
 > **Lo que no existe todavía:** zombis, combate, armas, objetos, audio y
 > cualquier arte que no sean cajas de colores.
@@ -82,8 +82,8 @@ juego funciona.
 | 1 | Escena y bucle | Una calle gris, cámara, estados de partida | ✅ |
 | 2 | Movimiento y cámara | Gus camina por una calle en diagonal a 57° | ✅ |
 | 2B | Render y dirección visual | Pipeline HDR, luz de día, interfaz rehecha | ✅ |
-| 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | 🔄 **en curso** |
-| 4 | El primer zombi | Te detecta, te persigue, te muerde | ⬜ |
+| 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | ✅ |
+| 4 | El primer zombi | Te detecta, te persigue, te muerde | 🔄 **siguiente** |
 | 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | ⬜ |
 | 6 | Pistola y ruido | Arma a distancia con consecuencias | ⬜ |
 | 7 | Bazooka | El especial con barra de espera | ⬜ |
@@ -299,7 +299,7 @@ poco.
 
 ---
 
-# FASE 3 — El mapa de la Misión 001 🔄 EN CURSO
+# FASE 3 — El mapa de la Misión 001 ✅
 
 **Objetivo:** que los tres tramos del recorrido existan completos y se sienta
 una calle de Buenos Aires, todavía en cajas de colores.
@@ -314,10 +314,10 @@ una calle de Buenos Aires, todavía en cajas de colores.
 |---|---|---|
 | 3.1 | Plano del recorrido: cuellos de botella, rutas y recursos | ✅ documentado en `mission001.js` |
 | 3.2 | Marcar los dos controles y la comisaría | ✅ |
-| 3.3 | **Dos rutas alternativas reales** | ⬜ **pendiente** |
-| 3.4 | Pasajes y patios internos transitables | ⬜ **pendiente** |
+| 3.3 | **Dos rutas alternativas reales** | ✅ dos pasajes, uno por tramo cortado |
+| 3.4 | Pasajes transitables | ✅ los patios internos quedan para más adelante |
 | 3.5 | Barricadas colocadas a mano en los puntos que el diseño pide | ✅ |
-| 3.6 | Marcar las zonas donde van a aparecer zombis y objetos | ⬜ **pendiente** |
+| 3.6 | Marcar las zonas de zombis y objetos | ✅ doce zonas con peso y nota de diseño |
 | 3.7 | Diferenciar visualmente los tres tramos | 🔄 parcial: varían altura y densidad, falta carácter propio |
 | 3.8 | Brújula con dirección y distancia al objetivo | ✅ |
 | 3.9 | Revisar las direcciones reales y corregir los textos | ✅ el destino pasó a ser una comisaría sobre Carlos Calvo |
@@ -326,7 +326,7 @@ una calle de Buenos Aires, todavía en cajas de colores.
 | 3.12 | Props: contenedores, bolsas, cestos, bancos, paradas, kiosco, semáforos, carteles | ✅ |
 | 3.13 | Pintura vial: eje, líneas de borde y sendas peatonales | ✅ |
 | 3.14 | Variar alturas y retiros de los edificios | ✅ más balcones, medianeras y tanques |
-| 3.15 | Revisar el presupuesto de draw calls | 🔄 246, por encima del objetivo de 150 |
+| 3.15 | Revisar el presupuesto de draw calls | 🔄 de 246 a **171**; el objetivo son 150 |
 
 ### Lo que se construyó
 
@@ -345,7 +345,27 @@ colocado a mano **reserva** una zona donde el generador no puede poner nada,
 porque si no un auto al azar puede cerrar el paso que una barricada dejaba
 abierto a propósito.
 
-**Agrupado estático de mallas**: 1774 mallas se funden en unos 265 lotes.
+**Rutas alternativas**: dos pasajes, uno por tramo cortado. Son calles
+angostas sin veredas que se meten entre dos edificios, corren por el fondo
+de la manzana y vuelven a salir más adelante. El generador abre un hueco en
+la hilera de fachadas donde el pasaje toca la calle, y ni los árboles ni los
+faroles pueden plantarse ahí: si tapan la boca, el pasaje no existe.
+
+La decisión que crean es el pilar de "decisiones rápidas" del documento 01:
+
+| | Por la calle | Por el pasaje |
+|---|---|---|
+| Distancia | Más corto | +40 m |
+| Riesgo | Hay que cruzar el corte, donde va a estar el peligro | Se evita el corte |
+| Ancho | Calzada de 10 m, se esquiva | 5 m, no se esquiva a nadie |
+| Recompensa | Nada | Munición a la entrada, curación a la salida |
+
+**Zonas de juego**: doce zonas definidas en `mission001.js` —siete de zombis
+y cinco de objetos— cada una con su peso y una nota que explica por qué está
+ahí. Todavía no aparece nada: son decisiones de diseño de nivel tomadas con
+el mapa fresco, para que la Fase 4 no tenga que inventarlas.
+
+**Agrupado estático de mallas**: 1774 mallas se funden en unos 98 lotes.
 Sin eso, esto no corre en un teléfono.
 
 ### Cómo se prueba
@@ -367,28 +387,32 @@ A mano:
 2. Intentar perderse a propósito: ¿hay algún lugar donde quedarse trabado?
 3. Cronometrarlo: entre 90 segundos y 3 minutos corriendo sin enemigos es el
    rango sano.
-4. **En el teléfono:** mirar el overlay (F1 o tres dedos). Hoy son 246 draw
+4. **Probar el pasaje**: meterse por la boca de la derecha antes de la
+   barricada. ¿Se entiende que es un camino y no un callejón sin salida?
+5. **En el teléfono:** mirar el overlay (F1 o tres dedos). Hoy son 171 draw
    calls y el objetivo son 150.
 
 ### Criterio de salida
 
 - [x] El recorrido completo se camina sin trabarse en ningún lado
-- [ ] Hay al menos dos rutas alternativas que cambian la experiencia
+- [x] Hay al menos dos rutas alternativas que cambian la experiencia
+- [x] Los dos pasajes se atraviesan de punta a punta
 - [ ] Una persona que nunca vio el juego sabe hacia dónde ir
 - [ ] El recorrido corriendo toma entre 90 s y 3 min
 - [ ] Los draw calls bajan de 150 en el teléfono
 
-### ⚠️ Lo que falta para cerrar la fase
+### ⚠️ Lo que quedó corto
 
-1. **Las rutas alternativas (3.3).** Es lo más importante que queda. Hoy los
-   cuellos de botella dejan huecos por donde pasar, pero el recorrido sigue
-   siendo un pasillo único: no hay una decisión de "por acá es más corto y
-   más peligroso, por allá más largo y más seguro". Eso es un pilar del
-   documento 01 y todavía no está.
-2. **Pasajes y patios (3.4).** Los baldíos existen pero son decorado: no se
-   entra.
-3. **Zonas de zombis y objetos (3.6).** Hace falta antes de la Fase 4.
-4. **Draw calls (3.15).** 246 contra un objetivo de 150.
+1. **Draw calls: 171 contra 150.** Se bajó de 246 agrandando los lotes del
+   agrupado, unificando los acabados mates y recortando la distancia de
+   sombras. Lo que queda son 64 materiales distintos, y bajarlos significa
+   resignar variedad de color. **Se revisa en la Fase 13**, cuando los
+   modelos reales reemplacen las primitivas: un edificio modelado es una
+   malla, no treinta cajas.
+2. **Patios internos.** Los baldíos siguen siendo decorado. Los pasajes
+   cubren la necesidad de ruta alternativa, así que no urge.
+3. **Carácter propio de cada tramo (3.7).** Varían altura y densidad, pero
+   los tres se parecen. Se resuelve mejor en la Fase 12, con arte.
 
 ---
 

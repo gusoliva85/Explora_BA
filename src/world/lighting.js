@@ -68,7 +68,13 @@ export const LUZ = {
    * Hasta donde se calculan sombras. Mas alla el terreno se ve igual pero
    * sin sombra, y como la camara mira desde arriba, no se nota.
    */
-  sombraDistancia: 80,
+  /*
+   * Hasta donde se calculan sombras. Se bajo de 80 a 60 midiendo: las
+   * sombras eran casi la mitad de las llamadas de dibujo, y a sesenta
+   * metros el corte cae donde la bruma de distancia ya empezo a lavar
+   * todo, asi que no se nota.
+   */
+  sombraDistancia: 60,
 
   /** Cada cuantos metros va un farol. De dia son props, no luces. */
   farolCada: 26,

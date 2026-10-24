@@ -33,6 +33,21 @@ await page.goto('http://localhost:5173/');
 await page.locator('#btn-start').click();
 await page.waitForTimeout(400);
 
+/*
+ * Posicion opcional: `node tools/captura.mjs nombre segundos x z`.
+ * Sirve para mirar un punto concreto del mapa sin tener que caminar hasta
+ * ahi, por ejemplo la boca de un pasaje.
+ */
+const px = process.argv[4];
+const pz = process.argv[5];
+if (px !== undefined && pz !== undefined) {
+  await page.evaluate(([x, z]) => {
+    globalThis.game.player.teleport(Number(x), Number(z));
+    globalThis.game.camera.snapToStreet();
+  }, [px, pz]);
+  await page.waitForTimeout(300);
+}
+
 // Caminar un poco hacia adelante, para que no quede quieto en el spawn.
 await page.keyboard.down('KeyW');
 await page.waitForTimeout(segundos * 1000);

@@ -45,6 +45,23 @@ import { PROPS } from './props.js';
 /** Metros de calle que se construyen por detras del punto de aparicion. */
 const PROLOGO = 26;
 
+/*
+ * Tamaño maximo de un lote agrupado, en metros.
+ *
+ * Es un equilibrio. Chico, se generan muchos lotes y no se gana casi nada
+ * en llamadas de dibujo; grande, los lotes son tan extensos que el motor
+ * no puede descartar los que estan fuera de pantalla y termina dibujando
+ * la cuadra entera siempre.
+ *
+ * Con la camara viendo unos sesenta metros, ciento diez da lotes que
+ * cubren casi dos pantallas: se descartan bien y a la vez funden bastante.
+ * Se midio sobre este mapa: pasar de 60 a 150 bajo los lotes de 247 a 98
+ * y las llamadas de dibujo de 236 a 171. Mas alla de 150 se sigue ganando
+ * en llamadas, pero empieza a dibujarse geometria fuera de pantalla, que
+ * en un telefono cuesta mas de lo que ahorra.
+ */
+const MAX_LOTE = 150;
+
 /** Devuelve un punto `metros` mas atras de `a`, sobre la recta de a hacia b. */
 function extenderHaciaAtras(a, b, metros) {
   const dx = b.x - a.x;
@@ -78,7 +95,7 @@ export class WorldBuilder {
      * descarte por volumen: si todo fuera un unico objeto, nunca se podria
      * descartar nada que este fuera de pantalla.
      */
-    this.grupoEstatico = this.app.batcher.addGroup('mundo', false, 60);
+    this.grupoEstatico = this.app.batcher.addGroup('mundo', false, MAX_LOTE);
 
     /**
      * Zonas que el diseño reserva. Todo lo colocado a mano reclama un
@@ -93,7 +110,26 @@ export class WorldBuilder {
      */
     this.reservado = [];
 
-    this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0 };
+    /**
+     * Huecos en la hilera de edificios.
+     *
+     * Son los rectangulos donde el generador NO puede poner una fachada,
+     * porque ahi tiene que haber una entrada: la boca de un pasaje. Sin
+     * esto, la hilera se construye entera y el desvio queda tapiado.
+     *
+     * @type {{minX:number, minZ:number, maxX:number, maxZ:number}[]}
+     */
+    this.huecos = [];
+
+    this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0, desvios: 0 };
+  }
+
+  /** @returns {boolean} true si el rectangulo pisa algun hueco. */
+  tapaHueco(minX, minZ, maxX, maxZ) {
+    for (const h of this.huecos) {
+      if (minX < h.maxX && maxX > h.minX && minZ < h.maxZ && maxZ > h.minZ) return true;
+    }
+    return false;
   }
 
   /** @returns {boolean} true si el punto cae en una zona reservada. */
@@ -203,6 +239,10 @@ export class WorldBuilder {
       this.reservado.push({ x: item.x, z: item.z, r });
     }
 
+    // Las bocas de los pasajes se anotan como huecos ANTES de levantar las
+    // fachadas, porque el generador las consulta mientras construye.
+    this.#registrarHuecos(mission);
+
     for (let i = 0; i < mission.route.length - 1; i++) {
       let a = mission.route[i];
       const b = mission.route[i + 1];
@@ -216,6 +256,7 @@ export class WorldBuilder {
     }
 
     this.#buildEsquinas(mission, rng);
+    this.#buildDesvios(mission, rng);
 
     // Lo colocado a mano va despues de lo generado, para que pueda pisarlo.
     for (const item of mission.props ?? []) {
@@ -466,6 +507,18 @@ export class WorldBuilder {
         : { x: cruzado(centerCross), y: height / 2, z: centerAlong };
       const sz = alongX ? { x: width, y: height, z: depth } : { x: depth, y: height, z: width };
 
+      /*
+       * Si este edificio taparia la boca de un pasaje, no se construye.
+       * El hueco que queda ES la entrada: no hace falta dibujar nada, la
+       * ausencia de pared ya comunica que por ahi se pasa, sobre todo
+       * porque del otro lado se ve el piso del pasaje.
+       */
+      if (this.tapaHueco(pos.x - sz.x / 2, pos.z - sz.z / 2, pos.x + sz.x / 2, pos.z + sz.z / 2)) {
+        cursor += width;
+        n++;
+        continue;
+      }
+
       this.addBox(`Edificio_${index}_${side}_${n}`, pos, sz, rng.pick(COLORS.facade), {
         collide: true,
         tag: 'building',
@@ -630,6 +683,7 @@ export class WorldBuilder {
         ? { x: along, z: crossCenter + offArbol }
         : { x: crossCenter + offArbol, z: along };
       if (this.estaReservado(pos.x, pos.z, 3)) continue;
+      if (this.tapaHueco(pos.x - 2.2, pos.z - 2.2, pos.x + 2.2, pos.z + 2.2)) continue;
 
       this.addProp('arbol', pos, rng.range(0, 360), rng, {
         collide: { w: 0.8, d: 0.8, h: 4 },
@@ -693,6 +747,126 @@ export class WorldBuilder {
     }
   }
 
+  /**
+   * Anota un hueco por cada boca de pasaje.
+   *
+   * La boca es el primer y el ultimo punto de cada desvio: son los dos
+   * lugares donde el pasaje toca la calle principal y, por lo tanto, los
+   * dos lugares donde no puede haber fachada.
+   */
+  #registrarHuecos(mission) {
+    for (const d of mission.desvios ?? []) {
+      const ancho = d.ancho ?? 5;
+      // Se abre generoso: la boca tiene que leerse como entrada desde la
+      // vereda de enfrente, no como una rendija.
+      const margen = ancho / 2 + 2.5;
+      for (const p of [d.puntos[0], d.puntos[d.puntos.length - 1]]) {
+        this.huecos.push({
+          minX: p.x - margen,
+          minZ: p.z - margen,
+          maxX: p.x + margen,
+          maxZ: p.z + margen
+        });
+      }
+      // Y el cuerpo del pasaje tampoco puede quedar dentro de un edificio.
+      for (let i = 0; i < d.puntos.length - 1; i++) {
+        const a = d.puntos[i];
+        const b = d.puntos[i + 1];
+        this.huecos.push({
+          minX: Math.min(a.x, b.x) - ancho / 2,
+          minZ: Math.min(a.z, b.z) - ancho / 2,
+          maxX: Math.max(a.x, b.x) + ancho / 2,
+          maxZ: Math.max(a.z, b.z) + ancho / 2
+        });
+      }
+    }
+  }
+
+  /**
+   * Pasajes: las rutas alternativas.
+   *
+   * Un pasaje es una calle angosta sin veredas que se mete entre dos
+   * edificios, corre por el fondo de la manzana y vuelve a salir a la
+   * calle principal mas adelante. Sirve para rodear un corte.
+   *
+   * La decision que crea es la del pilar del documento 01: por la calle es
+   * mas corto pero hay que pasar por donde esta el peligro; por el pasaje
+   * es mas largo y mas angosto, pero se esquiva.
+   *
+   * Se construyen DESPUES de las fachadas, asi sus paredes pisan cualquier
+   * cosa que haya quedado cerca.
+   */
+  #buildDesvios(mission, rng) {
+    for (let k = 0; k < (mission.desvios ?? []).length; k++) {
+      const d = mission.desvios[k];
+      const ancho = d.ancho ?? 5;
+      this.stats.desvios++;
+
+      for (let i = 0; i < d.puntos.length - 1; i++) {
+        const a = d.puntos[i];
+        const b = d.puntos[i + 1];
+        const alongX = Math.abs(b.x - a.x) > Math.abs(b.z - a.z);
+        const largo = alongX ? Math.abs(b.x - a.x) : Math.abs(b.z - a.z);
+        const cx = (a.x + b.x) / 2;
+        const cz = (a.z + b.z) / 2;
+
+        // Piso del pasaje: adoquin mas oscuro que la vereda, para que se
+        // distinga de un vistazo y se lea como "esto es otra cosa".
+        const sz = alongX
+          ? { x: largo + ancho, y: 0.1, z: ancho }
+          : { x: ancho, y: 0.1, z: largo + ancho };
+        this.addBox(`Pasaje_${k}_${i}`, { x: cx, y: 0.03, z: cz }, sz, COLORS.pasaje, {
+          acabado: ACABADO.vereda
+        });
+
+        /*
+         * Paredes a los dos lados: medianeras ciegas de ladrillo a la
+         * vista, sin ventanas ni puertas. Un pasaje no tiene frente.
+         *
+         * Se RECORTAN en los extremos que conectan con otro tramo. Sin
+         * ese recorte, la pared del tramo perpendicular cruza el corredor
+         * y lo tapia: el jugador entra al pasaje, llega a la primera
+         * vuelta y se encuentra con un muro. Lo detecto la prueba de
+         * pasajes, y es el tipo de error que no se ve mirando el codigo
+         * porque cada tramo, por separado, esta bien.
+         */
+        const recorte = ancho / 2 + 0.4;
+        const recorteInicio = i === 0 ? 0 : recorte;
+        const recorteFin = i === d.puntos.length - 2 ? 0 : recorte;
+        const largoPared = largo - recorteInicio - recorteFin;
+
+        if (largoPared > 0.5) {
+          // El recorte asimetrico corre el centro de la pared.
+          const dir = alongX ? Math.sign(b.x - a.x) : Math.sign(b.z - a.z);
+          const corrimiento = (dir * (recorteInicio - recorteFin)) / 2;
+          const px = alongX ? cx + corrimiento : cx;
+          const pz = alongX ? cz : cz + corrimiento;
+
+          for (const lado of [-1, 1]) {
+            const off = (ancho / 2 + 0.3) * lado;
+            const alto = rng.range(5, 8);
+            const pos = alongX
+              ? { x: px, y: alto / 2, z: pz + off }
+              : { x: px + off, y: alto / 2, z: pz };
+            const szPared = alongX
+              ? { x: largoPared, y: alto, z: 0.6 }
+              : { x: 0.6, y: alto, z: largoPared };
+            this.addBox(`PasajePared_${k}_${i}_${lado}`, pos, szPared, COLORS.brick, {
+              collide: true,
+              tag: 'building',
+              acabado: ACABADO.revoque,
+              sombra: true
+            });
+          }
+        }
+      }
+
+      // Algo de basura adentro: un pasaje limpio no parece un pasaje.
+      const medio = d.puntos[Math.floor(d.puntos.length / 2)];
+      this.addProp('bolsas', { x: medio.x, z: medio.z }, rng.range(0, 360), rng);
+    }
+  }
+
   /** Faroles a lo largo de la cuadra, alternando de vereda. */
   #buildFaroles(a, b, alongX, length, road, index) {
     if (!this.matsLuz) return;
@@ -706,6 +880,13 @@ export class WorldBuilder {
       const along = start + d;
       const cross = crossCenter + offset * lado;
       const pos = alongX ? { x: along, z: cross } : { x: cross, z: along };
+
+      // Un farol plantado delante de la boca de un pasaje la tapa justo
+      // desde el angulo en que el jugador la tiene que ver.
+      if (this.tapaHueco(pos.x - 2, pos.z - 2, pos.x + 2, pos.z + 2)) {
+        lado *= -1;
+        continue;
+      }
 
       let angulo;
       if (alongX) angulo = lado > 0 ? 0 : 180;
@@ -750,12 +931,13 @@ export class WorldBuilder {
 
   destroy() {
     this.reservado.length = 0;
+    this.huecos.length = 0;
     this.app.batcher.removeGroup(this.grupoEstatico.id);
     this.root.destroy();
     for (const f of this.faroles) f.destroy();
     this.faroles.length = 0;
     this.collision.clear();
     this.mats.clear();
-    this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0 };
+    this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0, desvios: 0 };
   }
 }

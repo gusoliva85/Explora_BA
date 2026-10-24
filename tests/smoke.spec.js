@@ -82,24 +82,56 @@ test('el jugador no atraviesa los edificios', async ({ page }) => {
   await page.locator('#btn-start').click();
   await expect(page.locator('#screen-hud')).toBeVisible();
 
-  // Se lo empuja con fuerza contra la fila de edificios del lado este.
-  const result = await page.evaluate(async () => {
+  /*
+   * La pared contra la que se empuja se BUSCA en el mundo, no se asume.
+   *
+   * Antes la prueba empujaba al jugador desde una coordenada fija hacia la
+   * derecha, dando por sentado que ahi habia una fachada. Al abrir las
+   * bocas de los pasajes, esa fachada dejo de existir y la prueba empezo a
+   * fallar sin que nada estuviera roto. Buscando una pared de verdad, la
+   * prueba sigue valiendo aunque el mapa cambie.
+   */
+  const result = await page.evaluate(() => {
     const { player, collision } = globalThis.game;
-    player.teleport(0, -40);
+
+    // Una fachada del lado derecho del primer tramo, lejos de los pasajes.
+    const pared = collision.boxes
+      .filter(
+        (b) =>
+          b.tag === 'building' &&
+          b.minX > 6 &&
+          b.minX < 26 &&
+          b.minZ < -14 &&
+          b.maxZ > -34
+      )
+      .sort((a, b) => a.minX - b.minX)[0];
+
+    if (!pared) return { sinPared: true };
+
+    // Arrancar enfrente de esa pared, en el medio de la calzada.
+    const z = Math.max(pared.minZ, -32);
+    player.teleport(0, z);
+
     for (let i = 0; i < 200; i++) {
       const p = player.position;
       const r = collision.moveCircle({ x: p.x, z: p.z }, 0.5, 0, player.radius);
       player.entity.setPosition(r.x, 0, r.z);
     }
+
     const p = player.position;
-    // ¿Quedo dentro de alguna caja solida?
-    const inside = collision.boxes.some((b) => b.contains(p.x, p.z));
-    return { x: p.x, inside };
+    return {
+      x: p.x,
+      z: p.z,
+      limite: pared.minX,
+      dentro: collision.boxes.some((b) => b.contains(p.x, p.z))
+    };
   });
 
-  expect(result.inside).toBe(false);
-  // Tiene que haberse frenado contra la fachada, no haberse ido a 100 m.
-  expect(result.x).toBeLessThan(30);
+  expect(result.sinPared, 'no se encontro ninguna fachada contra la que probar').toBeFalsy();
+  // Nunca puede quedar dentro de una caja solida.
+  expect(result.dentro).toBe(false);
+  // Y tiene que haberse frenado contra la pared, no haberla atravesado.
+  expect(result.x).toBeLessThan(result.limite + 0.5);
 });
 
 test('la mision se completa al recorrer los controles y llegar a la meta', async ({ page }) => {

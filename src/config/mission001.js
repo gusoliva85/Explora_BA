@@ -85,6 +85,106 @@ export const mission001 = {
 
   /*
    * =========================================================================
+   * RUTAS ALTERNATIVAS
+   * =========================================================================
+   * Cada desvio es un pasaje: una calle angosta que se mete entre dos
+   * edificios, corre por el fondo de la manzana y vuelve a salir mas
+   * adelante. El generador abre un hueco en la hilera de fachadas donde el
+   * pasaje toca la calle, asi que las bocas se ven como entradas.
+   *
+   * Los dos estan puestos para rodear un corte, y cada uno crea la misma
+   * decision, que es el pilar de "decisiones rapidas" del documento 01:
+   *
+   *   POR LA CALLE   es mas corto, pero hay que pasar por el hueco de la
+   *                  barricada, que es donde va a estar el peligro.
+   *   POR EL PASAJE  es mas largo y mas angosto —no se puede esquivar a
+   *                  nadie ahi adentro— pero se evita el corte.
+   *
+   * El primer punto y el ultimo tienen que caer sobre la linea de fachada
+   * de la calle principal: ahi es donde se abre la boca. En el tramo 1 esa
+   * linea esta en x = +8; en el tramo 2, en z = -118.
+   */
+  desvios: [
+    {
+      // TRAMO 1: rodea la barricada de Independencia por el fondo de la
+      // manzana de la derecha. Entra antes del corte y sale despues.
+      nombre: 'Pasaje Independencia',
+      ancho: 5,
+      puntos: [
+        { x: 8, z: -50 },
+        { x: 17, z: -50 },
+        { x: 17, z: -76 },
+        { x: 8, z: -76 }
+      ]
+    },
+    {
+      // TRAMO 2: rodea el corte de Av. Boedo por el lado de abajo.
+      nombre: 'Pasaje Boedo',
+      ancho: 5,
+      puntos: [
+        { x: -56, z: -118 },
+        { x: -56, z: -129 },
+        { x: -73, z: -129 },
+        { x: -73, z: -118 }
+      ]
+    }
+  ],
+
+  /*
+   * =========================================================================
+   * ZONAS DE JUEGO
+   * =========================================================================
+   * Donde van a aparecer zombis y objetos. Todavia no hay ni unos ni otros
+   * —eso es la Fase 4 y la Fase 8— pero las zonas se definen ahora, con el
+   * mapa fresco, porque son decisiones de diseño de nivel y no de
+   * implementacion.
+   *
+   * La logica que las ordena:
+   *
+   *   - Los zombis se concentran en los cuellos de botella y en la boca de
+   *     los pasajes. Son los lugares donde el jugador tiene que frenar, y
+   *     un zombi solo da miedo si aparece donde uno no puede correr.
+   *   - Los objetos se ponen en el camino LARGO. Asi el desvio paga: es
+   *     mas seguro y ademas rinde. Si el camino corto tuviera lo mismo,
+   *     nadie elegiria el otro.
+   *   - El primer tramo arranca flojo: hay que dejar que el jugador
+   *     aprenda a moverse antes de exigirle nada.
+   *
+   * `peso` es cuanta presion pone la zona, de 0 a 1. Lo usara el
+   * SpawnManager de la Fase 4 para repartir la cantidad de zombis.
+   */
+  zonas: [
+    // --- Zombis -------------------------------------------------------------
+    { tipo: 'zombis', x: 0, z: -36, radio: 9, peso: 0.25,
+      nota: 'Primer encuentro. Suave y en campo abierto: hay lugar para correr.' },
+    { tipo: 'zombis', x: 0, z: -62, radio: 11, peso: 0.9,
+      nota: 'El corte de Independencia. Es el que empuja hacia el pasaje.' },
+    { tipo: 'zombis', x: 17, z: -63, radio: 7, peso: 0.5,
+      nota: 'Dentro del pasaje. Menos, pero sin lugar para esquivar.' },
+    { tipo: 'zombis', x: 0.5, z: -92, radio: 9, peso: 0.6,
+      nota: 'Detras del colectivo, fuera de la vista hasta que lo rodeas.' },
+    { tipo: 'zombis', x: -46, z: -110, radio: 10, peso: 0.7,
+      nota: 'Mitad de la avenida, entre vehiculos abandonados.' },
+    { tipo: 'zombis', x: -64, z: -112, radio: 11, peso: 0.95,
+      nota: 'El corte de Boedo. El mas duro del recorrido.' },
+    { tipo: 'zombis', x: -90, z: -190, radio: 12, peso: 0.8,
+      nota: 'Ultimo tramo. Presion sostenida hasta la comisaria.' },
+
+    // --- Objetos ------------------------------------------------------------
+    { tipo: 'municion', x: 17, z: -52, radio: 3, peso: 1,
+      nota: 'Entrada del pasaje: premia haber elegido el camino largo.' },
+    { tipo: 'curacion', x: 17, z: -74, radio: 3, peso: 1,
+      nota: 'Salida del pasaje, antes de volver a la calle.' },
+    { tipo: 'municion', x: -8, z: -104, radio: 3, peso: 1,
+      nota: 'Junto a la parada de colectivo, antes del control 1.' },
+    { tipo: 'curacion', x: -65, z: -129, radio: 3, peso: 1,
+      nota: 'Fondo del pasaje de Boedo.' },
+    { tipo: 'municion', x: -84, z: -160, radio: 3, peso: 1,
+      nota: 'Tramo final, para llegar con algo con que defenderse.' }
+  ],
+
+  /*
+   * =========================================================================
    * DISEÑO DE NIVEL — colocado a mano
    * =========================================================================
    * Todo lo que esta aca cambia como se JUEGA el tramo, no solo como se ve.
