@@ -215,8 +215,25 @@ export const WEAPONS = {
     type: 'special',
     /** Daño directo al impacto. */
     damage: 250,
-    /** Daño en el borde del radio; interpola hacia el centro. */
-    damageEdge: 60,
+    /**
+     * Daño justo en el borde del radio; interpola hacia el centro.
+     *
+     * Estaba en 60, que es EXACTAMENTE la vida de un zombi estandar. O sea
+     * que todo lo que entraba en el radio moria, incluido el que apenas lo
+     * rozaba, y la bazooka era un boton de borrar pantalla: apuntarla no
+     * era una habilidad, porque cualquier punto del grupo daba el mismo
+     * resultado.
+     *
+     * Lo encontro una prueba, no el ojo: jugando se ve que todos mueren,
+     * que es exactamente lo que se espera de una bazooka, y no hay forma
+     * de notar que el borde no hace nada.
+     *
+     * Con 35 el zombi del borde SOBREVIVE herido —que es lo que pide la
+     * prueba a mano numero 3 del roadmap— y el radio letal queda en unos
+     * 4,6 m de los 6. El arma sigue siendo devastadora; lo que gana es un
+     * borde donde importa dónde cayó.
+     */
+    damageEdge: 35,
     blastRadius: 6,
     range: 40,
     /** Se apunta sola al zombi mas cercano dentro de `range`. Ver doc 02, D-03. */
@@ -226,7 +243,21 @@ export const WEAPONS = {
     windup: 0.35,
     projectileSpeed: 24,
     noiseRadius: 45,
-    ammoType: null
+    ammoType: null,
+    /** Altura a la que vuela el cohete. Misma idea que la de la pistola. */
+    shotHeight: 1.2,
+    /**
+     * Cuanto empuja la explosion, en METROS.
+     *
+     * Es la misma unidad que el empujon del cuchillo, que son 0,35 m. Con
+     * 2,5 m un zombi que sobrevive al borde sale volando casi medio radio
+     * de explosion: se ve que lo agarro la onda y queda lo bastante lejos
+     * como para que el jugador tenga tiempo de reaccionar.
+     *
+     * Se mueve con deteccion de colision, asi que contra una pared empuja
+     * menos. Es correcto: no hay para donde ir.
+     */
+    blastPush: 2.5
   }
 };
 

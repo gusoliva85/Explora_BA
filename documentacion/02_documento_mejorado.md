@@ -169,7 +169,7 @@ y recarga por tiempo son dos sistemas distintos.
 | Munición | Ninguna. No se recoge, no se agota |
 | Apuntado | Automático al zombi más cercano dentro de 40 m |
 | Daño directo | 250 |
-| Daño en el borde del área | 60, interpolando hacia el centro |
+| Daño en el borde del área | ~~60~~ → **35**, interpolando hacia el centro |
 | Radio de explosión | 6 m |
 | Ruido generado | 45 m (es lo que la vuelve una decisión y no un botón gratis) |
 
@@ -180,6 +180,24 @@ que es mucho más interesante y además es mucho más fácil de balancear.
 
 El apuntado automático está bien resuelto en móvil: apuntar a mano con el dedo
 en una pantalla chica es frustrante y es justo lo que el 01 quería evitar.
+
+**Corregido al implementarla (Fase 7).** Dos cosas de esta tabla estaban mal:
+
+1. **El daño de borde eran 60, que es exactamente la vida de un zombi
+   estándar.** O sea que todo lo que entraba en el radio moría, incluido el
+   que apenas lo rozaba: la bazooka era un botón de borrar pantalla y
+   apuntarla no era una habilidad. Peor: la prueba a mano de la propia Fase 7
+   pedía lo contrario ("un zombi en el borde sobrevive con poca vida"), así
+   que los dos números se contradecían. Bajado a **35**.
+2. **Faltaba exigir línea de vista** en el apuntado automático. Sin ella el
+   arma elegiría un zombi del otro lado de una persiana, el cohete reventaría
+   contra la pared a dos metros del jugador y la explosión de seis metros se
+   lo llevaría puesto.
+
+Y una decisión que la tabla no cubría: **el cohete no persigue**. El apuntado
+es automático, pero una vez que sale vuela derecho. Si persiguiera, el segundo
+y medio de vuelo no costaría nada y el arma volvería a ser "apretar para
+matar".
 
 ---
 

@@ -1,6 +1,7 @@
 import { WEAPONS } from '../config/balance.js';
 import { rumboHacia, difRumbos } from '../core/rumbo.js';
 import { blancoDelRayo, dispersar, rumboAsistido } from './ballistics.js';
+import { objetivoAutomatico } from './explosion.js';
 
 /**
  * ===========================================================================
@@ -105,6 +106,24 @@ export class WeaponController {
      * repetible, y nunca falla por mala suerte. El juego si le pasa el
      * generador con semilla (D-12).
      */
+    /*
+     * La bazooka.
+     *
+     * No es un arma que se equipa: es un boton aparte que esta siempre
+     * disponible cuando la barra esta llena (D-03). Y por eso la barra
+     * CARGA SIEMPRE, tengas el cuchillo o la pistola en la mano.
+     *
+     * Si cargara solo con la bazooka equipada, el jugador tendria que
+     * elegir entre pelear y esperar, y lo racional seria andar con la
+     * bazooka puesta sin usarla. Cargando sola, la decision pasa a ser la
+     * unica que importa: CUANDO gastarla.
+     */
+    this.cargaEspecial = 0;
+    this.lanzarProyectil = opt.lanzarProyectil;
+    this.alCargarEspecial = opt.alCargarEspecial;
+    this.alDispararEspecial = opt.alDispararEspecial;
+    this.alEspecialSinBlanco = opt.alEspecialSinBlanco;
+
     this.azar = opt.azar ?? (() => 0.5);
     this.rayo = opt.rayo;
     this.asistirApuntado = opt.asistirApuntado ?? (() => false);
@@ -152,6 +171,15 @@ export class WeaponController {
 
   get recargando() {
     return this.estado === EstadoArma.RECARGANDO;
+  }
+
+  /** Fraccion de 0 a 1 de la barra de la bazooka. */
+  get progresoEspecial() {
+    return this.cargaEspecial;
+  }
+
+  get especialLista() {
+    return this.cargaEspecial >= 1;
   }
 
   /** Fraccion de 0 a 1 de la recarga. Para la barra del HUD. */
@@ -220,6 +248,15 @@ export class WeaponController {
       this.reserva[arma.ammoType] = arma.startingReserve ?? 0;
     }
     this.yaGolpeados.clear();
+    /*
+     * La bazooka arranca DESCARGADA, no cargada.
+     *
+     * Empezar con ella lista convertiria el principio de cada intento en
+     * "gasto la bazooka en el primer grupo", que es justo la decision que
+     * el arma no quiere que sea automatica. Y al morir, reaparecer con la
+     * barra llena premiaria morirse.
+     */
+    this.cargaEspecial = 0;
     this.equipar(armaInicial);
   }
 
@@ -323,6 +360,7 @@ export class WeaponController {
    * @param {Array<{posicion:{x:number,z:number}, vivo:boolean}>} objetivos
    */
   update(dt, pos, rumboGrados, objetivos) {
+    this.#cargarEspecial(dt);
     if (this.restante > 0) this.restante -= dt;
 
     if (this.estado === EstadoArma.PREPARANDO && this.restante <= 0) {
@@ -346,6 +384,90 @@ export class WeaponController {
       this.estado = EstadoArma.LISTA;
       this.swing = null;
     }
+  }
+
+  /** Llena la barra de la bazooka. Corre siempre, se use o no. */
+  #cargarEspecial(dt) {
+    if (this.cargaEspecial >= 1) return;
+    const antes = this.cargaEspecial;
+    this.cargaEspecial = Math.min(1, this.cargaEspecial + dt / this.armas.bazooka.cooldown);
+    // Se avisa solo al llenarse, no en cada cuadro: el HUD lee la barra
+    // directamente, y lo que necesita un aviso es el momento en que el
+    // boton se habilita.
+    if (antes < 1 && this.cargaEspecial >= 1) {
+      this.alCargarEspecial?.({ arma: 'bazooka' });
+    }
+  }
+
+  /**
+   * Dispara la bazooka.
+   *
+   * No pasa por `atacar` ni cambia el arma equipada: es un boton propio.
+   *
+   * @param {{x:number,z:number}} pos
+   * @param {Array} objetivos
+   * @returns {boolean} true si salio el cohete
+   */
+  dispararEspecial(pos, objetivos = []) {
+    if (!this.especialLista) return false;
+
+    const arma = this.armas.bazooka;
+    const blanco = objetivoAutomatico(pos, objetivos, {
+      alcance: arma.range,
+      rayo: this.rayo,
+      altura: arma.shotHeight ?? 1.2
+    });
+
+    /*
+     * Sin blanco NO se gasta la carga (tarea 7.11).
+     *
+     * Es lo contrario de lo que hace la pistola, donde errar cuesta una
+     * bala a proposito. La diferencia es el precio: una bala son cinco
+     * segundos de recarga, la barra son treinta. Hacer perder treinta
+     * segundos por un boton apretado sin querer —en una pantalla tactil,
+     * con zombis encima— es castigar un error de dedo, no una decision.
+     */
+    if (!blanco) {
+      this.alEspecialSinBlanco?.({ x: pos.x, z: pos.z, alcance: arma.range });
+      return false;
+    }
+
+    this.cargaEspecial = 0;
+
+    this.lanzarProyectil?.({
+      origen: { x: pos.x, z: pos.z },
+      rumbo: blanco.rumbo,
+      velocidad: arma.projectileSpeed,
+      // El cohete no puede volar mas alla del blanco elegido: si el zombi
+      // se corre, detona donde estaba, no sigue de largo hasta los 40 m.
+      alcance: blanco.distancia + arma.blastRadius,
+      altura: arma.shotHeight ?? 1.2
+    });
+
+    this.alDispararEspecial?.({
+      arma: arma.id,
+      x: pos.x,
+      z: pos.z,
+      rumbo: blanco.rumbo,
+      objetivo: blanco.objetivo,
+      distancia: blanco.distancia
+    });
+
+    // El estruendo del disparo, aparte del de la explosion.
+    if (arma.noiseRadius > 0) {
+      this.alHacerRuido?.({ x: pos.x, z: pos.z, radio: arma.noiseRadius, arma: arma.id });
+    }
+    return true;
+  }
+
+  /** A quien apuntaria la bazooka ahora. Lo usa el indicador del HUD. */
+  blancoEspecial(pos, objetivos) {
+    const arma = this.armas.bazooka;
+    return objetivoAutomatico(pos, objetivos, {
+      alcance: arma.range,
+      rayo: this.rayo,
+      altura: arma.shotHeight ?? 1.2
+    });
   }
 
   /** Resuelve el ataque segun el tipo de arma. */

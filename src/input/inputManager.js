@@ -34,7 +34,8 @@ export class InputManager {
       interact: false,
       heal: false,
       swap: false,
-      reload: false
+      reload: false,
+      special: false
     };
     /** Botones que se activaron en este frame (flanco de subida). */
     this.pressed = new Set();
@@ -109,6 +110,9 @@ export class InputManager {
       // si llegara a quedarse con la R, recargar seria la tecla rara.
       KeyR: 'reload',
       KeyH: 'heal',
+      // F de la bazooka: cerca de WASD, no se aprieta sin querer, y no
+      // pisa nada. Q y R ya estan tomadas por cambiar de arma y recargar.
+      KeyF: 'special',
       Space: 'attack'
     };
 

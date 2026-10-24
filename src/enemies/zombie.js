@@ -205,13 +205,25 @@ export class Zombie {
       this.ai.aturdir(0.25);
       this.restanteDestello = 0.14;
       this.destello.enabled = true;
-      // Empujon hacia atras, para que se note el impacto.
+      /*
+       * Empujon hacia atras, en metros.
+       *
+       * La distancia la decide quien golpea, no el zombi. Era un 0,35 fijo
+       * escrito aca, asi que una explosion empujaba exactamente igual que
+       * un cuchillazo: los zombis se quedaban parados en medio del humo.
+       * Que SALGAN DESPEDIDOS es la mitad de la razon por la que esperar
+       * treinta segundos vale la pena; la otra mitad es que mueran.
+       *
+       * Se mueve con `moveCircle` y no de un salto: un empujon que
+       * atraviesa paredes es peor que no tener empujon.
+       */
       if (info.dirX !== undefined) {
+        const fuerza = info.fuerza ?? 0.35;
         const p = this.posicion;
         const r = this.world.moveCircle(
           { x: p.x, z: p.z },
-          info.dirX * 0.35,
-          info.dirZ * 0.35,
+          info.dirX * fuerza,
+          info.dirZ * fuerza,
           this.radio
         );
         this.entity.setPosition(r.x, 0, r.z);

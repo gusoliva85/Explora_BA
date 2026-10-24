@@ -359,6 +359,80 @@
   75% { transform: translateX(4px); }
 }
 
+/* --- Barra de la bazooka --------------------------------------------------
+   Un reloj de treinta segundos. Mientras carga es fría y discreta: no hay
+   nada que hacer al respecto. Cuando se llena cambia de color y late, que
+   es el único momento en que pide atención. */
+
+.fila-especial { margin-top: 8px; }
+
+.bar.bar-especial { flex: 1; height: 8px; }
+.bar.bar-especial > div {
+  background: linear-gradient(90deg, #3f6ea8, #6ea8e0);
+  transition: width 0.1s linear;
+}
+
+.especial-estado {
+  min-width: 52px;
+  text-align: right;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-dim);
+}
+
+/* Llena: el único momento en que la barra pide que la mires. */
+.fila-especial.lista .bar.bar-especial > div {
+  background: linear-gradient(90deg, #ff7a2f, #ffd470);
+}
+.fila-especial.lista .especial-estado {
+  color: var(--hud-ambar);
+  animation: latidoEspecial 1.4s ease-in-out infinite;
+}
+@keyframes latidoEspecial {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* --- Botón de la bazooka --------------------------------------------------
+   Sin carga NO se muestra. Un botón deshabilitado que igual se puede
+   apretar enseña a apretarlo en vano; uno que aparece recién cuando sirve
+   enseña que apareció porque sirve. Y en vertical, un botón menos en el
+   pulgar derecho es espacio ganado. */
+
+.btn.btn-action.btn-special {
+  width: 70px;
+  height: 70px;
+  align-self: center;
+  color: #fff;
+  background: radial-gradient(circle at 50% 36%, rgba(255, 122, 47, 0.45), rgba(120, 44, 8, 0.55));
+  border-color: rgba(255, 122, 47, 0.65);
+  box-shadow: 0 0 0 0 rgba(255, 122, 47, 0.4), 0 8px 26px -10px rgba(0, 0, 0, 0.95);
+  animation: pulsoEspecial 1.6s ease-in-out infinite;
+}
+.btn.btn-action.btn-special .especial-glifo { font-size: 26px; line-height: 1; }
+.btn.btn-action.btn-special:active {
+  box-shadow: 0 0 0 10px rgba(255, 122, 47, 0.2), 0 0 36px rgba(255, 122, 47, 0.6);
+}
+@keyframes pulsoEspecial {
+  0%, 100% { box-shadow: 0 8px 26px -10px rgba(0, 0, 0, 0.95); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 122, 47, 0.16), 0 0 30px rgba(255, 122, 47, 0.45); }
+}
+
+/*
+ * Para esconder el boton se usa la clase `.hidden` de game.css, que ya
+ * existe y lleva `!important`.
+ *
+ * Aca habia una clase nueva, `.oculto-sin-carga`, con un `display: none`
+ * comun. No funcionaba: `.btn` se define mas abajo en la hoja, tiene la
+ * misma especificidad, y por orden le ganaba. El boton se veia siempre.
+ *
+ * Es el mismo error de especificidad que ya habia pasado con `.btn-action`
+ * y `.btn-icon`. De ahi la regla: si hay una clase que ya resuelve esto, se
+ * usa esa.
+ */
+
 /* --- Recarga --------------------------------------------------------------
    Tiene barra propia y no reusa la de vida. Durante la recarga el jugador
    esta indefenso, y ese es la mitad del costo de usar la pistola: si no se

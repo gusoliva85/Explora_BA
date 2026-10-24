@@ -8,8 +8,8 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5 y **6**.
-> **Fase siguiente:** **Fase 7 — Bazooka.** No empezada.
+> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6 y **7**.
+> **Fase siguiente:** **Fase 8 — Objetos e inventario.** No empezada.
 >
 > El repositorio está en
 > **[github.com/gusoliva85/Explora_BA](https://github.com/gusoliva85/Explora_BA)**.
@@ -37,9 +37,16 @@
 > Esa diferencia es lo que convierte "¿peleo o corro?" en "¿peleo callado o
 > hago ruido y resuelvo rápido?".
 >
+> **Y está la bazooka.** Una barra que se llena sola en 30 s, apuntado
+> automático al zombi más cercano que se pueda ver, y un cohete que **viaja
+> de verdad**: tarda más de un segundo en cruzar cuarenta metros, y en ese
+> rato la horda se sigue moviendo. No persigue, así que un zombi que cambia
+> de dirección se salva. La explosión mata en el centro y deja heridos en
+> el borde.
+>
 > **Ya es un juego**: hay un objetivo, enemigos que te buscan, y decisiones
-> con costo. Lo que falta es profundidad: la bazooka, los objetos y la
-> misión completa.
+> con costo. Lo que falta es profundidad: los objetos y la misión
+> completa.
 >
 > **Lo que no existe todavía:** objetos, audio y cualquier arte que no sean
 > cajas de colores. **No hay sonido**, lo cual es una ironía incómoda para
@@ -821,42 +828,141 @@ ruido son el punto de partida del documento 02. Se ajustan jugando.
 
 ---
 
-# FASE 7 — Bazooka ⬜
+# FASE 7 — Bazooka ✅
 
 **Objetivo:** el arma especial con barra de espera y apuntado automático (D-03).
 
 ### Tareas
 
-| # | Tarea |
-|---|---|
-| 7.1 | Barra de carga de 30 s, visible en el HUD |
-| 7.2 | Selección automática del zombi más cercano dentro de 40 m |
-| 7.3 | Indicador del objetivo seleccionado antes de disparar |
-| 7.4 | Proyectil que viaja a 24 m/s, no instantáneo (se ve venir, se puede esquivar) |
-| 7.5 | Explosión con daño en área: 250 en el centro, 60 en el borde, radio de 6 m |
-| 7.6 | Empujón a los zombis cercanos a la explosión |
-| 7.7 | Efecto visual: destello, onda y humo |
-| 7.8 | Sacudón de cámara proporcional a la distancia |
-| 7.9 | Evento de ruido de 45 m |
-| 7.10 | Bloqueo del botón mientras la barra no está llena |
-| 7.11 | Qué pasa si no hay ningún zombi en rango (no debería gastarse) |
+| # | Tarea | Estado |
+|---|---|---|
+| 7.1 | Barra de carga de 30 s, visible en el HUD | ✅ carga siempre, tengas el arma que tengas |
+| 7.2 | Selección automática del zombi más cercano dentro de 40 m | ✅ y que **se pueda ver**: ver abajo |
+| 7.3 | Indicador del objetivo antes de disparar | ✅ resuelto distinto: el botón sólo aparece cuando hay blanco posible |
+| 7.4 | Proyectil a 24 m/s, no instantáneo | ✅ y no persigue, a propósito |
+| 7.5 | Explosión en área: 250 en el centro, radio de 6 m | ✅ el daño de borde bajó de 60 a 35, ver abajo |
+| 7.6 | Empujón a los zombis cercanos | ✅ 2,5 m, con detección de colisión |
+| 7.7 | Efecto visual: destello, onda y humo | ✅ |
+| 7.8 | Sacudón proporcional a la distancia | ✅ escala con la **cercanía**, no con el daño |
+| 7.9 | Ruido de 45 m | ✅ dos veces: el disparo y la explosión |
+| 7.10 | Botón bloqueado mientras la barra no está llena | ✅ no bloqueado: **no existe** |
+| 7.11 | Sin zombis en rango no se gasta la carga | ✅ |
+
+### Decisiones que se tomaron construyéndola
+
+**La barra carga siempre, con cualquier arma en la mano.** Si cargara sólo
+con la bazooka equipada, lo racional sería andar con ella puesta sin
+usarla, y el jugador tendría que elegir entre pelear y esperar. Cargando
+sola, la única decisión que queda es **cuándo gastarla**, que es la única
+interesante. Por eso tampoco entra en el cambio de arma: tiene botón
+propio.
+
+**El cohete no persigue.** El apuntado es automático, pero una vez que
+sale vuela derecho hacia donde estaba el blanco. Si persiguiera, la demora
+de segundo y medio no costaría nada y el arma volvería a ser "apretar para
+matar". Volando derecho, un zombi que cambia de dirección se salva y el
+radio de seis metros es lo que perdona el error. Hay una prueba que corre
+el blanco 40 m mientras el cohete está en el aire y exige que sobreviva.
+
+**El botón no existe hasta que sirve.** El roadmap pedía bloquearlo. Un
+botón deshabilitado que igual se puede apretar enseña a apretarlo en vano;
+uno que aparece recién cuando sirve enseña que apareció porque sirve. Y en
+vertical, un botón menos bajo el pulgar derecho es espacio ganado.
+
+**El apuntado exige línea de vista**, que no estaba en el documento 02. Sin
+eso, el arma elegiría un zombi del otro lado de una persiana, el cohete
+reventaría contra la pared a dos metros del jugador y la explosión de seis
+metros se lo llevaría puesto, sin que pudiera entender qué pasó.
+
+**Sin blanco no se gasta la carga, al revés que la pistola**, donde errar
+cuesta una bala a propósito. La diferencia es el precio: una bala son unos
+segundos, la barra son treinta. Castigar un dedo con treinta segundos no
+es balance. Pero el juego **avisa por qué** no pasó nada ("SIN BLANCO A LA
+VISTA"): un botón que no hace nada se lee como un botón roto.
+
+**La barra arranca en cero, también al reaparecer.** Empezar cargado
+convertiría el principio de cada intento en "gasto la bazooka en el primer
+grupo". Y reaparecer con la barra llena premiaría morirse.
+
+### Lo que se encontró de paso
+
+**El daño de borde era exactamente la vida de un zombi.** El documento 02
+fijaba `damageEdge: 60` y `ZOMBIE_STANDARD.maxHealth` también es 60: todo
+lo que entraba en el radio moría, incluido el que apenas lo rozaba. La
+bazooka era un botón de borrar pantalla y apuntarla no era una habilidad,
+porque cualquier punto del grupo daba el mismo resultado. **Y la prueba a
+mano número 3 de esta misma fase pedía lo contrario** ("un zombi en el
+borde sobrevive con poca vida"), así que los dos números del documento se
+contradecían entre sí. Bajado a 35: el radio letal queda en unos 4,6 m de
+los 6. Lo encontró una prueba, no el ojo — jugando se ve que todos mueren,
+que es exactamente lo que uno espera de una bazooka.
+
+**El empujón estaba escrito a mano en el zombi.** Era un `0.35` fijo, así
+que una explosión empujaba igual que un cuchillazo y los zombis se
+quedaban parados en medio del humo. Ahora la fuerza la decide quien
+golpea.
+
+**El cohete detonaba hasta 0,7 m antes del cuerpo.** Usaba la proyección
+sobre el segmento en vez del punto de entrada a la esfera. Con una
+explosión de seis metros no cambia a quién mata, pero el destello aparecía
+corto y de forma inconsistente según dónde cayera el cuadro.
+
+**La explosión se veía como niebla rosa.** Las tres capas eran aditivas, y
+sobre una calle de mediodía sumar luz satura a blanco y se lleva el color
+puesto. Ahora sólo el núcleo es aditivo —es fuego, tiene que quemar la
+imagen— y el humo y la marca del piso van en mezcla normal, que respeta el
+naranja y deja ver los zombis debajo, que es lo que uno quiere mirar justo
+en ese momento.
+
+**Se repitió un error de especificidad de CSS que este proyecto ya había
+cometido.** Para esconder el botón se escribió una clase nueva con un
+`display: none` común; `.btn` se define más abajo en la hoja, tiene la
+misma especificidad y le ganaba por orden, así que el botón se veía
+siempre. Ya existía `.hidden` con `!important` justamente por eso. La
+regla que queda: si hay una clase que ya resuelve esto, se usa esa.
 
 ### Cómo se prueba
 
-1. Esperar 30 s → la barra se llena y el botón se habilita.
-2. Disparar con un grupo de zombis → mueren todos los del radio.
-3. Disparar con un zombi en el borde del radio → sobrevive con poca vida.
-4. Disparar sin zombis en rango → no se gasta la carga.
-5. Después del disparo → la barra vuelve a cero y arranca de nuevo.
-6. Disparar cerca → los zombis de medio barrio vienen a ver qué pasó.
-7. **En el teléfono:** ¿el efecto de explosión baja los FPS? Si sí, simplificar.
+```
+npm test             226 pruebas; 39 nuevas de la bazooka
+npm run test:e2e     8 nuevas en el navegador
+npm run verificar    la versión compilada, con perfil de celular
+```
+
+A mano, con **F1** para ver el anillo del ruido:
+
+1. Esperar 30 s → la barra se pone ámbar y **aparece** el botón.
+2. Disparar a un grupo → el cohete tarda en llegar, y mueren los del centro.
+3. Mirar al que quedó en el borde → sobrevive herido y sale despedido.
+4. Disparar sin nadie en rango → no se gasta, y avisa por qué.
+5. Disparar y correr → la barra vuelve a cero y arranca de nuevo.
+6. Disparar cerca → medio barrio viene a ver qué pasó.
+7. **En el teléfono:** ¿la explosión baja los FPS?
 
 ### Criterio de salida
 
-- [ ] La bazooka se siente poderosa y vale la pena esperarla
-- [ ] El ruido que genera la convierte en una decisión, no en un botón gratis
-- [ ] No se puede abusar de ella
-- [ ] La explosión no baja los FPS en el teléfono
+- [x] La explosión no baja los FPS: el efecto son tres primitivas
+      reutilizadas, no partículas. 177 llamadas de dibujo, las mismas que
+      antes de la fase
+- [x] No se puede abusar de ella: treinta segundos entre usos, y el cohete
+      no persigue
+- [ ] **Se siente poderosa y vale la pena esperarla** — pendiente de tu
+      criterio jugando
+- [ ] **El ruido la convierte en una decisión, no en un botón gratis** —
+      pendiente. Hace 45 m de ruido dos veces (disparo y explosión), que es
+      el doble que la pistola. Si igual la usás sin pensarlo, el número
+      está bajo
+
+### ⚠️ Lo que quedó anotado
+
+**No hay indicador del blanco elegido** (tarea 7.3 en su forma original).
+Existe `arma.blancoEspecial()` para dibujarlo, pero por ahora el juego no
+lo muestra: con apuntado automático al más cercano, el jugador ya sabe a
+quién le va a pegar, y un marcador más en pantalla compite con el resto.
+Si al probarlo en el teléfono se extraña, está listo para engancharse.
+
+**El cohete no tiene estela.** Se ve la cabeza caliente volando, nada más.
+Con una estela se leería mejor la trayectoria; es trabajo de la Fase 12.
 
 ---
 

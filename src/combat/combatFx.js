@@ -62,6 +62,18 @@ const DURACION_FOGONAZO = 0.09;
 /** Cuanto dura el anillo de ruido del modo diagnostico. */
 const DURACION_RUIDO = 0.9;
 
+/*
+ * La explosion dura MUCHO mas que los demas efectos, y es a proposito.
+ *
+ * Los destellos del cuchillo y la pistola son avisos: duran lo justo para
+ * decir "paso esto". La explosion es la recompensa de treinta segundos de
+ * espera, y tiene que dar tiempo a mirarla. Medio segundo es poco en un
+ * efecto comun y mucho en uno que ocurre dos veces por partida.
+ */
+const DURACION_EXPLOSION = 0.55;
+/** Cuantas explosiones pueden verse a la vez. Rara vez mas de una. */
+const MAX_EXPLOSIONES = 2;
+
 export class CombatFx {
   /**
    * @param {pc.AppBase} app
@@ -87,6 +99,19 @@ export class CombatFx {
 
     this.fogonazo = this.#crearFogonazo();
     this.fogonazoRestante = 0;
+
+    /*
+     * El cohete en vuelo. Es la unica cosa del juego que existe entre que
+     * se dispara y que impacta, asi que necesita una entidad que viva mas
+     * de un cuadro, no un destello que se enciende y se apaga.
+     */
+    this.cohetes = new Map();
+    this.plantillaCohete = this.#crearCohete();
+
+    this.explosiones = [];
+    for (let i = 0; i < MAX_EXPLOSIONES; i++) {
+      this.explosiones.push({ ...this.#crearExplosion(i), restante: 0 });
+    }
 
     /** Anillos de ruido: solo se dibujan con el diagnostico encendido. */
     this.ruidos = [];
@@ -339,6 +364,111 @@ export class CombatFx {
     }
   }
 
+  /** La cabeza del cohete: una capsula corta y caliente. */
+  #crearCohete() {
+    const material = new pc.StandardMaterial();
+    material.diffuse = new pc.Color(0, 0, 0);
+    material.emissive = new pc.Color(1, 0.6, 0.2);
+    material.emissiveIntensity = 3;
+    material.useLighting = false;
+    material.blendType = pc.BLEND_ADDITIVE;
+    material.depthWrite = false;
+    material.update();
+    this.materialCohete = material;
+    return material;
+  }
+
+  /**
+   * La explosion: dos esferas concentricas y un anillo en el piso.
+   *
+   * La bola interior es el fogonazo; la exterior, mas grande y mas tenue,
+   * es el humo caliente. El anillo del piso es el que mas trabaja: es lo
+   * unico que dice EXACTAMENTE hasta donde llego el daño, y desde la
+   * camara cenital del juego una esfera no lo dice.
+   */
+  #crearExplosion(i) {
+    /*
+     * SOLO EL NUCLEO ES ADITIVO.
+     *
+     * La primera version tenia las tres partes en aditivo, y sobre una
+     * calle de mediodia el resultado fue un disco rosa palido del tamaño
+     * de media pantalla: sumar luz a algo que ya es claro satura a blanco
+     * y se lleva el color puesto. Se veia como niebla, no como fuego.
+     *
+     * El nucleo si: es fuego, tiene que quemar la imagen. El humo y el
+     * anillo van en mezcla normal, que respeta el color naranja y deja ver
+     * lo que hay debajo —los zombis, que es lo que el jugador quiere mirar
+     * justo en ese momento—.
+     */
+    const hacer = (nombre, color, intensidad, tipo, aditivo) => {
+      const m = new pc.StandardMaterial();
+      m.diffuse = new pc.Color(0, 0, 0);
+      m.emissive = color;
+      m.emissiveIntensity = intensidad;
+      m.useLighting = false;
+      m.blendType = aditivo ? pc.BLEND_ADDITIVE : pc.BLEND_NORMAL;
+      m.depthWrite = false;
+      m.update();
+      const e = new pc.Entity(`${nombre}_${i}`);
+      e.addComponent('render', { type: tipo, material: m, castShadows: false });
+      e.enabled = false;
+      this.raiz.addChild(e);
+      e.material = m;
+      return e;
+    };
+
+    return {
+      nucleo: hacer('ExplosionNucleo', new pc.Color(1, 0.9, 0.62), 6, 'sphere', true),
+      humo: hacer('ExplosionHumo', new pc.Color(0.95, 0.32, 0.06), 1, 'sphere', false),
+      anillo: hacer('ExplosionAnillo', new pc.Color(1, 0.5, 0.08), 1, 'cylinder', false)
+    };
+  }
+
+  /** Enciende el cohete `id` en una posicion. */
+  moverCohete(id, x, z, altura, rumbo) {
+    let e = this.cohetes.get(id);
+    if (!e) {
+      e = new pc.Entity(`Cohete_${id}`);
+      e.addComponent('render', {
+        type: 'capsule',
+        material: this.materialCohete,
+        castShadows: false
+      });
+      e.setLocalScale(0.18, 0.3, 0.18);
+      this.raiz.addChild(e);
+      this.cohetes.set(id, e);
+    }
+    e.setPosition(x, altura, z);
+    // La capsula es vertical; se la acuesta y se la orienta al rumbo.
+    e.setEulerAngles(90, rumbo, 0);
+    e.enabled = true;
+  }
+
+  /** Saca de escena el cohete `id`. */
+  quitarCohete(id) {
+    const e = this.cohetes.get(id);
+    if (!e) return;
+    e.destroy();
+    this.cohetes.delete(id);
+  }
+
+  /**
+   * La explosion.
+   *
+   * @param {number} x
+   * @param {number} z
+   * @param {number} radio el radio REAL del daño, no uno decorativo
+   */
+  mostrarExplosion(x, z, radio) {
+    const libre = this.explosiones.find((e) => e.restante <= 0) ?? this.explosiones[0];
+    for (const parte of [libre.nucleo, libre.humo, libre.anillo]) {
+      parte.setPosition(x, parte === libre.anillo ? 0.15 : 1.4, z);
+      parte.enabled = true;
+    }
+    libre.radio = radio;
+    libre.restante = DURACION_EXPLOSION;
+  }
+
   /** Destello en el punto donde pego. */
   mostrarImpacto(x, z) {
     const libre = this.impactos.find((i) => i.restante <= 0) ?? this.impactos[0];
@@ -390,6 +520,49 @@ export class CombatFx {
     for (let i = this.ruidos.length - 1; i >= 0; i--) {
       this.ruidos[i].restante -= dt;
       if (this.ruidos[i].restante <= 0) this.ruidos.splice(i, 1);
+    }
+
+    for (const ex of this.explosiones) {
+      if (ex.restante <= 0) continue;
+      ex.restante -= dt;
+      const k = Math.min(1, Math.max(0, ex.restante / DURACION_EXPLOSION));
+      const avance = 1 - k;
+
+      /*
+       * El anillo crece hasta el radio REAL del daño y se queda ahi.
+       *
+       * Es la parte honesta del efecto: si creciera mas que el radio para
+       * verse mejor, el jugador aprenderia una distancia de seguridad
+       * equivocada y la explosion se sentiria injusta sin que pudiera
+       * explicar por que.
+       */
+      const anillo = Math.min(1, avance * 1.6) * ex.radio;
+      ex.anillo.setLocalScale(anillo * 2, 0.02, anillo * 2);
+      /*
+       * El anillo es discreto a proposito: su trabajo es decir HASTA DONDE
+       * llego el daño, no tapar la calle. A 6 m de radio, un disco opaco
+       * cubre media pantalla y esconde justo lo que uno quiere ver, que es
+       * cuales zombis quedaron en pie.
+       */
+      ex.anillo.material.opacity = k * 0.3;
+      ex.anillo.material.update();
+
+      // El nucleo nace grande y se apaga rapido; el humo crece y se abre.
+      const nucleo = (0.5 + avance * 0.8) * ex.radio * 0.4;
+      ex.nucleo.setLocalScale(nucleo, nucleo, nucleo);
+      ex.nucleo.material.opacity = Math.max(0, k * 2 - 1);
+      ex.nucleo.material.update();
+
+      const humo = (0.4 + avance * 1.4) * ex.radio * 0.42;
+      ex.humo.setLocalScale(humo, humo, humo);
+      ex.humo.material.opacity = k * 0.55;
+      ex.humo.material.update();
+
+      if (ex.restante <= 0) {
+        ex.nucleo.enabled = false;
+        ex.humo.enabled = false;
+        ex.anillo.enabled = false;
+      }
     }
 
     for (const imp of this.impactos) {

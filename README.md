@@ -38,6 +38,7 @@ además muestra la dirección para abrirlo desde el celular.
 | Atacar / disparar | Click o `Espacio` | Botón grande |
 | Cambiar de arma | `Q` | Botón `⇄` |
 | Recargar | `R` | Botón `R` |
+| Bazooka | `F` | Botón naranja (sólo cuando está lista) |
 | Pausa | `Esc` | Botón |
 | Diagnóstico | `F1` | Tres dedos |
 
@@ -148,13 +149,14 @@ para medir la geometría.
 
 ## El ruido, que es la mecánica central
 
-Hay dos armas y la elección entre ellas no es "mejor o peor": es **callado
+Hay tres armas y la elección entre ellas no es "mejor o peor": es **callado
 o rápido**.
 
 | | Alcance | Se escucha a |
 |---|---|---|
 | Cuchillo | 2,1 m | **2 m** |
 | Pistola | 28 m | **22 m** |
+| Bazooka | 40 m | **45 m**, dos veces |
 
 Todo zombi vivo dentro del radio del ruido pasa a `ALERT` y va a investigar
 el lugar donde sonó. No va directo a perseguirte: **va al punto del ruido**,
@@ -167,6 +169,24 @@ juego y es completamente invisible.
 
 Las perillas están en `src/config/balance.js`: `noiseRadius` por arma, y
 `NOISE.rangeMultiplier` para subir la tensión de todo el juego de una vez.
+
+### La bazooka
+
+No se equipa: tiene botón propio, que **aparece** cuando la barra de 30 s
+se llena y desaparece al gastarla. La barra carga siempre, tengas el arma
+que tengas, porque la única decisión que importa es *cuándo* usarla.
+
+Apunta sola al zombi más cercano **que se pueda ver** —si está detrás de
+una persiana no cuenta, o el cohete reventaría contra la pared a dos metros
+tuyo—. Y una vez que sale, **no persigue**: vuela derecho hacia donde
+estaba el blanco, tarda más de un segundo en cruzar cuarenta metros, y un
+zombi que cambia de dirección se salva. El radio de 6 m es lo que perdona
+el error.
+
+El daño cae hacia el borde: 250 en el centro y 35 justo en el límite. El
+radio letal real es de unos 4,6 m, así que **el que queda en el borde
+sobrevive herido**. Esa diferencia es lo único que hace que apuntarla sea
+una habilidad en vez de un botón de borrar pantalla.
 
 ---
 

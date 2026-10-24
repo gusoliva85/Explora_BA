@@ -90,6 +90,17 @@
             </div>
           </div>
 
+          <!-- Barra de la bazooka.
+               Va arriba, con la vida y la munición, y no al lado de su
+               botón: es un reloj de treinta segundos que se mira muchas
+               veces antes de usarlo una. El botón se mira una sola vez,
+               justo antes de apretarlo. -->
+          <div class="hud-fila fila-especial">
+            <span class="stat-label">BAZOOKA</span>
+            <div class="bar bar-especial"><div id="especial-fill"></div></div>
+            <span id="especial-estado" class="especial-estado">--</span>
+          </div>
+
           <div class="fila-objetivo">
             <div id="objective" class="objective">Objetivo: llegar al primer control</div>
             <!-- Brujula: flecha al proximo objetivo y distancia. La flecha
@@ -125,6 +136,14 @@
               <button id="btn-run" class="btn btn-action">CORRER</button>
             </div>
             <div class="action-row">
+              <!-- La bazooka tiene botón propio y no entra en el cambio de
+                   arma: es un recurso que se gasta, no una forma de pelear.
+                   Hacerla pasar por el botón de cambiar obligaría a volver
+                   al cuchillo después de cada disparo. -->
+              <button id="btn-special" class="btn btn-action btn-special hidden"
+                      aria-label="Bazooka">
+                <span class="especial-glifo">&#9679;</span>
+              </button>
               <button id="btn-attack" class="btn btn-action btn-attack">ATACAR</button>
             </div>
           </div>
