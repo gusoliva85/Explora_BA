@@ -9,10 +9,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Explorar BA</title>
   <link rel="stylesheet" href="/src/styles/game.css" />
+  <link rel="stylesheet" href="/src/styles/hud.css" />
 </head>
 <body>
   <div id="app">
     <canvas id="game-canvas"></canvas>
+
+    <!-- Viñeta y encuadre. Va entre el canvas y el HUD: enmarca la escena
+         sin tapar los controles. -->
+    <div id="atmosfera"></div>
+    <!-- Destello de daño. Se enciende por clase desde el bus de eventos. -->
+    <div id="dano"></div>
 
     <!-- Capa de interfaz. Todo el HUD es DOM sobre el canvas (ver doc 02, decision D-13). -->
     <div id="ui-layer">

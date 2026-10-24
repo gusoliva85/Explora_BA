@@ -101,6 +101,7 @@ export const CAMERA = {
    * camara se tiraria encima del jugador cada vez que el rayo roza un
    * edificio que en realidad pasa muy por debajo.
    */
+  /** Ya no se usa: la altura la aporta cada caja. Ver cameraController. */
   collisionMaxHeight: 20,
   /** Altura del punto al que mira, sobre los pies del jugador. */
   targetHeight: 1.2,

@@ -36,7 +36,9 @@ export class Hud {
       joystickKnob: document.getElementById('joystick-knob'),
       completeDetail: document.getElementById('complete-detail'),
       gameoverDetail: document.getElementById('gameover-detail'),
-      loadingBar: document.getElementById('loading-bar')
+      loadingBar: document.getElementById('loading-bar'),
+      bar: document.querySelector('.bar-health'),
+      dano: document.getElementById('dano')
     };
 
     // Si el dispositivo cambia de modo (girar, conectar un mouse, forzarlo
@@ -47,7 +49,10 @@ export class Hud {
     });
 
     bus.on(EV.STATE_CHANGED, ({ to }) => this.#showForState(to));
-    bus.on(EV.PLAYER_DAMAGED, ({ health }) => this.setHealth(health));
+    bus.on(EV.PLAYER_DAMAGED, ({ health }) => {
+      this.setHealth(health);
+      this.destelloDano();
+    });
     bus.on(EV.PLAYER_HEALED, ({ health }) => this.setHealth(health));
     bus.on(EV.OBJECTIVE_CHANGED, ({ text }) => this.setObjective(text));
     bus.on(EV.CHECKPOINT_REACHED, ({ label }) => this.flash(label));
@@ -80,10 +85,38 @@ export class Hud {
     const pct = Math.max(0, Math.min(100, (value / PLAYER.maxHealth) * 100));
     this.el.healthFill.style.width = `${pct}%`;
     this.el.healthText.textContent = String(Math.ceil(value));
+
+    // Por debajo de un tercio la barra late y el numero se pone rojo. Es
+    // informacion: en plena corrida nadie lee un numero chico.
+    const critico = pct <= 33;
+    this.el.bar?.classList.toggle('critica', critico);
+    this.el.healthText.classList.toggle('critico', critico);
+  }
+
+  /**
+   * Destello rojo al recibir un golpe.
+   *
+   * Se reinicia la animacion a mano quitando la clase y forzando un
+   * reflujo: si llegan dos golpes seguidos, sin esto el segundo no se
+   * veria porque la animacion ya estaria corriendo.
+   */
+  destelloDano() {
+    const el = this.el.dano;
+    if (!el) return;
+    el.classList.remove('activo');
+    void el.offsetWidth;
+    el.classList.add('activo');
   }
 
   setObjective(text) {
-    this.el.objective.textContent = `Objetivo: ${text}`;
+    const el = this.el.objective;
+    const nuevo = `Objetivo: ${text}`;
+    if (el.textContent === nuevo) return;
+    el.textContent = nuevo;
+    // Reinicio de la animacion de entrada, igual que con el daño.
+    el.classList.remove('nuevo');
+    void el.offsetWidth;
+    el.classList.add('nuevo');
   }
 
   setGameOverReason(text) {

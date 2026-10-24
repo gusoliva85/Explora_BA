@@ -131,17 +131,25 @@ export class CameraController {
     const offZ = Math.cos(yawRad) * horiz;
     const offY = Math.sin(pitchRad) * this.distance;
 
-    // Colision de camara en el plano XZ: no la dejamos entrar en un edificio.
-    // La prueba es en dos dimensiones y no sabe de alturas, asi que solo
-    // tiene sentido cuando la camara va por debajo de los techos. Mas
-    // arriba, vuela sobre la cuadra y nada puede taparla.
+    /*
+     * Colision de camara.
+     *
+     * La prueba es en el plano XZ, pero la camara vuela a casi veinte
+     * metros: si no se tuviera en cuenta la altura, cualquier auto o
+     * cordon que cruce el rayo la tiraria encima del jugador aunque pase
+     * ocho metros por debajo. Por eso solo cuentan las cajas mas altas que
+     * la propia camara, que son las unicas que de verdad pueden taparla.
+     */
+    const alturaCamara = this.focus.y + offY;
     let dist = this.distance;
-    if (this.focus.y + offY < CAMERA.collisionMaxHeight) {
-      const hit = this.world.raycast(this.focus.x, this.focus.z, this.focus.x + offX, this.focus.z + offZ);
-      if (hit) {
-        // 0.4 m de margen para que no se vea el interior de la pared.
-        dist = Math.max(CAMERA.distanceMin * 0.5, this.distance * hit.t - 0.4);
-      }
+    const hit = this.world.raycast(
+      this.focus.x, this.focus.z,
+      this.focus.x + offX, this.focus.z + offZ,
+      alturaCamara
+    );
+    if (hit) {
+      // 0.4 m de margen para que no se vea el interior de la pared.
+      dist = Math.max(CAMERA.distanceMin * 0.5, this.distance * hit.t - 0.4);
     }
 
     const scale = dist / this.distance;

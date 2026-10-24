@@ -13,19 +13,30 @@
  * ammo.js solo para eso, sin tocar al jugador ni a los zombis.
  */
 
-/** Caja alineada a los ejes, en el plano XZ. */
+/**
+ * Caja alineada a los ejes, en el plano XZ.
+ *
+ * Guarda tambien su altura. El movimiento no la usa —todo pasa a ras del
+ * piso— pero la camara si: vuela a casi veinte metros y necesita saber que
+ * un auto de metro y medio no puede taparla.
+ */
 export class Box2D {
-  constructor(minX, minZ, maxX, maxZ, tag = 'static') {
+  constructor(minX, minZ, maxX, maxZ, tag = 'static', height = Infinity) {
     this.minX = minX;
     this.minZ = minZ;
     this.maxX = maxX;
     this.maxZ = maxZ;
     this.tag = tag;
+    this.height = height;
   }
 
   /** Crea una caja desde centro y tamaño. */
-  static fromCenter(cx, cz, width, depth, tag = 'static') {
-    return new Box2D(cx - width / 2, cz - depth / 2, cx + width / 2, cz + depth / 2, tag);
+  static fromCenter(cx, cz, width, depth, tag = 'static', height = Infinity) {
+    return new Box2D(
+      cx - width / 2, cz - depth / 2,
+      cx + width / 2, cz + depth / 2,
+      tag, height
+    );
   }
 
   contains(x, z) {
@@ -190,15 +201,19 @@ export class CollisionWorld {
    *
    * @returns {boolean} true si NO hay obstaculo entre a y b.
    */
-  hasLineOfSight(ax, az, bx, bz) {
-    return this.raycast(ax, az, bx, bz) === null;
+  hasLineOfSight(ax, az, bx, bz, alturaMinima = 0) {
+    return this.raycast(ax, az, bx, bz, alturaMinima) === null;
   }
 
   /**
    * Lanza un rayo de (ax,az) a (bx,bz).
+   *
+   * @param {number} [alturaMinima] ignora las cajas mas bajas que esto. La
+   *   camara lo usa para que un auto o un cordon no le tapen la vista
+   *   cuando esta volando por encima de los techos.
    * @returns {{x:number, z:number, t:number, box:Box2D}|null} impacto mas cercano, o null.
    */
-  raycast(ax, az, bx, bz) {
+  raycast(ax, az, bx, bz, alturaMinima = 0) {
     const dx = bx - ax;
     const dz = bz - az;
     const len = Math.hypot(dx, dz);
@@ -219,6 +234,7 @@ export class CollisionWorld {
 
     let best = null;
     for (const b of candidates) {
+      if (b.height < alturaMinima) continue;
       const hit = rayBox2D(ax, az, dx, dz, b);
       if (hit !== null && (best === null || hit < best.t)) {
         best = { t: hit, box: b, x: ax + dx * hit, z: az + dz * hit };

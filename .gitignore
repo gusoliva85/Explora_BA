@@ -9,3 +9,4 @@ Thumbs.db
 # Archivos de trabajo de Blender: se versiona el .blend, no los autoguardados
 *.blend1
 *.blend2
+capturas/

@@ -12,6 +12,8 @@ import { WorldBuilder } from './world/worldBuilder.js';
 import { MissionManager } from './missions/missionManager.js';
 import { Hud } from './ui/hud.js';
 import { mission001 } from './config/mission001.js';
+import { montarPostProceso } from './render/postProcess.js';
+import { montarLuzAmbiente, crearMaterialesLuz } from './world/lighting.js';
 import { PERF, UNITS, CAMERA } from './config/balance.js';
 
 /**
@@ -61,24 +63,29 @@ const input = new InputManager(canvas);
 
 // --- Escena ----------------------------------------------------------------
 
-// Luz ambiente provisional, mas alta de lo que va a ser al final: sin
-// esto el grey-box queda negro y no se puede evaluar ni la camara ni
-// el recorrido. Los faroles de sodio llegan en la Fase 3 y entonces
-// hay que volver a bajarla.
-app.scene.ambientLight = new pc.Color(0.3, 0.32, 0.38);
-app.scene.exposure = 1.0;
+/*
+ * Iluminacion nocturna. La luz ambiente es practicamente nula a proposito:
+ * lo que ilumina la calle son los faroles de sodio, y de eso depende que
+ * haya charcos de luz y tramos oscuros en vez de una papilla gris pareja.
+ */
+const matsLuz = crearMaterialesLuz();
+montarLuzAmbiente(app);
 
-// Niebla lineal: ademas del clima opresivo, esconde el borde del mapa y deja
-// recortar el clip lejano, que es el ahorro de relleno mas barato en movil.
-// En el motor 2.x la niebla se configura por FogParams, no por scene.fog*.
-app.scene.fog.type = pc.FOG_LINEAR;
-app.scene.fog.color = new pc.Color(0.07, 0.08, 0.1);
-app.scene.fog.start = 55;
-app.scene.fog.end = 170;
+/*
+ * Niebla exponencial, no lineal.
+ *
+ * La lineal se come la escena de golpe a partir de cierta distancia y
+ * produce una banda visible donde arranca. La exponencial al cuadrado se
+ * acumula suave desde el primer metro, que es como se comporta el aire
+ * humedo de verdad, y ademas deja ver las luces lejanas a traves de ella.
+ */
+app.scene.fog.type = pc.FOG_EXP2;
+app.scene.fog.color = new pc.Color(0.035, 0.045, 0.065);
+app.scene.fog.density = 0.0115;
 
 const cameraEntity = new pc.Entity('Camara');
 cameraEntity.addComponent('camera', {
-  clearColor: new pc.Color(0.07, 0.08, 0.1),
+  clearColor: new pc.Color(0.025, 0.033, 0.05),
   fov: CAMERA.fov,
   // El campo se mide a lo ancho, no a lo alto: ver la nota en balance.js.
   horizontalFov: CAMERA.fovHorizontal,
@@ -88,26 +95,18 @@ cameraEntity.addComponent('camera', {
 });
 app.root.addChild(cameraEntity);
 
-// Una sola luz direccional con sombras. Mas luces con sombra es lo primero
-// que hunde el framerate en movil.
-const sun = new pc.Entity('Sol');
-sun.addComponent('light', {
-  type: 'directional',
-  color: new pc.Color(0.75, 0.78, 0.9),
-  intensity: 1.15,
-  castShadows: true,
-  shadowDistance: 70,
-  shadowResolution: 1024,
-  shadowBias: 0.2,
-  normalOffsetBias: 0.05
-});
-sun.setEulerAngles(55, -35, 0);
-app.root.addChild(sun);
+// Pipeline de imagen: HDR, oclusion ambiental, bloom, mapeo de tonos,
+// grading y viñeta. Sin esto la escena nocturna se ve plana y sucia.
+const { frame: postProceso, calidad } = montarPostProceso(app, cameraEntity);
+console.info(`[render] perfil de calidad: ${calidad}`);
 
 // Suelo de respaldo, por si el jugador se sale del trazado de calles.
 const ground = new pc.Entity('SueloBase');
 const groundMat = new pc.StandardMaterial();
-groundMat.diffuse = new pc.Color(0.1, 0.1, 0.11);
+groundMat.diffuse = new pc.Color(0.045, 0.05, 0.058);
+groundMat.gloss = 0.35;
+groundMat.metalness = 0;
+groundMat.useMetalness = true;
 groundMat.update();
 ground.addComponent('render', { type: 'plane', material: groundMat, castShadows: false });
 ground.setLocalScale(600, 1, 600);
@@ -121,8 +120,14 @@ app.root.addChild(ground);
  * mira. Se reemplaza por el modelo en la Fase 11; el controlador no cambia.
  */
 const playerEntity = new pc.Entity('Gus');
+// Cuero: oscuro pero con brillo especular alto. Es lo que hace que la
+// silueta se recorte contra el asfalto cuando pasa por un farol, en vez de
+// desaparecer como una mancha negra.
 const bodyMat = new pc.StandardMaterial();
-bodyMat.diffuse = new pc.Color(0.16, 0.17, 0.2); // campera negra de la referencia
+bodyMat.diffuse = new pc.Color(0.055, 0.06, 0.075);
+bodyMat.metalness = 0.1;
+bodyMat.gloss = 0.72;
+bodyMat.useMetalness = true;
 bodyMat.update();
 const body = new pc.Entity('Cuerpo');
 body.addComponent('render', { type: 'capsule', material: bodyMat, castShadows: true });
@@ -131,7 +136,10 @@ body.setLocalPosition(0, UNITS.playerHeight / 2, 0);
 playerEntity.addChild(body);
 
 const noseMat = new pc.StandardMaterial();
-noseMat.diffuse = new pc.Color(0.85, 0.7, 0.3);
+noseMat.diffuse = new pc.Color(0, 0, 0);
+noseMat.emissive = new pc.Color(1.0, 0.75, 0.28);
+noseMat.emissiveIntensity = 6;
+noseMat.useLighting = false;
 noseMat.update();
 const nose = new pc.Entity('Frente');
 nose.addComponent('render', { type: 'box', material: noseMat, castShadows: false });
@@ -147,23 +155,27 @@ playerEntity.addChild(nose);
  * jugador pierde de vista su propio personaje entre los zombis y los autos.
  * Salio de mirar los mockups, y vale para cualquier angulo.
  */
+/*
+ * Marca de posicion en el piso.
+ *
+ * Gus va de negro sobre asfalto nocturno: sin una marca permanente el
+ * jugador pierde de vista su propio personaje. Ahora que hay bloom, en vez
+ * de un disco opaco alcanza con un emisivo suave: el pipeline lo convierte
+ * solo en un resplandor con halo.
+ */
 const ringMat = new pc.StandardMaterial();
 ringMat.diffuse = new pc.Color(0, 0, 0);
-// Con mezcla aditiva la opacidad no atenua nada: lo que gradua la
-// intensidad es el propio color emisivo.
-ringMat.emissive = new pc.Color(0.12, 0.085, 0.02);
+ringMat.emissive = new pc.Color(1.0, 0.72, 0.28);
+ringMat.emissiveIntensity = 1.6;
+ringMat.useLighting = false;
 ringMat.blendType = pc.BLEND_ADDITIVE;
 ringMat.depthWrite = false;
-ringMat.depthTest = false; // que no lo tape el asfalto ni la vereda
-ringMat.opacity = 1;
+ringMat.opacity = 0.5;
 ringMat.update();
-// Un disco bajo y muy transparente: lee como un charco de luz alrededor de
-// los pies. Se probo con un toro y queda como una rosquilla parada, porque
-// la primitiva no deja afinar el tubo sin achatar tambien el anillo.
-const ring = new pc.Entity('AnilloJugador');
+const ring = new pc.Entity('MarcaJugador');
 ring.addComponent('render', { type: 'cylinder', material: ringMat, castShadows: false });
-ring.setLocalScale(1.3, 0.02, 1.3);
-ring.setLocalPosition(0, 0.03, 0);
+ring.setLocalScale(1.25, 0.01, 1.25);
+ring.setLocalPosition(0, 0.025, 0);
 playerEntity.addChild(ring);
 
 app.root.addChild(playerEntity);
@@ -173,7 +185,7 @@ const camera = new CameraController(cameraEntity, collision);
 
 // --- Mundo y mision --------------------------------------------------------
 
-const builder = new WorldBuilder(app, collision);
+const builder = new WorldBuilder(app, collision, matsLuz);
 const built = builder.build(mission001);
 const mission = new MissionManager(mission001, bus);
 
@@ -316,4 +328,8 @@ hud.setHealth(100);
 hud.setObjective(mission.objectiveText);
 
 // Util para depurar desde la consola del navegador: game.player.teleport(...)
-globalThis.game = { app, bus, state, player, camera, mission, collision, builder, input, debug, device };
+// Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
+globalThis.game = {
+  app, bus, state, player, camera, mission, collision, builder, input, debug, device,
+  postProceso, calidad
+};
