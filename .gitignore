@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vite/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.local
+# Archivos de trabajo de Blender: se versiona el .blend, no los autoguardados
+*.blend1
+*.blend2

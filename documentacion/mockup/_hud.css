@@ -1,0 +1,162 @@
+/* ===========================================================================
+   HUD VERTICAL
+   ===========================================================================
+   Pensado para un telefono en la mano, en vertical, sostenido con las dos
+   manos o con una. Reglas que se siguen aca y que valen para el juego real:
+
+   - Los dos pulgares mandan: joystick abajo a la izquierda, acciones abajo
+     a la derecha, y nada importante en el medio de la pantalla.
+   - El tercio central queda libre: ahi esta la accion, y una mano tapandolo
+     seria el peor error posible.
+   - Arriba solo informacion, nunca botones grandes: en vertical el borde
+     superior esta lejos del pulgar.
+   - Todo en `em` sobre un tamaño base, para que el HUD escale con la
+     pantalla sin reescribir medidas.
+   =========================================================================== */
+
+.hud { position: absolute; inset: 0; font-size: 8px; pointer-events: none; z-index: 20; }
+
+/* --- Franja superior ------------------------------------------------------ */
+
+.hud-top {
+  position: absolute;
+  top: 5.6em;              /* por debajo de la isla de la camara */
+  left: 1.6em;
+  right: 1.6em;
+}
+
+.fila { display: flex; align-items: center; gap: .9em; }
+
+.vida-label { font-size: .95em; letter-spacing: .16em; color: #8e96a1; }
+.barra {
+  flex: 1;
+  height: 1em;
+  border-radius: .5em;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .62);
+  border: 1px solid rgba(232, 234, 237, .16);
+}
+.barra > i { display: block; height: 100%; }
+.barra.vida-b > i { background: linear-gradient(90deg, #b8403a, #e05a52); }
+.num { font-size: 1.2em; font-weight: 700; min-width: 2.6ch; text-align: right; }
+
+.pausa {
+  width: 3.2em; height: 3.2em; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 1em; letter-spacing: .1em; color: #e8eaed;
+  background: rgba(0, 0, 0, .45);
+  border: 1px solid rgba(232, 234, 237, .16);
+}
+
+.objetivo {
+  margin-top: .7em;
+  font-size: 1.05em;
+  color: #b4bcc6;
+  text-shadow: 0 1px 4px #000;
+}
+.objetivo b { color: #e0a526; font-weight: 600; }
+
+/* Brujula: con la calle en diagonal y la camara girando, sin esto se pierde
+   el norte enseguida. */
+.brujula {
+  position: absolute;
+  top: 11.4em;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: .45em;
+  padding: .35em .9em;
+  border-radius: 999px;
+  font-size: .95em; white-space: nowrap;
+  color: #e0a526;
+  background: rgba(0, 0, 0, .5);
+  border: 1px solid rgba(224, 165, 38, .3);
+}
+
+/* --- Zona de pulgares ----------------------------------------------------- */
+
+.hud-bottom {
+  position: absolute;
+  left: 1.6em; right: 1.6em; bottom: 2.2em;
+  display: flex; align-items: flex-end; justify-content: space-between;
+}
+
+.joystick {
+  position: relative;
+  width: 12em; height: 12em;
+  border-radius: 50%;
+  border: 2px solid rgba(232, 234, 237, .2);
+  background: rgba(0, 0, 0, .26);
+}
+.joystick i {
+  position: absolute; left: 50%; top: 50%;
+  width: 5em; height: 5em; margin: -2.5em 0 0 -2.5em;
+  border-radius: 50%;
+  background: rgba(232, 234, 237, .4);
+}
+
+.acciones { display: flex; flex-direction: column; align-items: flex-end; gap: .8em; }
+.fila-btn { display: flex; align-items: flex-end; gap: .8em; }
+
+.btn {
+  display: grid; place-items: center;
+  border-radius: 50%;
+  font-size: .85em; font-weight: 700; letter-spacing: .04em;
+  color: #e8eaed;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(232, 234, 237, .16);
+}
+.btn.sm { width: 6em; height: 6em; }
+.btn.lg { width: 8.6em; height: 8.6em; background: rgba(212, 80, 74, .28); border-color: rgba(212, 80, 74, .45); }
+.btn.int { background: rgba(224, 165, 38, .28); border-color: rgba(224, 165, 38, .55); }
+
+/* --- Armas ---------------------------------------------------------------- */
+
+.armas { display: flex; flex-direction: column; align-items: flex-end; gap: .45em; }
+.muni { font-size: 1.35em; font-weight: 700; letter-spacing: .05em; text-shadow: 0 1px 4px #000; }
+.muni small { font-size: .6em; color: #8e96a1; font-weight: 600; }
+.bazooka { display: flex; align-items: center; gap: .5em; font-size: .85em; color: #8e96a1; }
+.bazooka.lista { color: #e0a526; }
+.barra.baz { width: 8.5em; flex: none; height: .75em; }
+.barra.baz > i { background: linear-gradient(90deg, #8a6a16, #e0a526); }
+
+/* --- Avisos --------------------------------------------------------------- */
+
+/* Aviso contextual de interaccion, anclado al objeto del mundo. */
+.prompt {
+  position: absolute;
+  display: flex; align-items: center; gap: .5em;
+  padding: .45em 1em;
+  border-radius: 999px;
+  font-size: .95em; font-weight: 700; white-space: nowrap;
+  color: #17130a;
+  background: rgba(224, 165, 38, .93);
+  transform: translate(-50%, -50%);
+}
+
+/* Enemigo fuera de cuadro. */
+.fuera {
+  position: absolute;
+  display: flex; align-items: center; gap: .35em;
+  padding: .4em .8em .4em .6em;
+  border-radius: 999px;
+  font-size: 1em; font-weight: 700;
+  color: #f0948e;
+  background: rgba(40, 12, 11, .82);
+  border: 1px solid rgba(212, 80, 74, .5);
+  transform: translateY(-50%);
+}
+
+.ruido {
+  position: absolute;
+  display: flex; align-items: center; gap: .5em;
+  padding: .35em .9em;
+  border-radius: 999px;
+  font-size: .95em; white-space: nowrap;
+  color: #d4504a;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid rgba(212, 80, 74, .35);
+  transform: translateX(-50%);
+}
+
+/* Borde rojo de daño reciente: informacion, no decoracion. */
+.daño { position: absolute; inset: 0; }

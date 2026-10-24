@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0d10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Explorar BA</title>
+  <link rel="stylesheet" href="/src/styles/game.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Capa de interfaz. Todo el HUD es DOM sobre el canvas (ver doc 02, decision D-13). -->
+    <div id="ui-layer">
+
+      <!-- Pantalla de arranque: ademas de presentar el juego, sirve de "gesto del
+           usuario" que los navegadores exigen para habilitar audio y pantalla completa. -->
+      <section id="screen-boot" class="screen">
+        <div class="panel">
+          <h1 class="title">EXPLORAR BA</h1>
+          <p class="subtitle">Prototipo tecnico &mdash; Mision 001: Llegar al refugio</p>
+          <button id="btn-start" class="btn btn-primary">TOCAR PARA EMPEZAR</button>
+
+          <!-- Cada esquema de ayuda se muestra segun el modo detectado. -->
+          <p class="hint desktop-only">
+            <b>WASD</b> mover &middot; <b>Mouse</b> camara &middot; <b>Shift</b> correr &middot;
+            <b>Click</b> atacar &middot; <b>E</b> interactuar &middot; <b>Q</b> cambiar arma &middot;
+            <b>R</b> curarse &middot; <b>Esc</b> pausa &middot; <b>F1</b> diagnostico
+          </p>
+          <p class="hint touch-only">
+            <b>Dedo izquierdo</b> mover &middot; <b>Dedo derecho</b> mirar &middot;
+            <b>Botones</b> atacar, correr e interactuar &middot; <b>Tres dedos</b> diagnostico
+            <br />Conviene jugar con el telefono en horizontal.
+          </p>
+        </div>
+      </section>
+
+      <section id="screen-loading" class="screen hidden">
+        <div class="panel">
+          <p class="subtitle">Cargando&hellip;</p>
+          <div class="progress"><div id="loading-bar"></div></div>
+        </div>
+      </section>
+
+      <!-- HUD de partida -->
+      <section id="screen-hud" class="screen screen-passthrough hidden">
+        <div class="hud-top">
+          <div class="stat">
+            <span class="stat-label">VIDA</span>
+            <div class="bar bar-health"><div id="health-fill"></div></div>
+            <span id="health-text" class="stat-value">100</span>
+          </div>
+          <div id="objective" class="objective">Objetivo: llegar al primer control</div>
+          <button id="btn-pause" class="btn btn-icon" aria-label="Pausa">II</button>
+        </div>
+
+        <div class="hud-bottom">
+          <!-- Joystick virtual (solo tactil) -->
+          <div id="joystick" class="joystick hidden">
+            <div id="joystick-knob" class="joystick-knob"></div>
+          </div>
+
+          <!-- Botones de accion: solo en modo tactil. En escritorio estorban,
+               porque la misma accion ya esta en el teclado. -->
+          <div class="action-cluster touch-only">
+            <button id="btn-interact" class="btn btn-action btn-interact hidden">E</button>
+            <button id="btn-run" class="btn btn-action">CORRER</button>
+            <button id="btn-attack" class="btn btn-action btn-attack">ATACAR</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-paused" class="screen hidden">
+        <div class="panel">
+          <h2 class="title-sm">PAUSA</h2>
+          <button id="btn-resume" class="btn btn-primary">CONTINUAR</button>
+          <button id="btn-restart-pause" class="btn">REINICIAR MISION</button>
+          <!-- Herramienta de desarrollo: permite ver el HUD de celular en la
+               PC sin levantar el telefono. Se saca antes de publicar. -->
+          <button id="btn-toggle-input" class="btn">PROBAR CONTROLES: <span id="input-mode-label">?</span></button>
+          <p class="hint" id="device-info"></p>
+        </div>
+      </section>
+
+      <section id="screen-complete" class="screen hidden">
+        <div class="panel">
+          <h2 class="title-sm ok">MISION COMPLETA</h2>
+          <p id="complete-detail" class="subtitle"></p>
+          <button id="btn-restart-win" class="btn btn-primary">JUGAR DE NUEVO</button>
+        </div>
+      </section>
+
+      <section id="screen-gameover" class="screen hidden">
+        <div class="panel">
+          <h2 class="title-sm bad">TE ALCANZARON</h2>
+          <p id="gameover-detail" class="subtitle"></p>
+          <button id="btn-restart-lose" class="btn btn-primary">REINTENTAR</button>
+        </div>
+      </section>
+
+
+      <!-- Overlay de diagnostico (F1) -->
+      <pre id="debug-overlay" class="debug hidden"></pre>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

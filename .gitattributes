@@ -1,0 +1,16 @@
+* text=auto eol=lf
+
+# Binarios de arte y audio: si el repo crece, migrar a Git LFS.
+*.glb   binary
+*.gltf  binary
+*.fbx   binary
+*.blend binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.ktx2  binary
+*.basis binary
+*.mp3   binary
+*.ogg   binary
+*.wav   binary

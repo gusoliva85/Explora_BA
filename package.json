@@ -1,0 +1,25 @@
+{
+  "name": "explorar-ba",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Juego de supervivencia zombi en 3D para navegador movil, ambientado en Buenos Aires.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:lan": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:all": "vitest run && playwright test"
+  },
+  "dependencies": {
+    "playcanvas": "^2.23.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

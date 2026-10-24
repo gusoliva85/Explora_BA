@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Explorar BA — Mockups</title>
+<link rel="stylesheet" href="_comun.css" />
+<link rel="stylesheet" href="_hud.css" />
+<style>
+  .wrap { max-width: 1180px; }
+
+  .trio {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 28px;
+    margin: 30px 0 10px;
+  }
+  .trio .phone { width: 100%; max-width: 330px; margin: 0 auto; }
+  .trio figure { margin: 0; }
+  .trio figcaption { margin-top: 14px; text-align: center; }
+  .trio h2 { margin: 0 0 4px; font-size: 17px; }
+  .trio p { margin: 0 0 10px; font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+  .trio .ver {
+    display: inline-block; padding: 7px 14px; font-size: 12.5px; font-weight: 650;
+    color: var(--ink); text-decoration: none;
+    border: 1px solid var(--line); border-radius: 8px;
+  }
+  .trio .ver:hover { border-color: rgba(232,234,237,.35); }
+  .reco { color: var(--accent); font-size: 11px; letter-spacing: .14em; text-transform: uppercase; }
+
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 0; font-size: 13.5px; }
+  th, td { padding: 11px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-dim); font-weight: 650; }
+  td:first-child { color: var(--ink-dim); width: 30%; }
+  .si { color: #5fc27e; } .no { color: #d4504a; } .medio { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Explorar BA</p>
+  <h1>Tres c&aacute;maras para la misma calle</h1>
+  <p class="lede">
+    Tel&eacute;fono en vertical y la calle en diagonal, desde abajo a la derecha hasta arriba
+    a la izquierda. Lo &uacute;nico que cambia entre los tres es cu&aacute;nto se inclina la c&aacute;mara.
+    La cuadra, los autos, los zombis y la posici&oacute;n de Gus son exactamente los mismos,
+    as&iacute; que la comparaci&oacute;n es justa. Esta es la decisi&oacute;n <b>D-02</b> del documento 02.
+  </p>
+
+  <div class="trio">
+
+    <figure>
+      <div class="phone"><div class="phone-screen">
+        <canvas id="c1" width="812" height="1760"></canvas><div class="notch"></div>
+      </div></div>
+      <figcaption>
+        <h2>1 &middot; Alta &mdash; 75&deg;</h2>
+        <p>Casi desde arriba. Ves 32 m de calle, pero Gus mide 18 px y la ciudad desaparece.</p>
+        <a class="ver" href="01_alta.html">Ver en detalle</a>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="phone-screen">
+        <canvas id="c2" width="812" height="1760"></canvas><div class="notch"></div>
+      </div></div>
+      <figcaption>
+        <p class="reco">Recomendada</p>
+        <h2>2 &middot; Media &mdash; 66&deg;</h2>
+        <p>Aparecen persianas y carteles sin perder lectura t&aacute;ctica. Gus mide 26 px.</p>
+        <a class="ver" href="02_media.html">Ver en detalle</a>
+      </figcaption>
+    </figure>
+
+    <figure>
+      <div class="phone"><div class="phone-screen">
+        <canvas id="c3" width="812" height="1760"></canvas><div class="notch"></div>
+      </div></div>
+      <figcaption>
+        <h2>3 &middot; Baja &mdash; 57&deg;</h2>
+        <p>La calle encierra y Gus mide 40 px, pero solo ves 16 m por delante.</p>
+        <a class="ver" href="03_baja.html">Ver en detalle</a>
+      </figcaption>
+    </figure>
+
+  </div>
+
+  <div class="card" style="margin-top:30px">
+    <h3>Comparaci&oacute;n</h3>
+    <table>
+      <tr>
+        <th>&nbsp;</th>
+        <th>Alta 75&deg;</th>
+        <th>Media 66&deg;</th>
+        <th>Baja 57&deg;</th>
+      </tr>
+      <tr>
+        <td>Gus en pantalla</td>
+        <td>18 px <span class="no">&#9679;</span></td>
+        <td>26 px <span class="medio">&#9679;</span></td>
+        <td>40 px <span class="si">&#9679;</span></td>
+      </tr>
+      <tr>
+        <td>Calle visible por delante</td>
+        <td>32 m <span class="si">&#9679;</span></td>
+        <td>24 m <span class="si">&#9679;</span></td>
+        <td>16 m <span class="no">&#9679;</span></td>
+      </tr>
+      <tr>
+        <td>Se lee la campera y el pelo</td>
+        <td class="no">No</td>
+        <td class="medio">Apenas</td>
+        <td class="si">S&iacute;</td>
+      </tr>
+      <tr>
+        <td>Se leen persianas y carteles</td>
+        <td class="no">Casi no</td>
+        <td class="si">S&iacute;</td>
+        <td class="si">S&iacute;, con detalle</td>
+      </tr>
+      <tr>
+        <td>Colisi&oacute;n de c&aacute;mara</td>
+        <td class="si">Casi no hace falta</td>
+        <td class="medio">Necesaria</td>
+        <td class="no">Obligatoria y dif&iacute;cil</td>
+      </tr>
+      <tr>
+        <td>Enemigos fuera de cuadro</td>
+        <td class="si">Rara vez</td>
+        <td class="medio">A veces</td>
+        <td class="no">Seguido: hay que avisarlos en el HUD</td>
+      </tr>
+      <tr>
+        <td>Costo en el tel&eacute;fono</td>
+        <td class="si">Bajo</td>
+        <td class="medio">Medio</td>
+        <td class="no">Alto</td>
+      </tr>
+      <tr>
+        <td>Conviene invertir en animaci&oacute;n</td>
+        <td class="no">No se ve</td>
+        <td class="medio">A medias</td>
+        <td class="si">S&iacute;</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="grid" style="margin-top:24px">
+    <div class="card">
+      <h3>Lo que comparten los tres</h3>
+      <ul>
+        <li>Tel&eacute;fono en <b>vertical</b>. Es como se va a jugar.</li>
+        <li>Calle en <b>diagonal</b>, de abajo a la derecha hacia arriba a la izquierda.</li>
+        <li>Joystick abajo a la izquierda, acciones abajo a la derecha, tercio central libre.</li>
+        <li>Mismo estilo low-poly estilizado, de noche, con luz de sodio.</li>
+        <li>Buenos Aires por acumulaci&oacute;n: persianas, toldos, tanques de agua, baldosas, un colectivo.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>C&oacute;mo se cierra la decisi&oacute;n</h3>
+      <ul>
+        <li>Estos mockups sirven para descartar, no para decidir del todo.</li>
+        <li>La decisi&oacute;n real se toma en la <b>Fase 4</b>, con zombis persigui&eacute;ndote, en el tel&eacute;fono.</li>
+        <li>El &aacute;ngulo es una variable en <code>balance.js</code>: se cambia en vivo con la rueda del mouse.</li>
+        <li>Mientras tanto, el prototipo arranca en la media de 66&deg;.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Lo que falta probar</h3>
+      <ul>
+        <li>Si la diagonal se mantiene cuando la calle dobla en una esquina.</li>
+        <li>Si la c&aacute;mara gira con el jugador o queda fija respecto de la calle.</li>
+        <li>Si en vertical alcanza el ancho cuando haya ocho zombis a la vez.</li>
+        <li>Si los carteles verticales se leen en una pantalla de 6 pulgadas de verdad.</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>
+    Las im&aacute;genes se dibujan con canvas 2D a partir de las medidas reales del juego
+    (calzada 10 m, vereda 3 m, Gus 1,80 m). No son capturas del motor: sirven para
+    decidir la est&eacute;tica y el &aacute;ngulo de c&aacute;mara antes de modelar nada.
+    Para regenerar los PNG: <code>node tools/render-mockups.mjs</code>.
+  </footer>
+</div>
+
+<script src="_calle.js"></script>
+<script>
+  // Las tres variantes, con la misma semilla y la misma composicion.
+  const base = { yaw: 104, semilla: 20261024 };
+
+  new Calle(document.getElementById('c1'), Object.assign({}, base, {
+    pitch: 75, escala: 46, x0: 455, y0: 1255, niebla: 0.42, temperatura: -0.25
+  })).dibujar();
+
+  new Calle(document.getElementById('c2'), Object.assign({}, base, {
+    pitch: 66, escala: 50, x0: 450, y0: 1240, niebla: 0.5, temperatura: 0.3
+  })).dibujar();
+
+  new Calle(document.getElementById('c3'), Object.assign({}, base, {
+    pitch: 57, escala: 56, x0: 445, y0: 1180, niebla: 0.62, temperatura: 0.1,
+    arma: 'cuchillo'
+  })).dibujar();
+</script>
+</body>
+</html>

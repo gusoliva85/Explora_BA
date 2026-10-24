@@ -1,0 +1,185 @@
+/* ===========================================================================
+   Estilos compartidos por los tres mockups.
+   Solo la pagina que los contiene: el HUD de cada uno esta en su archivo,
+   porque es parte de lo que se esta comparando.
+   =========================================================================== */
+
+:root {
+  --page: #0a0b0d;
+  --card: #121419;
+  --ink: #e8eaed;
+  --ink-dim: #8e96a1;
+  --line: rgba(232, 234, 237, 0.12);
+  --accent: #e0a526;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 32px 20px 64px;
+  background:
+    radial-gradient(1100px 600px at 50% -10%, #161a20 0%, transparent 60%),
+    var(--page);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1040px; margin: 0 auto; }
+
+/* --- Encabezado ----------------------------------------------------------- */
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: clamp(24px, 4vw, 36px);
+  letter-spacing: -0.015em;
+  font-weight: 750;
+}
+
+.lede { margin: 0 0 28px; max-width: 70ch; color: var(--ink-dim); line-height: 1.6; font-size: 15px; }
+
+/* --- Marco de telefono ---------------------------------------------------- */
+
+.phone-stage {
+  display: flex;
+  justify-content: center;
+  padding: 26px 0 34px;
+}
+
+/* Telefono en VERTICAL: es como se va a jugar. */
+.phone {
+  position: relative;
+  width: 406px;
+  max-width: 100%;
+  aspect-ratio: 406 / 880;
+  padding: 10px;
+  border-radius: 38px;
+  background: linear-gradient(145deg, #25282e, #0e1013);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 40px 80px -24px rgba(0, 0, 0, 0.9);
+}
+
+.phone-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 29px;
+  background: #000;
+}
+
+.phone-screen canvas { display: block; width: 100%; height: 100%; }
+
+/* Isla de la camara frontal: recuerda que el HUD no puede invadir esa zona. */
+.notch {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 78px;
+  height: 20px;
+  margin-left: -39px;
+  border-radius: 999px;
+  background: #05070a;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  z-index: 40;
+}
+
+.caption {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+
+/* --- Fichas de analisis --------------------------------------------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+  margin: 26px 0;
+}
+
+.card {
+  padding: 18px 18px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-weight: 650;
+}
+
+.card ul { margin: 0; padding-left: 17px; }
+.card li { margin: 0 0 7px; font-size: 13.5px; line-height: 1.55; }
+.card li:last-child { margin-bottom: 0; }
+
+.pro::before { content: "\2713\00a0"; color: #5fc27e; }
+.con::before { content: "\2717\00a0"; color: #d4504a; }
+
+/* --- Datos tecnicos ------------------------------------------------------- */
+
+.specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 26px;
+}
+
+.chip {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.chip b { color: var(--ink); font-weight: 600; }
+
+/* --- Paleta --------------------------------------------------------------- */
+
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.sw { width: 54px; }
+.sw i { display: block; height: 36px; border-radius: 7px; border: 1px solid var(--line); }
+.sw span { display: block; margin-top: 5px; font-size: 9.5px; color: var(--ink-dim); text-align: center; letter-spacing: 0.02em; }
+
+/* --- Navegacion entre mockups --------------------------------------------- */
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 34px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.nav a {
+  padding: 9px 15px;
+  font-size: 13px;
+  color: var(--ink-dim);
+  text-decoration: none;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+.nav a:hover { color: var(--ink); border-color: rgba(232, 234, 237, 0.3); }
+.nav a.current { color: #17130a; background: var(--accent); border-color: transparent; font-weight: 650; }
+
+footer { margin-top: 30px; font-size: 12px; color: var(--ink-dim); line-height: 1.6; }

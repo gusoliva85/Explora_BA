@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mockup 1 — Camara alta 75&deg;</title>
+<link rel="stylesheet" href="_comun.css" />
+<link rel="stylesheet" href="_hud.css" />
+</head>
+<body>
+<div class="wrap">
+
+  <p class="eyebrow">Explorar BA · Mockup 1 de 3</p>
+  <h1>C&aacute;mara alta &mdash; 75 grados</h1>
+  <p class="lede">
+    Tel&eacute;fono en vertical, la calle en diagonal desde abajo a la derecha hasta
+    arriba a la izquierda. La c&aacute;mara est&aacute; casi arriba de Gus: se ve mucha calle
+    por delante y los edificios casi no tapan nada. Es la variante m&aacute;s t&aacute;ctica
+    y la que menos se parece a caminar por Boedo.
+  </p>
+
+  <div class="specs">
+    <span class="chip">Inclinaci&oacute;n <b>75&deg;</b></span>
+    <span class="chip">Giro de calle <b>diagonal</b></span>
+    <span class="chip">Gus en pantalla <b>~18 px</b></span>
+    <span class="chip">Calle por delante <b>~32 m</b></span>
+    <span class="chip">Pantalla <b>vertical 9:19.5</b></span>
+  </div>
+
+  <div class="phone-stage">
+    <div class="phone">
+      <div class="phone-screen">
+        <canvas id="escena" width="812" height="1760"></canvas>
+        <div class="notch"></div>
+
+        <div class="hud">
+          <div class="hud-top">
+            <div class="fila">
+              <span class="vida-label">VIDA</span>
+              <div class="barra vida-b"><i style="width:78%"></i></div>
+              <span class="num">78</span>
+              <div class="pausa">II</div>
+            </div>
+            <div class="objetivo">Objetivo: <b>segu&iacute; por Boedo hasta el kiosco</b></div>
+          </div>
+
+          <div class="brujula">&#9650;&nbsp; 240 m al control 2</div>
+
+          <div class="hud-bottom">
+            <div class="joystick"><i style="transform:translate(1.6em,-2em)"></i></div>
+            <div class="acciones">
+              <div class="armas">
+                <div class="muni">9&nbsp;<small>/ 24</small></div>
+                <div class="bazooka">BAZOOKA <div class="barra baz"><i style="width:58%"></i></div></div>
+              </div>
+              <div class="fila-btn">
+                <div class="btn sm int">E</div>
+                <div class="btn sm">CORRER</div>
+              </div>
+              <div class="fila-btn">
+                <div class="btn sm">ARMA</div>
+                <div class="btn lg">ATACAR</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="caption">Tel&eacute;fono vertical &middot; 406 &times; 880 &middot; el tercio central queda libre de dedos</p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Lo que gana</h3>
+      <ul>
+        <li class="pro">Ves unos 32 m de calle por delante: los zombis nunca te sorprenden.</li>
+        <li class="pro">Los edificios casi no tapan la acci&oacute;n, as&iacute; que la c&aacute;mara no pelea con las paredes.</li>
+        <li class="pro">La diagonal se lee clar&iacute;sima: se entiende de un vistazo hacia d&oacute;nde sigue la calle.</li>
+        <li class="pro">Es la m&aacute;s barata de dibujar: menos fachada visible, menos texturas en pantalla.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Lo que cuesta</h3>
+      <ul>
+        <li class="con">Gus mide 18 px: se intuye la campera negra, pero no se le ve la cara ni el detalle.</li>
+        <li class="con">Las persianas y los carteles quedan en una franja fina y casi no se leen.</li>
+        <li class="con">La calle no encierra: hay menos sensaci&oacute;n de peligro.</li>
+        <li class="con">No se justifica invertir mucho en animaciones, porque no se ven.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Cu&aacute;ndo elegirla</h3>
+      <ul>
+        <li>Si al probar la Fase 4 te matan zombis que nunca viste venir.</li>
+        <li>Si el tel&eacute;fono de referencia no llega a 30 FPS con las fachadas completas.</li>
+        <li>Si el juego se inclina m&aacute;s a la t&aacute;ctica que a la atm&oacute;sfera.</li>
+      </ul>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <a class="current" href="01_alta.html">1 · Alta 75&deg;</a>
+    <a href="02_media.html">2 · Media 66&deg;</a>
+    <a href="03_baja.html">3 · Baja 57&deg;</a>
+    <a href="index.html">&larr; Comparar los tres</a>
+  </nav>
+
+  <footer>
+    Las tres variantes dibujan exactamente la misma cuadra, con los mismos autos,
+    los mismos zombis y Gus en el mismo lugar. Lo &uacute;nico que cambia es la c&aacute;mara,
+    as&iacute; que la comparaci&oacute;n es justa.
+  </footer>
+</div>
+
+<script src="_calle.js"></script>
+<script>
+  const calle = new Calle(document.getElementById('escena'), {
+    pitch: 75,
+    yaw: 104,
+    escala: 46,
+    x0: 455,
+    y0: 1255,
+    semilla: 20261024,
+    niebla: 0.42,
+    temperatura: -0.25,   // noche fria
+    arma: 'pistola'
+  });
+  calle.dibujar();
+</script>
+</body>
+</html>
