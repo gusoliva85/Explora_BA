@@ -61,7 +61,11 @@ const input = new InputManager(canvas);
 
 // --- Escena ----------------------------------------------------------------
 
-app.scene.ambientLight = new pc.Color(0.18, 0.19, 0.24);
+// Luz ambiente provisional, mas alta de lo que va a ser al final: sin
+// esto el grey-box queda negro y no se puede evaluar ni la camara ni
+// el recorrido. Los faroles de sodio llegan en la Fase 3 y entonces
+// hay que volver a bajarla.
+app.scene.ambientLight = new pc.Color(0.3, 0.32, 0.38);
 app.scene.exposure = 1.0;
 
 // Niebla lineal: ademas del clima opresivo, esconde el borde del mapa y deja
@@ -69,16 +73,18 @@ app.scene.exposure = 1.0;
 // En el motor 2.x la niebla se configura por FogParams, no por scene.fog*.
 app.scene.fog.type = pc.FOG_LINEAR;
 app.scene.fog.color = new pc.Color(0.07, 0.08, 0.1);
-app.scene.fog.start = 45;
-app.scene.fog.end = 130;
+app.scene.fog.start = 55;
+app.scene.fog.end = 170;
 
 const cameraEntity = new pc.Entity('Camara');
 cameraEntity.addComponent('camera', {
   clearColor: new pc.Color(0.07, 0.08, 0.1),
   fov: CAMERA.fov,
+  // El campo se mide a lo ancho, no a lo alto: ver la nota en balance.js.
+  horizontalFov: CAMERA.fovHorizontal,
   nearClip: 0.2,
   // El clip lejano acompaña a la niebla: nada se dibuja mas alla de lo que se ve.
-  farClip: 160
+  farClip: 230
 });
 app.root.addChild(cameraEntity);
 
@@ -88,9 +94,9 @@ const sun = new pc.Entity('Sol');
 sun.addComponent('light', {
   type: 'directional',
   color: new pc.Color(0.75, 0.78, 0.9),
-  intensity: 0.85,
+  intensity: 1.15,
   castShadows: true,
-  shadowDistance: 45,
+  shadowDistance: 70,
   shadowResolution: 1024,
   shadowBias: 0.2,
   normalOffsetBias: 0.05
@@ -132,6 +138,34 @@ nose.addComponent('render', { type: 'box', material: noseMat, castShadows: false
 nose.setLocalScale(0.18, 0.18, 0.45);
 nose.setLocalPosition(0, 1.5, -0.42);
 playerEntity.addChild(nose);
+
+/**
+ * Anillo ambar en el piso.
+ *
+ * No es decoracion. Gus va vestido de negro sobre asfalto nocturno y, a la
+ * distancia de camara elegida, mide unos 40 px: sin una marca permanente el
+ * jugador pierde de vista su propio personaje entre los zombis y los autos.
+ * Salio de mirar los mockups, y vale para cualquier angulo.
+ */
+const ringMat = new pc.StandardMaterial();
+ringMat.diffuse = new pc.Color(0, 0, 0);
+// Con mezcla aditiva la opacidad no atenua nada: lo que gradua la
+// intensidad es el propio color emisivo.
+ringMat.emissive = new pc.Color(0.12, 0.085, 0.02);
+ringMat.blendType = pc.BLEND_ADDITIVE;
+ringMat.depthWrite = false;
+ringMat.depthTest = false; // que no lo tape el asfalto ni la vereda
+ringMat.opacity = 1;
+ringMat.update();
+// Un disco bajo y muy transparente: lee como un charco de luz alrededor de
+// los pies. Se probo con un toro y queda como una rosquilla parada, porque
+// la primitiva no deja afinar el tubo sin achatar tambien el anillo.
+const ring = new pc.Entity('AnilloJugador');
+ring.addComponent('render', { type: 'cylinder', material: ringMat, castShadows: false });
+ring.setLocalScale(1.3, 0.02, 1.3);
+ring.setLocalPosition(0, 0.03, 0);
+playerEntity.addChild(ring);
+
 app.root.addChild(playerEntity);
 
 const player = new PlayerController(playerEntity, collision, bus);
@@ -155,8 +189,13 @@ function startMission({ fromCheckpoint = false } = {}) {
   const sp = fromCheckpoint ? mission.respawn : mission001.spawn;
 
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
-  camera.reset(sp.yaw ?? 0);
   input.reset();
+
+  // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
+  // girar sola en los primeros segundos de partida.
+  camera.reset(sp.yaw ?? 0);
+  camera.setStreetHeading(mission.streetHeading(sp));
+  camera.snapToStreet();
 
   hud.setHealth(player.health);
   hud.setObjective(mission.objectiveText);
@@ -251,6 +290,8 @@ app.on('update', (rawDt) => {
   if (state.isSimulating) {
     player.update(dt, input.move, input.buttons.run, camera.yaw);
     mission.update(dt, player.position);
+    // La calle manda: la camara se realinea al tramo que el jugador pisa.
+    camera.setStreetHeading(mission.streetHeading(player.position));
   }
 
   // La camara se actualiza siempre: en pausa y en los resultados la escena

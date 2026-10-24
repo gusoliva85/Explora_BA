@@ -17,6 +17,17 @@ import { createRng } from '../core/rng.js';
  * el mismo entre recargas y entre la PC y el telefono.
  */
 
+/** Metros de calle que se construyen por detras del punto de aparicion. */
+const PROLOGO = 26;
+
+/** Devuelve un punto `metros` mas atras de `a`, sobre la recta que va de a hacia b. */
+function extenderHaciaAtras(a, b, metros) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const len = Math.hypot(dx, dz) || 1;
+  return { x: a.x - (dx / len) * metros, z: a.z - (dz / len) * metros };
+}
+
 const COLORS = {
   asphalt: [0.14, 0.145, 0.16],
   sidewalk: [0.34, 0.34, 0.33],
@@ -96,9 +107,16 @@ export class WorldBuilder {
     const markers = [];
 
     for (let i = 0; i < mission.route.length - 1; i++) {
-      const a = mission.route[i];
+      let a = mission.route[i];
       const b = mission.route[i + 1];
       const cfg = mission.blocks[Math.min(i, mission.blocks.length - 1)];
+
+      // El primer tramo se estira hacia atras del punto de aparicion. La
+      // camara mira desde arriba y bastante lejos: sin esta cola, al
+      // arrancar se ve el borde del mapa en la mitad de abajo de la
+      // pantalla. No es jugable, es escenografia.
+      if (i === 0) a = extenderHaciaAtras(a, b, PROLOGO);
+
       this.#buildStreetSegment(a, b, cfg, rng, i);
     }
 

@@ -46,20 +46,31 @@
         </div>
       </section>
 
-      <!-- HUD de partida -->
+      <!-- ====================================================================
+           HUD DE PARTIDA — layout vertical
+           ====================================================================
+           Sigue el mockup 3, que es el elegido. Las reglas:
+           - Arriba solo informacion. En vertical el borde de arriba queda
+             lejos del pulgar, asi que no van botones importantes ahi.
+           - Abajo a la izquierda el joystick, abajo a la derecha las
+             acciones: es donde caen los dos pulgares solos.
+           - El tercio central queda LIBRE. Ahi pasa la accion, y una mano
+             tapandolo seria el peor error posible.
+           ==================================================================== -->
       <section id="screen-hud" class="screen screen-passthrough hidden">
+
         <div class="hud-top">
-          <div class="stat">
+          <div class="hud-fila">
             <span class="stat-label">VIDA</span>
             <div class="bar bar-health"><div id="health-fill"></div></div>
             <span id="health-text" class="stat-value">100</span>
+            <button id="btn-pause" class="btn btn-icon" aria-label="Pausa">II</button>
           </div>
           <div id="objective" class="objective">Objetivo: llegar al primer control</div>
-          <button id="btn-pause" class="btn btn-icon" aria-label="Pausa">II</button>
         </div>
 
         <div class="hud-bottom">
-          <!-- Joystick virtual (solo tactil) -->
+          <!-- Joystick virtual: aparece donde el jugador apoya el dedo. -->
           <div id="joystick" class="joystick hidden">
             <div id="joystick-knob" class="joystick-knob"></div>
           </div>
@@ -67,9 +78,13 @@
           <!-- Botones de accion: solo en modo tactil. En escritorio estorban,
                porque la misma accion ya esta en el teclado. -->
           <div class="action-cluster touch-only">
-            <button id="btn-interact" class="btn btn-action btn-interact hidden">E</button>
-            <button id="btn-run" class="btn btn-action">CORRER</button>
-            <button id="btn-attack" class="btn btn-action btn-attack">ATACAR</button>
+            <div class="action-row">
+              <button id="btn-interact" class="btn btn-action btn-interact hidden">E</button>
+              <button id="btn-run" class="btn btn-action">CORRER</button>
+            </div>
+            <div class="action-row">
+              <button id="btn-attack" class="btn btn-action btn-attack">ATACAR</button>
+            </div>
           </div>
         </div>
       </section>

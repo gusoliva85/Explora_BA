@@ -46,14 +46,62 @@ export const PLAYER = {
 };
 
 export const CAMERA = {
-  /** Angulo de inclinacion por defecto. 90 seria cenital pura. Ver doc 02, D-02. */
-  pitchDegrees: 58,
-  pitchMin: 35,
-  pitchMax: 80,
-  /** Distancia del pivote a la camara. */
-  distance: 9.5,
-  distanceMin: 6,
-  distanceMax: 14,
+  /**
+   * Inclinacion. 90 seria cenital pura, 0 seria a la altura del hombro.
+   * Decision D-02, cerrada en 57 grados sobre los mockups: es el angulo en
+   * el que Gus se lee como personaje y las persianas y carteles se ven.
+   */
+  pitchDegrees: 57,
+  pitchMin: 40,
+  pitchMax: 78,
+
+  /**
+   * Giro de la camara respecto del eje de la calle, en grados.
+   *
+   * Esto es lo que pone la calle en DIAGONAL en vez de subir derecho por el
+   * medio de la pantalla. Con el telefono en vertical, una calle vertical
+   * desperdicia los costados y una horizontal desperdicia el alto: la
+   * diagonal usa la pantalla entera y deja ver mucho mas recorrido hacia
+   * adelante. Ver doc 02, D-02 y los mockups.
+   *
+   * El signo decide hacia que lado cae la diagonal. NEGATIVO manda la calle
+   * de abajo a la derecha hacia arriba a la izquierda, que es la
+   * composicion elegida; positivo la espeja.
+   */
+  diagonalOffsetDegrees: -16,
+
+  /**
+   * Suavizado con el que la camara vuelve sola a la diagonal despues de que
+   * el jugador la movio a mano. Mas alto, vuelve mas rapido.
+   */
+  alignLerp: 2.2,
+  /** Segundos sin tocar la camara antes de que empiece a volver sola. */
+  alignDelay: 1.4,
+
+  /**
+   * Distancia del pivote a la camara.
+   *
+   * Es mucho mas de lo que parece necesario, y hay un motivo. El mockup
+   * elegido es una proyeccion casi ortografica: muestra 14 m de ancho de
+   * calle Y unos 50 m de profundidad al mismo tiempo. Una camara en
+   * perspectiva pegada al personaje no puede hacer las dos cosas: a 9,5 m
+   * con 57 grados de inclinacion solo se ve un parche de asfalto y los
+   * edificios quedan fuera del encuadre por arriba.
+   *
+   * La forma de acercarse a la vista del mockup con una camara de verdad es
+   * alejarla y cerrar el campo, como un teleobjetivo. A 22 m y 36 grados la
+   * perspectiva casi no deforma y entra la cuadra entera.
+   */
+  distance: 20,
+  distanceMin: 13,
+  distanceMax: 32,
+  /**
+   * Por encima de esta altura la camara vuela sobre los techos y ya nada
+   * puede taparla, asi que se saltea la prueba de colision. Sin esto, la
+   * camara se tiraria encima del jugador cada vez que el rayo roza un
+   * edificio que en realidad pasa muy por debajo.
+   */
+  collisionMaxHeight: 20,
   /** Altura del punto al que mira, sobre los pies del jugador. */
   targetHeight: 1.2,
   /** Suavizado del seguimiento: mas alto, mas pegada al jugador. */
@@ -61,7 +109,18 @@ export const CAMERA = {
   /** Sensibilidad de giro horizontal. */
   sensitivityMouse: 0.22,
   sensitivityTouch: 0.28,
-  fov: 55
+  /**
+   * Campo de vision HORIZONTAL, en grados.
+   *
+   * Es importante que sea horizontal y no vertical. Con el telefono en
+   * vertical la pantalla es angosta y alta: si se fija el campo vertical,
+   * el horizontal queda en unos 27 grados y no entra ni el ancho de la
+   * calle. Fijando el horizontal, el vertical se agranda solo y se ve
+   * mucho mas lejos por la diagonal, que es justo lo que se busca.
+   */
+  fov: 38,
+  /** Ver arriba: el campo se mide a lo ancho. */
+  fovHorizontal: true
 };
 
 export const ZOMBIE_STANDARD = {

@@ -188,6 +188,7 @@ class Device {
     c.toggle('is-touch', this.isTouch);
     c.toggle('is-desktop', this.isDesktop);
     c.toggle('is-portrait', this.isPortrait);
+    c.toggle('is-landscape', !this.isPortrait);
     c.toggle('is-ios', this.isIOS);
     c.toggle('is-android', this.isAndroid);
   }

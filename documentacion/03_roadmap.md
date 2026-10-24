@@ -57,7 +57,7 @@ juego funciona.
 |---|---|---|---|
 | 0 | Fundaciones | El proyecto corre en local y se versiona | ✅ |
 | 1 | Escena y bucle | Una calle gris, cámara, estados de partida | ✅ |
-| 2 | Movimiento | Gus camina, corre y choca contra las paredes | ✅ |
+| 2 | Movimiento y cámara | Gus camina por una calle en diagonal a 57° | ✅ |
 | 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | ⬜ |
 | 4 | El primer zombi | Te detecta, te persigue, te muerde | ⬜ |
 | 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | ⬜ |
@@ -113,7 +113,7 @@ npm run test:e2e  # 5 pruebas en navegador real
 - [x] `npm run dev` levanta y la página carga sin errores en consola
 - [x] `npm test` pasa entero
 - [x] `npm run test:e2e` pasa entero
-- [ ] El repositorio Git existe y tiene el primer commit
+- [x] El repositorio Git existe y tiene el primer commit
 
 ---
 
@@ -172,8 +172,11 @@ distinga menú, juego, pausa, victoria y derrota.
 | 2.11 | `?input=touch` y botón en la pausa para probar el HUD de celular desde la PC | ✅ |
 | 2.12 | Vertical como orientación de diseño; se sacó el aviso de rotación (D-15) | ✅ |
 | 2.13 | Mockups de las tres cámaras candidatas en `documentacion/mockup/` | ✅ |
-| 2.14 | **Pendiente:** girar la cámara para que la calle quede en diagonal y arrancar en 66° | ⬜ |
-| 2.15 | **Pendiente:** pasar el HUD del juego al layout vertical de los mockups | ⬜ |
+| 2.14 | Cámara a 57° con la calle en diagonal, alineada sola al tramo (D-02 cerrada) | ✅ |
+| 2.15 | HUD en layout vertical, con las acciones en dos filas | ✅ |
+| 2.16 | Anillo ámbar en el piso para no perder de vista a Gus | ✅ |
+| 2.17 | Prólogo de 26 m de calle por detrás del spawn, para que no se vea el borde del mapa | ✅ |
+| 2.18 | : captura del juego con perfil de celular | ✅ |
 
 ### Cómo se prueba
 
@@ -190,6 +193,17 @@ distinga menú, juego, pausa, victoria y derrota.
 - [x] Gus no atraviesa paredes en ninguna circunstancia (hay prueba automática)
 - [x] El movimiento es relativo a la cámara
 - [x] La cámara no se mete dentro de los edificios
+
+### ⚠️ Lo que quedó provisional en esta fase
+
+Son cosas que **se arreglan en fases siguientes**, no olvidos:
+
+- **La luz ambiente está más alta de lo que va a ser.** Sin eso el grey-box
+  queda negro y no se puede evaluar nada. Los faroles de sodio llegan en la
+  Fase 3 y entonces hay que volver a bajarla.
+- **El anillo del piso es un disco plano.** Cumple, pero se lee como una
+  mancha. Con una textura de resplandor en la Fase 12 queda bien.
+- **La calle está vacía.** Hay pocos autos y ningún farol. Eso es la Fase 3.
 
 ### 🔍 Pendiente de tu validación
 

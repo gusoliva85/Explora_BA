@@ -2,14 +2,25 @@ import * as pc from 'playcanvas';
 import { CAMERA } from '../config/balance.js';
 
 /**
- * Camara de tercera persona en angulo alto.
+ * ===========================================================================
+ * CAMARA
+ * ===========================================================================
+ * Tercera persona a 57 grados, con la calle cruzando la pantalla en
+ * diagonal. Es la variante 3 de los mockups, elegida como definitiva
+ * (decision D-02).
  *
- * El documento 01 proponia dos cosas incompatibles ("tercera persona, vista
- * cenital"). Aca se implementa el punto medio que resuelve ambas
- * necesidades: se ve al personaje y su equipo, pero desde bastante arriba,
- * asi en calles angostas no se pierde la lectura de la escena. El pitch es
- * ajustable en vivo (balance.js y rueda del mouse) para poder decidir el
- * valor definitivo jugando, no discutiendo. Ver doc 02, decision D-02.
+ * Dos cosas la distinguen de una camara orbital comun:
+ *
+ * 1. **Se alinea sola a la calle.** No apunta hacia el objetivo ni hacia
+ *    donde mira el jugador: apunta al eje del tramo que esta pisando, mas
+ *    un giro fijo que es el que produce la diagonal. Cuando el recorrido
+ *    dobla en una esquina, la camara acompaña sola.
+ *
+ * 2. **El jugador puede moverla, y despues vuelve.** Arrastrando se gira
+ *    como siempre; al soltar, despues de un segundo y pico, la camara
+ *    regresa suavemente a la diagonal. Asi se puede mirar a los costados
+ *    sin perder nunca la composicion, y sin obligar al pulgar a
+ *    reorientarla todo el tiempo.
  *
  * Incluye colision de camara: si hay un edificio entre el jugador y la
  * camara, la camara se acerca hasta despejar la vista.
@@ -26,6 +37,14 @@ export class CameraController {
     this.yaw = 0;
     this.pitch = CAMERA.pitchDegrees;
     this.distance = CAMERA.distance;
+
+    /**
+     * Rumbo al que la camara quiere volver: el de la calle mas el giro
+     * diagonal. Lo fija `setStreetHeading` desde el bucle principal.
+     */
+    this.targetYaw = 0;
+    /** Segundos desde la ultima vez que el jugador toco la camara. */
+    this.sinceManual = Infinity;
 
     /** Punto suavizado al que sigue la camara. */
     this.focus = new pc.Vec3();
@@ -47,6 +66,22 @@ export class CameraController {
   }
 
   /**
+   * Fija el rumbo al que la camara debe volver, a partir de la direccion de
+   * la calle. El giro diagonal se suma aca y en ningun otro lado.
+   *
+   * @param {number} headingDegrees rumbo del tramo, en grados
+   */
+  setStreetHeading(headingDegrees) {
+    this.targetYaw = normalizarAngulo(headingDegrees + CAMERA.diagonalOffsetDegrees);
+  }
+
+  /** Lleva la camara de una a la diagonal, sin animacion (spawn, reinicio). */
+  snapToStreet() {
+    this.yaw = this.targetYaw;
+    this.sinceManual = Infinity;
+  }
+
+  /**
    * @param {number} dt
    * @param {pc.Vec3} targetPos posicion del jugador (pies)
    * @param {{x:number,y:number}} lookDelta desplazamiento de entrada en pixeles
@@ -54,9 +89,23 @@ export class CameraController {
    */
   update(dt, targetPos, lookDelta, isTouch) {
     const sens = isTouch ? CAMERA.sensitivityTouch : CAMERA.sensitivityMouse;
-    this.yaw -= lookDelta.x * sens;
-    this.pitch = pc.math.clamp(this.pitch + lookDelta.y * sens, CAMERA.pitchMin, CAMERA.pitchMax);
-    this.yaw = ((this.yaw % 360) + 360) % 360;
+
+    if (lookDelta.x !== 0 || lookDelta.y !== 0) {
+      this.yaw -= lookDelta.x * sens;
+      this.pitch = pc.math.clamp(this.pitch + lookDelta.y * sens, CAMERA.pitchMin, CAMERA.pitchMax);
+      this.sinceManual = 0;
+    } else {
+      this.sinceManual += dt;
+    }
+    this.yaw = normalizarAngulo(this.yaw);
+
+    // Vuelta a la diagonal. Se espera un momento antes de empezar: si la
+    // camara volviera apenas se suelta el dedo, mirar a un costado seria
+    // imposible y se sentiria como que pelea contra el jugador.
+    if (this.sinceManual > CAMERA.alignDelay) {
+      const k = 1 - Math.exp(-CAMERA.alignLerp * dt);
+      this.yaw = normalizarAngulo(this.yaw + diferenciaAngular(this.yaw, this.targetYaw) * k);
+    }
 
     // Punto de interes: a la altura del pecho, no de los pies.
     const tx = targetPos.x;
@@ -83,11 +132,16 @@ export class CameraController {
     const offY = Math.sin(pitchRad) * this.distance;
 
     // Colision de camara en el plano XZ: no la dejamos entrar en un edificio.
+    // La prueba es en dos dimensiones y no sabe de alturas, asi que solo
+    // tiene sentido cuando la camara va por debajo de los techos. Mas
+    // arriba, vuela sobre la cuadra y nada puede taparla.
     let dist = this.distance;
-    const hit = this.world.raycast(this.focus.x, this.focus.z, this.focus.x + offX, this.focus.z + offZ);
-    if (hit) {
-      // 0.4 m de margen para que no se vea el interior de la pared.
-      dist = Math.max(CAMERA.distanceMin * 0.5, this.distance * hit.t - 0.4);
+    if (this.focus.y + offY < CAMERA.collisionMaxHeight) {
+      const hit = this.world.raycast(this.focus.x, this.focus.z, this.focus.x + offX, this.focus.z + offZ);
+      if (hit) {
+        // 0.4 m de margen para que no se vea el interior de la pared.
+        dist = Math.max(CAMERA.distanceMin * 0.5, this.distance * hit.t - 0.4);
+      }
     }
 
     const scale = dist / this.distance;
@@ -100,9 +154,26 @@ export class CameraController {
   }
 
   reset(yaw = 0) {
-    this.yaw = yaw;
+    this.yaw = normalizarAngulo(yaw);
+    this.targetYaw = this.yaw;
+    this.sinceManual = Infinity;
     this.pitch = CAMERA.pitchDegrees;
     this.distance = CAMERA.distance;
     this.initialized = false;
   }
+}
+
+/** Lleva un angulo en grados al rango [0, 360). */
+export function normalizarAngulo(grados) {
+  return ((grados % 360) + 360) % 360;
+}
+
+/**
+ * Diferencia entre dos angulos por el camino corto, en [-180, 180].
+ *
+ * Sin esto, ir de 350 a 10 grados daria -340 y la camara pegaria una vuelta
+ * entera en el sentido equivocado.
+ */
+export function diferenciaAngular(desde, hasta) {
+  return ((hasta - desde + 540) % 360) - 180;
 }

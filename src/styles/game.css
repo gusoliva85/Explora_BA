@@ -70,14 +70,12 @@ html, body {
 body:not(.is-touch) .touch-only { display: none; }
 body:not(.is-desktop) .desktop-only { display: none; }
 
-/* En vertical el HUD se aprieta: los botones bajan de tamaño y la barra de
-   vida se acorta, para no comerse la pantalla. */
-body.is-portrait {
-  --touch-min: 48px;
-}
-body.is-touch.is-portrait .btn-action { width: 68px; height: 68px; font-size: 10px; }
-body.is-touch.is-portrait .btn-attack { width: 84px; height: 84px; }
-body.is-touch.is-portrait .joystick { width: 112px; height: 112px; }
+/* En horizontal sobra ancho: las acciones vuelven a una sola fila y el
+   joystick se agranda. Vertical es la orientacion de diseño (D-15), asi que
+   los tamaños por defecto ya son los suyos y no hace falta tocarlos. */
+body.is-landscape .action-cluster { flex-direction: row; align-items: flex-end; }
+body.is-landscape .joystick { width: 148px; height: 148px; }
+body.is-landscape .objective { margin-top: 6px; }
 
 /* En escritorio el puntero sobre el canvas indica que se puede arrastrar. */
 body.is-desktop #game-canvas { cursor: grab; }
@@ -163,24 +161,24 @@ body.is-desktop #game-canvas:active { cursor: grabbing; }
   flex: 0 0 auto;
 }
 
-/* --- HUD ----------------------------------------------------------------- */
+/* --- HUD -----------------------------------------------------------------
+   Layout vertical, segun el mockup 3. En horizontal funciona igual: lo
+   unico que cambia son los tamaños, mas abajo. */
 
 .hud-top {
   position: absolute;
   top: calc(12px + var(--safe-t));
-  left: calc(12px + var(--safe-l));
-  right: calc(12px + var(--safe-r));
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  left: calc(14px + var(--safe-l));
+  right: calc(14px + var(--safe-r));
 }
 
-.stat { display: flex; align-items: center; gap: 8px; }
-.stat-label { font-size: 10px; letter-spacing: 0.14em; color: var(--ink-dim); }
-.stat-value { font-size: 13px; font-weight: 700; min-width: 2.5ch; text-align: right; }
+.hud-fila { display: flex; align-items: center; gap: 10px; }
+
+.stat-label { font-size: 10px; letter-spacing: 0.14em; color: var(--ink-dim); flex: 0 0 auto; }
+.stat-value { font-size: 14px; font-weight: 700; min-width: 3ch; text-align: right; flex: 0 0 auto; }
 
 .bar {
-  width: clamp(90px, 22vw, 180px);
+  flex: 1;
   height: 10px;
   background: rgba(0, 0, 0, 0.55);
   border: 1px solid var(--line);
@@ -188,11 +186,10 @@ body.is-desktop #game-canvas:active { cursor: grabbing; }
   overflow: hidden;
 }
 .bar > div { height: 100%; width: 100%; transition: width 0.15s linear; }
-.bar-health > div { background: var(--bad); }
+.bar-health > div { background: linear-gradient(90deg, #b8403a, #e05a52); }
 
 .objective {
-  flex: 1;
-  text-align: center;
+  margin-top: 8px;
   font-size: 12px;
   color: var(--ink-dim);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
@@ -203,7 +200,7 @@ body.is-desktop #game-canvas:active { cursor: grabbing; }
 
 .hud-bottom {
   position: absolute;
-  bottom: calc(16px + var(--safe-b));
+  bottom: calc(18px + var(--safe-b));
   left: calc(16px + var(--safe-l));
   right: calc(16px + var(--safe-r));
   display: flex;
@@ -231,24 +228,33 @@ body.is-desktop #game-canvas:active { cursor: grabbing; }
   background: rgba(232, 234, 237, 0.42);
 }
 
+/* Las acciones se apilan en dos filas: en vertical no hay ancho para
+   ponerlas en linea sin que se toquen con el joystick. */
 .action-cluster {
   display: flex;
+  flex-direction: column;
   align-items: flex-end;
   gap: 12px;
   margin-left: auto;
 }
+.action-row { display: flex; align-items: flex-end; gap: 12px; }
 
 .btn-action {
-  width: 84px;
-  height: 84px;
+  width: 76px;
+  height: 76px;
   margin: 0;
   padding: 0;
   border-radius: 50%;
   font-size: 11px;
   letter-spacing: 0.06em;
 }
-.btn-attack { width: 104px; height: 104px; background: rgba(212, 80, 74, 0.28); }
-.btn-interact { background: rgba(224, 165, 38, 0.3); }
+.btn-attack {
+  width: 100px;
+  height: 100px;
+  background: rgba(212, 80, 74, 0.28);
+  border-color: rgba(212, 80, 74, 0.45);
+}
+.btn-interact { background: rgba(224, 165, 38, 0.3); border-color: rgba(224, 165, 38, 0.55); }
 
 /* --- Carga --------------------------------------------------------------- */
 

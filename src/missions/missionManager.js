@@ -27,6 +27,43 @@ export class MissionManager {
     this.respawn = { x: s.x, z: s.z, yaw: s.yaw ?? 0 };
   }
 
+  /**
+   * Hacia donde corre la calle en el tramo donde esta el jugador, en grados.
+   *
+   * La camara lo usa para mantener la calle en diagonal: en vez de que el
+   * jugador tenga que reorientarla con el dedo cada vez que el recorrido
+   * dobla en una esquina, la camara se alinea sola al tramo. Es un dedo
+   * menos de trabajo en una pantalla chica.
+   *
+   * Devuelve el rumbo del segmento mas cercano, no el del proximo objetivo:
+   * si el jugador se mete en una calle lateral a explorar, la camara no
+   * tiene por que seguir mirando hacia el control.
+   *
+   * El angulo sigue la convencion de la camara: con rumbo 0 la camara se
+   * para en +Z y mira hacia -Z. Por eso se usa `atan2(-dx, -dz)` y no
+   * `atan2(dx, dz)`: con el segundo la camara se ubicaria delante del
+   * jugador mirandolo venir, en vez de atras acompañandolo.
+   *
+   * @param {{x:number,z:number}} pos
+   * @returns {number} rumbo en grados
+   */
+  streetHeading(pos) {
+    const route = this.mission.route;
+    let mejor = 0;
+    let mejorDist = Infinity;
+
+    for (let i = 0; i < route.length - 1; i++) {
+      const a = route[i];
+      const b = route[i + 1];
+      const d = distanceToSegment(pos, a, b);
+      if (d < mejorDist) {
+        mejorDist = d;
+        mejor = Math.atan2(-(b.x - a.x), -(b.z - a.z)) * (180 / Math.PI);
+      }
+    }
+    return mejor;
+  }
+
   get objectiveText() {
     const i = Math.min(this.nextCheckpoint, this.mission.objectives.length - 1);
     return this.mission.objectives[i];
@@ -60,6 +97,24 @@ export class MissionManager {
       this.bus.emit(EV.MISSION_COMPLETE, { elapsed: this.elapsed });
     }
   }
+}
+
+/**
+ * Distancia de un punto al segmento a-b, en el plano XZ.
+ *
+ * Se proyecta el punto sobre la recta del segmento y se recorta el
+ * parametro a [0,1]: sin ese recorte, un jugador parado mas alla del final
+ * de una cuadra quedaria asociado a esa cuadra igual.
+ */
+export function distanceToSegment(p, a, b) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const len2 = dx * dx + dz * dz;
+  if (len2 === 0) return Math.hypot(p.x - a.x, p.z - a.z);
+
+  let t = ((p.x - a.x) * dx + (p.z - a.z) * dz) / len2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + t * dx), p.z - (a.z + t * dz));
 }
 
 /** Distancia 2D dentro de un radio. Se compara al cuadrado para evitar la raiz. */
