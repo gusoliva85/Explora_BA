@@ -8,8 +8,8 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B, 3, 4 y **5**.
-> **Fase siguiente:** **Fase 6 — Pistola y sistema de ruido.** No empezada.
+> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5 y **6**.
+> **Fase siguiente:** **Fase 7 — Bazooka.** No empezada.
 >
 > El repositorio está en
 > **[github.com/gusoliva85/Explora_BA](https://github.com/gusoliva85/Explora_BA)**.
@@ -27,16 +27,24 @@
 > la calle. Y hay **zombis**: te detectan por vista o por cercanía, te
 > persiguen esquivando obstáculos, te muerden y la cámara se sacude.
 >
-> Y **se puede pelear**: el cuchillo barre un arco, puede alcanzar a varios
-> zombis de un golpe, los empuja y los interrumpe. Dos cuchillazos matan a
-> un zombi estándar.
+> Y **se puede pelear con dos armas**. El cuchillo barre un arco de 2,1 m,
+> alcanza a varios zombis de un golpe, los empuja y los interrumpe. La
+> pistola dispara a 28 m, la paran las paredes, tiene cargador de 12 y
+> recarga de 1,6 s.
 >
-> **Ya es un juego**: hay un objetivo, enemigos que te buscan, y la decisión
-> de pelear o correr. Lo que falta es profundidad: arma a distancia, el
-> ruido que atrae, objetos y la misión completa.
+> **Y disparar tiene consecuencias.** El tiro se escucha a 22 metros y todo
+> zombi dentro de ese radio viene a investigar. El cuchillo se escucha a 2.
+> Esa diferencia es lo que convierte "¿peleo o corro?" en "¿peleo callado o
+> hago ruido y resuelvo rápido?".
 >
-> **Lo que no existe todavía:** zombis, combate, armas, objetos, audio y
-> cualquier arte que no sean cajas de colores.
+> **Ya es un juego**: hay un objetivo, enemigos que te buscan, y decisiones
+> con costo. Lo que falta es profundidad: la bazooka, los objetos y la
+> misión completa.
+>
+> **Lo que no existe todavía:** objetos, audio y cualquier arte que no sean
+> cajas de colores. **No hay sonido**, lo cual es una ironía incómoda para
+> una fase cuya mecánica central es el ruido: hoy el ruido se *ve* (el
+> aviso en pantalla, el anillo del diagnóstico) pero no se escucha.
 
 ---
 
@@ -562,7 +570,7 @@ reabren acá: lo único que se ajusta es la inclinación.
 | # | Tarea | Estado |
 |---|---|---|
 | 5.1 | `WeaponController`: arma equipada, tiempos y estados | ✅ lógica pura, sin motor |
-| 5.2 | Ataque con arco: 1,7 m y 55° a cada lado | ✅ |
+| 5.2 | Ataque con arco: **2,1 m** y 55° a cada lado | ✅ corregido, ver abajo |
 | 5.3 | Demora entre apretar y golpear | ✅ y el golpe sale desde donde mirás al conectar, no al apretar |
 | 5.4 | Un golpe alcanza a varios zombis | ✅ |
 | 5.5 | Un golpe no pega dos veces al mismo zombi | ✅ |
@@ -600,56 +608,216 @@ A mano:
 - [ ] **Un zombi se puede derrotar sin recibir daño si lo hacés bien** —
       pendiente de tu criterio jugando
 
+### 🔧 Corregido después de probarlo en el teléfono
+
+Dos cosas que reportó Gustavo jugando, y que ninguna prueba había visto.
+
+**1. El cuchillo golpeaba para atrás.** No era un error de cálculo: eran
+**dos convenios de ángulos opuestos conviviendo sin que ninguno estuviera
+escrito.** La cámara y los modelos usaban "rumbo 0 mira hacia -Z", que es
+el que impone PlayCanvas. El cerebro del zombi y el arma usaban el
+contrario. Cada uno era coherente consigo mismo, así que funcionaban por
+separado y sus pruebas pasaban; el error aparecía **solo en el cruce**,
+cuando el arma recibía el rumbo del jugador y lo comparaba con el suyo:
+180° de diferencia exactos.
+
+El mismo error afectaba al zombi, y nadie lo había notado: su cuerpo
+apuntaba al revés de donde caminaba, o sea que **perseguía de espaldas**,
+con los brazos hacia el lado opuesto. A veinte metros de cámara cenital
+casi no se ve.
+
+Se cerró creando `src/core/rumbo.js`: **un único convenio, escrito, con el
+signo viviendo en un solo lugar**. La regla que queda es "ningún `atan2` de
+rumbos fuera de ese archivo". Si hay un solo lugar donde vive el signo, no
+puede haber dos convenios.
+
+**2. El alcance era muy corto.** Subido de 1,7 m a **2,1 m**. Con 1,7 había
+que quedar prácticamente encima del zombi, y a la distancia de cámara del
+juego esa diferencia no se ve, así que el golpe fallaba sin que se
+entendiera por qué. Además el arco que se **dibuja** tenía su radio escrito
+a mano, con un comentario que prometía que coincidía con el arma; ahora los
+dos leen `WEAPONS.knife`, porque un comentario no mantiene nada
+sincronizado.
+
+**3. De paso, `difRumbos` estaba mal y nadie lo sabía.** La encontró una
+prueba nueva del convenio. El `%` de JavaScript conserva el signo del
+dividendo, así que la fórmula habitual devolvía diferencias mayores que
+180° en cuanto los ángulos se salían de rango. No era hipotético: el rumbo
+del zombi quieto **se incrementaba sin volver nunca al rango**, así que
+bastaba dejarlo parado un rato para que su cono de visión se rompiera y
+dejara de ver al jugador.
+
+#### Por qué las pruebas no lo vieron, y qué se agregó
+
+Las pruebas del arma le pasaban un rumbo **escrito a mano** y comprobaban
+el arco alrededor de ese rumbo. Eran coherentes consigo mismas y por eso
+inútiles: nunca enfrentaron el rumbo del arma con el del jugador. Encima
+una decía `rumbo = 0` con un comentario que afirmaba "mira hacia +Z", que
+era falso — y como el arma usaba el convenio invertido, **las dos mentiras
+se cancelaban**.
+
+Lo que se agregó:
+
+- `tests/rumbo.test.js` — ata el convenio **al motor**: compara
+  `dirDeRumbo` contra lo que PlayCanvas le hace de verdad a una entidad
+  rotada en Y. Si alguien cambia el signo, se queja antes de que el juego
+  entero quede al revés.
+- `tests/arma.test.js` — las pruebas ya no escriben números de rumbo: se
+  los piden al convenio. Y hay 16 nuevas que exigen que el golpe alcance lo
+  que el jugador tiene **adelante** y no alcance lo que tiene **atrás**,
+  en ocho rumbos distintos.
+- `tests/combate.spec.js` — en el navegador, que es el único lugar donde
+  existe el `yaw` real del jugador. Mide que el arco **dibujado** apunte a
+  donde apunta el modelo, y que el zombi camine de frente.
+
+Las tres se validaron **reintroduciendo cada error a propósito** y
+comprobando que fallan. La primera versión de la prueba del arco no falló:
+comparaba la rotación de la entidad, que no sabe nada de los vértices, así
+que se reescribió para medir la geometría de la malla. Una prueba que no se
+vio fallar no prueba nada.
+
 ### ⚠️ Lo que quedó anotado
 
-**El balance del cuerpo a cuerpo no está ajustado.** Los números de partida
-son los del documento 02: 45 de daño, 1,7 m de alcance, 0,55 s de espera.
-Se ajustan jugando, y mejor con la pistola ya puesta para poder comparar.
+**El balance del cuerpo a cuerpo no está ajustado.** Quedan 45 de daño y
+0,55 s de espera, del documento 02. El alcance ya se corrigió jugando. El
+resto se ajusta con la pistola puesta, para poder comparar.
 
 **No hay animación de ataque.** Gus no se mueve al golpear: lo que se ve es
 el arco. Eso llega con el modelo, en la Fase 12.
 
 ---
 
-# FASE 6 — Pistola y sistema de ruido ⬜
+# FASE 6 — Pistola y sistema de ruido ✅
 
 **Objetivo:** el arma a distancia, y que disparar tenga consecuencias.
 
 ### Tareas
 
-| # | Tarea |
-|---|---|
-| 6.1 | Disparo instantáneo: rayo con alcance de 28 m, que choca contra paredes |
-| 6.2 | Dispersión de 2,5° (castiga el tiro a máxima distancia) |
-| 6.3 | Apuntado asistido en móvil: ligera corrección hacia el zombi más cercano al centro |
-| 6.4 | Cargador de 12 balas, recarga de 1,6 s, munición de reserva |
-| 6.5 | Clic sin munición: que se escuche y se vea que estás vacío |
-| 6.6 | Línea de trazado del disparo y chispa en el impacto |
-| 6.7 | Fogonazo y retroceso de cámara |
-| 6.8 | Cambio de arma: cuchillo ↔ pistola (botón y tecla Q) |
-| 6.9 | **Sistema de ruido** (D-05): evento con posición y radio |
-| 6.10 | Que los zombis dentro del radio pasen a `ALERT` y vayan hacia el origen del ruido |
-| 6.11 | Indicador visual del ruido en modo debug: círculo que se expande |
-| 6.12 | Mostrar munición en el HUD |
+| # | Tarea | Estado |
+|---|---|---|
+| 6.1 | Disparo instantáneo: rayo de 28 m que choca contra paredes | ✅ el rayo va a 1,2 m de altura, así que lo para un auto pero no un cordón |
+| 6.2 | Dispersión de 2,5° | ✅ con azar de semilla propia, nunca `Math.random` |
+| 6.3 | Apuntado asistido en móvil | ✅ cono de 14°, corrección máxima de 5° |
+| 6.4 | Cargador de 12, recarga de 1,6 s, reserva de 24 | ✅ la munición se lleva por tipo, no por arma |
+| 6.5 | Clic sin munición | ✅ el contador se sacude y la recarga arranca sola |
+| 6.6 | Trazado del disparo y chispa en el impacto | ✅ |
+| 6.7 | Fogonazo y retroceso de cámara | ✅ sacudón más corto y seco que el del cuchillo |
+| 6.8 | Cambio de arma: botón y tecla Q | ✅ y cancela la recarga en curso, a propósito |
+| 6.9 | Sistema de ruido: evento con posición y radio | ✅ |
+| 6.10 | Los zombis del radio van al origen del ruido | ✅ a `ALERT`, no a `CHASE`: van a investigar, no saben dónde estás |
+| 6.11 | Anillo de ruido en modo diagnóstico | ✅ se expande desde el origen |
+| 6.12 | Munición en el HUD | ✅ con tres niveles de aviso, no dos |
+
+### Decisiones que se tomaron construyéndola
+
+**El ruido sale igual si el tiro falla.** Es el corazón de la fase: lo que
+atrae a los zombis es el estruendo, no el acierto. Si errar fuera
+silencioso, no tendría costo y disparar dejaría de ser una decisión.
+
+**Un zombi que ya te está persiguiendo no se distrae con un ruido.** Si se
+distrajera, disparar con un zombi encima lo mandaría a investigar el lugar
+del disparo —donde estás parado vos—, lo cual se ve como que pierde el
+rastro de alguien que tiene delante. Y sería explotable: disparar al aire
+para sacarse uno de encima.
+
+**La pared se resuelve antes que los zombis, no después.** Es el orden que
+parece dar igual y no da igual: buscando primero el zombi más cercano, un
+tiro contra una persiana con un zombi del otro lado igual lo mataría.
+
+**El más cercano tapa al de atrás.** Es lo que hace que una fila de zombis
+en un pasillo angosto sea un problema y no una oportunidad.
+
+**Cambiar de arma cancela la recarga.** Si no, se podría empezar a recargar,
+pasar al cuchillo, pelear, y volver a la pistola ya cargada: la recarga
+dejaría de costar nada, y su costo es justamente el punto.
+
+**La asistencia de puntería corrige menos de lo que busca** (5° de
+corrección dentro de un cono de 14°). Si corrigiera todo el cono sería
+apuntado automático y acertar dejaría de tener mérito; el jugador sigue
+eligiendo a quién le tira, el juego sólo le perdona el temblor del pulgar.
+
+**El botón grande dice DISPARAR cuando tenés la pistola.** Un botón que
+dice ATACAR con una pistola en la mano sugiere cuerpo a cuerpo, que es
+exactamente la decisión contraria a la que esta fase quiere que pienses.
+
+### Lo que se encontró de paso
+
+**`difRumbos` estaba mal y nadie lo sabía.** Lo encontró una prueba nueva
+del convenio de ángulos. El `%` de JavaScript conserva el signo del
+dividendo, así que la fórmula habitual devolvía diferencias mayores que
+180° en cuanto los ángulos se salían de rango — y el rumbo del zombi quieto
+**se incrementaba sin volver nunca al rango**. Bastaba dejar un zombi
+parado un rato para que su cono de visión se rompiera y dejara de verte.
+
+**El ruido se medía desde el puesto de origen del zombi, no desde donde
+estaba.** Para un zombi quieto da lo mismo, y por eso no se notaba. Para
+uno que ya había caminado treinta metros, estaba midiendo desde un lugar
+donde no estaba: podía escuchar un disparo lejísimo o no escuchar uno al
+lado.
+
+**Un efecto más corto que un cuadro no se dibuja nunca.** El fogonazo
+duraba 0,06 s y el techo de simulación es 1/15 = 0,067 s: nacía y moría
+dentro del mismo cuadro. En el navegador de prueba no apareció jamás, y en
+un teléfono de gama media con la calle llena habría pasado lo mismo. Las
+duraciones de los destellos ahora están **por encima del techo de dt**, con
+margen.
 
 ### Cómo se prueba
 
+```
+npm test             187 pruebas; 64 nuevas sólo de la pistola
+npm run test:e2e     7 nuevas en el navegador, incluida la del ruido
+npm run verificar    la versión compilada, con perfil de celular
+```
+
+A mano, con **F1** para ver los anillos de ruido:
+
 1. Disparar a un zombi a 10 m → acierta, dos tiros lo matan.
-2. Disparar a 28 m → el disparo no llega.
-3. Disparar a través de una pared → no pasa.
-4. Vaciar el cargador → recarga, y durante la recarga no se puede disparar.
-5. Quedarse sin reserva → clic en vacío.
-6. **Disparar con tres zombis alrededor que no te habían visto** → los tres
-   vienen. Esta es la prueba clave de la fase.
-7. Matar un zombi con cuchillo al lado de otros → los otros no se enteran.
-8. **En el teléfono:** ¿se puede apuntar y acertar sin frustrarse?
+2. Disparar a 30 m → la bala no llega, pero se gasta igual.
+3. Disparar contra un auto con un zombi detrás → no pasa.
+4. Vaciar el cargador → recarga sola, y durante la recarga no dispara.
+5. **Disparar con zombis alrededor que no te vieron** → vienen todos.
+   Esta es la prueba clave de la fase.
+6. Matar con cuchillo al lado de otros → los otros no se enteran.
+7. **En el teléfono:** ¿se puede apuntar y acertar sin frustrarse?
 
 ### Criterio de salida
 
-- [ ] Disparar atrae zombis de forma notoria y predecible
-- [ ] El cuchillo sirve por ser silencioso, no solo como recurso de emergencia
-- [ ] El jugador duda antes de disparar. **Si no duda, el ruido es muy poco**
-- [ ] Se puede apuntar con el dedo sin frustrarse
+- [x] Disparar atrae zombis de forma notoria y predecible — hay una prueba
+      de navegador que pone tres zombis de espaldas a 19 m y exige que los
+      tres vengan; se validó rompiéndola (bajando el radio del disparo al
+      del cuchillo) y falla como debe
+- [x] El cuchillo sirve por ser silencioso — la otra mitad de la prueba:
+      un cuchillazo al lado de esos mismos tres no despierta a ninguno
+- [ ] **El jugador duda antes de disparar** — pendiente de tu criterio
+      jugando. Es el único criterio que no se puede medir con una prueba.
+      Si no dudás, el ruido es muy poco y hay que subir `noiseRadius` o
+      `NOISE.rangeMultiplier`
+- [ ] **Se puede apuntar con el dedo sin frustrarse** — pendiente de tu
+      criterio en el teléfono. Si cuesta, lo que se toca es
+      `aimAssist.maxima`, pero **con cuidado**: pasando de 6° ya se siente
+      como que el juego apunta solo
+
+### ⚠️ Lo que quedó anotado
+
+**No hay sonido.** Es incómodo en una fase sobre el ruido: hoy el ruido se
+*ve* (el aviso "N TE ESCUCHARON" y el anillo del diagnóstico) pero no se
+escucha. El audio llega en la Fase 11, y cuando llegue el aviso en pantalla
+probablemente sobre.
+
+**La pistola no se recoge: se tiene desde el principio.** Los objetos y la
+munición de reserva en el mapa son de la Fase 8. Hoy arrancás con 12 + 24
+balas y no hay forma de conseguir más, así que la escasez todavía no es
+real.
+
+**El ruido sólo lo escuchan los zombis en juego**, o sea los que están
+dentro de la distancia de corte (55 m). Hoy no cambia nada porque el
+disparo se escucha a 22, pero si alguna vez un arma hiciera más ruido que
+ese corte habría que despertar a los de afuera. Está escrito en
+`spawnManager.propagarRuido` para que no sea una sorpresa.
+
+**El balance no está ajustado.** 34 de daño, 2,5° de dispersión y 22 m de
+ruido son el punto de partida del documento 02. Se ajustan jugando.
 
 ---
 

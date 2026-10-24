@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { PLAYER, UNITS } from '../config/balance.js';
 import { EV } from '../core/events.js';
+import { rumboHacia } from '../core/rumbo.js';
 
 /**
  * Controlador cinematico del protagonista (Gus).
@@ -97,7 +98,8 @@ export class PlayerController {
     // 4. Girar el personaje hacia donde se mueve.
     const speed = Math.hypot(this.velocity.x, this.velocity.z);
     if (speed > 0.15) {
-      const targetYaw = Math.atan2(this.velocity.x, this.velocity.z) * pc.math.RAD_TO_DEG + 180;
+      // Mismo convenio que todo el resto: ver core/rumbo.js.
+      const targetYaw = rumboHacia(this.velocity.x, this.velocity.z);
       this.yaw = approachAngle(this.yaw, targetYaw, PLAYER.turnSpeed * dt);
       this.entity.setEulerAngles(0, this.yaw, 0);
     }

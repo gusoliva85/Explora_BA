@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
 import { EstadoZombi } from './zombieAI.js';
+import { dirDeRumbo } from '../core/rumbo.js';
 
 /**
  * ===========================================================================
@@ -58,24 +59,24 @@ export function dibujarDiagnosticoZombis(app, spawn, jugador) {
 
     // --- Cono de vision -----------------------------------------------------
     const cfg = z.cfg;
-    const semi = (cfg.sightAngle / 2) * (Math.PI / 180);
-    const rumbo = z.ai.rumbo * (Math.PI / 180);
+    const semi = cfg.sightAngle / 2;
+    const rumbo = z.ai.rumbo;
     const alcance = cfg.sightRange;
 
     for (const signo of [-1, 1]) {
-      const a = rumbo + semi * signo;
+      const d = dirDeRumbo(rumbo + semi * signo);
       _a.set(p.x, 1.5, p.z);
-      _b.set(p.x + Math.sin(a) * alcance, 1.5, p.z + Math.cos(a) * alcance);
+      _b.set(p.x + d.x * alcance, 1.5, p.z + d.z * alcance);
       app.drawLine(_a, _b, color, false);
     }
     // Arco de cierre, para que el cono se lea como un area y no como dos
     // rayas sueltas.
     const pasos = 7;
     for (let i = 0; i < pasos; i++) {
-      const a1 = rumbo - semi + (semi * 2 * i) / pasos;
-      const a2 = rumbo - semi + (semi * 2 * (i + 1)) / pasos;
-      _a.set(p.x + Math.sin(a1) * alcance, 1.5, p.z + Math.cos(a1) * alcance);
-      _b.set(p.x + Math.sin(a2) * alcance, 1.5, p.z + Math.cos(a2) * alcance);
+      const d1 = dirDeRumbo(rumbo - semi + (semi * 2 * i) / pasos);
+      const d2 = dirDeRumbo(rumbo - semi + (semi * 2 * (i + 1)) / pasos);
+      _a.set(p.x + d1.x * alcance, 1.5, p.z + d1.z * alcance);
+      _b.set(p.x + d2.x * alcance, 1.5, p.z + d2.z * alcance);
       app.drawLine(_a, _b, color, false);
     }
 

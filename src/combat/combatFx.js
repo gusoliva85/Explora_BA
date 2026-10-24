@@ -1,4 +1,10 @@
 import * as pc from 'playcanvas';
+import { WEAPONS } from '../config/balance.js';
+import { dirDeRumbo } from '../core/rumbo.js';
+
+/* Vectores reutilizados para dibujar: no se crean dentro del bucle. */
+const _p1 = new pc.Vec3();
+const _p2 = new pc.Vec3();
 
 /**
  * ===========================================================================
@@ -27,6 +33,35 @@ const DURACION_IMPACTO = 0.25;
 /** Cuantos impactos pueden verse a la vez. */
 const MAX_IMPACTOS = 6;
 
+/*
+ * El trazado del disparo dura MENOS que todo lo demas.
+ *
+ * No es para que se note poco: es porque tiene que leerse como la estela de
+ * algo que ya paso, no como un laser apuntando. Con mas de dos decimas
+ * parece un rayo continuo y el arma deja de sentirse como una pistola.
+ *
+ * ---------------------------------------------------------------------------
+ * PERO NO MENOS QUE UN CUADRO
+ * ---------------------------------------------------------------------------
+ * Hay un piso que no se puede cruzar, y es el techo de simulacion:
+ * `PERF.maxDeltaTime`, o sea 1/15 de segundo. Un efecto que dure menos que
+ * eso puede nacer y morir dentro del mismo cuadro y no dibujarse NUNCA.
+ *
+ * Paso: el fogonazo estaba en seis centesimas, por debajo de ese techo, y
+ * en el navegador de prueba —que corre con WebGL por software— no aparecia
+ * jamas aunque el codigo lo encendiera. En un telefono de gama media con
+ * la calle llena pasaria lo mismo.
+ *
+ * Por eso los dos valores estan por encima del techo, con margen. Siguen
+ * siendo destellos: a 60 cuadros por segundo son seis y siete cuadros.
+ */
+const DURACION_TRAZADO = 0.11;
+/** Cuantos trazados pueden verse a la vez. La pistola dispara rapido. */
+const MAX_TRAZADOS = 4;
+const DURACION_FOGONAZO = 0.09;
+/** Cuanto dura el anillo de ruido del modo diagnostico. */
+const DURACION_RUIDO = 0.9;
+
 export class CombatFx {
   /**
    * @param {pc.AppBase} app
@@ -44,6 +79,17 @@ export class CombatFx {
     for (let i = 0; i < MAX_IMPACTOS; i++) {
       this.impactos.push({ entidad: this.#crearImpacto(i), restante: 0 });
     }
+
+    this.trazados = [];
+    for (let i = 0; i < MAX_TRAZADOS; i++) {
+      this.trazados.push({ entidad: this.#crearTrazado(i), restante: 0 });
+    }
+
+    this.fogonazo = this.#crearFogonazo();
+    this.fogonazoRestante = 0;
+
+    /** Anillos de ruido: solo se dibujan con el diagnostico encendido. */
+    this.ruidos = [];
   }
 
   /**
@@ -53,15 +99,30 @@ export class CombatFx {
    * la forma de un sector. Son pocos triangulos y se arma una sola vez.
    */
   #crearArco() {
-    const semi = 55; // coincide con WEAPONS.knife.arcDegrees
-    const radio = 1.7;
+    /*
+     * El arco se mide del arma, no se copia a mano.
+     *
+     * Antes el semiangulo y el radio estaban escritos aca como numeros
+     * sueltos, con un comentario que decia "coincide con WEAPONS.knife".
+     * Un comentario no mantiene nada sincronizado: al ampliar el alcance
+     * del cuchillo, el dibujo se habria quedado corto y el jugador habria
+     * visto un arco mas chico que el que golpea de verdad.
+     */
+    const semi = WEAPONS.knife.arcDegrees;
+    const radio = WEAPONS.knife.range;
     const pasos = 14;
 
+    /*
+     * La malla se construye con `dirDeRumbo`, igual que la deteccion de
+     * golpe. Antes se armaba con `sin/cos` directos, que es el convenio
+     * contrario: el sector apuntaba a la espalda del jugador. Ver
+     * core/rumbo.js.
+     */
     const positions = [0, 0, 0];
     const indices = [];
     for (let i = 0; i <= pasos; i++) {
-      const a = ((-semi + (semi * 2 * i) / pasos) * Math.PI) / 180;
-      positions.push(Math.sin(a) * radio, 0, Math.cos(a) * radio);
+      const d = dirDeRumbo(-semi + (semi * 2 * i) / pasos);
+      positions.push(d.x * radio, 0, d.z * radio);
       if (i > 0) indices.push(0, i, i + 1);
     }
 
@@ -139,6 +200,145 @@ export class CombatFx {
     this.materialArco.update();
   }
 
+  /**
+   * El trazado: una tira finita y luminosa entre el cano y el impacto.
+   *
+   * Es una caja estirada y no una linea de diagnostico por dos razones.
+   * Una linea de `drawLine` tiene un pixel de ancho sin importar la
+   * distancia, asi que desde la camara del juego casi no se ve; y no pasa
+   * por el post-proceso, o sea que no florece con el bloom, que es
+   * justamente lo que hace que un disparo se vea caliente.
+   */
+  #crearTrazado(i) {
+    const material = new pc.StandardMaterial();
+    material.diffuse = new pc.Color(0, 0, 0);
+    material.emissive = new pc.Color(1, 0.85, 0.5);
+    /*
+     * Intensidad moderada, no maxima.
+     *
+     * Con 6 el trazado salia blanco puro: el tono calido se perdia en el
+     * mapeo de tonos y lo que se veia era un palo blanco, mas parecido a
+     * un laser de mira que a una estela. Con 2,5 el color sobrevive, el
+     * bloom lo sigue haciendo brillar, y se lee como un disparo.
+     */
+    material.emissiveIntensity = 2.5;
+    material.useLighting = false;
+    material.blendType = pc.BLEND_ADDITIVE;
+    material.depthWrite = false;
+    material.update();
+
+    const e = new pc.Entity('Trazado_' + i);
+    e.addComponent('render', { type: 'box', material, castShadows: false });
+    e.enabled = false;
+    this.raiz.addChild(e);
+    e.material = material;
+    return e;
+  }
+
+  /** Fogonazo: una bola de luz muy corta en la boca del cano. */
+  #crearFogonazo() {
+    const material = new pc.StandardMaterial();
+    material.diffuse = new pc.Color(0, 0, 0);
+    material.emissive = new pc.Color(1, 0.8, 0.45);
+    material.emissiveIntensity = 10;
+    material.useLighting = false;
+    material.blendType = pc.BLEND_ADDITIVE;
+    material.depthWrite = false;
+    material.update();
+
+    const e = new pc.Entity('Fogonazo');
+    e.addComponent('render', { type: 'sphere', material, castShadows: false });
+    e.enabled = false;
+    this.raiz.addChild(e);
+    e.material = material;
+    return e;
+  }
+
+  /**
+   * Muestra un disparo: fogonazo en el origen y trazado hasta el impacto.
+   *
+   * @param {{x:number,z:number}} desde
+   * @param {{x:number,z:number}} hasta
+   * @param {number} altura
+   * @param {boolean} acerto
+   */
+  mostrarDisparo(desde, hasta, altura, acerto) {
+    const dx = hasta.x - desde.x;
+    const dz = hasta.z - desde.z;
+    const largo = Math.hypot(dx, dz);
+    if (largo < 0.01) return;
+
+    const t = this.trazados.find((x) => x.restante <= 0) ?? this.trazados[0];
+    const e = t.entidad;
+
+    /*
+     * La caja se centra en el medio del recorrido y se orienta con
+     * `lookAt`, que apunta el frente -Z de la entidad al destino. De ahi
+     * que se estire en Z y no en X: es el mismo frente que usa todo el
+     * resto del juego, ver core/rumbo.js.
+     */
+    e.setPosition(desde.x + dx / 2, altura, desde.z + dz / 2);
+    e.lookAt(hasta.x, altura, hasta.z);
+    e.setLocalScale(0.045, 0.045, largo);
+
+    // Un tiro que acierta se ve calido; uno que se pierde, mas frio.
+    if (acerto) e.material.emissive.set(1, 0.85, 0.5);
+    else e.material.emissive.set(0.8, 0.88, 1);
+    e.material.update();
+
+    e.enabled = true;
+    t.restante = DURACION_TRAZADO;
+
+    /*
+     * El fogonazo va DELANTE del personaje, no encima.
+     *
+     * A 0,4 m quedaba dentro del cuerpo: el torso lo tapaba y desde la
+     * camara cenital no se veia nada, aunque estuviera encendido. El radio
+     * de colision del jugador es 0,35, asi que cualquier cosa mas cerca
+     * que eso esta adentro suyo. A 0,8 m sale limpio y ademas senala hacia
+     * donde esta disparando.
+     */
+    this.fogonazo.setPosition(desde.x + (dx / largo) * 0.8, altura, desde.z + (dz / largo) * 0.8);
+    this.fogonazo.setLocalScale(0.5, 0.5, 0.5);
+    this.fogonazo.enabled = true;
+    this.fogonazoRestante = DURACION_FOGONAZO;
+  }
+
+  /**
+   * Anillo que marca hasta donde llego un ruido (tarea 6.11).
+   *
+   * Solo se dibuja con el diagnostico encendido. El radio del ruido es la
+   * regla principal de la fase y es completamente invisible: sin poder
+   * verlo, ajustarlo seria adivinar.
+   */
+  marcarRuido(x, z, radio) {
+    this.ruidos.push({ x, z, radio, restante: DURACION_RUIDO });
+    // No se acumulan: si el jugador vacia un cargador, interesa el ultimo.
+    if (this.ruidos.length > 4) this.ruidos.shift();
+  }
+
+  /**
+   * Dibuja los anillos de ruido vivos.
+   *
+   * Lo llama el diagnostico, no el bucle normal: con el diagnostico
+   * apagado esto no cuesta nada.
+   */
+  dibujarRuidos(app, color) {
+    for (const r of this.ruidos) {
+      const k = Math.max(0, r.restante / DURACION_RUIDO);
+      // El anillo se expande desde el origen: se lee como una onda.
+      const radio = r.radio * (1 - k);
+      const pasos = 36;
+      for (let i = 0; i < pasos; i++) {
+        const a1 = (i / pasos) * Math.PI * 2;
+        const a2 = ((i + 1) / pasos) * Math.PI * 2;
+        _p1.set(r.x + Math.sin(a1) * radio, 0.3, r.z + Math.cos(a1) * radio);
+        _p2.set(r.x + Math.sin(a2) * radio, 0.3, r.z + Math.cos(a2) * radio);
+        app.drawLine(_p1, _p2, color, false);
+      }
+    }
+  }
+
   /** Destello en el punto donde pego. */
   mostrarImpacto(x, z) {
     const libre = this.impactos.find((i) => i.restante <= 0) ?? this.impactos[0];
@@ -161,6 +361,35 @@ export class CombatFx {
       const escala = 1 + (1 - k) * 0.15;
       this.arco.setLocalScale(escala, 1, escala);
       if (this.arcoRestante <= 0) this.arco.enabled = false;
+    }
+
+    for (const t of this.trazados) {
+      if (t.restante <= 0) continue;
+      t.restante -= dt;
+      const k = Math.min(1, Math.max(0, t.restante / DURACION_TRAZADO));
+      t.entidad.material.opacity = k;
+      t.entidad.material.update();
+      if (t.restante <= 0) t.entidad.enabled = false;
+    }
+
+    if (this.fogonazoRestante > 0) {
+      this.fogonazoRestante -= dt;
+      const k = Math.min(1, Math.max(0, this.fogonazoRestante / DURACION_FOGONAZO));
+      const s = 0.3 + (1 - k) * 0.45;
+      this.fogonazo.setLocalScale(s, s, s);
+      this.fogonazo.material.opacity = k;
+      this.fogonazo.material.update();
+      if (this.fogonazoRestante <= 0) this.fogonazo.enabled = false;
+    }
+
+    /*
+     * Los anillos de ruido se vencen aunque el diagnostico este apagado.
+     * Si no, al encenderlo apareceria de golpe un anillo de un disparo de
+     * hace un minuto, que es peor que no mostrar nada.
+     */
+    for (let i = this.ruidos.length - 1; i >= 0; i--) {
+      this.ruidos[i].restante -= dt;
+      if (this.ruidos[i].restante <= 0) this.ruidos.splice(i, 1);
     }
 
     for (const imp of this.impactos) {

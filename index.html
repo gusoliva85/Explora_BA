@@ -73,6 +73,23 @@
             <span id="health-text" class="stat-value">100</span>
             <button id="btn-pause" class="btn btn-icon" aria-label="Pausa">II</button>
           </div>
+          <!-- Arma y municion.
+               Va ARRIBA y no al lado del boton de disparar, aunque el boton
+               este abajo a la derecha. Es informacion que se consulta de
+               reojo entre tiro y tiro, y el pulgar derecho tapa justamente
+               la zona del boton: un contador debajo de la mano no se lee
+               nunca. -->
+          <div class="hud-fila fila-arma">
+            <div id="arma-caja" class="arma-caja">
+              <span id="arma-nombre" class="arma-nombre">CUCHILLO</span>
+              <span id="arma-municion" class="arma-municion">--</span>
+            </div>
+            <div id="recarga" class="recarga hidden">
+              <span class="recarga-texto">RECARGANDO</span>
+              <div class="bar bar-recarga"><div id="recarga-fill"></div></div>
+            </div>
+          </div>
+
           <div class="fila-objetivo">
             <div id="objective" class="objective">Objetivo: llegar al primer control</div>
             <!-- Brujula: flecha al proximo objetivo y distancia. La flecha
@@ -93,6 +110,16 @@
           <!-- Botones de accion: solo en modo tactil. En escritorio estorban,
                porque la misma accion ya esta en el teclado. -->
           <div class="action-cluster touch-only">
+            <!-- Recargar y cambiar de arma van en su PROPIA fila, arriba de
+                 todo y pegados al borde derecho.
+                 Compartiendo fila con CORRER se corrian hacia el centro de
+                 la pantalla —casi la mitad del ancho— y el tercio central
+                 tiene que quedar libre: ahi pasa la accion, y una mano
+                 tapandolo es el peor error posible en vertical. -->
+            <div class="action-row action-row-chica">
+              <button id="btn-reload" class="btn btn-action btn-small hidden" aria-label="Recargar">R</button>
+              <button id="btn-swap" class="btn btn-action btn-small" aria-label="Cambiar de arma">&#8646;</button>
+            </div>
             <div class="action-row">
               <button id="btn-interact" class="btn btn-action btn-interact hidden">E</button>
               <button id="btn-run" class="btn btn-action">CORRER</button>

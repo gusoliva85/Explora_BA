@@ -151,7 +151,16 @@ export const WEAPONS = {
     name: 'Cuchillo',
     type: 'melee',
     damage: 45,
-    range: 1.7,
+    /**
+     * Alcance del golpe, en metros.
+     *
+     * Subido de 1,7 a 2,1 despues de probarlo en el telefono: con 1,7
+     * habia que quedar practicamente encima del zombi, y a la distancia de
+     * camara del juego —veinte metros— esa diferencia no se ve, asi que el
+     * golpe fallaba sin que se entendiera por que. El arco que se dibuja
+     * sale de este mismo numero, ver combatFx.
+     */
+    range: 2.1,
     /** Semiangulo del arco de golpe, en grados. */
     arcDegrees: 55,
     cooldown: 0.55,
@@ -173,7 +182,32 @@ export const WEAPONS = {
     noiseRadius: 22,
     ammoType: 'pistol',
     magazineSize: 12,
-    reloadTime: 1.6
+    reloadTime: 1.6,
+    /** Municion de reserva al empezar la mision: dos cargadores. */
+    startingReserve: 24,
+
+    /**
+     * Altura a la que vuela la bala, en metros.
+     *
+     * Decide QUE la detiene. A un metro veinte, a la altura del pecho, un
+     * auto de uno setenta la para y un cordon de quince centimetros no.
+     * Sin esto, o los tiros pasan por arriba de todo o los frena cualquier
+     * baldosa. Es el mismo criterio que la linea de ojos del zombi.
+     */
+    shotHeight: 1.2,
+    /** Medio ancho del cuerpo de un zombi para el rayo. */
+    targetRadius: 0.45,
+
+    /**
+     * Apuntado asistido, SOLO en pantallas tactiles (tarea 6.3).
+     *
+     * `cono` es cuanto busca alrededor del centro; `maxima`, cuanto puede
+     * corregir. La correccion es deliberadamente mas chica que el cono: el
+     * jugador decide a quien le tira, el juego solo le perdona el temblor
+     * del pulgar. Subir `maxima` por encima de unos 6 grados ya se siente
+     * como que el juego apunta solo, y acertar deja de tener merito.
+     */
+    aimAssist: { cono: 14, maxima: 5 }
   },
   bazooka: {
     id: 'bazooka',

@@ -158,23 +158,28 @@ test('dos cuchillazos matan a un zombi', async ({ page }) => {
      * Ponerse al alcance y mirarlo. El rumbo del jugador es el que orienta
      * el arco del arma, asi que hay que apuntarlo de verdad: si el test
      * pasara sin esto, el arco no estaria funcionando.
+     *
+     * El rumbo se le PIDE al convenio del juego. Aca antes decia
+     * `player.yaw = 180` con el comentario "mirando hacia -Z", que era
+     * falso; funcionaba solo porque el arma usaba el convenio invertido.
+     * Ver src/core/rumbo.js.
      */
     const q = victima.posicion;
-    const rumbo = (Math.atan2(0 - 0, -1) * 180) / Math.PI;
-    player.teleport(q.x, q.z + 1.1, 0);
-    player.yaw = 180; // mirando hacia -Z, o sea hacia el zombi
+    const parado = { x: q.x, z: q.z + 1.1 };
+    const rumbo = g.rumbo.rumboEntre(parado, q);
+    player.teleport(parado.x, parado.z, rumbo);
+    player.yaw = rumbo;
 
     const vidaInicial = victima.health.actual;
     let golpes = 0;
 
     for (let intento = 0; intento < 400 && victima.health.vivo; intento++) {
       // Mantener la posicion: el zombi empuja y aturde.
-      player.entity.setPosition(q.x, 0, q.z + 1.1);
-      player.yaw = 180;
+      player.entity.setPosition(parado.x, 0, parado.z);
+      player.yaw = rumbo;
 
       if (arma.puedeAtacar) {
-        const p2 = { x: q.x, z: q.z + 1.1 };
-        if (arma.atacar(p2, 180)) golpes++;
+        if (arma.atacar(parado, rumbo)) golpes++;
       }
       await esperar(1);
     }

@@ -3,6 +3,7 @@ import { ZombieAI, EstadoZombi } from '../src/enemies/zombieAI.js';
 import { Health } from '../src/entities/health.js';
 import { CollisionWorld, Box2D } from '../src/physics/collisionWorld.js';
 import { ZOMBIE_STANDARD } from '../src/config/balance.js';
+import { rumboHacia } from '../src/core/rumbo.js';
 
 /**
  * ===========================================================================
@@ -27,6 +28,21 @@ const mundoConPared = () => {
 const crear = (world, origen = { x: 0, z: 0 }) =>
   new ZombieAI({ world, origen, azar: () => 0.5 });
 
+/*
+ * Casi todas estas pruebas ponen al jugador en +Z, asi que el zombi tiene
+ * que estar mirando hacia +Z para verlo.
+ *
+ * El rumbo NO se escribe como numero. Antes aca decia `ai.rumbo = 0` con un
+ * comentario que afirmaba "mira hacia +Z", y la afirmacion era falsa: en el
+ * convenio del juego el rumbo 0 mira hacia -Z. Las pruebas pasaban porque
+ * el cerebro del zombi usaba internamente el convenio invertido, el mismo
+ * que escondia que el cuchillo golpeara para atras.
+ *
+ * Pidiendoselo a `rumboHacia`, la prueba dice que quiere decir y no puede
+ * volver a quedar desfasada del juego.
+ */
+const MIRANDO_A_MAS_Z = rumboHacia(0, 1);
+
 /** Corre la IA varios cuadros con el jugador quieto. */
 const correr = (ai, jugador, cuadros = 30, dt = 1 / 30, pos = { x: 0, z: 0 }) => {
   let ultimo = null;
@@ -44,7 +60,7 @@ describe('deteccion', () => {
   let ai;
   beforeEach(() => {
     ai = crear(mundoVacio());
-    ai.rumbo = 0; // mira hacia +Z
+    ai.rumbo = MIRANDO_A_MAS_Z;
   });
 
   it('ve al jugador de frente, dentro del alcance', () => {
@@ -81,7 +97,7 @@ describe('deteccion', () => {
 
   it('una pared le corta la vista', () => {
     const conPared = crear(mundoConPared());
-    conPared.rumbo = 0;
+    conPared.rumbo = MIRANDO_A_MAS_Z;
     // De frente y dentro del alcance, pero con la pared en el medio.
     expect(conPared.detectar({ x: 0, z: 0 }, { x: 0, z: 10 })).toBeNull();
   });
@@ -91,7 +107,7 @@ describe('deteccion', () => {
     // Altura 1.1: por debajo de la linea de ojos.
     w.add(new Box2D(-10, 4.5, 10, 5.5, 'prop', 1.1));
     const bajo = crear(w);
-    bajo.rumbo = 0;
+    bajo.rumbo = MIRANDO_A_MAS_Z;
     expect(bajo.detectar({ x: 0, z: 0 }, { x: 0, z: 10 })).toBe('vista');
   });
 });
@@ -103,21 +119,21 @@ describe('maquina de estados', () => {
 
   it('pasa a perseguir cuando te ve', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     ai.update(0.1, { pos: { x: 0, z: 0 }, jugador: { x: 0, z: 8 }, jugadorVivo: true });
     expect(ai.estado).toBe(EstadoZombi.CHASE);
   });
 
   it('persiguiendo, se acerca al jugador', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const { pos } = correr(ai, { x: 0, z: 12 }, 40);
     expect(pos.z).toBeGreaterThan(1);
   });
 
   it('al alcance deja de caminar y ataca', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const jugador = { x: 0, z: ZOMBIE_STANDARD.attackRange - 0.2 };
     const pos = { x: 0, z: 0 };
 
@@ -131,7 +147,7 @@ describe('maquina de estados', () => {
 
   it('respeta el tiempo de espera entre ataques', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const jugador = { x: 0, z: 1 };
     const pos = { x: 0, z: 0 };
     const ctx = { pos, jugador, jugadorVivo: true };
@@ -151,7 +167,7 @@ describe('maquina de estados', () => {
 
   it('si lo perdes de vista, va a buscarte al ultimo lugar', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const pos = { x: 0, z: 0 };
 
     ai.update(0.1, { pos, jugador: { x: 0, z: 10 }, jugadorVivo: true });
@@ -165,7 +181,7 @@ describe('maquina de estados', () => {
 
   it('despues de buscar un rato, se calma', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const pos = { x: 0, z: 0 };
     ai.update(0.1, { pos, jugador: { x: 0, z: 10 }, jugadorVivo: true });
 
@@ -184,14 +200,14 @@ describe('maquina de estados', () => {
 
   it('no persigue a un jugador muerto', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     ai.update(0.1, { pos: { x: 0, z: 0 }, jugador: { x: 0, z: 8 }, jugadorVivo: false });
     expect(ai.estado).not.toBe(EstadoZombi.CHASE);
   });
 
   it('aturdido no se mueve ni ataca', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const ctx = { pos: { x: 0, z: 0 }, jugador: { x: 0, z: 1 }, jugadorVivo: true };
     ai.update(0.1, ctx);
     ai.aturdir(0.5);
@@ -204,7 +220,7 @@ describe('maquina de estados', () => {
 
   it('al pasarse el aturdimiento vuelve a perseguir', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const ctx = { pos: { x: 0, z: 0 }, jugador: { x: 0, z: 8 }, jugadorVivo: true };
     ai.update(0.1, ctx);
     ai.aturdir(0.3);
@@ -247,13 +263,60 @@ describe('ruido', () => {
     }
     expect(ai.estado).toBe(EstadoZombi.SEARCH);
   });
+
+  it('mide la distancia desde donde esta, no desde su puesto de origen', () => {
+    /*
+     * Un zombi que ya camino treinta metros tiene que escuchar lo que suena
+     * CERCA DE EL. Midiendo contra su puesto de origen —que es lo que hacia
+     * antes— podia no escuchar un disparo al lado, o alertarse por uno que
+     * sono lejisimo. Para un zombi quieto da lo mismo, y por eso no se
+     * notaba.
+     */
+    const ai = crear(mundoVacio(), { x: 0, z: 0 });
+    const lejosDeSuPuesto = { x: 60, z: 0 };
+
+    // Ruido al lado de donde ESTA: lo tiene que escuchar.
+    expect(ai.oirRuido(62, 0, 10, lejosDeSuPuesto)).toBe(true);
+
+    // Y uno al lado de su puesto, que ya quedo lejos: no.
+    const otro = crear(mundoVacio(), { x: 0, z: 0 });
+    expect(otro.oirRuido(1, 0, 10, lejosDeSuPuesto)).toBe(false);
+  });
+
+  it('persiguiendo, un ruido no lo distrae', () => {
+    /*
+     * Si lo distrajera, disparar con un zombi encima lo mandaria a
+     * investigar el lugar del disparo, o sea donde esta parado el jugador:
+     * se veria como que pierde el rastro de alguien que tiene delante. Y
+     * seria explotable —disparar al aire para sacarselo de encima—, que es
+     * lo contrario de lo que el ruido tiene que lograr.
+     */
+    const ai = crear(mundoVacio());
+    ai.rumbo = MIRANDO_A_MAS_Z;
+    ai.update(0.1, { pos: { x: 0, z: 0 }, jugador: { x: 0, z: 8 }, jugadorVivo: true });
+    expect(ai.estado).toBe(EstadoZombi.CHASE);
+
+    expect(ai.oirRuido(2, 2, 50, { x: 0, z: 0 })).toBe(false);
+    expect(ai.estado).toBe(EstadoZombi.CHASE);
+  });
+
+  it('un ruido justo en el borde del radio todavia se escucha', () => {
+    const ai = crear(mundoVacio());
+    expect(ai.oirRuido(20, 0, 20, { x: 0, z: 0 })).toBe(true);
+  });
+
+  it('un zombi muerto no escucha nada', () => {
+    const ai = crear(mundoVacio());
+    ai.morir();
+    expect(ai.oirRuido(1, 1, 50, { x: 0, z: 0 })).toBe(false);
+  });
 });
 
 describe('navegacion', () => {
   it('no atraviesa una pared yendo hacia el jugador', () => {
     // El esquive tiene que desviarlo, no dejarlo empujando contra el muro.
     const ai = crear(mundoConPared());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const pos = { x: 0, z: 0 };
     // Se lo fuerza a perseguir poniendolo muy cerca primero.
     ai.ultimoVisto = { x: 0, z: 10 };
@@ -274,7 +337,7 @@ describe('navegacion', () => {
 
   it('se separa de un companero encimado', () => {
     const ai = crear(mundoVacio());
-    ai.rumbo = 0;
+    ai.rumbo = MIRANDO_A_MAS_Z;
     const pos = { x: 0, z: 0 };
     const r = ai.update(1 / 30, {
       pos,

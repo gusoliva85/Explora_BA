@@ -1,4 +1,11 @@
 import { ZOMBIE_STANDARD } from '../config/balance.js';
+import {
+  rumboHacia,
+  rumboEntre,
+  dirDeRumbo,
+  difRumbos,
+  normalizarRumbo
+} from '../core/rumbo.js';
 
 /**
  * ===========================================================================
@@ -120,10 +127,38 @@ export class ZombieAI {
    * demasiado; uno que va hasta ahi a investigar es creible y ademas deja
    * margen para escapar.
    */
-  oirRuido(x, z, radio) {
+  oirRuido(x, z, radio, posActual = null) {
     if (!this.vivo || this.estado === EstadoZombi.STUNNED) return false;
-    const d = Math.hypot(x - this.origen.x, z - this.origen.z);
+
+    /*
+     * La distancia se mide desde DONDE ESTA, no desde su puesto de origen.
+     *
+     * Antes se media contra `this.origen`, el lugar donde lo pusieron al
+     * generar el mapa. Para un zombi quieto da lo mismo, y por eso no se
+     * notaba; para uno que ya se habia movido treinta metros persiguiendo
+     * o buscando, estaba midiendo desde un lugar donde no estaba. Podia
+     * escuchar un disparo que sono lejisimo de el, o no escuchar uno que
+     * sono al lado.
+     *
+     * `posActual` es opcional para no romper a quien no la tenga, pero el
+     * juego siempre la pasa: el gestor de zombis la tiene a mano.
+     */
+    const desde = posActual ?? this.origen;
+    const d = Math.hypot(x - desde.x, z - desde.z);
     if (d > radio) return false;
+
+    /*
+     * Ya persiguiendo, un ruido no lo distrae.
+     *
+     * Si lo distrajera, disparar con un zombi encima lo mandaria a
+     * investigar el lugar del disparo —donde esta el jugador parado— lo
+     * cual se ve como que pierde el rastro de alguien que tiene delante.
+     * Y seria explotable: disparar al aire para sacarse uno de encima.
+     */
+    if (this.estado === EstadoZombi.CHASE || this.estado === EstadoZombi.ATTACK) {
+      return false;
+    }
+
     this.ultimoVisto = { x, z };
     this.#cambiarA(EstadoZombi.ALERT);
     return true;
@@ -159,8 +194,7 @@ export class ZombieAI {
     if (d > this.cfg.sightRange) return null;
 
     // Cono de vision. El angulo es TOTAL, asi que se compara con la mitad.
-    const rumboAJugador = Math.atan2(dx, dz) * (180 / Math.PI);
-    const diff = Math.abs(((rumboAJugador - this.rumbo + 540) % 360) - 180);
+    const diff = difRumbos(rumboHacia(dx, dz), this.rumbo);
     if (diff > this.cfg.sightAngle / 2) return null;
 
     return this.#puedeVer(pos, jugador) ? 'vista' : null;
@@ -180,10 +214,11 @@ export class ZombieAI {
    */
   #esquivar(pos, dirX, dirZ) {
     const alcance = 3.2;
+    const base = rumboHacia(dirX, dirZ);
     const rayo = (anguloGrados) => {
-      const a = Math.atan2(dirX, dirZ) + (anguloGrados * Math.PI) / 180;
-      const hx = pos.x + Math.sin(a) * alcance;
-      const hz = pos.z + Math.cos(a) * alcance;
+      const d = dirDeRumbo(base + anguloGrados);
+      const hx = pos.x + d.x * alcance;
+      const hz = pos.z + d.z * alcance;
       const hit = this.world.raycast(pos.x, pos.z, hx, hz, ALTURA_OJOS * 0.4);
       return hit ? hit.t : 1;
     };
@@ -200,8 +235,7 @@ export class ZombieAI {
 
     // Girar noventa grados hacia el lado libre. Menos que eso no alcanza
     // para despegarse de una pared larga.
-    const a = Math.atan2(dirX, dirZ) + (this.ladoEsquive * 70 * Math.PI) / 180;
-    return { x: Math.sin(a), z: Math.cos(a) };
+    return dirDeRumbo(base + this.ladoEsquive * 70);
   }
 
   /**
@@ -288,7 +322,12 @@ export class ZombieAI {
       case EstadoZombi.IDLE:
         // Quieto, girando despacio: barre el cono de vision y asi llega a
         // detectar algo que entro por un costado.
-        this.rumbo += dt * 18;
+        //
+        // Se normaliza en cada vuelta. Sin esto el angulo crece para
+        // siempre —un zombi parado dos minutos pasa de los 2000 grados— y
+        // aunque los rumbos sean equivalentes de a 360, arrastrar numeros
+        // grandes invita a errores de rango en todo lo que los compare.
+        this.rumbo = normalizarRumbo(this.rumbo + dt * 18);
         break;
 
       case EstadoZombi.ALERT:
@@ -372,11 +411,11 @@ export class ZombieAI {
     fx /= mag;
     fz /= mag;
 
-    this.rumbo = Math.atan2(fx, fz) * (180 / Math.PI);
+    this.rumbo = rumboHacia(fx, fz);
     return { dirX: fx, dirZ: fz, velocidad, atacar: false };
   }
 
   #rumboHacia(pos, objetivo) {
-    return Math.atan2(objetivo.x - pos.x, objetivo.z - pos.z) * (180 / Math.PI);
+    return rumboEntre(pos, objetivo);
   }
 }

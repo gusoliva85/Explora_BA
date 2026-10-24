@@ -1,4 +1,5 @@
 import { EV } from '../core/events.js';
+import { rumboEntre } from '../core/rumbo.js';
 
 /**
  * Progreso de la mision: controles intermedios y destino final.
@@ -39,10 +40,10 @@ export class MissionManager {
    * si el jugador se mete en una calle lateral a explorar, la camara no
    * tiene por que seguir mirando hacia el control.
    *
-   * El angulo sigue la convencion de la camara: con rumbo 0 la camara se
-   * para en +Z y mira hacia -Z. Por eso se usa `atan2(-dx, -dz)` y no
-   * `atan2(dx, dz)`: con el segundo la camara se ubicaria delante del
-   * jugador mirandolo venir, en vez de atras acompañandolo.
+   * El angulo es el rumbo unico del proyecto, el de core/rumbo.js: con
+   * rumbo 0 la camara se para en +Z y mira hacia -Z. El sentido importa.
+   * Invertido, la camara se pondria delante del jugador mirandolo venir,
+   * en vez de atras acompañandolo.
    *
    * @param {{x:number,z:number}} pos
    * @returns {number} rumbo en grados
@@ -58,7 +59,7 @@ export class MissionManager {
       const d = distanceToSegment(pos, a, b);
       if (d < mejorDist) {
         mejorDist = d;
-        mejor = Math.atan2(-(b.x - a.x), -(b.z - a.z)) * (180 / Math.PI);
+        mejor = rumboEntre(a, b);
       }
     }
     return mejor;

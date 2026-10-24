@@ -35,7 +35,9 @@ además muestra la dirección para abrirlo desde el celular.
 | Mover | `WASD` o flechas | Dedo en la mitad izquierda |
 | Cámara | Arrastrar / rueda para acercar | Dedo en la mitad derecha |
 | Correr | `Shift` | Botón |
-| Atacar | Click o `Espacio` | Botón |
+| Atacar / disparar | Click o `Espacio` | Botón grande |
+| Cambiar de arma | `Q` | Botón `⇄` |
+| Recargar | `R` | Botón `R` |
 | Pausa | `Esc` | Botón |
 | Diagnóstico | `F1` | Tres dedos |
 
@@ -123,6 +125,49 @@ Ya encontraron varios errores reales: un pasaje que se tapiaba solo en sus
 esquinas, un colectivo que el tráfico generado terminaba de bloquear, y un
 jugador que atravesaba paredes con pasos grandes.
 
+### Una prueba que no se vio fallar no prueba nada
+
+Es la regla más útil que dejó este proyecto, y salió de un error concreto:
+la capa de interfaz se tragaba todos los toques y el juego no respondía a
+nada en el teléfono, mientras la prueba del joystick **seguía pasando**.
+Usaba `dispatchEvent`, que entrega el evento directamente al elemento que
+uno nombra, salteando la detección de impacto del navegador: probaba que el
+manejador funciona, no que el toque llegue a él.
+
+Lo mismo con el arco del cuchillo, que apuntaba al revés con pruebas
+unitarias impecables: todas fijaban un rumbo y medían alrededor de **ese**
+rumbo, así que un convenio invertido pasaba entero.
+
+Por eso, cada vez que se arregla algo así, el error se **reintroduce a
+propósito** para comprobar que la prueba nueva falla. Ya salvó dos veces:
+una prueba del arco comparaba la rotación de la entidad —que no sabe nada
+de los vértices— y pasaba con la malla dada vuelta; hubo que reescribirla
+para medir la geometría.
+
+---
+
+## El ruido, que es la mecánica central
+
+Hay dos armas y la elección entre ellas no es "mejor o peor": es **callado
+o rápido**.
+
+| | Alcance | Se escucha a |
+|---|---|---|
+| Cuchillo | 2,1 m | **2 m** |
+| Pistola | 28 m | **22 m** |
+
+Todo zombi vivo dentro del radio del ruido pasa a `ALERT` y va a investigar
+el lugar donde sonó. No va directo a perseguirte: **va al punto del ruido**,
+porque un zombi que corre derecho hacia vos después de escuchar un disparo
+a veinte metros sabe demasiado.
+
+Con `F1` se ve el anillo del ruido expandiéndose desde el origen. Conviene
+mirarlo antes de tocar los números: el radio es la regla principal del
+juego y es completamente invisible.
+
+Las perillas están en `src/config/balance.js`: `noiseRadius` por arma, y
+`NOISE.rangeMultiplier` para subir la tensión de todo el juego de una vez.
+
 ---
 
 ## Decisiones que conviene conocer
@@ -131,6 +176,12 @@ Están todas en el documento 02. Las que más sorprenden:
 
 - **No se usa el editor de PlayCanvas** (D-01). El motor se usa como
   biblioteca: todo es texto, versionable y corre sin internet.
+- **Un solo convenio de ángulos, y vive en un solo archivo**
+  (`src/core/rumbo.js`): rumbo 0 mira hacia `-Z`. La regla es *ningún
+  `atan2` de rumbos fuera de ese archivo*. Convivieron dos convenios
+  opuestos durante varias fases, cada uno coherente consigo mismo, y el
+  resultado fue que el cuchillo golpeaba para atrás y los zombis
+  perseguían caminando de espaldas.
 - **No hay motor de física** (D-09). El escenario son paredes verticales
   sobre suelo plano; eso se resuelve con círculos contra rectángulos, sin
   descargar WebAssembly ni perder determinismo.

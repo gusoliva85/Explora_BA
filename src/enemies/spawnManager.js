@@ -1,4 +1,4 @@
-import { PERF, ZOMBIE_STANDARD } from '../config/balance.js';
+import { PERF, ZOMBIE_STANDARD, NOISE } from '../config/balance.js';
 import { createRng } from '../core/rng.js';
 import { Zombie } from './zombie.js';
 import { EV } from '../core/events.js';
@@ -247,14 +247,47 @@ export class SpawnManager {
   }
 
   /**
-   * Un ruido atrae a todos los que lo escuchen. Lo usa la Fase 6.
+   * Un ruido atrae a todos los que lo escuchen (D-05).
+   *
+   * Es el mecanismo central de la Fase 6: lo que convierte disparar en una
+   * decision y no en la opcion obviamente mejor. El cuchillo no es un arma
+   * de emergencia, es el arma silenciosa, y eso no significa nada hasta que
+   * exista algo ruidoso.
+   *
+   * ---------------------------------------------------------------------------
+   * QUIENES ALCANZA A ESCUCHARLO
+   * ---------------------------------------------------------------------------
+   * Solo los zombis EN JUEGO. Los que estan mas alla de la distancia de
+   * corte tienen la IA apagada y no se enteran de nada.
+   *
+   * Es una limitacion real y conviene tenerla escrita: el radio del disparo
+   * son 22 m y el corte esta en 55, asi que hoy no cambia nada. Si alguna
+   * vez un arma hiciera mas ruido que la distancia de corte, habria que
+   * despertar a los que estan fuera, y nadie se acordaria de por que el
+   * ruido "no llega" mas alla de cierto punto.
+   *
+   * @returns {number} cuantos lo escucharon
    */
   propagarRuido(x, z, radio) {
+    // El multiplicador global es la perilla para hacer el juego mas tenso
+    // de una sola vez, sin tocar el balance de cada arma.
+    const alcance = radio * NOISE.rangeMultiplier;
+
     let alertados = 0;
     for (const zb of this.enJuego) {
-      if (zb.vivo && zb.ai.oirRuido(x, z, radio)) alertados++;
+      if (zb.vivo && zb.ai.oirRuido(x, z, alcance, zb.posicion)) alertados++;
     }
-    if (alertados > 0) this.bus?.emit(EV.NOISE_EMITTED, { x, z, radio, alertados });
+
+    /*
+     * El evento se emite SIEMPRE, aunque no lo haya escuchado nadie.
+     *
+     * Es lo que permite dibujar el circulo del ruido en modo diagnostico
+     * incluso cuando no hay zombis cerca, que es justo el caso en el que
+     * uno quiere ver hasta donde llego: si solo se emitiera al alertar a
+     * alguien, el diagnostico mostraria el radio unicamente cuando ya no
+     * hace falta mirarlo.
+     */
+    this.bus?.emit(EV.NOISE_EMITTED, { x, z, radio: alcance, alertados });
     return alertados;
   }
 

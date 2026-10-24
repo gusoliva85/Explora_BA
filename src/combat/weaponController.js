@@ -1,4 +1,6 @@
 import { WEAPONS } from '../config/balance.js';
+import { rumboHacia, difRumbos } from '../core/rumbo.js';
+import { blancoDelRayo, dispersar, rumboAsistido } from './ballistics.js';
 
 /**
  * ===========================================================================
@@ -40,7 +42,16 @@ export const EstadoArma = {
   /** Se apreto, el golpe todavia no salio. */
   PREPARANDO: 'PREPARANDO',
   /** Golpe aplicado, esperando para poder volver a atacar. */
-  ESPERANDO: 'ESPERANDO'
+  ESPERANDO: 'ESPERANDO',
+  /**
+   * Cambiando el cargador.
+   *
+   * Es un estado propio y no un "esperando mas largo" porque el jugador
+   * tiene que poder VERLO: durante la recarga esta indefenso, y esa es la
+   * mitad del costo de usar la pistola. Si no se distingue de la espera
+   * normal, el jugador no entiende por que no dispara.
+   */
+  RECARGANDO: 'RECARGANDO'
 };
 
 export class WeaponController {
@@ -51,6 +62,13 @@ export class WeaponController {
    * @param {(info:object) => void} [opt.alGolpear] se llama cuando el golpe conecta
    * @param {(info:object) => void} [opt.alFallar] se llama cuando el golpe no alcanza a nadie
    * @param {(info:object) => void} [opt.alHacerRuido] para el sistema de ruido (D-05)
+   * @param {(info:object) => void} [opt.alDisparar] trazado y fogonazo
+   * @param {(info:object) => void} [opt.alClicVacio] gatillo sin municion
+   * @param {(info:object) => void} [opt.alRecargar] arranca el cambio de cargador
+   * @param {(info:object) => void} [opt.alCambiarMunicion] para el HUD
+   * @param {Function} [opt.rayo] prueba del escenario, firma de CollisionWorld.raycast
+   * @param {() => number} [opt.azar] generador con semilla (D-12)
+   * @param {() => boolean} [opt.asistirApuntado] si corresponde ayudar a apuntar
    */
   constructor(opt = {}) {
     this.armas = WEAPONS;
@@ -63,10 +81,42 @@ export class WeaponController {
     /** Datos del swing en curso: desde donde y hacia donde. */
     this.swing = null;
 
+    /*
+     * Municion.
+     *
+     * Se lleva por TIPO de municion, no por arma. Hoy da lo mismo porque
+     * solo la pistola gasta balas, pero el dia que haya dos armas de 9 mm
+     * tienen que compartir la reserva: si cada arma tuviera su propia
+     * cuenta, cambiar de arma seria una forma gratis de recargar.
+     */
+    this.cargador = {};
+    this.reserva = {};
+    for (const arma of Object.values(this.armas)) {
+      if (!arma.ammoType) continue;
+      this.cargador[arma.ammoType] = arma.magazineSize ?? 0;
+      this.reserva[arma.ammoType] = arma.startingReserve ?? 0;
+    }
+
+    /*
+     * El azar por omision NO es aleatorio.
+     *
+     * Devuelve siempre el centro, o sea cero dispersion. Es a proposito:
+     * una prueba que no le pase un generador obtiene un disparo perfecto y
+     * repetible, y nunca falla por mala suerte. El juego si le pasa el
+     * generador con semilla (D-12).
+     */
+    this.azar = opt.azar ?? (() => 0.5);
+    this.rayo = opt.rayo;
+    this.asistirApuntado = opt.asistirApuntado ?? (() => false);
+
     this.alIniciarAtaque = opt.alIniciarAtaque;
     this.alGolpear = opt.alGolpear;
     this.alFallar = opt.alFallar;
     this.alHacerRuido = opt.alHacerRuido;
+    this.alDisparar = opt.alDisparar;
+    this.alClicVacio = opt.alClicVacio;
+    this.alRecargar = opt.alRecargar;
+    this.alCambiarMunicion = opt.alCambiarMunicion;
   }
 
   get arma() {
@@ -83,12 +133,122 @@ export class WeaponController {
     return 1 - this.restante / this.arma.cooldown;
   }
 
+  /** Tipo de municion del arma equipada, o null si no gasta. */
+  get tipoMunicion() {
+    return this.arma.ammoType;
+  }
+
+  /** Balas en el cargador. `Infinity` si el arma no gasta municion. */
+  get enCargador() {
+    const t = this.tipoMunicion;
+    return t ? this.cargador[t] : Infinity;
+  }
+
+  /** Balas de reserva. */
+  get enReserva() {
+    const t = this.tipoMunicion;
+    return t ? this.reserva[t] : 0;
+  }
+
+  get recargando() {
+    return this.estado === EstadoArma.RECARGANDO;
+  }
+
+  /** Fraccion de 0 a 1 de la recarga. Para la barra del HUD. */
+  get progresoRecarga() {
+    if (!this.recargando) return 1;
+    return 1 - this.restante / this.arma.reloadTime;
+  }
+
   equipar(clave) {
     if (!this.armas[clave]) return false;
     this.equipada = clave;
+    /*
+     * Cambiar de arma CANCELA la recarga en curso.
+     *
+     * Es lo correcto y ademas cierra un agujero: si la recarga siguiera
+     * corriendo, se podria empezar a recargar, pasar al cuchillo, pelear
+     * con el cuchillo y volver a la pistola ya cargada. La recarga dejaria
+     * de costar nada, y su costo es justamente el punto.
+     */
     this.estado = EstadoArma.LISTA;
     this.restante = 0;
+    this.swing = null;
+    this.#avisarMunicion();
     return true;
+  }
+
+  /** Alterna entre las armas que el jugador tiene encima. */
+  cambiarA(clave) {
+    return this.equipar(clave);
+  }
+
+  /**
+   * Empieza a cambiar el cargador.
+   *
+   * @returns {boolean} true si arranco de verdad
+   */
+  recargar() {
+    const t = this.tipoMunicion;
+    if (!t) return false;
+    if (this.recargando) return false;
+    // Un cargador lleno no se recarga: seria tirar balas de la reserva.
+    if (this.cargador[t] >= this.arma.magazineSize) return false;
+    if (this.reserva[t] <= 0) return false;
+    // En medio de un disparo no, pero desde la espera entre tiros si: es
+    // lo que deja recargar sin tener que esperar el ciclo completo.
+    if (this.estado === EstadoArma.PREPARANDO) return false;
+
+    this.estado = EstadoArma.RECARGANDO;
+    this.restante = this.arma.reloadTime;
+    this.alRecargar?.({ arma: this.arma.id, duracion: this.arma.reloadTime });
+    return true;
+  }
+
+  /**
+   * Vuelve al estado de arranque de mision.
+   *
+   * Hace falta porque la municion es la primera cosa del juego que
+   * PERSISTE entre intentos. Sin esto, morir y reaparecer en el ultimo
+   * control dejaria al jugador con el cargador como lo tenia al morir —o
+   * sea, probablemente vacio, justo donde lo mataron.
+   */
+  reiniciar(armaInicial = 'knife') {
+    for (const arma of Object.values(this.armas)) {
+      if (!arma.ammoType) continue;
+      this.cargador[arma.ammoType] = arma.magazineSize ?? 0;
+      this.reserva[arma.ammoType] = arma.startingReserve ?? 0;
+    }
+    this.yaGolpeados.clear();
+    this.equipar(armaInicial);
+  }
+
+  /** Suma municion a la reserva. Lo usaran los objetos de la Fase 8. */
+  sumarMunicion(tipo, cantidad) {
+    if (this.reserva[tipo] === undefined) return false;
+    this.reserva[tipo] += cantidad;
+    this.#avisarMunicion();
+    return true;
+  }
+
+  #avisarMunicion() {
+    this.alCambiarMunicion?.({
+      arma: this.arma.id,
+      tipo: this.tipoMunicion,
+      cargador: this.enCargador,
+      reserva: this.enReserva,
+      capacidad: this.arma.magazineSize ?? 0
+    });
+  }
+
+  /** Termina la recarga: pasa balas de la reserva al cargador. */
+  #completarRecarga() {
+    const t = this.tipoMunicion;
+    const falta = this.arma.magazineSize - this.cargador[t];
+    const pasan = Math.min(falta, this.reserva[t]);
+    this.cargador[t] += pasan;
+    this.reserva[t] -= pasan;
+    this.#avisarMunicion();
   }
 
   /**
@@ -111,6 +271,29 @@ export class WeaponController {
    */
   atacar(pos, rumboGrados, objetivos = []) {
     if (!this.puedeAtacar) return false;
+
+    /*
+     * Gatillo en vacio.
+     *
+     * Tiene que ser un aviso, no un silencio. El jugador que aprieta y no
+     * pasa nada cree que se trabo el boton; el que aprieta y escucha el
+     * clic entiende que se quedo sin balas, que es una informacion que
+     * necesita YA, con tres zombis encima.
+     *
+     * Y despues se recarga solo. No es comodidad: nadie que se queda sin
+     * municion en una pelea decide NO recargar, asi que obligar a un
+     * segundo botón solo agrega un paso que siempre se quiere dar.
+     */
+    if (this.tipoMunicion && this.enCargador <= 0) {
+      this.alClicVacio?.({
+        arma: this.arma.id,
+        reserva: this.enReserva,
+        x: pos.x,
+        z: pos.z
+      });
+      this.recargar();
+      return false;
+    }
 
     this.estado = EstadoArma.PREPARANDO;
     this.restante = this.arma.windup;
@@ -152,14 +335,114 @@ export class WeaponController {
       return;
     }
 
+    if (this.estado === EstadoArma.RECARGANDO && this.restante <= 0) {
+      this.#completarRecarga();
+      this.estado = EstadoArma.LISTA;
+      this.swing = null;
+      return;
+    }
+
     if (this.estado === EstadoArma.ESPERANDO && this.restante <= 0) {
       this.estado = EstadoArma.LISTA;
       this.swing = null;
     }
   }
 
-  /** Aplica el daño del swing a todo lo que caiga dentro del arco. */
+  /** Resuelve el ataque segun el tipo de arma. */
   #resolverGolpe(pos, rumboGrados, objetivos) {
+    if (this.arma.type === 'hitscan') {
+      this.#resolverDisparo(pos, rumboGrados, objetivos);
+      return;
+    }
+    this.#resolverArco(pos, rumboGrados, objetivos);
+  }
+
+  /**
+   * El disparo instantaneo.
+   *
+   * El orden de los tres pasos no es casual:
+   *
+   * 1. **Asistencia** primero, sobre el rumbo limpio. Corrige el temblor
+   *    del pulgar antes de que intervenga el azar.
+   * 2. **Dispersion** despues. Si fuera al revés, la asistencia podria
+   *    cancelar la dispersion y el arma seria un puntero perfecto en
+   *    cuanto hubiera un zombi cerca del centro.
+   * 3. **El rayo** al final, con el rumbo ya definitivo.
+   */
+  #resolverDisparo(pos, rumboGrados, objetivos) {
+    const arma = this.arma;
+
+    // La bala se descuenta al SALIR, no al apretar: un disparo que se
+    // interrumpe —porque cambiaste de arma a mitad del windup— no la gasta.
+    const t = arma.ammoType;
+    if (t) {
+      this.cargador[t] = Math.max(0, this.cargador[t] - 1);
+      this.#avisarMunicion();
+    }
+
+    let rumbo = rumboGrados;
+    if (this.asistirApuntado()) {
+      rumbo = rumboAsistido(pos, rumbo, objetivos, {
+        alcance: arma.range,
+        cono: arma.aimAssist.cono,
+        maxima: arma.aimAssist.maxima
+      });
+    }
+    rumbo = dispersar(rumbo, arma.spreadDegrees, this.azar);
+
+    const impacto = blancoDelRayo(pos, rumbo, objetivos, {
+      alcance: arma.range,
+      radioBlanco: arma.targetRadius,
+      rayo: this.rayo,
+      alturaTiro: arma.shotHeight
+    });
+
+    /*
+     * El trazado se avisa SIEMPRE, acierte o no. Es lo unico que le dice
+     * al jugador por donde paso la bala, y por lo tanto lo unico que le
+     * permite corregir. Un disparo sin trazado que falla no enseña nada.
+     */
+    this.alDisparar?.({
+      arma: arma.id,
+      desde: { x: pos.x, z: pos.z },
+      hasta: { x: impacto.x, z: impacto.z },
+      rumbo,
+      altura: arma.shotHeight,
+      acerto: !!impacto.objetivo,
+      pared: impacto.pared,
+      distancia: impacto.distancia
+    });
+
+    if (impacto.objetivo) {
+      const q = impacto.objetivo.posicion;
+      const dx = q.x - pos.x;
+      const dz = q.z - pos.z;
+      const d = Math.hypot(dx, dz) || 1;
+      this.yaGolpeados.add(impacto.objetivo);
+      this.alGolpear?.({
+        objetivo: impacto.objetivo,
+        daño: arma.damage,
+        arma: arma.id,
+        dirX: dx / d,
+        dirZ: dz / d
+      });
+    } else {
+      this.alFallar?.({ arma: arma.id, x: pos.x, z: pos.z, rumbo });
+    }
+
+    /*
+     * El ruido sale IGUAL si el tiro falla. Es el corazon de la fase: lo
+     * que atrae a los zombis es el estruendo, no el acierto. Un jugador
+     * que erra y se queda sin saber por que vino la horda aprendio algo
+     * importante sobre disparar.
+     */
+    if (arma.noiseRadius > 0) {
+      this.alHacerRuido?.({ x: pos.x, z: pos.z, radio: arma.noiseRadius, arma: arma.id });
+    }
+  }
+
+  /** Aplica el daño del swing a todo lo que caiga dentro del arco. */
+  #resolverArco(pos, rumboGrados, objetivos) {
     const arma = this.arma;
     const alcanzados = this.alcanzados(pos, rumboGrados, objetivos);
 
@@ -216,9 +499,10 @@ export class WeaponController {
       // Pegado encima, el angulo deja de importar: a medio metro uno
       // alcanza para cualquier lado.
       if (d > 0.6) {
-        const rumboObjetivo = Math.atan2(dx, dz) * (180 / Math.PI);
-        const diff = Math.abs(((rumboObjetivo - rumboGrados + 540) % 360) - 180);
-        if (diff > arma.arcDegrees) continue;
+        // `rumboHacia` y el rumbo del jugador tienen que estar en el MISMO
+        // convenio. Aca habia un `atan2(dx, dz)` suelto, que es el convenio
+        // contrario, y el cuchillo golpeaba para atras. Ver core/rumbo.js.
+        if (difRumbos(rumboHacia(dx, dz), rumboGrados) > arma.arcDegrees) continue;
       }
 
       out.push(objetivo);

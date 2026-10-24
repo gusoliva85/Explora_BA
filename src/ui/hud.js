@@ -41,7 +41,14 @@ export class Hud {
       brujula: document.getElementById('brujula'),
       brujulaFlecha: document.getElementById('brujula-flecha'),
       brujulaTexto: document.getElementById('brujula-texto'),
-      dano: document.getElementById('dano')
+      dano: document.getElementById('dano'),
+      armaCaja: document.getElementById('arma-caja'),
+      armaNombre: document.getElementById('arma-nombre'),
+      armaMunicion: document.getElementById('arma-municion'),
+      recarga: document.getElementById('recarga'),
+      recargaFill: document.getElementById('recarga-fill'),
+      btnReload: document.getElementById('btn-reload'),
+      btnAttack: document.getElementById('btn-attack')
     };
 
     // Si el dispositivo cambia de modo (girar, conectar un mouse, forzarlo
@@ -82,6 +89,95 @@ export class Hud {
   /** @deprecated usar `device.isTouch`. Se mantiene por compatibilidad. */
   get isTouch() {
     return device.isTouch;
+  }
+
+  /**
+   * Arma equipada y municion.
+   *
+   * El cargador va grande y la reserva chica al lado. Lo urgente es cuanto
+   * queda ANTES de recargar, no el total que uno lleva encima: la reserva
+   * solo dice si vale la pena recargar o si conviene pasar al cuchillo.
+   *
+   * @param {{nombre:string, cargador:number, reserva:number,
+   *   capacidad:number, gastaMunicion:boolean}} info
+   */
+  setArma(info) {
+    if (!this.el.armaCaja) return;
+    this.el.armaNombre.textContent = info.nombre.toUpperCase();
+
+    /*
+     * El boton grande dice lo que hace AHORA.
+     *
+     * Con la pistola en la mano, un boton que dice ATACAR sugiere cuerpo a
+     * cuerpo, que es justo la decision contraria a la que la Fase 6 quiere
+     * que el jugador piense. El boton es lo unico que se mira antes de
+     * apretar, asi que tiene que decir cual de las dos cosas va a pasar.
+     */
+    if (this.el.btnAttack) {
+      this.el.btnAttack.textContent = info.gastaMunicion ? 'DISPARAR' : 'ATACAR';
+      this.el.btnAttack.classList.toggle('btn-disparar', info.gastaMunicion);
+    }
+
+    if (!info.gastaMunicion) {
+      // El cuchillo no tiene balas. Decir "infinito" seria ruido: lo que
+      // importa de el es que es silencioso, y eso no se pone en un numero.
+      this.el.armaMunicion.textContent = '—';
+      this.el.armaCaja.classList.remove('poca', 'vacia');
+      this.#mostrarBotonRecarga(false, false);
+      return;
+    }
+
+    this.el.armaMunicion.innerHTML =
+      `${info.cargador}<span class="reserva"> / ${info.reserva}</span>`;
+
+    /*
+     * Tres niveles, no dos. "Vacio" y "lleno" no alcanza: el momento
+     * interesante es el de "me quedan tres balas", cuando todavia se puede
+     * elegir entre tirar o guardar y pasar al cuchillo. Ese aviso es el que
+     * hace que el jugador dude, que es el criterio de salida de la fase.
+     */
+    const vacio = info.cargador === 0;
+    const poca = !vacio && info.cargador <= Math.max(2, Math.ceil(info.capacidad * 0.25));
+    this.el.armaCaja.classList.toggle('vacia', vacio);
+    this.el.armaCaja.classList.toggle('poca', poca);
+
+    // El boton de recargar aparece cuando hace falta Y se puede.
+    const conviene = info.cargador < info.capacidad && info.reserva > 0;
+    this.#mostrarBotonRecarga(conviene, vacio || poca);
+    this.el.btnAttack?.classList.toggle('sin-balas', vacio);
+  }
+
+  #mostrarBotonRecarga(visible, urgente) {
+    const b = this.el.btnReload;
+    if (!b) return;
+    b.classList.toggle('hidden', !visible);
+    b.classList.toggle('urgente', visible && urgente);
+  }
+
+  /** Sacudon del contador al apretar el gatillo sin balas. */
+  avisarSinMunicion() {
+    const el = this.el.armaCaja;
+    if (!el) return;
+    // Se reinicia la animacion a mano: si no, dos clics seguidos solo
+    // mostrarian el primero.
+    el.classList.remove('clic');
+    void el.offsetWidth;
+    el.classList.add('clic');
+  }
+
+  /**
+   * Barra de recarga.
+   *
+   * @param {boolean} visible
+   * @param {number} progreso 0..1
+   */
+  setRecarga(visible, progreso = 0) {
+    if (!this.el.recarga) return;
+    this.el.recarga.classList.toggle('hidden', !visible);
+    if (visible) {
+      const pct = Math.max(0, Math.min(100, progreso * 100));
+      this.el.recargaFill.style.width = `${pct}%`;
+    }
   }
 
   setHealth(value) {

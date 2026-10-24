@@ -33,7 +33,8 @@ export class InputManager {
       attack: false,
       interact: false,
       heal: false,
-      swap: false
+      swap: false,
+      reload: false
     };
     /** Botones que se activaron en este frame (flanco de subida). */
     this.pressed = new Set();
@@ -103,7 +104,11 @@ export class InputManager {
       ShiftRight: 'run',
       KeyE: 'interact',
       KeyQ: 'swap',
-      KeyR: 'heal',
+      // R es recargar, que es lo que espera cualquiera que haya jugado a
+      // algo con armas. Curarse se movio a H: todavia no existe (Fase 8) y
+      // si llegara a quedarse con la R, recargar seria la tecla rara.
+      KeyR: 'reload',
+      KeyH: 'heal',
       Space: 'attack'
     };
 

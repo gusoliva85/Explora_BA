@@ -20,10 +20,19 @@ import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
 import { ajustes } from './core/settings.js';
+import { createRng } from './core/rng.js';
+import { rumboHacia, rumboEntre, dirDeRumbo } from './core/rumbo.js';
 
 /** El perfil de calidad decide tambien la resolucion de las sombras. */
 const calidadAlta = () => calidadElegida() === Calidad.ALTA;
-import { PERF, UNITS, CAMERA, PLAYER, ZOMBIE_STANDARD } from './config/balance.js';
+import {
+  PERF,
+  UNITS,
+  CAMERA,
+  PLAYER,
+  ZOMBIE_STANDARD,
+  WORLD_SEED
+} from './config/balance.js';
 
 /**
  * ===========================================================================
@@ -222,6 +231,23 @@ console.info(`[zombis] ${zombis.stats.total} puestos repartidos en el mapa`);
 const efectos = new CombatFx(app, builder.mats);
 
 /*
+ * El azar del combate: su propio generador, con su propia semilla.
+ *
+ * No comparte el del mundo, y eso es a proposito. Si fuera el mismo, la
+ * cantidad de tiros que diste cambiaria la dispersion del proximo, pero
+ * tambien cualquier otra cosa que consuma azar en el futuro —el graznido de
+ * un pajaro, la variacion de una textura— correria la secuencia del
+ * combate. Dos generadores separados se pueden razonar por separado.
+ *
+ * La semilla sale de la del mundo para que la partida siga siendo
+ * reproducible entera con un solo numero (D-12).
+ */
+const azarCombate = createRng(WORLD_SEED ^ 0x9e3779b9);
+
+/** Color del anillo de ruido en el diagnostico: el mismo ambar del HUD. */
+const COLOR_RUIDO = new pc.Color(1, 0.72, 0.15);
+
+/*
  * El arma. Resuelve el arco y el daño; los efectos y el ruido se enganchan
  * por callbacks, para que el controlador no tenga que conocer ni la escena
  * ni el gestor de zombis.
@@ -229,12 +255,36 @@ const efectos = new CombatFx(app, builder.mats);
 const arma = new WeaponController({
   armaInicial: 'knife',
 
-  alIniciarAtaque: ({ x, z, rumbo, conectaria }) => {
+  /*
+   * El escenario y el azar entran por aca.
+   *
+   * El arma no conoce ni PlayCanvas ni el mundo: recibe una funcion para
+   * preguntar si hay algo en el camino y otra para el azar. Es lo que
+   * permite probar la balistica entera con numeros, y lo que mantiene el
+   * azar atado a la semilla de la partida (D-12).
+   */
+  rayo: (ax, az, bx, bz, altura) => collision.raycast(ax, az, bx, bz, altura),
+  azar: azarCombate,
+
+  /*
+   * El apuntado asistido se decide EN EL MOMENTO del disparo, no al
+   * arrancar. El modo de control se puede cambiar desde el menu de pausa
+   * sin recargar, asi que una decision tomada una vez quedaria vieja.
+   */
+  asistirApuntado: () => device.isTouch,
+
+  alIniciarAtaque: ({ x, z, rumbo, conectaria, arma: id }) => {
     /*
      * El arco se muestra al APRETAR, no al conectar. Es lo que hace que el
      * golpe se sienta inmediato aunque el daño salga unas centesimas
      * despues: el jugador ve que su orden se registro.
+     *
+     * Solo para el cuerpo a cuerpo. Un disparo tiene su propio efecto —el
+     * fogonazo y el trazado— y dibujarle encima el abanico del cuchillo
+     * diria que la pistola alcanza dos metros en noventa grados, que es
+     * exactamente lo contrario de lo que hace.
      */
+    if (id !== 'knife') return;
     efectos.mostrarArco({ x, y: 0, z }, rumbo, conectaria);
   },
 
@@ -251,9 +301,63 @@ const arma = new WeaponController({
   },
 
   alHacerRuido: ({ x, z, radio }) => {
-    zombis.propagarRuido(x, z, radio);
-  }
+    const alertados = zombis.propagarRuido(x, z, radio);
+    // El anillo se marca siempre; el diagnostico decide si se dibuja.
+    efectos.marcarRuido(x, z, radio);
+    if (alertados > 0) {
+      /*
+       * Avisar que el ruido junto gente NO es un adorno.
+       *
+       * El criterio de salida de la fase es que el jugador dude antes de
+       * disparar, y para dudar tiene que haber aprendido que el tiro
+       * trae zombis. Eso pasa cuando los ve venir, pero un zombi que se
+       * acerca desde treinta metros tarda diez segundos en ser visible, y
+       * para entonces ya nadie conecta una cosa con la otra. El aviso
+       * cierra la relacion causa-efecto en el momento.
+       */
+      hud.flash(alertados === 1 ? 'ALGO TE ESCUCHÓ' : `${alertados} TE ESCUCHARON`, 1500);
+    }
+  },
+
+  alDisparar: ({ desde, hasta, altura, acerto }) => {
+    efectos.mostrarDisparo(desde, hasta, altura, acerto);
+    /*
+     * Retroceso de camara, mas corto y mas seco que el del cuerpo a
+     * cuerpo. Un sacudon largo en un arma que dispara dos veces por
+     * segundo se acumularia hasta marear.
+     */
+    camera.sacudir(0.1, 0.08);
+  },
+
+  alClicVacio: () => {
+    hud.avisarSinMunicion();
+  },
+
+  alRecargar: () => {
+    hud.flash('RECARGANDO', 900);
+  },
+
+  alCambiarMunicion: () => actualizarHudArma()
 });
+
+/**
+ * Pasa el estado del arma al HUD.
+ *
+ * Se llama desde los avisos del arma y al cambiar de arma, no en cada
+ * cuadro: escribir en el DOM sesenta veces por segundo para un numero que
+ * cambia una vez por disparo es tirar cuadros a la basura en un telefono.
+ * Lo unico que SI se actualiza por cuadro es la barra de recarga, porque es
+ * una animacion.
+ */
+function actualizarHudArma() {
+  hud.setArma({
+    nombre: arma.arma.name,
+    cargador: arma.enCargador,
+    reserva: arma.enReserva,
+    capacidad: arma.arma.magazineSize ?? 0,
+    gastaMunicion: !!arma.tipoMunicion
+  });
+}
 
 console.info(
   `[mundo] ${built.stats.boxes} cajas, ${built.stats.colliders} colisionadores, ` +
@@ -268,7 +372,9 @@ function startMission({ fromCheckpoint = false } = {}) {
 
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
   zombis.reiniciar();
-  arma.equipar('knife');
+  arma.reiniciar('knife');
+  actualizarHudArma();
+  hud.setRecarga(false);
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -323,8 +429,7 @@ function actualizarBrujula() {
   const dz = destino.z - p.z;
   const distancia = Math.hypot(dx, dz);
 
-  // Mismo convenio que la camara: rumbo cero es mirar hacia -Z.
-  const rumboDestino = Math.atan2(-dx, -dz) * pc.math.RAD_TO_DEG;
+  const rumboDestino = rumboHacia(dx, dz);
   // El glifo de la flecha apunta a la derecha, de ahi el -90.
   const relativo = rumboDestino - camera.yaw - 90;
 
@@ -365,6 +470,8 @@ byId('btn-restart-lose').addEventListener('click', () => startMission({ fromChec
 input.bindHudButton(byId('btn-run'), 'run');
 input.bindHudButton(byId('btn-attack'), 'attack');
 input.bindHudButton(byId('btn-interact'), 'interact');
+input.bindHudButton(byId('btn-swap'), 'swap');
+input.bindHudButton(byId('btn-reload'), 'reload');
 
 /*
  * Ajustes del menu de pausa.
@@ -426,10 +533,21 @@ app.on('update', (rawDt) => {
 
     // --- Ataque del jugador ------------------------------------------------
     const pos2d = { x: player.position.x, z: player.position.z };
+
+    // Cambio de arma. Con dos armas alternar alcanza; cuando haya tres
+    // habra que elegir, pero inventar un selector ahora seria de mas.
+    if (input.wasPressed('swap')) {
+      arma.cambiarA(arma.equipada === 'knife' ? 'pistol' : 'knife');
+      actualizarHudArma();
+      hud.flash(arma.arma.name.toUpperCase(), 900);
+    }
+    if (input.wasPressed('reload')) arma.recargar();
+
     if (input.wasPressed('attack')) {
       arma.atacar(pos2d, player.yaw, zombis.enJuego);
     }
     arma.update(dt, pos2d, player.yaw, zombis.enJuego);
+    hud.setRecarga(arma.recargando, arma.progresoRecarga);
     efectos.update(dt);
 
     const p = player.position;
@@ -453,7 +571,10 @@ app.on('update', (rawDt) => {
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
-  debug.set('arma', `${arma.equipada} ${arma.estado}`);
+  debug.set(
+    'arma',
+    `${arma.equipada} ${arma.estado} ${arma.tipoMunicion ? `${arma.enCargador}/${arma.enReserva}` : ''}`
+  );
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
   debug.set('equipo', device.describe());
 
@@ -462,6 +583,9 @@ app.on('update', (rawDt) => {
   if (debug.visible) {
     const pj = player.position;
     dibujarDiagnosticoZombis(app, zombis, { x: pj.x, z: pj.z });
+    // Hasta donde llego cada ruido. El radio es la regla principal de la
+    // Fase 6 y es invisible: sin verlo, ajustarlo seria adivinar.
+    efectos.dibujarRuidos(app, COLOR_RUIDO);
   }
   debug.update(rawDt);
 
@@ -478,6 +602,19 @@ hud.setObjective(mission.objectiveText);
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
   postProceso, calidad, zombis, arma, efectos,
+  // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
+  // tener que importar playcanvas por su cuenta dentro del navegador.
+  pc,
+  /*
+   * El convenio de rumbos.
+   *
+   * Esta expuesto porque las pruebas del navegador escribian angulos a
+   * mano, y una de ellas tenia `player.yaw = 180` con el comentario "o sea
+   * mirando hacia -Z", que era falso. Pasaba igual, porque el arma usaba
+   * el convenio invertido y los dos errores se cancelaban. Una prueba que
+   * afirma un angulo tiene que pedirselo al juego, no adivinarlo.
+   */
+  rumbo: { rumboHacia, rumboEntre, dirDeRumbo },
   // Los numeros de balance, para poder verificarlos desde una prueba.
   balance: { PLAYER, CAMERA, UNITS, PERF, ZOMBIE_STANDARD }
 };

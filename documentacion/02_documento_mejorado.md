@@ -849,6 +849,71 @@ La tabla de riesgos de la sección 16 está bien. Le faltan cuatro.
 | D-14 | `localStorage` para ajustes, último control y mejor tiempo | 🟡 |
 | D-15 | **Vertical** es la orientación de diseño; horizontal se adapta y no se avisa nada | 🔴 |
 | D-16 | El juego transcurre **de día**, con estética low-poly clara y mate | 🔴 |
+| D-17 | **Un solo convenio de ángulos**, en `core/rumbo.js`: rumbo 0 mira a `-Z`. Ningún `atan2` de rumbos fuera de ahí | 🔴 |
+| D-18 | Ningún destello dura menos que el techo de `dt`, o puede no dibujarse nunca | 🟡 |
+
+---
+
+### 🔴 D-17 — Un solo convenio de ángulos, y vive en un solo archivo
+
+**El problema.** Durante cinco fases convivieron **dos convenios de rumbo
+opuestos**, y ninguno estaba escrito en ningún lado.
+
+- La cámara, las misiones y todos los modelos usaban `rumbo 0 = mirar
+  hacia -Z`. No es una elección: es lo que impone PlayCanvas, porque
+  `setEulerAngles(0, g, 0)` apunta el frente local de la entidad —que es
+  `-Z`— hacia ese rumbo.
+- El cerebro del zombi y el arma usaban el contrario, `atan2(dx, dz)`,
+  donde el rumbo 0 mira hacia `+Z`.
+
+Cada uno era **coherente consigo mismo**, así que los dos funcionaban por
+separado y sus pruebas pasaban. El error aparecía sólo en el cruce: cuando
+el arma recibía el rumbo del jugador y lo comparaba con el suyo, había 180°
+de diferencia exactos. **El cuchillo golpeaba para atrás.** El zombi tenía
+el mismo problema sin que nadie lo notara: su cuerpo apuntaba al revés de
+donde caminaba, o sea que perseguía de espaldas, con los brazos hacia el
+lado opuesto. Desde veinte metros de cámara cenital casi no se ve.
+
+**La decisión.** Existe `src/core/rumbo.js`, define el convenio una sola
+vez —**rumbo 0 mira hacia `-Z`, el ángulo crece girando hacia `-X`**— y
+expone `rumboHacia`, `rumboEntre`, `dirDeRumbo`, `difRumbos` y
+`normalizarRumbo`.
+
+La regla operativa es: **ningún `atan2` de rumbos fuera de ese archivo.**
+Si hay un solo lugar donde vive el signo, no puede haber dos convenios.
+
+**Lo que hay que probar, y no es lo obvio.** Una prueba que fija un rumbo y
+mide el arco alrededor de **ese** rumbo no sirve: es coherente consigo
+misma y un convenio invertido le pasa entero. Hacen falta dos cosas más:
+
+1. Una prueba que ate el convenio **al motor**: que `dirDeRumbo` coincida
+   con lo que PlayCanvas le hace de verdad a una entidad rotada en Y.
+2. Pruebas que unan las dos puntas: que el arma alcance lo que el jugador
+   tiene **adelante** —preguntándole a `dirDeRumbo` dónde queda eso— y no
+   lo que tiene atrás.
+
+Y las pruebas del juego **no escriben ángulos a mano**: se los piden al
+convenio. Una decía `player.yaw = 180` con el comentario *"o sea mirando
+hacia -Z"*, que era falso, y pasaba igual porque el arma usaba el convenio
+invertido: las dos mentiras se cancelaban.
+
+---
+
+### 🟡 D-18 — Ningún destello puede durar menos que el techo de `dt`
+
+**El problema.** El fogonazo del disparo duraba 0,06 s. El techo de
+simulación (D-11) es 1/15 = 0,067 s. Un efecto más corto que eso puede
+**nacer y morir dentro del mismo cuadro y no dibujarse nunca**: el código
+lo enciende, el contador se vence antes del siguiente render, y no se ve
+jamás. Pasó exactamente eso, y no apareció en ninguna prueba porque las
+pruebas comprobaban que el efecto se *activara*, no que se *viera*.
+
+**La decisión.** Toda duración de efecto visual queda por encima de
+`PERF.maxDeltaTime`, con margen. Siguen siendo destellos —a 60 cuadros por
+segundo, seis o siete cuadros— pero no se pueden saltear. Vale para el
+trazado, el fogonazo, el arco del cuchillo y cualquier cosa que venga.
+
+---
 
 ## 8. Resumen de anotaciones para el futuro
 
