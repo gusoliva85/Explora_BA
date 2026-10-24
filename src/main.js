@@ -14,6 +14,8 @@ import { Hud } from './ui/hud.js';
 import { mission001 } from './config/mission001.js';
 import { montarPostProceso } from './render/postProcess.js';
 import { SpawnManager } from './enemies/spawnManager.js';
+import { WeaponController } from './combat/weaponController.js';
+import { CombatFx } from './combat/combatFx.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
 import { calidadElegida, Calidad } from './render/postProcess.js';
@@ -207,6 +209,44 @@ const zombis = new SpawnManager(app, collision, builder.mats, bus);
 zombis.preparar(mission001);
 console.info(`[zombis] ${zombis.stats.total} puestos repartidos en el mapa`);
 
+// --- Combate ---------------------------------------------------------------
+
+const efectos = new CombatFx(app, builder.mats);
+
+/*
+ * El arma. Resuelve el arco y el daño; los efectos y el ruido se enganchan
+ * por callbacks, para que el controlador no tenga que conocer ni la escena
+ * ni el gestor de zombis.
+ */
+const arma = new WeaponController({
+  armaInicial: 'knife',
+
+  alIniciarAtaque: ({ x, z, rumbo, conectaria }) => {
+    /*
+     * El arco se muestra al APRETAR, no al conectar. Es lo que hace que el
+     * golpe se sienta inmediato aunque el daño salga unas centesimas
+     * despues: el jugador ve que su orden se registro.
+     */
+    efectos.mostrarArco({ x, y: 0, z }, rumbo, conectaria);
+  },
+
+  alGolpear: ({ objetivo, daño, dirX, dirZ }) => {
+    objetivo.recibirDaño(daño, { dirX, dirZ, fuente: 'jugador' });
+    const q = objetivo.posicion;
+    efectos.mostrarImpacto(q.x, q.z);
+    // Sacudon corto: marca el impacto sin estorbar la lectura.
+    camera.sacudir(0.12, 0.14);
+  },
+
+  alFallar: () => {
+    // Nada de sacudon: fallar tiene que sentirse distinto a acertar.
+  },
+
+  alHacerRuido: ({ x, z, radio }) => {
+    zombis.propagarRuido(x, z, radio);
+  }
+});
+
 console.info(
   `[mundo] ${built.stats.boxes} cajas, ${built.stats.colliders} colisionadores, ` +
     `${built.markers.length} marcadores`
@@ -220,6 +260,7 @@ function startMission({ fromCheckpoint = false } = {}) {
 
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
   zombis.reiniciar();
+  arma.equipar('knife');
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -357,6 +398,14 @@ app.on('update', (rawDt) => {
     camera.setStreetHeading(mission.streetHeading(player.position));
     actualizarBrujula();
 
+    // --- Ataque del jugador ------------------------------------------------
+    const pos2d = { x: player.position.x, z: player.position.z };
+    if (input.wasPressed('attack')) {
+      arma.atacar(pos2d, player.yaw, zombis.enJuego);
+    }
+    arma.update(dt, pos2d, player.yaw, zombis.enJuego);
+    efectos.update(dt);
+
     const p = player.position;
     zombis.update(dt, { x: p.x, z: p.z }, player.health > 0, (daño, zombi) => {
       const golpeo = player.applyDamage(daño, 'zombi');
@@ -378,6 +427,7 @@ app.on('update', (rawDt) => {
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
+  debug.set('arma', `${arma.equipada} ${arma.estado}`);
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
   debug.set('equipo', device.describe());
 
@@ -401,7 +451,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis,
+  postProceso, calidad, zombis, arma, efectos,
   // Los numeros de balance, para poder verificarlos desde una prueba.
   balance: { PLAYER, CAMERA, UNITS, PERF, ZOMBIE_STANDARD }
 };

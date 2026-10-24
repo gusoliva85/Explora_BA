@@ -8,8 +8,11 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B, 3 y **4**.
-> **Fase siguiente:** **Fase 5 — Combate cuerpo a cuerpo.** No empezada.
+> **Fases cerradas:** 0, 1, 2, 2B, 3, 4 y **5**.
+> **Fase siguiente:** **Fase 6 — Pistola y sistema de ruido.** No empezada.
+>
+> El repositorio está en
+> **[github.com/gusoliva85/Explora_BA](https://github.com/gusoliva85/Explora_BA)**.
 >
 > La última sesión cerró la Fase 2 (cámara a 57° con la calle en diagonal y
 > HUD vertical) y una Fase 2B que **no estaba planificada**: la reforma del
@@ -24,8 +27,13 @@
 > la calle. Y hay **zombis**: te detectan por vista o por cercanía, te
 > persiguen esquivando obstáculos, te muerden y la cámara se sacude.
 >
-> **Lo que falta para que sea un juego:** no se puede atacar. Hoy solo se
-> puede correr. Eso es la Fase 5.
+> Y **se puede pelear**: el cuchillo barre un arco, puede alcanzar a varios
+> zombis de un golpe, los empuja y los interrumpe. Dos cuchillazos matan a
+> un zombi estándar.
+>
+> **Ya es un juego**: hay un objetivo, enemigos que te buscan, y la decisión
+> de pelear o correr. Lo que falta es profundidad: arma a distancia, el
+> ruido que atrae, objetos y la misión completa.
 >
 > **Lo que no existe todavía:** zombis, combate, armas, objetos, audio y
 > cualquier arte que no sean cajas de colores.
@@ -87,8 +95,8 @@ juego funciona.
 | 2B | Render y dirección visual | Pipeline HDR, luz de día, interfaz rehecha | ✅ |
 | 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | ✅ |
 | 4 | El primer zombi | Te detecta, te persigue, te muerde | ✅ |
-| 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | 🔄 **siguiente** |
-| 6 | Pistola y ruido | Arma a distancia con consecuencias | ⬜ |
+| 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | ✅ |
+| 6 | Pistola y ruido | Arma a distancia con consecuencias | 🔄 **siguiente** |
 | 7 | Bazooka | El especial con barra de espera | ⬜ |
 | 8 | Objetos e inventario | Munición y curación que se recogen y se usan | ⬜ |
 | 9 | Misión completa | Controles, victoria, derrota, reinicio, guardado | ⬜ |
@@ -144,6 +152,31 @@ un disparo que escuchó a veinte metros sabe demasiado. Lo usa la Fase 6.
 **Un golpe interrumpe aunque no mate.** Sin eso, un zombi que ya empezó a
 atacar te pega igual por más que le des primero, y el combate se siente
 injusto.
+
+### Decisiones que se tomaron construyéndola
+
+**El golpe tiene una demora de 0,12 s entre apretar y aplicar daño.** Con
+daño instantáneo el zombi muere en el mismo cuadro en que empieza la
+animación: no hay nada que anticipar y el golpe se siente despegado del
+personaje. La demora también abre la puerta a que un zombi alcance a
+interrumpirte, que es de donde sale la tensión del cuerpo a cuerpo.
+
+**El golpe se resuelve desde donde mirás al conectar, no al apretar.** Si
+fuera al apretar, girar durante el swing no serviría de nada.
+
+**El arco se muestra al apretar, el daño sale después.** Es lo que hace que
+el golpe se sienta inmediato aunque el daño llegue unas centésimas más
+tarde: el jugador ve que su orden se registró.
+
+**El color del arco dice el resultado.** Cálido y fuerte si conecta, un
+trazo frío y tenue si falla. "Fallaste" y "el arma no hizo nada" son dos
+cosas muy distintas para quien está jugando.
+
+**Un error de diseño que corregí a mitad de camino:** el arco se dibujaba
+desde el bucle principal, pegado al chequeo del botón. Eso significaba que
+un ataque que no viniera del botón —una prueba, una captura, un ataque
+automático más adelante— no mostraba nada. Lo moví adentro del arma, que es
+la única que sabe de verdad que atacó.
 
 ### Cómo se prueba
 
@@ -520,29 +553,36 @@ reabren acá: lo único que se ajusta es la inclinación.
 
 ---
 
-# FASE 5 — Combate cuerpo a cuerpo ⬜
+# FASE 5 — Combate cuerpo a cuerpo ✅
 
 **Objetivo:** el cuchillo. Que pegarle a un zombi se sienta bien.
 
 ### Tareas
 
-| # | Tarea |
-|---|---|
-| 5.1 | `WeaponController`: arma equipada, tiempos de espera, estados |
-| 5.2 | Ataque con arco: alcance de 1,7 m y 55° a cada lado |
-| 5.3 | Demora entre apretar y golpear (0,12 s), para sincronizar con la animación |
-| 5.4 | Que un solo golpe pueda alcanzar a varios zombis del arco |
-| 5.5 | Que un golpe no pegue dos veces al mismo zombi |
-| 5.6 | Reacción del zombi al recibir daño: empujón hacia atrás e interrupción |
-| 5.7 | Muerte del zombi: apagar IA y colisión, dejar el cuerpo unos segundos, desaparecer |
-| 5.8 | Reutilizar los zombis muertos en vez de crear y destruir (evita tirones por recolección de basura) |
-| 5.9 | Retroalimentación de impacto: destello en el zombi, partícula, sacudón de cámara |
-| 5.10 | Retroalimentación de fallo: que se note que tiraste el golpe al aire |
-| 5.11 | Que el cuchillo emita un evento de ruido de 2 m (D-05) |
+| # | Tarea | Estado |
+|---|---|---|
+| 5.1 | `WeaponController`: arma equipada, tiempos y estados | ✅ lógica pura, sin motor |
+| 5.2 | Ataque con arco: 1,7 m y 55° a cada lado | ✅ |
+| 5.3 | Demora entre apretar y golpear | ✅ y el golpe sale desde donde mirás al conectar, no al apretar |
+| 5.4 | Un golpe alcanza a varios zombis | ✅ |
+| 5.5 | Un golpe no pega dos veces al mismo zombi | ✅ |
+| 5.6 | Empujón e interrupción al recibir daño | ✅ venía de la Fase 4 |
+| 5.7 | Muerte: se desploma, queda unos segundos y se recicla | ✅ |
+| 5.8 | Reutilizar los zombis muertos | ✅ venía de la Fase 4 |
+| 5.9 | Arco visible, destello en el zombi y sacudón | ✅ |
+| 5.10 | El fallo se ve distinto del acierto | ✅ el arco cambia de color y no hay sacudón |
+| 5.11 | El cuchillo hace ruido de 2 m (D-05) | ✅ conectado al sistema de zombis |
 
 ### Cómo se prueba
 
-1. Golpear al aire → se ve la animación, no pasa nada más.
+```
+npm test             20 pruebas nuevas del arco y los tiempos
+npm run test:e2e     que matar un zombi funcione de punta a punta
+```
+
+A mano:
+
+1. Golpear al aire → se ve el arco frío, no pasa nada más.
 2. Golpear a un zombi → se ve el impacto, pierde vida, retrocede.
 3. Dos cuchillazos → el zombi muere y el cuerpo queda unos segundos.
 4. Golpear a tres zombis juntos → los alcanza a todos, una vez a cada uno.
@@ -553,10 +593,21 @@ reabren acá: lo único que se ajusta es la inclinación.
 
 ### Criterio de salida
 
-- [ ] Se entiende sin dudas cuándo acertaste y cuándo fallaste
-- [ ] Dos cuchillazos matan a un zombi estándar
-- [ ] Matar muchos zombis no degrada el rendimiento
-- [ ] Un zombi se puede derrotar sin recibir daño si lo hacés bien
+- [x] Se entiende sin dudas cuándo acertaste y cuándo fallaste
+- [x] Dos cuchillazos matan a un zombi estándar (hay una prueba que lo fija
+      leyendo el balance real, no un número copiado)
+- [x] Matar muchos zombis no degrada el rendimiento: se reciclan
+- [ ] **Un zombi se puede derrotar sin recibir daño si lo hacés bien** —
+      pendiente de tu criterio jugando
+
+### ⚠️ Lo que quedó anotado
+
+**El balance del cuerpo a cuerpo no está ajustado.** Los números de partida
+son los del documento 02: 45 de daño, 1,7 m de alcance, 0,55 s de espera.
+Se ajustan jugando, y mejor con la pistola ya puesta para poder comparar.
+
+**No hay animación de ataque.** Gus no se mueve al golpear: lo que se ve es
+el arco. Eso llega con el modelo, en la Fase 12.
 
 ---
 

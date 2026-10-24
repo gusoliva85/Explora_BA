@@ -64,6 +64,18 @@ export class Zombie {
     /** Segundos que queda el cuerpo antes de reciclarse. */
     this.restanteCadaver = 0;
     this.rumboVisual = 0;
+    /** Segundos de parpadeo blanco tras un golpe. */
+    this.restanteDestello = 0;
+
+    /*
+     * Material propio para el destello.
+     *
+     * Los zombis comparten materiales para poder agruparse, asi que no se
+     * puede tocar el color de uno sin afectar a todos. La solucion es una
+     * capa aparte: una copia del torso, mas grande y emisiva, que se
+     * enciende solo cuando este zombi recibe un golpe.
+     */
+    this.destello = this.#crearDestello();
 
     this.entity.enabled = false;
   }
@@ -115,6 +127,28 @@ export class Zombie {
     return raiz;
   }
 
+  /** Capa blanca que se enciende al recibir un golpe. */
+  #crearDestello() {
+    const mat = new pc.StandardMaterial();
+    mat.diffuse = new pc.Color(0, 0, 0);
+    mat.emissive = new pc.Color(1, 0.9, 0.85);
+    mat.useLighting = false;
+    mat.blendType = pc.BLEND_ADDITIVE;
+    mat.depthWrite = false;
+    mat.opacity = 0;
+    mat.update();
+
+    const e = new pc.Entity('Destello');
+    e.addComponent('render', { type: 'capsule', material: mat, castShadows: false });
+    e.setLocalScale(0.58, 0.46, 0.46);
+    e.setLocalPosition(0, 1.05, -0.08);
+    e.setLocalEulerAngles(16, 0, 0);
+    e.enabled = false;
+    this.entity.addChild(e);
+    e.material = mat;
+    return e;
+  }
+
   // =========================================================================
   // CICLO DE VIDA
   // =========================================================================
@@ -125,6 +159,8 @@ export class Zombie {
    * basura, que en un telefono se notan muchisimo.
    */
   activar(x, z, azar) {
+    this.restanteDestello = 0;
+    this.destello.enabled = false;
     this.entity.setPosition(x, 0, z);
     this.entity.enabled = true;
     this.activo = true;
@@ -167,6 +203,8 @@ export class Zombie {
 
     if (this.health.vivo) {
       this.ai.aturdir(0.25);
+      this.restanteDestello = 0.14;
+      this.destello.enabled = true;
       // Empujon hacia atras, para que se note el impacto.
       if (info.dirX !== undefined) {
         const p = this.posicion;
@@ -207,6 +245,13 @@ export class Zombie {
     if (!this.activo) return false;
 
     this.health.update(dt);
+
+    if (this.restanteDestello > 0) {
+      this.restanteDestello -= dt;
+      this.destello.material.opacity = Math.max(0, this.restanteDestello / 0.14) * 0.75;
+      this.destello.material.update();
+      if (this.restanteDestello <= 0) this.destello.enabled = false;
+    }
 
     if (!this.health.vivo) {
       this.restanteCadaver -= dt;
