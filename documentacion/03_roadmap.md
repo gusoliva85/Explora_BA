@@ -97,7 +97,7 @@ juego funciona.
 | 0.7 | Pruebas unitarias con Vitest | ✅ |
 | 0.8 | Prueba de humo en navegador real con Playwright | ✅ |
 | 0.9 | `npm run dev:lan` para abrir desde el teléfono | ✅ |
-| 0.10 | **Pendiente tuyo:** `git init` y primer commit | ⬜ |
+| 0.10 | `git init` y primer commit | ✅ |
 
 ### Cómo se prueba
 
@@ -176,7 +176,7 @@ distinga menú, juego, pausa, victoria y derrota.
 | 2.15 | HUD en layout vertical, con las acciones en dos filas | ✅ |
 | 2.16 | Anillo ámbar en el piso para no perder de vista a Gus | ✅ |
 | 2.17 | Prólogo de 26 m de calle por detrás del spawn, para que no se vea el borde del mapa | ✅ |
-| 2.18 | : captura del juego con perfil de celular | ✅ |
+| 2.18 | `tools/captura.mjs`: captura del juego con perfil de celular | ✅ |
 
 ### Cómo se prueba
 
