@@ -84,7 +84,15 @@ contraintuitivas a propósito.
 npm test          # unitarias, sin navegador, menos de un segundo
 npm run test:e2e  # en navegador real, incluye perfil de celular
 npm run test:all  # todo
+npm run verificar # compila y comprueba que la version de produccion CORRA
 ```
+
+`npm run verificar` no es lo mismo que `npm run build`. Un build puede
+terminar sin errores y la pagina quedar en negro: un import que solo
+existia en desarrollo, un recurso que no se copio, una diferencia de
+minificacion. El verificador compila, sirve el resultado y lo abre con
+perfil de celular para comprobar que arranca y se juega. Conviene correrlo
+antes de publicar.
 
 Las de navegador hacen cosas que ninguna unitaria puede: caminan el
 recorrido entero de la misión verificando que siga siendo transitable con
@@ -124,6 +132,23 @@ Están todas en el documento 02. Las que más sorprenden:
 - Blender, para los modelos, a partir de la Fase 12
 
 ---
+
+## Despliegue
+
+Cada push a `main` publica solo en Vercel. La configuracion es la que trae
+el preset de Vite:
+
+| | |
+|---|---|
+| Framework | Vite |
+| Root Directory | `./` |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+| Install Command | `npm install` |
+| Node | 20.19 o mas nuevo (fijado en `engines`) |
+
+No hace falta ninguna variable de entorno: el juego corre entero en el
+navegador y no habla con ningun servicio.
 
 ## Licencias
 

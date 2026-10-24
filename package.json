@@ -4,6 +4,9 @@
   "private": true,
   "description": "Juego de supervivencia zombi en 3D para navegador movil, ambientado en Buenos Aires.",
   "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite",
     "dev:lan": "vite --host",
@@ -12,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:all": "vitest run && playwright test"
+    "test:all": "vitest run && playwright test",
+    "verificar": "node tools/verificar-produccion.mjs"
   },
   "dependencies": {
     "playcanvas": "^2.23.3"
