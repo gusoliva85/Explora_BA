@@ -9,16 +9,20 @@
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
 > **Fases cerradas:** 0, 1, 2 y 2B.
-> **Fase siguiente:** **Fase 3 — El mapa de la Misión 001.** No empezada.
+> **Fase en curso:** **Fase 3 — El mapa de la Misión 001.** Avanzada, con
+> cuatro tareas pendientes anotadas abajo.
 >
 > La última sesión cerró la Fase 2 (cámara a 57° con la calle en diagonal y
 > HUD vertical) y una Fase 2B que **no estaba planificada**: la reforma del
 > render y la dirección visual. Se agregó al roadmap para que quede
 > registrada, no se hizo "de más" en silencio.
 >
-> **Lo que está jugable hoy:** Gus camina por tres cuadras de Boedo en
-> grey-box, de día, con cámara en diagonal, colisiones, controles táctiles y
-> de teclado, controles intermedios, victoria y derrota.
+> **Lo que está jugable hoy:** Gus camina por tres cuadras de Boedo
+> pobladas —árboles, autos, taxis, colectivos, barricadas, contenedores,
+> kiosco, semáforos, comisaría—, de día, con cámara en diagonal, pintura
+> vial, brújula al objetivo, controles intermedios, victoria y derrota.
+> Una prueba automatizada camina la ruta entera y verifica que sea
+> transitable con todos los obstáculos puestos.
 >
 > **Lo que no existe todavía:** zombis, combate, armas, objetos, audio y
 > cualquier arte que no sean cajas de colores.
@@ -78,7 +82,7 @@ juego funciona.
 | 1 | Escena y bucle | Una calle gris, cámara, estados de partida | ✅ |
 | 2 | Movimiento y cámara | Gus camina por una calle en diagonal a 57° | ✅ |
 | 2B | Render y dirección visual | Pipeline HDR, luz de día, interfaz rehecha | ✅ |
-| 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | 🔄 **siguiente** |
+| 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | 🔄 **en curso** |
 | 4 | El primer zombi | Te detecta, te persigue, te muerde | ⬜ |
 | 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | ⬜ |
 | 6 | Pistola y ruido | Arma a distancia con consecuencias | ⬜ |
@@ -295,7 +299,7 @@ poco.
 
 ---
 
-# FASE 3 — El mapa de la Misión 001 🔄 SIGUIENTE
+# FASE 3 — El mapa de la Misión 001 🔄 EN CURSO
 
 **Objetivo:** que los tres tramos del recorrido existan completos y se sienta
 una calle de Buenos Aires, todavía en cajas de colores.
@@ -306,40 +310,85 @@ una calle de Buenos Aires, todavía en cajas de colores.
 
 ### Tareas
 
-| # | Tarea |
-|---|---|
-| 3.1 | Dibujar el plano del recorrido en papel: dónde van los cuellos de botella, dónde las rutas alternativas, dónde conviene que haya recursos |
-| 3.2 | Marcar en el plano los dos controles y la comisaría |
-| 3.3 | Diseñar al menos **dos rutas alternativas** reales (hoy el pasillo es único; el pilar de "decisiones rápidas" del 01 pide una ruta directa peligrosa y un desvío largo y seguro) |
-| 3.4 | Agregar pasajes y patios internos a los que se entre desde los huecos entre edificios |
-| 3.5 | Colocar barricadas a mano en los puntos donde el diseño lo pide (hoy los autos son aleatorios) |
-| 3.6 | Marcar las zonas donde después van a aparecer zombis y objetos |
-| 3.7 | Diferenciar visualmente los tres tramos (residencial / comercial / mixto) con colores de fachada y alturas |
-| 3.8 | Agregar un indicador de dirección al objetivo: flecha o brújula en el HUD |
-| 3.9 | Revisar las direcciones reales en un mapa y corregir los textos (ver D-04: Billinghurst no queda en Boedo) |
-| 3.10 | Medir cuánto se tarda en recorrerlo caminando y corriendo, sin enemigos |
-| 3.11 | Árboles en las veredas, con copa low-poly y sombra |
-| 3.12 | Más props: contenedores, bolsas, paradas de colectivo, kiosco de esquina |
-| 3.13 | Sendas peatonales y líneas de calzada pintadas |
-| 3.14 | Variar alturas y retiros de los edificios para que la cuadra no sea un muro parejo |
-| 3.15 | Revisar el presupuesto de draw calls al terminar: hoy está en ~160 |
+| # | Tarea | Estado |
+|---|---|---|
+| 3.1 | Plano del recorrido: cuellos de botella, rutas y recursos | ✅ documentado en `mission001.js` |
+| 3.2 | Marcar los dos controles y la comisaría | ✅ |
+| 3.3 | **Dos rutas alternativas reales** | ⬜ **pendiente** |
+| 3.4 | Pasajes y patios internos transitables | ⬜ **pendiente** |
+| 3.5 | Barricadas colocadas a mano en los puntos que el diseño pide | ✅ |
+| 3.6 | Marcar las zonas donde van a aparecer zombis y objetos | ⬜ **pendiente** |
+| 3.7 | Diferenciar visualmente los tres tramos | 🔄 parcial: varían altura y densidad, falta carácter propio |
+| 3.8 | Brújula con dirección y distancia al objetivo | ✅ |
+| 3.9 | Revisar las direcciones reales y corregir los textos | ✅ el destino pasó a ser una comisaría sobre Carlos Calvo |
+| 3.10 | Medir el recorrido | ✅ 320 m en línea recta, 329 caminados: +6 % de desvío |
+| 3.11 | Árboles de vereda con cantero, tronco y copa | ✅ |
+| 3.12 | Props: contenedores, bolsas, cestos, bancos, paradas, kiosco, semáforos, carteles | ✅ |
+| 3.13 | Pintura vial: eje, líneas de borde y sendas peatonales | ✅ |
+| 3.14 | Variar alturas y retiros de los edificios | ✅ más balcones, medianeras y tanques |
+| 3.15 | Revisar el presupuesto de draw calls | 🔄 246, por encima del objetivo de 150 |
+
+### Lo que se construyó
+
+**Biblioteca de props** (`src/world/props.js`): quince objetos armados con
+piezas, no cubos pintados. Un auto tiene carrocería, cabina, cuatro ruedas,
+parabrisas y luces; un árbol tiene cantero, cordón, tronco y tres lóbulos de
+copa de verdes distintos.
+
+**Paleta compartida** (`src/world/palette.js`): la regla es que dos
+superficies que se tocan nunca compartan valor, y que el color saturado se
+reserve para lo que importa —toldos, taxis, semáforos, objetos de misión—.
+
+**Diseño a mano vs. generado**: lo que cambia cómo se JUEGA vive en
+`mission001.js`; lo que solo cambia cómo se VE lo genera la semilla. Y lo
+colocado a mano **reserva** una zona donde el generador no puede poner nada,
+porque si no un auto al azar puede cerrar el paso que una barricada dejaba
+abierto a propósito.
+
+**Agrupado estático de mallas**: 1774 mallas se funden en unos 265 lotes.
+Sin eso, esto no corre en un teléfono.
 
 ### Cómo se prueba
 
-1. Caminar el recorrido entero de principio a fin: ¿se entiende hacia dónde ir
-   sin leer el objetivo?
+```
+npm run test:e2e     incluye la prueba que camina la ruta entera
+```
+
+Esa prueba es nueva y es la más útil de la fase: un caminante tosco recorre
+los tres tramos esquivando obstáculos y, si se traba, informa **la
+coordenada exacta y qué caja lo bloquea**. Ya encontró dos problemas reales:
+un colectivo colocado a mano que el tráfico generado terminaba de tapar, y
+un paso de menos de un metro junto al cordón.
+
+A mano:
+
+1. Caminar el recorrido entero: ¿se entiende hacia dónde ir sin leer el
+   objetivo? ¿La brújula ayuda o estorba?
 2. Intentar perderse a propósito: ¿hay algún lugar donde quedarse trabado?
-3. Recorrerlo por las rutas alternativas: ¿son realmente distintas o son un
-   adorno?
-4. Cronometrarlo: entre 90 segundos y 3 minutos corriendo sin enemigos es el
-   rango sano. Más de eso, se acorta.
+3. Cronometrarlo: entre 90 segundos y 3 minutos corriendo sin enemigos es el
+   rango sano.
+4. **En el teléfono:** mirar el overlay (F1 o tres dedos). Hoy son 246 draw
+   calls y el objetivo son 150.
 
 ### Criterio de salida
 
-- [ ] El recorrido completo se camina sin trabarse en ningún lado
+- [x] El recorrido completo se camina sin trabarse en ningún lado
 - [ ] Hay al menos dos rutas alternativas que cambian la experiencia
 - [ ] Una persona que nunca vio el juego sabe hacia dónde ir
 - [ ] El recorrido corriendo toma entre 90 s y 3 min
+- [ ] Los draw calls bajan de 150 en el teléfono
+
+### ⚠️ Lo que falta para cerrar la fase
+
+1. **Las rutas alternativas (3.3).** Es lo más importante que queda. Hoy los
+   cuellos de botella dejan huecos por donde pasar, pero el recorrido sigue
+   siendo un pasillo único: no hay una decisión de "por acá es más corto y
+   más peligroso, por allá más largo y más seguro". Eso es un pilar del
+   documento 01 y todavía no está.
+2. **Pasajes y patios (3.4).** Los baldíos existen pero son decorado: no se
+   entra.
+3. **Zonas de zombis y objetos (3.6).** Hace falta antes de la Fase 4.
+4. **Draw calls (3.15).** 246 contra un objetivo de 150.
 
 ---
 

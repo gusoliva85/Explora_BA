@@ -37,23 +37,42 @@ test('el juego arranca, se juega y no tira errores', async ({ page }) => {
 
   // El mundo se construyo con una cantidad razonable de geometria.
   const worldStats = await page.evaluate(() => globalThis.game.builder.stats);
-  expect(worldStats.boxes).toBeGreaterThan(40);
-  expect(worldStats.colliders).toBeGreaterThan(20);
+  expect(worldStats.piezas).toBeGreaterThan(200);
+  expect(worldStats.props).toBeGreaterThan(50);
+  expect(worldStats.colliders).toBeGreaterThan(60);
 
-  // Caminar hacia adelante tiene que mover al jugador.
+  /*
+   * Caminar hacia adelante tiene que mover al jugador.
+   *
+   * Se espera a que se haya movido, en vez de medir cuanto se movio en un
+   * tiempo fijo. El motivo: esta prueba corre con WebGL por software, y
+   * como el bucle acota el dt a 1/15 de segundo (ver PERF.maxDeltaTime),
+   * cuando la escena pesa el reloj del juego avanza bastante mas lento que
+   * el de pared. Medir metros por segundo de reloj real daria un numero
+   * que depende de lo cargada que este la maquina de pruebas, no del
+   * juego.
+   */
   const before = await page.evaluate(() => {
     const p = globalThis.game.player.position;
     return { x: p.x, z: p.z };
   });
   await page.keyboard.down('KeyW');
-  await page.waitForTimeout(700);
+  await page.waitForFunction(
+    (inicio) => {
+      const p = globalThis.game.player.position;
+      return Math.hypot(p.x - inicio.x, p.z - inicio.z) > 1.5;
+    },
+    before,
+    { timeout: 15000 }
+  );
   await page.keyboard.up('KeyW');
+
+  // Y la direccion tiene que ser la correcta: al arrancar, calle abajo.
   const after = await page.evaluate(() => {
     const p = globalThis.game.player.position;
     return { x: p.x, z: p.z };
   });
-  const moved = Math.hypot(after.x - before.x, after.z - before.z);
-  expect(moved).toBeGreaterThan(0.5);
+  expect(after.z).toBeLessThan(before.z);
 
   expect(errors).toEqual([]);
 });

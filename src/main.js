@@ -240,6 +240,38 @@ bus.on(EV.MISSION_COMPLETE, () => {
   state.set(State.MISSION_COMPLETE);
 });
 
+/**
+ * Actualiza la flecha que apunta al proximo objetivo.
+ *
+ * El angulo es RELATIVO a la camara, no absoluto: al jugador le sirve
+ * saber que el objetivo queda a su izquierda, no que queda al noroeste.
+ * Se calcula el rumbo hacia el destino y se le resta el de la camara; lo
+ * que queda es cuanto girar la flecha en pantalla.
+ *
+ * Con la calle poblada de autos, arboles y barricadas, el marcador del
+ * piso deja de verse desde lejos. Esta flecha es lo que reemplaza eso.
+ */
+function actualizarBrujula() {
+  const destino = mission.objetivoActual();
+  if (!destino) {
+    hud.mostrarBrujula(false);
+    return;
+  }
+
+  const p = player.position;
+  const dx = destino.x - p.x;
+  const dz = destino.z - p.z;
+  const distancia = Math.hypot(dx, dz);
+
+  // Mismo convenio que la camara: rumbo cero es mirar hacia -Z.
+  const rumboDestino = Math.atan2(-dx, -dz) * pc.math.RAD_TO_DEG;
+  // El glifo de la flecha apunta a la derecha, de ahi el -90.
+  const relativo = rumboDestino - camera.yaw - 90;
+
+  hud.mostrarBrujula(true);
+  hud.setBrujula(relativo, distancia);
+}
+
 function pause() {
   if (state.current !== State.PLAYING) return;
   state.set(State.PAUSED);
@@ -312,6 +344,7 @@ app.on('update', (rawDt) => {
     mission.update(dt, player.position);
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
     camera.setStreetHeading(mission.streetHeading(player.position));
+    actualizarBrujula();
   }
 
   // La camara se actualiza siempre: en pausa y en los resultados la escena

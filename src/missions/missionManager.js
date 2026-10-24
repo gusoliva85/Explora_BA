@@ -64,6 +64,23 @@ export class MissionManager {
     return mejor;
   }
 
+  /**
+   * El punto al que hay que ir ahora: el proximo control pendiente, o la
+   * meta si ya estan todos tomados.
+   *
+   * @returns {{x:number, z:number, label:string}|null}
+   */
+  objetivoActual() {
+    if (this.completed) return null;
+    const cp = this.mission.checkpoints[this.nextCheckpoint];
+    if (cp) {
+      const p = this.mission.route[cp.atRouteIndex];
+      return { x: p.x, z: p.z, label: cp.label };
+    }
+    const g = this.mission.route[this.mission.goal.atRouteIndex];
+    return { x: g.x, z: g.z, label: this.mission.goal.label };
+  }
+
   get objectiveText() {
     const i = Math.min(this.nextCheckpoint, this.mission.objectives.length - 1);
     return this.mission.objectives[i];

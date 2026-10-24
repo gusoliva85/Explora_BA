@@ -45,7 +45,7 @@ const estado = await page.evaluate(() => ({
   camObjetivo: globalThis.game.camera.targetYaw.toFixed(1),
   camPitch: globalThis.game.camera.pitch.toFixed(1),
   modo: globalThis.game.device.describe(),
-  cajas: globalThis.game.builder.stats.boxes,
+  stats: JSON.stringify(globalThis.game.builder.stats),
   drawCalls: globalThis.game.app.stats.drawCalls.total
 }));
 console.log(estado);

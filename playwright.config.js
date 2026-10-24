@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [
     {
       name: 'escritorio',
-      testMatch: 'smoke.spec.js',
+      testMatch: /(smoke|recorrido)\.spec\.js/,
       use: { ...devices['Desktop Chrome'] }
     },
     {

@@ -38,6 +38,9 @@ export class Hud {
       gameoverDetail: document.getElementById('gameover-detail'),
       loadingBar: document.getElementById('loading-bar'),
       bar: document.querySelector('.bar-health'),
+      brujula: document.getElementById('brujula'),
+      brujulaFlecha: document.getElementById('brujula-flecha'),
+      brujulaTexto: document.getElementById('brujula-texto'),
       dano: document.getElementById('dano')
     };
 
@@ -106,6 +109,29 @@ export class Hud {
     el.classList.remove('activo');
     void el.offsetWidth;
     el.classList.add('activo');
+  }
+
+  /**
+   * Brujula hacia el objetivo.
+   *
+   * Con la calle poblada de autos, arboles y barricadas, el marcador del
+   * piso deja de verse desde lejos. La flecha resuelve la pregunta que el
+   * jugador se hace todo el tiempo: hacia donde sigo.
+   *
+   * El angulo es RELATIVO a la camara, no absoluto: la flecha tiene que
+   * apuntar a donde el jugador ve, no al norte.
+   *
+   * @param {number} anguloGrados 0 = hacia arriba de la pantalla
+   * @param {number} distancia en metros
+   */
+  setBrujula(anguloGrados, distancia) {
+    if (!this.el.brujulaFlecha) return;
+    this.el.brujulaFlecha.style.transform = `rotate(${anguloGrados.toFixed(1)}deg)`;
+    this.el.brujulaTexto.textContent = `${Math.round(distancia)} m`;
+  }
+
+  mostrarBrujula(visible) {
+    this.el.brujula?.classList.toggle('hidden', !visible);
   }
 
   setObjective(text) {

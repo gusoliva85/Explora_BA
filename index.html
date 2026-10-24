@@ -73,7 +73,15 @@
             <span id="health-text" class="stat-value">100</span>
             <button id="btn-pause" class="btn btn-icon" aria-label="Pausa">II</button>
           </div>
-          <div id="objective" class="objective">Objetivo: llegar al primer control</div>
+          <div class="fila-objetivo">
+            <div id="objective" class="objective">Objetivo: llegar al primer control</div>
+            <!-- Brujula: flecha al proximo objetivo y distancia. La flecha
+                 gira respecto de la camara, no respecto del norte. -->
+            <div id="brujula" class="brujula hidden">
+              <span id="brujula-flecha" class="brujula-flecha">&#10148;</span>
+              <span id="brujula-texto">--</span>
+            </div>
+          </div>
         </div>
 
         <div class="hud-bottom">
