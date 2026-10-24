@@ -22,7 +22,7 @@ export default defineConfig({
       // Perfil de celular completo: pantalla, densidad, puntero grueso y
       // eventos tactiles. Es lo que hace que `device.js` lo vea como movil.
       name: 'celular',
-      testMatch: 'mobile.spec.js',
+      testMatch: /(mobile|controles)\.spec\.js/,
       use: { ...devices['Pixel 7'] }
     }
   ],

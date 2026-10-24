@@ -50,7 +50,25 @@ html, body {
   touch-action: none;
 }
 
-#ui-layer { position: absolute; inset: 0; }
+/*
+ * CAPA DE INTERFAZ
+ *
+ * `pointer-events: none` es obligatorio y no es un detalle de estilo.
+ *
+ * Esta capa cubre la pantalla entera por encima del canvas. Sin esta linea
+ * es ella la que recibe cada toque, y el canvas no se entera de nada: el
+ * joystick no aparece, la camara no gira, el juego parece muerto aunque
+ * los botones se vean perfectos. Paso exactamente eso.
+ *
+ * Lo que tiene que recibir toques lo pide de vuelta con `pointer-events:
+ * auto`: las pantallas modales completas, y dentro del HUD solo los
+ * botones y el joystick.
+ */
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
 
 .hidden { display: none !important; }
 
@@ -87,6 +105,8 @@ body.is-desktop #game-canvas:active { cursor: grabbing; }
 .screen {
   position: absolute;
   inset: 0;
+  /* Las modales recuperan los toques: tapan el juego a proposito. */
+  pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;

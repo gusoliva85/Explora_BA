@@ -62,21 +62,37 @@ test('el toque mueve al jugador con el joystick virtual', async ({ page }) => {
     return { x: p.x, z: p.z };
   });
 
-  // Apoyar en la mitad izquierda y arrastrar hacia arriba = caminar adelante.
-  await page.locator('#game-canvas').dispatchEvent('pointerdown', {
-    pointerId: 1, pointerType: 'touch', clientX: 60, clientY: 500, isPrimary: true
+  /*
+   * ATENCION: aca NO se usa `dispatchEvent`.
+   *
+   * Esta prueba antes entregaba los eventos directamente al canvas con
+   * `dispatchEvent`, que saltea la deteccion de impacto del navegador. Por
+   * eso siguio pasando mientras la capa de interfaz se tragaba todos los
+   * toques y el juego, en un telefono de verdad, no respondia a nada.
+   *
+   * Los eventos tactiles por CDP recorren el mismo camino que un dedo:
+   * el navegador decide a quien le tocan. Si algo tapa el canvas, esta
+   * prueba falla, que es lo que tiene que hacer.
+   */
+  const cdp = await page.context().newCDPSession(page);
+  const caja = await page.locator('#game-canvas').boundingBox();
+  const x = caja.x + caja.width * 0.2;
+  const abajo = caja.y + caja.height * 0.78;
+  const arriba = caja.y + caja.height * 0.56;
+
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchStart',
+    touchPoints: [{ x, y: abajo }]
   });
-  await page.locator('#game-canvas').dispatchEvent('pointermove', {
-    pointerId: 1, pointerType: 'touch', clientX: 60, clientY: 420, isPrimary: true
+  await cdp.send('Input.dispatchTouchEvent', {
+    type: 'touchMove',
+    touchPoints: [{ x, y: arriba }]
   });
 
   /*
-   * Se espera a que se haya movido, no se mide cuanto se movio en un tiempo
-   * fijo. Esta prueba corre con WebGL por software, y como el bucle acota
-   * el dt a 1/15 de segundo, cuando la escena pesa —por ejemplo al sumar
-   * zombis— el reloj del juego avanza bastante mas lento que el de pared.
-   * Medir metros por segundo real daria un numero que depende de cuanto
-   * cargada este la maquina de pruebas y no del juego.
+   * Se espera a que se haya movido, no se mide cuanto en un tiempo fijo:
+   * la prueba corre con WebGL por software y, con el techo de dt, el
+   * reloj del juego avanza mas lento que el de pared.
    */
   await page.waitForFunction(
     (inicio) => {
@@ -87,9 +103,7 @@ test('el toque mueve al jugador con el joystick virtual', async ({ page }) => {
     { timeout: 20000 }
   );
 
-  await page.locator('#game-canvas').dispatchEvent('pointerup', {
-    pointerId: 1, pointerType: 'touch', clientX: 60, clientY: 420, isPrimary: true
-  });
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
 
   // Y el joystick tiene que haberlo mandado hacia adelante, no a cualquier lado.
   const after = await page.evaluate(() => {
