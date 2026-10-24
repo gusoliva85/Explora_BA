@@ -61,16 +61,18 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
   const frame = new pc.CameraFrame(app, cameraEntity.camera);
 
   // --- Formato del buffer ---------------------------------------------------
-  // El bloom necesita coma flotante: con 8 bits por canal no existe el
-  // concepto de "mas brillante que el blanco" y no hay nada que derramar.
-  // Se piden formatos de mas a menos calidad; el motor toma el primero que
-  // la placa soporte.
+  // Coma flotante igual que de noche: no por el bloom, sino porque el sol
+  // y el cielo juntos exceden el rango de 8 bits y sin HDR los claros se
+  // recortan en bloques planos.
   frame.rendering.renderFormats = [pc.PIXELFORMAT_111110F, pc.PIXELFORMAT_RGBA16F];
 
   // Renderizar por debajo de la resolucion nativa y reenfocar al final es,
   // lejos, el ajuste que mas FPS devuelve en movil por menos perdida visual.
-  frame.rendering.renderTargetScale = alta ? 1.0 : 0.82;
-  frame.rendering.sharpness = alta ? 0.35 : 0.6;
+  frame.rendering.renderTargetScale = alta ? 1.0 : 0.85;
+  // Enfoque alto: es lo que le devuelve el filo a los bordes despues de
+  // renderizar por debajo de la resolucion nativa, y en un low-poly el
+  // filo del borde ES el detalle.
+  frame.rendering.sharpness = alta ? 0.5 : 0.75;
 
   // Suavizado por multimuestreo. Con TAA encendido no hace falta y seria
   // pagar dos veces por lo mismo.
@@ -79,63 +81,71 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
   /*
    * Mapeo de tonos NEUTRAL.
    *
-   * Es lo que convierte el rango alto en algo mostrable. Se eligio NEUTRAL
-   * sobre ACES porque ACES tiñe las luces calidas hacia el naranja y
-   * desatura las sombras: en una calle iluminada con sodio eso termina
-   * volviendo todo sepia. NEUTRAL conserva el color de la lampara y deja
-   * que el azul de la noche siga siendo azul.
+   * Se eligio sobre ACES porque ACES comprime mucho los claros y desatura:
+   * en una escena de dia eso apaga justamente los colores que se quieren
+   * ver. NEUTRAL mantiene los medios donde estan y solo dobla los altos.
    */
   frame.rendering.toneMapping = pc.TONEMAP_NEUTRAL;
 
   // --- Oclusion ambiental ---------------------------------------------------
-  // Oscurece los rincones: donde la pared toca la vereda, debajo de los
-  // autos, en los huecos entre edificios. Es el efecto que mas hace por que
-  // los objetos parezcan apoyados en el piso y no pegados encima.
-  // Encendida tambien en movil: ahora que ninguna luz proyecta sombras, la
-  // oclusion ambiental es lo unico que apoya los objetos en el piso. Es
-  // cara, pero sin ella todo flota.
+  /*
+   * De dia esta es LA herramienta de definicion. Oscurece el encuentro
+   * entre la pared y la vereda, el hueco bajo los autos, el borde del
+   * cordon. Sin ella un low-poly claro se ve como recortes de papel
+   * pegados unos sobre otros.
+   *
+   * Encendida tambien en movil: cuesta, pero es lo que mas aporta por
+   * milisegundo gastado.
+   */
   frame.ssao.type = pc.SSAOTYPE_LIGHTING;
   frame.ssao.blurEnabled = true;
-  frame.ssao.intensity = 0.7;
-  frame.ssao.radius = 6;
-  frame.ssao.samples = alta ? 12 : 6;
-  frame.ssao.power = 4;
+  frame.ssao.intensity = 0.75;
+  frame.ssao.radius = 4;
+  frame.ssao.samples = alta ? 12 : 7;
+  frame.ssao.power = 5;
 
   // --- Bloom ----------------------------------------------------------------
-  // El alma de la escena nocturna: hace que los faroles, las ventanas
-  // encendidas y el anillo del jugador derramen luz.
-  frame.bloom.intensity = 0.04;
-  frame.bloom.blurLevel = alta ? 16 : 10;
-  // Umbral bajo: queremos que derrame casi todo lo que emite, no solo lo
-  // que quema. Con un umbral alto solo brillarian las lamparas.
-  frame.bloom.threshold = 0.75;
+  /*
+   * Casi apagado, y a proposito. De dia no hay nada que brille mas que el
+   * cielo; un bloom alto solo lava la imagen y se come la definicion. Lo
+   * poco que queda sirve para que el borde de una pared al sol no corte
+   * de forma dura contra la sombra.
+   */
+  frame.bloom.intensity = 0.012;
+  frame.bloom.blurLevel = alta ? 12 : 8;
+  frame.bloom.threshold = 1.1;
 
   // --- Grading --------------------------------------------------------------
-  // Un leve empuje de contraste y saturacion, y un tinte frio que fija la
-  // hora: noche cerrada, no atardecer.
+  /*
+   * Un empujon chico de contraste y saturacion. Nada de tinte: cualquier
+   * desvio de color se nota enseguida en una escena clara, y el pedido es
+   * que los colores sean los que son, algo apagados pero francos.
+   */
   frame.grading.enabled = true;
-  frame.grading.brightness = 1.0;
-  frame.grading.contrast = 1.12;
-  frame.grading.saturation = 1.18;
-  frame.grading.tint = new pc.Color(0.92, 0.96, 1.08);
+  frame.grading.brightness = 1.02;
+  frame.grading.contrast = 1.08;
+  frame.grading.saturation = 1.1;
+  frame.grading.tint = new pc.Color(1, 1, 1);
 
-  // Realce selectivo: levanta las sombras lo justo para que no sean un
-  // agujero negro, baja un poco las luces para que no se quemen, y sube la
-  // vibracion de los colores apagados sin tocar los que ya son intensos.
+  /*
+   * Realce selectivo. Lo importante aca es `shadows`: levanta las zonas en
+   * sombra sin tocar el resto, que es exactamente lo que hace falta para
+   * que la vereda del lado sombreado se siga leyendo.
+   */
   frame.colorEnhance.enabled = true;
-  frame.colorEnhance.shadows = 0.3;
-  frame.colorEnhance.highlights = -0.1;
-  frame.colorEnhance.vibrance = 0.3;
-  frame.colorEnhance.midtones = 0.04;
+  frame.colorEnhance.shadows = 0.22;
+  frame.colorEnhance.highlights = -0.12;
+  frame.colorEnhance.vibrance = 0.14;
+  frame.colorEnhance.midtones = 0.02;
 
   // --- Viñeta ---------------------------------------------------------------
-  // Cierra los bordes y empuja la mirada al centro, donde esta Gus. En una
-  // pantalla de telefono, sostenida cerca de la cara, esto ayuda bastante.
-  frame.vignette.intensity = 0.7;
-  frame.vignette.inner = 0.6;
-  frame.vignette.outer = 1.7;
-  frame.vignette.curvature = 0.6;
-  frame.vignette.color = new pc.Color(0.02, 0.03, 0.05);
+  // Apenas perceptible. Enmarca sin oscurecer: cerrar los bordes de dia es
+  // justo lo contrario de lo que se busca.
+  frame.vignette.intensity = 0.3;
+  frame.vignette.inner = 0.85;
+  frame.vignette.outer = 2.1;
+  frame.vignette.curvature = 0.5;
+  frame.vignette.color = new pc.Color(0.18, 0.2, 0.24);
 
   // --- Suavizado temporal ---------------------------------------------------
   // Limpia los bordes escalonados acumulando varios cuadros. En movil
@@ -144,10 +154,9 @@ export function montarPostProceso(app, cameraEntity, calidad = calidadElegida())
   frame.taa.jitter = 0.5;
 
   // --- Aberracion cromatica -------------------------------------------------
-  // Muy sutil, solo en los bordes. Saca el aspecto de render limpio de
-  // motor y acerca la imagen a algo filmado.
-  frame.fringing.enabled = true;
-  frame.fringing.intensity = alta ? 4 : 2;
+  // Apagada. En una imagen clara y de bordes netos se ve como un defecto,
+  // no como estilo.
+  frame.fringing.enabled = false;
 
   frame.update();
   return { frame, calidad };

@@ -13,7 +13,11 @@ import { MissionManager } from './missions/missionManager.js';
 import { Hud } from './ui/hud.js';
 import { mission001 } from './config/mission001.js';
 import { montarPostProceso } from './render/postProcess.js';
-import { montarLuzAmbiente, crearMaterialesLuz } from './world/lighting.js';
+import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
+import { calidadElegida, Calidad } from './render/postProcess.js';
+
+/** El perfil de calidad decide tambien la resolucion de las sombras. */
+const calidadAlta = () => calidadElegida() === Calidad.ALTA;
 import { PERF, UNITS, CAMERA } from './config/balance.js';
 
 /**
@@ -64,28 +68,28 @@ const input = new InputManager(canvas);
 // --- Escena ----------------------------------------------------------------
 
 /*
- * Iluminacion nocturna. La luz ambiente es practicamente nula a proposito:
- * lo que ilumina la calle son los faroles de sodio, y de eso depende que
- * haya charcos de luz y tramos oscuros en vez de una papilla gris pareja.
+ * Iluminacion de dia: sol con sombras y mucha luz de cielo de relleno.
+ * Ver src/world/lighting.js para el porque de cada numero.
  */
 const matsLuz = crearMaterialesLuz();
-montarLuzAmbiente(app);
+montarLuzAmbiente(app, calidadAlta());
 
 /*
- * Niebla exponencial, no lineal.
+ * Bruma de distancia, muy suave y del color del horizonte.
  *
- * La lineal se come la escena de golpe a partir de cierta distancia y
- * produce una banda visible donde arranca. La exponencial al cuadrado se
- * acumula suave desde el primer metro, que es como se comporta el aire
- * humedo de verdad, y ademas deja ver las luces lejanas a traves de ella.
+ * De dia la niebla no oscurece: aclara. Lo lejano se va destiñendo hacia
+ * el celeste del cielo, que es lo que separa un plano del siguiente y da
+ * profundidad sin tener que oscurecer nada. La densidad es baja a
+ * proposito: lo justo para que el fondo de la cuadra se despegue, no para
+ * tapar.
  */
 app.scene.fog.type = pc.FOG_EXP2;
-app.scene.fog.color = new pc.Color(0.035, 0.045, 0.065);
-app.scene.fog.density = 0.0115;
+app.scene.fog.color = COLOR_HORIZONTE;
+app.scene.fog.density = 0.0055;
 
 const cameraEntity = new pc.Entity('Camara');
 cameraEntity.addComponent('camera', {
-  clearColor: new pc.Color(0.025, 0.033, 0.05),
+  clearColor: COLOR_HORIZONTE,
   fov: CAMERA.fov,
   // El campo se mide a lo ancho, no a lo alto: ver la nota en balance.js.
   horizontalFov: CAMERA.fovHorizontal,
@@ -103,8 +107,8 @@ console.info(`[render] perfil de calidad: ${calidad}`);
 // Suelo de respaldo, por si el jugador se sale del trazado de calles.
 const ground = new pc.Entity('SueloBase');
 const groundMat = new pc.StandardMaterial();
-groundMat.diffuse = new pc.Color(0.045, 0.05, 0.058);
-groundMat.gloss = 0.35;
+groundMat.diffuse = new pc.Color(0.34, 0.35, 0.33);
+groundMat.gloss = 0.1;
 groundMat.metalness = 0;
 groundMat.useMetalness = true;
 groundMat.update();
@@ -120,13 +124,16 @@ app.root.addChild(ground);
  * mira. Se reemplaza por el modelo en la Fase 11; el controlador no cambia.
  */
 const playerEntity = new pc.Entity('Gus');
-// Cuero: oscuro pero con brillo especular alto. Es lo que hace que la
-// silueta se recorte contra el asfalto cuando pasa por un farol, en vez de
-// desaparecer como una mancha negra.
+/*
+ * La campera de cuero de la referencia es negra, pero un negro puro sobre
+ * asfalto gris desaparece. Se usa un gris muy oscuro y azulado: a la
+ * distancia de camara lee como negro, y al mismo tiempo se recorta contra
+ * la calzada. Mate, para no verse de plastico.
+ */
 const bodyMat = new pc.StandardMaterial();
-bodyMat.diffuse = new pc.Color(0.055, 0.06, 0.075);
-bodyMat.metalness = 0.1;
-bodyMat.gloss = 0.72;
+bodyMat.diffuse = new pc.Color(0.1, 0.105, 0.125);
+bodyMat.metalness = 0;
+bodyMat.gloss = 0.22;
 bodyMat.useMetalness = true;
 bodyMat.update();
 const body = new pc.Entity('Cuerpo');
@@ -136,10 +143,10 @@ body.setLocalPosition(0, UNITS.playerHeight / 2, 0);
 playerEntity.addChild(body);
 
 const noseMat = new pc.StandardMaterial();
-noseMat.diffuse = new pc.Color(0, 0, 0);
-noseMat.emissive = new pc.Color(1.0, 0.75, 0.28);
-noseMat.emissiveIntensity = 6;
-noseMat.useLighting = false;
+noseMat.diffuse = new pc.Color(0.95, 0.72, 0.18);
+noseMat.gloss = 0.2;
+noseMat.metalness = 0;
+noseMat.useMetalness = true;
 noseMat.update();
 const nose = new pc.Entity('Frente');
 nose.addComponent('render', { type: 'box', material: noseMat, castShadows: false });
@@ -158,19 +165,20 @@ playerEntity.addChild(nose);
 /*
  * Marca de posicion en el piso.
  *
- * Gus va de negro sobre asfalto nocturno: sin una marca permanente el
- * jugador pierde de vista su propio personaje. Ahora que hay bloom, en vez
- * de un disco opaco alcanza con un emisivo suave: el pipeline lo convierte
- * solo en un resplandor con halo.
+ * De noche alcanzaba con un resplandor aditivo. De dia eso no se ve: sobre
+ * una calzada clara, sumar luz no cambia casi nada. Hace falta un disco
+ * de color solido y semitransparente, como el selector de un juego de
+ * estrategia. Plano, sin iluminar, para que mantenga el mismo color este
+ * al sol o en sombra.
  */
 const ringMat = new pc.StandardMaterial();
 ringMat.diffuse = new pc.Color(0, 0, 0);
-ringMat.emissive = new pc.Color(1.0, 0.72, 0.28);
-ringMat.emissiveIntensity = 1.6;
+ringMat.emissive = new pc.Color(1.0, 0.7, 0.12);
+ringMat.emissiveIntensity = 1;
 ringMat.useLighting = false;
-ringMat.blendType = pc.BLEND_ADDITIVE;
+ringMat.blendType = pc.BLEND_NORMAL;
 ringMat.depthWrite = false;
-ringMat.opacity = 0.5;
+ringMat.opacity = 0.55;
 ringMat.update();
 const ring = new pc.Entity('MarcaJugador');
 ring.addComponent('render', { type: 'cylinder', material: ringMat, castShadows: false });

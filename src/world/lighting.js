@@ -2,104 +2,129 @@ import * as pc from 'playcanvas';
 
 /**
  * ===========================================================================
- * ILUMINACION NOCTURNA
+ * ILUMINACION — DE DIA
  * ===========================================================================
- * Antes habia una sola luz direccional y una luz ambiente alta para que no
- * quedara todo negro. Eso es lo que hacia que la calle se viera plana y
- * gris: sin fuentes de luz puntuales no hay charcos de luz, no hay sombras
- * que se alarguen, y no hay nada para que el bloom muerda.
+ * El juego transcurre de DIA. La version nocturna anterior se descarto por
+ * un motivo simple: obligaba a esforzarse para ver. En un telefono, a
+ * pleno sol y con el brillo a la mitad, una escena oscura no se juega.
  *
- * El esquema que se usa aca es el de una calle real de noche:
+ * El objetivo es un low-poly claro: colores algo apagados y mates, pero con
+ * mucha separacion entre superficies. La definicion no viene del detalle
+ * sino del contraste entre planos, y eso se consigue con tres cosas:
  *
- *   1. Luz ambiente MUY baja y azulada. Es el cielo, nada mas.
- *   2. Una direccional fria y debil, con sombras: la luna. Define las
- *      siluetas y da direccion, pero casi no ilumina.
- *   3. Los faroles de sodio. Son los que de verdad iluminan, y son luces
- *      puntuales con alcance corto. Cada charco de luz es un refugio y
- *      cada tramo oscuro entre dos faroles es tension.
- *   4. Ventanas encendidas. No iluminan nada, pero rompen la masa negra de
- *      las fachadas y el bloom las convierte en puntos vivos.
+ *   1. Un sol fuerte y alto, CON sombras. De dia las sombras no son un
+ *      problema sino la herramienta principal: una sombra nitida en el
+ *      piso dice "esto esta apoyado aca" mejor que cualquier textura.
+ *   2. Luz de cielo abundante y azulada. Rellena las sombras para que
+ *      sigan siendo legibles en vez de ser agujeros negros, y de paso las
+ *      tiñe de azul, que es lo que hace que una escena de dia parezca de
+ *      dia y no un gris sucio.
+ *   3. Oclusion ambiental marcada, que dibuja el contacto entre cada
+ *      objeto y el piso.
  *
- * La regla de rendimiento: UNA sola luz proyecta sombras. Cada luz con
- * sombra cuesta una pasada de render entera, y en un telefono eso se nota
- * enseguida.
+ * Lo que NO se usa: emisivos fuertes ni bloom pronunciado. De dia no hay
+ * nada que brille mas que el cielo, y un bloom alto solo lava la imagen y
+ * se come justamente la definicion que se busca.
  */
 
-/** Color de una lampara de sodio: naranja fuerte, nada de blanco. */
-export const COLOR_SODIO = new pc.Color(1.0, 0.62, 0.26);
+/** Color del sol: calido, casi blanco. */
+export const COLOR_SOL = new pc.Color(1.0, 0.96, 0.88);
 
-/** Color de la luna: azul frio, muy desaturado. */
-export const COLOR_LUNA = new pc.Color(0.55, 0.68, 1.0);
+/**
+ * Luz de cielo: el relleno de las sombras.
+ *
+ * Lleva algo de azul porque el cielo lo tiene, pero mucho menos de lo que
+ * parece razonable. Con un azul franco, el asfalto gris se teñia entero y
+ * la calzada se veia azul marino en vez de gris. La luz ambiente tiñe
+ * TODO, asi que su saturacion se nota mucho mas que la de cualquier
+ * material.
+ */
+export const COLOR_CIELO = new pc.Color(0.56, 0.59, 0.63);
+
+/** Color del horizonte: fondo del cielo y bruma de distancia. */
+export const COLOR_HORIZONTE = new pc.Color(0.74, 0.81, 0.87);
 
 export const LUZ = {
-  /** Lo unico que ilumina las caras que no ven ningun farol. */
-  ambiente: new pc.Color(0.14, 0.185, 0.29),
-  /** Intensidad de la luna. Baja a proposito: define, no ilumina. */
-  lunaIntensidad: 2.4,
-  /** Alcance de un farol, en metros. Mas que esto y la calle se aplana. */
-  farolAlcance: 24,
+  /** Relleno global. Alto a proposito: es lo que mantiene todo legible. */
+  ambiente: COLOR_CIELO,
+  solIntensidad: 2.7,
   /*
-   * Ojo con este numero. Las unidades del motor NO son fisicas salvo que
-   * se active `scene.physicalUnits`, y la caida es inversa al cuadrado:
-   * a siete metros de la lampara, que es la altura del brazo, lo que llega
-   * al piso es una fraccion chica de la intensidad nominal. Con 11 la
-   * calle quedaba literalmente negra.
+   * Elevacion del sol. Es el numero mas sensible de todo el archivo.
+   *
+   * A 58 grados, un edificio de diecisiete metros proyecta una sombra de
+   * casi once, y como la calzada mide diez, la sombra la cubria entera: la
+   * calle quedaba como un corredor gris oscuro. A 73 la sombra baja a unos
+   * cinco metros y solo alcanza hasta la mitad, que es justo lo que se
+   * quiere: una vereda al sol, la otra en sombra, y la calzada despejada.
    */
-  farolIntensidad: 20,
-  /** Altura del brazo del farol. */
-  farolAltura: 7.2,
-  /** Cada cuantos metros va un farol. Se alternan de vereda. */
-  farolCada: 24
+  solElevacion: 73,
+  /*
+   * Azimut. Se elige para que la sombra caiga sesgada respecto del eje de
+   * la calle y no perpendicular: cruzada deja franjas regulares que leen
+   * como rayas; sesgada acompaña la diagonal de la camara.
+   */
+  solAzimut: -24,
+  /**
+   * Hasta donde se calculan sombras. Mas alla el terreno se ve igual pero
+   * sin sombra, y como la camara mira desde arriba, no se nota.
+   */
+  sombraDistancia: 80,
+
+  /** Cada cuantos metros va un farol. De dia son props, no luces. */
+  farolCada: 26,
+  farolAltura: 7.2
 };
 
 /**
- * Luz general de la escena: ambiente y luna.
+ * Luz general de la escena.
+ *
  * @param {pc.AppBase} app
- * @returns {pc.Entity} la entidad de la luna, por si hay que animarla
+ * @param {boolean} sombrasDeCalidad perfil alto o movil
+ * @returns {pc.Entity} la entidad del sol
  */
-export function montarLuzAmbiente(app) {
+export function montarLuzAmbiente(app, sombrasDeCalidad = true) {
   app.scene.ambientLight = LUZ.ambiente;
-  // Con el pipeline HDR la exposicion pasa a importar: es el diafragma.
   app.scene.exposure = 1.0;
   app.scene.skyboxIntensity = 0;
 
-  /*
-   * La luna NO proyecta sombras, y es una decision medida, no una omision.
-   *
-   * Se probo con sombras y el resultado era una calle negra: los edificios
-   * tienen entre nueve y diecisiete metros a los dos lados de una calzada
-   * de diez, asi que cualquier luz direccional elevada deja el asfalto
-   * entero en sombra. Subir el bias no cambia nada porque no es acne: es
-   * oclusion de verdad.
-   *
-   * Ademas, en la realidad la luz de luna es tan debil que sus sombras no
-   * se distinguen al lado de un farol de sodio. Y cada luz con sombra
-   * cuesta una pasada de render completa, que es lo mas caro que hay en un
-   * telefono.
-   *
-   * La sensacion de apoyo y de volumen la dan la oclusion ambiental del
-   * pipeline y el contraste entre los charcos de luz y la oscuridad.
-   */
-  const luna = new pc.Entity('Luna');
-  luna.addComponent('light', {
+  const sol = new pc.Entity('Sol');
+  sol.addComponent('light', {
     type: 'directional',
-    color: COLOR_LUNA,
-    intensity: LUZ.lunaIntensidad,
-    castShadows: false
+    color: COLOR_SOL,
+    intensity: LUZ.solIntensidad,
+    castShadows: true,
+    /*
+     * Cascadas: la camara abarca mucha calle de golpe, asi que una sola
+     * resolucion de sombra o queda pixelada cerca o se desperdicia lejos.
+     * Varias cascadas con distribucion corta concentran la resolucion
+     * donde esta el jugador, que es donde se mira.
+     */
+    numCascades: sombrasDeCalidad ? 3 : 2,
+    cascadeDistribution: 0.45,
+    shadowDistance: LUZ.sombraDistancia,
+    shadowResolution: sombrasDeCalidad ? 2048 : 1024,
+    shadowType: pc.SHADOW_PCF3_32F,
+    shadowBias: 0.04,
+    normalOffsetBias: 0.04,
+    /*
+     * La sombra no llega a negro. Es la decision que mantiene legible la
+     * vereda del lado en sombra: en la realidad el cielo la rellena, y aca
+     * se imita bajando cuanto oscurece la sombra.
+     */
+    shadowIntensity: 0.52
   });
-  // Rasante: realza las caras que miran al noroeste y deja el resto en
-  // penumbra, que es lo que separa un edificio del de al lado.
-  luna.setEulerAngles(38, -52, 0);
-  app.root.addChild(luna);
-  return luna;
+  sol.setEulerAngles(LUZ.solElevacion, LUZ.solAzimut, 0);
+  app.root.addChild(sol);
+  return sol;
 }
 
 /**
- * Un farol de sodio: poste, brazo, lampara emisiva y la luz puntual.
+ * Un farol: poste, brazo y lampara.
  *
- * La lampara es una esfera con material emisivo fuerte. No ilumina nada por
- * si misma (de eso se encarga la luz puntual), pero el bloom la convierte
- * en un punto que derrama, y eso es la mitad del efecto.
+ * De dia no emite luz: es mobiliario urbano. Se conserva porque la
+ * repeticion de faroles a lo largo de la vereda es parte de como se lee
+ * una calle, y porque cuando aparezca una mision de noche ya va a estar
+ * puesto y solo habra que encenderlo.
  *
  * @param {pc.AppBase} app
  * @param {{x:number,z:number}} pos base del poste
@@ -129,66 +154,56 @@ export function crearFarol(app, pos, anguloGrados, mats) {
   raiz.addChild(brazo);
 
   const lampara = new pc.Entity('Lampara');
-  lampara.addComponent('render', { type: 'sphere', material: mats.lampara, castShadows: false });
+  lampara.addComponent('render', { type: 'sphere', material: mats.lampara, castShadows: true });
   lampara.setLocalScale(0.5, 0.26, 0.5);
   lampara.setLocalPosition(0, alto - 0.22, -largoBrazo);
   raiz.addChild(lampara);
-
-  const luz = new pc.Entity('LuzFarol');
-  luz.addComponent('light', {
-    type: 'omni',
-    color: COLOR_SODIO,
-    intensity: LUZ.farolIntensidad,
-    range: LUZ.farolAlcance,
-    // Ninguna luz puntual proyecta sombras: con quince faroles seria
-    // imposible de sostener en un telefono.
-    castShadows: false,
-    // Caida suave: el charco de luz no tiene borde recortado.
-    falloffMode: pc.LIGHTFALLOFF_INVERSESQUARED
-  });
-  luz.setLocalPosition(0, alto - 0.35, -largoBrazo);
-  raiz.addChild(luz);
 
   app.root.addChild(raiz);
   return raiz;
 }
 
 /**
- * Materiales de iluminacion compartidos.
+ * Materiales compartidos.
  *
- * Se crean una sola vez y se reparten: menos materiales distintos es menos
- * cambios de estado y menos draw calls.
+ * Todos son mates: `gloss` bajo y `metalness` en cero salvo donde de
+ * verdad hay metal. Un especular fuerte es lo que hace que un low-poly se
+ * vea de plastico, y ademas compite con la lectura de las formas.
  */
 export function crearMaterialesLuz() {
   const metal = new pc.StandardMaterial();
-  metal.diffuse = new pc.Color(0.16, 0.17, 0.19);
-  metal.metalness = 0.85;
-  metal.gloss = 0.45;
+  metal.diffuse = new pc.Color(0.3, 0.32, 0.34);
+  metal.metalness = 0.55;
+  metal.gloss = 0.3;
   metal.useMetalness = true;
   metal.update();
 
-  // Emisivo por encima de 1: eso es lo que hace que el bloom lo tome.
   const lampara = new pc.StandardMaterial();
-  lampara.diffuse = new pc.Color(0, 0, 0);
-  lampara.emissive = new pc.Color(1.0, 0.68, 0.34);
-  lampara.emissiveIntensity = 7;
-  lampara.useLighting = false;
+  lampara.diffuse = new pc.Color(0.76, 0.74, 0.68);
+  lampara.gloss = 0.25;
+  lampara.metalness = 0;
+  lampara.useMetalness = true;
   lampara.update();
 
-  // Ventana encendida. Varias intensidades para que no parezcan todas la
-  // misma lampara.
+  /*
+   * Ventanas. De dia un vidrio no brilla: refleja el cielo. Se resuelve
+   * con un azul oscuro y algo de brillo, que es mucho mas barato que un
+   * reflejo de verdad y a esta distancia de camara se lee igual.
+   */
   const ventana = new pc.StandardMaterial();
-  ventana.diffuse = new pc.Color(0, 0, 0);
-  ventana.emissive = new pc.Color(1.0, 0.82, 0.55);
-  ventana.emissiveIntensity = 2.0;
-  ventana.useLighting = false;
+  ventana.diffuse = new pc.Color(0.19, 0.25, 0.32);
+  ventana.gloss = 0.55;
+  ventana.metalness = 0.1;
+  ventana.useMetalness = true;
   ventana.update();
 
+  // Alguna con la cortina corrida o la persiana a media asta: rompe la
+  // repeticion sin costar nada.
   const ventanaFria = new pc.StandardMaterial();
-  ventanaFria.diffuse = new pc.Color(0, 0, 0);
-  ventanaFria.emissive = new pc.Color(0.62, 0.78, 1.0);
-  ventanaFria.emissiveIntensity = 1.6;
-  ventanaFria.useLighting = false;
+  ventanaFria.diffuse = new pc.Color(0.46, 0.44, 0.4);
+  ventanaFria.gloss = 0.15;
+  ventanaFria.metalness = 0;
+  ventanaFria.useMetalness = true;
   ventanaFria.update();
 
   return { metal, lampara, ventana, ventanaFria };

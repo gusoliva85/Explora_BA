@@ -6,6 +6,25 @@
 
 ---
 
+## 📍 Dónde estamos — 24 de octubre de 2026
+
+> **Fases cerradas:** 0, 1, 2 y 2B.
+> **Fase siguiente:** **Fase 3 — El mapa de la Misión 001.** No empezada.
+>
+> La última sesión cerró la Fase 2 (cámara a 57° con la calle en diagonal y
+> HUD vertical) y una Fase 2B que **no estaba planificada**: la reforma del
+> render y la dirección visual. Se agregó al roadmap para que quede
+> registrada, no se hizo "de más" en silencio.
+>
+> **Lo que está jugable hoy:** Gus camina por tres cuadras de Boedo en
+> grey-box, de día, con cámara en diagonal, colisiones, controles táctiles y
+> de teclado, controles intermedios, victoria y derrota.
+>
+> **Lo que no existe todavía:** zombis, combate, armas, objetos, audio y
+> cualquier arte que no sean cajas de colores.
+
+---
+
 ## Cómo se usa este documento
 
 Este es el plan de trabajo. Todo lo que hay que hacer está acá, dividido en
@@ -58,7 +77,8 @@ juego funciona.
 | 0 | Fundaciones | El proyecto corre en local y se versiona | ✅ |
 | 1 | Escena y bucle | Una calle gris, cámara, estados de partida | ✅ |
 | 2 | Movimiento y cámara | Gus camina por una calle en diagonal a 57° | ✅ |
-| 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | ⬜ |
+| 2B | Render y dirección visual | Pipeline HDR, luz de día, interfaz rehecha | ✅ |
+| 3 | El mapa de la Misión 001 | Los tres tramos completos y recorribles | 🔄 **siguiente** |
 | 4 | El primer zombi | Te detecta, te persigue, te muerde | ⬜ |
 | 5 | Combate cuerpo a cuerpo | El cuchillo mata zombis | ⬜ |
 | 6 | Pistola y ruido | Arma a distancia con consecuencias | ⬜ |
@@ -222,10 +242,63 @@ poco.
 
 ---
 
-# FASE 3 — El mapa de la Misión 001 ⬜
+# FASE 2B — Render y dirección visual ✅
+
+**Objetivo:** que el juego se vea bien y, sobre todo, que se vea **claro**.
+
+> **Esta fase no estaba en el plan original.** Se agregó después de mirar el
+> prototipo y comprobar que el problema no era el contenido sino el render:
+> el juego dibujaba a 8 bits por canal, con una sola luz y sin ningún
+> tratamiento de imagen. Queda anotada acá para que el roadmap refleje lo
+> que pasó de verdad.
+
+### Tareas
+
+| # | Tarea | Estado |
+|---|---|---|
+| 2B.1 | Pipeline HDR con `pc.CameraFrame`: oclusión ambiental, bloom, mapeo de tonos, grading, realce de color y viñeta | ✅ |
+| 2B.2 | Dos perfiles de calidad, alto y móvil, forzables con `?calidad=alta\|movil` | ✅ |
+| 2B.3 | **Pasar de noche a día** (decisión D-16) | ✅ |
+| 2B.4 | Sol con sombras en cascada, luz de cielo de relleno y bruma de distancia | ✅ |
+| 2B.5 | Paleta diurna low-poly: colores claros, mates y con contraste entre superficies vecinas | ✅ |
+| 2B.6 | Identidad porteña barata: toldos de color, taxi negro y amarillo, colectivo con franja | ✅ |
+| 2B.7 | Faroles como mobiliario urbano, listos para encenderse si hay misión nocturna | ✅ |
+| 2B.8 | Interfaz rehecha en hoja aparte: barra de vida con marcas, estado crítico, objetivo animado, botones más grandes | ✅ |
+| 2B.9 | Destello rojo al recibir daño y transiciones de entrada en los paneles | ✅ |
+| 2B.10 | `tools/captura.mjs` para revisar cambios con perfil de celular | ✅ |
+| 2B.11 | `iniciar.bat`: libera puertos, levanta el servidor, espera y abre el navegador | ✅ |
+
+### Cómo se prueba
+
+1. Abrir el juego → la calle se ve de día, clara, sin esfuerzo.
+2. Comparar `?calidad=alta` contra `?calidad=movil` → la segunda es más
+   blanda pero legible igual.
+3. Bajarse la vida desde la consola (`game.player.applyDamage(75)`) → la
+   barra late en rojo y hay destello.
+4. **En el teléfono, a la luz del día y con el brillo a la mitad.** Es la
+   prueba que importa: si ahí no se ve, no sirve.
+
+### Criterio de salida
+
+- [x] La escena se lee sin esfuerzo en una pantalla de celular
+- [x] Los planos se separan entre sí sin necesidad de textura
+- [x] La interfaz es legible en movimiento
+- [ ] **Pendiente tuyo:** confirmarlo en un teléfono real
+
+### ⚠️ Lo que quedó provisional
+
+- **La calle está vacía.** Pocos autos, ningún árbol, ninguna barricada a
+  mano. Eso es la Fase 3 y es justamente lo que sigue.
+- **Todo sigue siendo cajas.** Los modelos son la Fase 12.
+- **No hay partículas ni transiciones entre estados de juego**, solo en los
+  paneles.
+
+---
+
+# FASE 3 — El mapa de la Misión 001 🔄 SIGUIENTE
 
 **Objetivo:** que los tres tramos del recorrido existan completos y se sienta
-una calle de Buenos Aires, todavía en cajas grises.
+una calle de Buenos Aires, todavía en cajas de colores.
 
 > Hoy el generador ya arma los tres tramos con calzada, veredas, edificios de
 > altura variable y autos abandonados. Esta fase es sobre convertir eso en un
@@ -245,6 +318,11 @@ una calle de Buenos Aires, todavía en cajas grises.
 | 3.8 | Agregar un indicador de dirección al objetivo: flecha o brújula en el HUD |
 | 3.9 | Revisar las direcciones reales en un mapa y corregir los textos (ver D-04: Billinghurst no queda en Boedo) |
 | 3.10 | Medir cuánto se tarda en recorrerlo caminando y corriendo, sin enemigos |
+| 3.11 | Árboles en las veredas, con copa low-poly y sombra |
+| 3.12 | Más props: contenedores, bolsas, paradas de colectivo, kiosco de esquina |
+| 3.13 | Sendas peatonales y líneas de calzada pintadas |
+| 3.14 | Variar alturas y retiros de los edificios para que la cuadra no sea un muro parejo |
+| 3.15 | Revisar el presupuesto de draw calls al terminar: hoy está en ~160 |
 
 ### Cómo se prueba
 

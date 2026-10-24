@@ -258,6 +258,47 @@ primer amigo. Pero el amigo no camina con vos ni pelea todavía.
 
 ---
 
+### 🔴 D-16 — El juego transcurre de **día**, no de noche
+
+**El problema.** El documento 01 pide una estética *"oscura y atmosférica"*
+(sección 6) y habla de calles con poca visibilidad. Se implementó así: noche
+cerrada, faroles de sodio, contraste fuerte. Se veía bien en una captura y
+**era injugable en un teléfono**.
+
+**Por qué no funcionaba.** Un celular se usa de día, muchas veces en la
+calle, con el brillo a la mitad para ahorrar batería y con reflejos en la
+pantalla. Todo lo que en el monitor era "atmósfera" ahí era, simplemente, no
+ver. Y obligar al jugador a esforzarse para distinguir un zombi de un
+contenedor no genera tensión: genera que deje de jugar.
+
+**La decisión: mediodía, low-poly claro.**
+
+| | Qué |
+|---|---|
+| **Hora** | Mediodía, sol alto a 73° |
+| **Paleta** | Colores francos pero algo apagados, nunca saturados al máximo |
+| **Acabado** | Mate. Nada de brillo salvo chapa y persianas |
+| **Definición** | Viene del contraste entre planos y de la oclusión ambiental, no del detalle |
+| **Sombras** | Sí, y son la herramienta principal: una sombra nítida apoya el objeto en el piso |
+
+Tres cosas que salieron de implementarlo y conviene no volver a aprender:
+
+1. **La elevación del sol es el número más sensible de todo el render.** A
+   58° un edificio de 17 m proyecta casi 11 m de sombra, y como la calzada
+   mide 10, la cubría entera. A 73° la sombra baja a 5 m y la calle queda
+   despejada.
+2. **La luz ambiente tiñe todo.** Con un azul de cielo franco, el asfalto
+   gris se veía azul marino. Su saturación se nota mucho más que la de
+   cualquier material.
+3. **Los albedos hay que calibrarlos con la luz puesta.** Los mismos colores
+   que funcionaban de noche salían blancos quemados de día.
+
+> 🔵 **NOTA-10.** La noche no se descarta para siempre: los faroles quedaron
+> construidos como mobiliario urbano y volver a encenderlos es cambiar un
+> parámetro. Una misión nocturna, puntual y diseñada para eso, puede ser un
+> recurso fuerte más adelante. Lo que se descarta es que la noche sea el
+> estado por defecto.
+
 ### 🔵 D-07 — La referencia "Pueblo"
 
 La sección 5 del 01 dice: *"la referencia 'Pueblo' debe confirmarse antes de
@@ -807,6 +848,7 @@ La tabla de riesgos de la sección 16 está bien. Le faltan cuatro.
 | D-13 | Interfaz en HTML/CSS sobre el canvas | 🟡 |
 | D-14 | `localStorage` para ajustes, último control y mejor tiempo | 🟡 |
 | D-15 | **Vertical** es la orientación de diseño; horizontal se adapta y no se avisa nada | 🔴 |
+| D-16 | El juego transcurre **de día**, con estética low-poly clara y mate | 🔴 |
 
 ## 8. Resumen de anotaciones para el futuro
 
@@ -821,6 +863,7 @@ La tabla de riesgos de la sección 16 está bien. Le faltan cuatro.
 | NOTA-07 | Falta herramienta de audio: Audacity + bancos con licencia revisada |
 | NOTA-08 | Gus: primero feo pero animado, después bonito |
 | NOTA-09 | Si la calle dobla en una esquina, hay que decidir si la cámara gira con la calle o se mantiene fija: girarla marea, no girarla rompe la diagonal |
+| NOTA-10 | La noche queda disponible para una misión puntual: los faroles ya están construidos, solo hay que encenderlos |
 
 ---
 
@@ -830,7 +873,8 @@ Para que quede claro qué sigue vigente sin modificaciones:
 
 - El alcance de la primera versión (sección 3) y todo lo que queda afuera.
 - El bucle de juego y la estructura de la Misión 001 (sección 4).
-- El estilo low-poly estilizado y las reglas visuales (sección 6).
+- El estilo low-poly estilizado y las reglas visuales (sección 6), **salvo
+  la parte de "oscuro y atmosférico"**, que queda reemplazada por D-16.
 - El kit modular de escenario (sección 5).
 - La lista de sistemas y los estados de partida y de zombi (sección 10).
 - El flujo de producción de arte y la nomenclatura (secciones 8 y 9).

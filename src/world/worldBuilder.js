@@ -38,36 +38,73 @@ function extenderHaciaAtras(a, b, metros) {
  * Cada entrada lleva ademas brillo y metalicidad, que es lo que diferencia
  * una chapa de auto de una pared revocada bajo la misma luz.
  */
+/*
+ * PALETA DIURNA
+ *
+ * Low-poly claro: colores francos pero algo apagados, nunca saturados al
+ * maximo. La regla que los une es que cada superficie vecina tenga un
+ * valor distinto —asfalto medio, vereda clara, fachada clara-calida— para
+ * que los planos se separen solos aunque no haya ninguna textura.
+ *
+ * Los numeros son albedo: cuanta luz refleja la superficie. Un asfalto
+ * real ronda 0.12 y una pared pintada 0.55. Aca se exageran un poco hacia
+ * arriba porque el pedido es legibilidad, no fotorrealismo.
+ */
 const COLORS = {
-  asphalt: [0.115, 0.122, 0.138],
-  asphaltWet: [0.085, 0.095, 0.12],
-  sidewalk: [0.21, 0.215, 0.222],
-  curb: [0.27, 0.27, 0.26],
+  asphalt: [0.33, 0.325, 0.315],
+  asphaltWet: [0.28, 0.277, 0.272],
+  sidewalk: [0.62, 0.6, 0.56],
+  curb: [0.7, 0.68, 0.64],
+
+  // Fachadas porteñas: ocre, crema, celeste desvaido, verde agua,
+  // terracota. Son los colores que uno ve caminando por Boedo.
   facade: [
-    [0.3, 0.25, 0.19],
-    [0.19, 0.21, 0.24],
-    [0.34, 0.3, 0.23],
-    [0.17, 0.2, 0.18],
-    [0.27, 0.19, 0.17]
+    [0.76, 0.66, 0.48],
+    [0.58, 0.66, 0.7],
+    [0.82, 0.78, 0.66],
+    [0.55, 0.64, 0.56],
+    [0.74, 0.54, 0.44],
+    [0.68, 0.7, 0.72]
   ],
-  shutter: [0.1, 0.11, 0.12],
+
+  // Persiana metalica: gris medio, un punto mas oscura que la fachada
+  // para que la planta baja se lea como un bloque distinto.
+  shutter: [0.42, 0.44, 0.45],
+
+  // Toldos: aca si va color fuerte. Son el acento de la cuadra y lo que
+  // hace que no sea una hilera de cajas beige.
+  toldo: [
+    [0.62, 0.22, 0.18],
+    [0.18, 0.42, 0.28],
+    [0.17, 0.32, 0.52],
+    [0.66, 0.5, 0.14]
+  ],
+
   car: [
-    [0.22, 0.045, 0.04],
-    [0.04, 0.085, 0.2],
-    [0.08, 0.085, 0.095],
-    [0.26, 0.245, 0.21]
+    [0.6, 0.17, 0.14],
+    [0.16, 0.3, 0.54],
+    [0.78, 0.78, 0.76],
+    [0.24, 0.25, 0.27]
   ],
-  checkpoint: [0.88, 0.65, 0.15],
-  goal: [0.25, 0.76, 0.45]
+  /** Taxi porteño: carroceria negra y techo amarillo. Identidad gratis. */
+  taxi: [0.12, 0.12, 0.13],
+  taxiTecho: [0.88, 0.72, 0.1],
+  bus: [0.2, 0.36, 0.58],
+  busFranja: [0.78, 0.3, 0.2],
+
+  checkpoint: [0.95, 0.72, 0.15],
+  goal: [0.3, 0.8, 0.48]
 };
 
 /** Acabados: cuanto brilla y cuanto de metal tiene cada tipo de superficie. */
 const ACABADO = {
-  asfalto: { gloss: 0.42, metalness: 0.0 },
-  vereda: { gloss: 0.22, metalness: 0.0 },
-  revoque: { gloss: 0.12, metalness: 0.0 },
-  chapa: { gloss: 0.78, metalness: 0.65 },
-  persiana: { gloss: 0.55, metalness: 0.8 }
+  asfalto: { gloss: 0.12, metalness: 0.0 },
+  vereda: { gloss: 0.08, metalness: 0.0 },
+  revoque: { gloss: 0.05, metalness: 0.0 },
+  tela: { gloss: 0.06, metalness: 0.0 },
+  // Las unicas dos superficies con brillo. Si todo brilla, nada destaca.
+  chapa: { gloss: 0.55, metalness: 0.45 },
+  persiana: { gloss: 0.3, metalness: 0.5 }
 };
 
 export class WorldBuilder {
@@ -319,6 +356,24 @@ export class WorldBuilder {
         acabado: ACABADO.persiana
       });
 
+      // Toldo: sobresale de la fachada, proyecta una sombra nitida sobre la
+      // vereda y aporta el unico color saturado de la cuadra. Tres cosas
+      // por una caja.
+      if (width > 5.5 && rng.chance(0.62)) {
+        const tDepth = 1.4;
+        const tCross = (fullWidth / 2 + tDepth / 2) * side;
+        const tPos = alongX
+          ? { x: centerAlong, y: 3.5, z: (a.z + b.z) / 2 + tCross }
+          : { x: (a.x + b.x) / 2 + tCross, y: 3.5, z: centerAlong };
+        const tSz = alongX
+          ? { x: width * 0.8, y: 0.18, z: tDepth }
+          : { x: tDepth, y: 0.18, z: width * 0.8 };
+        this.addBox(`Toldo_${index}_${side}_${n}`, tPos, tSz, rng.pick(COLORS.toldo), {
+          acabado: ACABADO.tela,
+          sombra: true
+        });
+      }
+
       // Ventanas encendidas en los pisos altos. No iluminan la calle: son
       // puntos emisivos para que el bloom los tome y la fachada deje de ser
       // una masa negra. Cuesta una caja chica por ventana.
@@ -424,12 +479,35 @@ export class WorldBuilder {
         : { x: cross, y: high / 2, z: along };
       const sz = alongX ? { x: aLen, y: high, z: aWide } : { x: aWide, y: high, z: aLen };
 
-      this.addBox(`${isBus ? 'Colectivo' : 'Auto'}_${index}_${i}`, pos, sz, rng.pick(COLORS.car), {
+      const esTaxi = !isBus && rng.chance(0.28);
+      const colorCuerpo = isBus ? COLORS.bus : esTaxi ? COLORS.taxi : rng.pick(COLORS.car);
+
+      this.addBox(`${isBus ? 'Colectivo' : esTaxi ? 'Taxi' : 'Auto'}_${index}_${i}`, pos, sz, colorCuerpo, {
         collide: true,
         tag: 'vehicle',
         acabado: ACABADO.chapa,
         sombra: true
       });
+
+      // Techo amarillo del taxi, o franja de color del colectivo. Son los
+      // dos vehiculos que cualquiera reconoce de una cuadra de distancia.
+      if (esTaxi) {
+        this.addBox(
+          `TaxiTecho_${index}_${i}`,
+          { x: pos.x, y: high + 0.06, z: pos.z },
+          { x: sz.x * 0.58, y: 0.12, z: sz.z * 0.72 },
+          COLORS.taxiTecho,
+          { acabado: ACABADO.chapa }
+        );
+      } else if (isBus) {
+        this.addBox(
+          `BusFranja_${index}_${i}`,
+          { x: pos.x, y: high * 0.52, z: pos.z },
+          { x: sz.x + 0.04, y: 0.45, z: sz.z + 0.04 },
+          COLORS.busFranja,
+          { acabado: ACABADO.chapa }
+        );
+      }
     }
   }
 
