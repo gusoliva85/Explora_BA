@@ -125,6 +125,89 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     expect(Math.hypot(despues.x - alSoltar.x, despues.z - alSoltar.z)).toBeLessThan(2);
   });
 
+  test('el joystick NO se come el toque: se puede volver a apoyar donde esta', async ({
+    page
+  }) => {
+    /*
+     * El error que reporto Gustavo jugando, y que es dificil de imaginar
+     * leyendo el codigo:
+     *
+     *   1. Apoyas el dedo en la zona de movimiento -> no pasa nada.
+     *   2. Apoyas en otro lado -> anda, y el joystick se MUEVE ahi.
+     *   3. Volves a apoyar en ese mismo lugar -> deja de andar.
+     *
+     * O sea que el joystick se escapaba del dedo. La causa era
+     * `pointer-events: auto` sobre el dibujo del joystick: se convertia en
+     * una tapa justo encima del lugar donde el jugador acaba de tocar.
+     *
+     * La prueba hace exactamente esa secuencia: toca, suelta, y vuelve a
+     * tocar EL MISMO PUNTO. Lo que importa es el segundo toque.
+     */
+    await page.goto('/');
+    await page.locator('#btn-start').click();
+    await expect(page.locator('#screen-hud')).toBeVisible();
+
+    const caja = await page.locator('#game-canvas').boundingBox();
+    const x = caja.x + caja.width * 0.25;
+    const abajo = caja.y + caja.height * 0.76;
+    const arriba = caja.y + caja.height * 0.56;
+
+    const cdp = await page.context().newCDPSession(page);
+    const toque = (tipo, py) =>
+      cdp.send('Input.dispatchTouchEvent', {
+        type: tipo,
+        touchPoints: tipo === 'touchEnd' ? [] : [{ x, y: py }]
+      });
+
+    const posicion = () =>
+      page.evaluate(() => {
+        const p = globalThis.game.player.position;
+        return { x: p.x, z: p.z };
+      });
+
+    // --- Primer toque: deja el joystick dibujado en este punto ------------
+    const antes1 = await posicion();
+    await toque('touchStart', abajo);
+    await toque('touchMove', arriba);
+    await page.waitForFunction(
+      (ini) => {
+        const p = globalThis.game.player.position;
+        return Math.hypot(p.x - ini.x, p.z - ini.z) > 1.0;
+      },
+      antes1,
+      { timeout: 20000 }
+    );
+    await toque('touchEnd', arriba);
+    await page.waitForTimeout(500);
+
+    // El joystick quedo donde se apoyo el dedo. Se comprueba, porque si no
+    // quedara ahi la segunda parte de la prueba no probaria nada.
+    const tapando = await page.evaluate(
+      ([px, py]) => {
+        const el = document.elementFromPoint(px, py);
+        return el?.id || el?.className || el?.tagName;
+      },
+      [x, abajo]
+    );
+    expect(tapando, `un toque donde esta el joystick lo recibe ${tapando}`).toBe(
+      'game-canvas'
+    );
+
+    // --- Segundo toque, EXACTAMENTE en el mismo lugar ---------------------
+    const antes2 = await posicion();
+    await toque('touchStart', abajo);
+    await toque('touchMove', arriba);
+    await page.waitForFunction(
+      (ini) => {
+        const p = globalThis.game.player.position;
+        return Math.hypot(p.x - ini.x, p.z - ini.z) > 1.0;
+      },
+      antes2,
+      { timeout: 20000 }
+    );
+    await toque('touchEnd', arriba);
+  });
+
   test('tocar ATACAR dispara el ataque', async ({ page }) => {
     await page.goto('/');
     await page.locator('#btn-start').click();

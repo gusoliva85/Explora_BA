@@ -72,6 +72,34 @@ export function dirDeRumbo(grados) {
   return { x: -Math.sin(a), z: -Math.cos(a) };
 }
 
+/**
+ * Convierte una entrada de pantalla en una direccion del mundo.
+ *
+ * Es la cuenta que traduce "el dedo fue hacia arriba a la derecha" en "el
+ * personaje va hacia alla", y depende de hacia donde mira la camara: con la
+ * calle en diagonal, arriba en la pantalla NO es arriba en el mapa.
+ *
+ * Vive aca porque la usan dos cosas que tienen que coincidir exactamente:
+ * el joystick de movimiento y el de apuntado. Si cada una hiciera su propia
+ * version, el dia que una cambie el personaje caminaria hacia un lado y
+ * dispararia hacia otro.
+ *
+ * @param {number} ejeX -1 izquierda, +1 derecha
+ * @param {number} ejeY -1 abajo, +1 arriba de la pantalla
+ * @param {number} yawCamara grados
+ * @returns {{x:number, z:number}} sin normalizar: conserva la intensidad
+ */
+export function direccionDeEntrada(ejeX, ejeY, yawCamara) {
+  // Adelante de la camara es su rumbo; la derecha es su perpendicular.
+  const adelante = dirDeRumbo(yawCamara);
+  const derechaX = -adelante.z;
+  const derechaZ = adelante.x;
+  return {
+    x: ejeX * derechaX + ejeY * adelante.x,
+    z: ejeX * derechaZ + ejeY * adelante.z
+  };
+}
+
 /** Lleva cualquier angulo al rango de 0 a 360. */
 export function normalizarRumbo(grados) {
   return ((grados % 360) + 360) % 360;

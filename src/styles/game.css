@@ -124,8 +124,28 @@ body.is-desktop #game-canvas:active { cursor: grabbing; }
   pointer-events: none;
   display: block;
 }
-.screen-passthrough button,
-.screen-passthrough .joystick { pointer-events: auto; }
+/*
+ * Solo los BOTONES reciben toques. El joystick NO.
+ *
+ * El joystick es un dibujo: no escucha nada. Quien escucha los dedos es el
+ * canvas, y el joystick solo se mueve a donde el canvas dice que esta el
+ * dedo. Dandole `pointer-events: auto` se convertia en una tapa:
+ *
+ *   1. Apoyas el dedo en la zona de movimiento -> no pasa nada, porque el
+ *      dedo cae sobre el dibujo del joystick y el canvas no se entera.
+ *   2. Apoyas en otro lado -> ahi si anda, y el joystick se MUEVE a ese
+ *      lugar.
+ *   3. Volves a apoyar en ese mismo lugar -> deja de andar, porque ahora
+ *      el dibujo esta ahi.
+ *
+ * O sea que el joystick se escapaba del dedo. Lo reporto Gustavo jugando
+ * en el telefono.
+ *
+ * Es la misma familia de error que el de `#ui-layer`: algo decorativo
+ * puesto por encima del canvas pidiendo eventos que no usa. La regla que
+ * queda es que `pointer-events: auto` es para lo que TIENE un manejador.
+ */
+.screen-passthrough button { pointer-events: auto; }
 
 /* --- Carga --------------------------------------------------------------- */
 

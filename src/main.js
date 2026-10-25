@@ -17,13 +17,20 @@ import { SpawnManager } from './enemies/spawnManager.js';
 import { WeaponController } from './combat/weaponController.js';
 import { CombatFx } from './combat/combatFx.js';
 import { GestorProyectiles } from './combat/projectile.js';
+import { BolsaDeObjetos, TipoObjeto, curaDeBotiquin } from './items/itemLogic.js';
+import { VistaObjetos } from './items/itemView.js';
 import { alcanzadosPorExplosion } from './combat/explosion.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
 import { ajustes } from './core/settings.js';
 import { createRng } from './core/rng.js';
-import { rumboHacia, rumboEntre, dirDeRumbo } from './core/rumbo.js';
+import {
+  rumboHacia,
+  rumboEntre,
+  dirDeRumbo,
+  direccionDeEntrada
+} from './core/rumbo.js';
 
 /** El perfil de calidad decide tambien la resolucion de las sombras. */
 const calidadAlta = () => calidadElegida() === Calidad.ALTA;
@@ -34,6 +41,8 @@ import {
   PLAYER,
   ZOMBIE_STANDARD,
   WEAPONS,
+  ITEMS,
+  CHECKPOINT_DROP,
   WORLD_SEED
 } from './config/balance.js';
 
@@ -247,6 +256,15 @@ const efectos = new CombatFx(app, builder.mats);
  */
 const azarCombate = createRng(WORLD_SEED ^ 0x9e3779b9);
 
+/*
+ * Objetos del piso.
+ *
+ * La bolsa es logica pura —que hay, donde, y si sirve— y la vista solo
+ * dibuja lo que la bolsa dice. Mismo reparto que los zombis y que el arma.
+ */
+const objetos = new BolsaDeObjetos();
+const vistaObjetos = new VistaObjetos(app);
+
 /** Color del anillo de ruido en el diagnostico: el mismo ambar del HUD. */
 const COLOR_RUIDO = new pc.Color(1, 0.72, 0.15);
 
@@ -437,6 +455,56 @@ function actualizarHudArma() {
   });
 }
 
+/**
+ * Decide si un objeto le sirve al jugador AHORA.
+ *
+ * Es lo que impide que un botiquin pisado con la vida llena se pierda para
+ * siempre sin que el jugador se entere. Lo que no sirve se queda en el
+ * piso esperando a que haga falta.
+ */
+function leSirve(tipo) {
+  if (tipo === TipoObjeto.BOTIQUIN) return player.health < PLAYER.maxHealth;
+  if (tipo === TipoObjeto.MUNICION) {
+    // Hay tope de reserva: con la reserva llena, la caja se queda.
+    return arma.reserva.pistol < ITEMS.ammoPistol.maxCarried;
+  }
+  return true;
+}
+
+/** Levanta lo que el jugador este pisando y le sirva. */
+function recogerObjetos(pos) {
+  const tomados = objetos.recoger(pos, leSirve);
+  for (const o of tomados) {
+    vistaObjetos.quitar(o.id);
+
+    if (o.tipo === TipoObjeto.BOTIQUIN) {
+      const cura = curaDeBotiquin(PLAYER.maxHealth);
+      const antes = player.health;
+      player.heal(cura);
+      hud.flash(`+${Math.round(player.health - antes)} VIDA`, 1200);
+    } else if (o.tipo === TipoObjeto.MUNICION) {
+      arma.sumarMunicion('pistol', ITEMS.ammoPistol.amount);
+      hud.flash(`+${ITEMS.ammoPistol.amount} BALAS`, 1200);
+    }
+  }
+}
+
+/**
+ * Suelta el surtido del control en el piso, alrededor del punto.
+ *
+ * El angulo de arranque sale del generador con semilla para que dos
+ * partidas con la misma semilla dejen las cajas en el mismo lugar (D-12).
+ */
+function soltarEnControl(punto) {
+  const nuevos = objetos.soltarGrupo(
+    CHECKPOINT_DROP.objetos,
+    punto,
+    CHECKPOINT_DROP.radio,
+    azarCombate() * 360
+  );
+  for (const o of nuevos) vistaObjetos.mostrar(o);
+}
+
 console.info(
   `[mundo] ${built.stats.boxes} cajas, ${built.stats.colliders} colisionadores, ` +
     `${built.markers.length} marcadores`
@@ -458,6 +526,8 @@ function startMission({ fromCheckpoint = false } = {}) {
   // mapa que ya se reinicio, sobre zombis que ya no son los mismos.
   for (const c of cohetes.vivos) efectos.quitarCohete(c.id);
   cohetes.limpiar();
+  objetos.limpiar();
+  vistaObjetos.limpiar();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -473,6 +543,18 @@ function startMission({ fromCheckpoint = false } = {}) {
   state.set(State.PLAYING);
   input.setEnabled(true);
 }
+
+/*
+ * Llegar a un control deja un surtido en el piso.
+ *
+ * No rellena nada solo. La diferencia importa: un relleno automatico es un
+ * premio que no se siente, y ademas no da ninguna decision. Tres cajas
+ * tiradas que hay que ir a pisar —con lo que eso implica si hay zombis
+ * cerca— son un respiro que el jugador se gana caminando.
+ */
+bus.on(EV.CHECKPOINT_REACHED, ({ x, z }) => {
+  soltarEnControl({ x, z });
+});
 
 bus.on(EV.PLAYER_DIED, () => {
   input.setEnabled(false);
@@ -551,7 +633,12 @@ byId('btn-restart-win').addEventListener('click', () => startMission());
 byId('btn-restart-lose').addEventListener('click', () => startMission({ fromCheckpoint: true }));
 
 input.bindHudButton(byId('btn-run'), 'run');
-input.bindHudButton(byId('btn-attack'), 'attack');
+/*
+ * El de atacar no es un boton comun: ver `bindAimButton`. Un toque dispara
+ * hacia adelante; mantenerlo y arrastrar lo convierte en joystick de
+ * apuntado.
+ */
+input.bindAimButton(byId('btn-attack'), 'attack');
 input.bindHudButton(byId('btn-interact'), 'interact');
 input.bindHudButton(byId('btn-swap'), 'swap');
 input.bindHudButton(byId('btn-reload'), 'reload');
@@ -609,7 +696,20 @@ app.on('update', (rawDt) => {
   input.sample();
 
   if (state.isSimulating) {
-    player.update(dt, input.move, input.buttons.run, camera.yaw);
+    /*
+     * El rumbo apuntado se calcula ANTES de mover al jugador, para que el
+     * personaje ya mire hacia alla en el mismo cuadro en que se dispara.
+     * Si se hiciera despues, el primer tiro de cada rafaga saldria hacia
+     * donde el personaje estaba mirando antes.
+     */
+    const rumboApuntado = input.apuntando
+      ? (() => {
+          const d = direccionDeEntrada(input.aim.x, input.aim.y, camera.yaw);
+          return rumboHacia(d.x, d.z);
+        })()
+      : null;
+
+    player.update(dt, input.move, input.buttons.run, camera.yaw, rumboApuntado);
     mission.update(dt, player.position);
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
     camera.setStreetHeading(mission.streetHeading(player.position));
@@ -628,10 +728,35 @@ app.on('update', (rawDt) => {
     if (input.wasPressed('reload')) arma.recargar();
     if (input.wasPressed('special')) arma.dispararEspecial(pos2d, zombis.enJuego);
 
-    if (input.wasPressed('attack')) {
+    /*
+     * Disparar.
+     *
+     * Con el pulgar quieto, un toque = un ataque hacia donde mira el
+     * personaje. Con el pulgar arrastrado, el arma dispara SEGUIDO hacia
+     * donde apunta, respetando su propia cadencia.
+     *
+     * Que apuntar implique disparar es deliberado y tiene costo: la
+     * pistola hace ruido, asi que mantener apretado para "mirar" sale
+     * caro. Apuntar sin tirar es para lo que estan el cuchillo y las
+     * piernas.
+     */
+    if (input.wasPressed('attack') || (input.buttons.attack && input.apuntando)) {
       arma.atacar(pos2d, player.yaw, zombis.enJuego);
     }
     arma.update(dt, pos2d, player.yaw, zombis.enJuego);
+
+    /*
+     * La mira muestra el alcance REAL del arma equipada, no un largo
+     * decorativo: con el cuchillo son dos metros y con la pistola
+     * veintiocho. Es la forma mas barata de que el jugador entienda la
+     * diferencia entre las dos armas sin leer nada.
+     */
+    if (rumboApuntado !== null) {
+      efectos.mostrarMira(pos2d, rumboApuntado, arma.arma.range);
+    } else {
+      efectos.ocultarMira();
+    }
+
     hud.setRecarga(arma.recargando, arma.progresoRecarga);
     hud.setEspecial(arma.progresoEspecial, arma.especialLista);
 
@@ -643,6 +768,9 @@ app.on('update', (rawDt) => {
     }
 
     efectos.update(dt);
+
+    recogerObjetos(pos2d);
+    vistaObjetos.update(dt);
 
     const p = player.position;
     zombis.update(dt, { x: p.x, z: p.z }, player.health > 0, (daño, zombi) => {
@@ -665,6 +793,7 @@ app.on('update', (rawDt) => {
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
+  debug.set('objetos', JSON.stringify(objetos.contar()));
   debug.set(
     'bazooka',
     `${(arma.progresoEspecial * 100).toFixed(0)}%${arma.especialLista ? ' LISTA' : ''} ` +
@@ -700,7 +829,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis, arma, efectos, cohetes,
+  postProceso, calidad, zombis, arma, efectos, cohetes, objetos, vistaObjetos,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.
   pc,

@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { WEAPONS } from '../config/balance.js';
+import { WEAPONS, UNITS } from '../config/balance.js';
 import { dirDeRumbo } from '../core/rumbo.js';
 
 /* Vectores reutilizados para dibujar: no se crean dentro del bucle. */
@@ -62,6 +62,15 @@ const DURACION_FOGONAZO = 0.09;
 /** Cuanto dura el anillo de ruido del modo diagnostico. */
 const DURACION_RUIDO = 0.9;
 
+/**
+ * Altura a la que se dibuja todo lo que va "en el piso".
+ *
+ * El mundo es plano en y=0 y las veredas son cajas de `UNITS.curbHeight`
+ * apoyadas encima, asi que lo que se dibuje mas bajo que eso queda adentro
+ * de la vereda. Con margen, para que no roce.
+ */
+const ALTURA_SOBRE_CORDON = UNITS.curbHeight + 0.1;
+
 /*
  * La explosion dura MUCHO mas que los demas efectos, y es a proposito.
  *
@@ -99,6 +108,17 @@ export class CombatFx {
 
     this.fogonazo = this.#crearFogonazo();
     this.fogonazoRestante = 0;
+
+    /*
+     * La mira: una linea en el piso que sale del personaje hacia donde
+     * apunta el pulgar.
+     *
+     * Sin esto, apuntar seria adivinar. El pulgar derecho esta abajo a la
+     * derecha y el personaje en el medio de la pantalla: no hay forma de
+     * saber que direccion elegiste salvo disparando y viendo donde pego,
+     * que con una pistola que hace ruido es una forma cara de averiguarlo.
+     */
+    this.mira = this.#crearMira();
 
     /*
      * El cohete en vuelo. Es la unica cosa del juego que existe entre que
@@ -362,6 +382,61 @@ export class CombatFx {
         app.drawLine(_p1, _p2, color, false);
       }
     }
+  }
+
+  /** Linea de apuntado. Se enciende y se apaga, no tiene duracion. */
+  #crearMira() {
+    const material = new pc.StandardMaterial();
+    material.diffuse = new pc.Color(0, 0, 0);
+    material.emissive = new pc.Color(1, 0.85, 0.45);
+    material.emissiveIntensity = 1;
+    material.useLighting = false;
+    material.blendType = pc.BLEND_NORMAL;
+    material.depthWrite = false;
+    material.opacity = 0.5;
+    material.update();
+
+    const e = new pc.Entity('Mira');
+    e.addComponent('render', { type: 'box', material, castShadows: false });
+    e.enabled = false;
+    this.raiz.addChild(e);
+    e.material = material;
+    return e;
+  }
+
+  /**
+   * Muestra la mira desde `pos` hacia `rumbo`.
+   *
+   * @param {{x:number,z:number}} pos
+   * @param {number} rumbo grados
+   * @param {number} largo metros; es el alcance real del arma
+   */
+  mostrarMira(pos, rumbo, largo) {
+    const d = dirDeRumbo(rumbo);
+    // Arranca fuera del cuerpo para no salir de adentro del personaje.
+    const desde = 0.6;
+    const tramo = Math.max(0.2, largo - desde);
+    const medio = desde + tramo / 2;
+
+    /*
+     * Por encima del cordon, no a ras del piso.
+     *
+     * El mundo es plano en y=0 y las veredas son cajas de 15 cm apoyadas
+     * encima. Cualquier cosa dibujada por debajo de esa altura queda
+     * ADENTRO de la vereda y no se ve: la mira funcionaba en la calzada y
+     * desaparecia al subir al cordon, que es justo donde uno se para a
+     * cubrirse.
+     *
+     * Vale lo mismo para el disco de los objetos. Ver UNITS.curbHeight.
+     */
+    this.mira.setPosition(pos.x + d.x * medio, ALTURA_SOBRE_CORDON, pos.z + d.z * medio);
+    this.mira.setEulerAngles(0, rumbo, 0);
+    this.mira.setLocalScale(0.09, 0.01, tramo);
+    this.mira.enabled = true;
+  }
+
+  ocultarMira() {
+    this.mira.enabled = false;
   }
 
   /** La cabeza del cohete: una capsula corta y caliente. */

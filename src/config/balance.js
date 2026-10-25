@@ -262,9 +262,46 @@ export const WEAPONS = {
 };
 
 export const ITEMS = {
-  medkit: { id: 'medkit', name: 'Botiquin', heal: 45, useTime: 1.2, maxCarried: 3 },
+  /**
+   * El botiquin cura LA MITAD DE LA VIDA TOTAL, y se suma a lo que haya.
+   *
+   * Sale de `PLAYER.maxHealth` y no es un numero escrito a mano: si alguna
+   * vez la vida maxima cambia, la cura lo acompaña sola. Un 45 fijo al
+   * lado de un maximo de 100 es el tipo de numero que queda viejo en
+   * silencio.
+   *
+   * Es la mitad del TOTAL y no la mitad de lo que falta: la segunda cura
+   * mucho cuando estas por morir y casi nada cuando estas bien, o sea que
+   * premia llegar al control hecho pedazos.
+   */
+  medkit: {
+    id: 'medkit',
+    name: 'Botiquin',
+    heal: PLAYER.maxHealth / 2,
+    useTime: 1.2,
+    maxCarried: 3
+  },
   bandage: { id: 'bandage', name: 'Venda', heal: 18, useTime: 0.6, maxCarried: 5 },
   ammoPistol: { id: 'ammoPistol', name: 'Munición 9mm', amount: 12, maxCarried: 60 }
+};
+
+/**
+ * Lo que aparece al llegar a un control.
+ *
+ * No se rellena nada de forma automatica: se SUELTAN objetos en el piso y
+ * el jugador los junta caminando. La diferencia importa. Un relleno
+ * automatico es un premio que no se siente; tres cajas tiradas que hay que
+ * ir a pisar, con lo que eso implica si hay zombis cerca, es una pequeña
+ * decision mas.
+ *
+ * Dos de municion —doce balas cada una, un cargador cada una— y un
+ * botiquin. Si llegas con el cargador lleno y la vida entera, se quedan en
+ * el piso: lo que no sirve no se levanta.
+ */
+export const CHECKPOINT_DROP = {
+  objetos: ['municion', 'municion', 'botiquin'],
+  /** Radio en el que se reparten alrededor del control. */
+  radio: 2.2
 };
 
 export const NOISE = {

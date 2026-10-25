@@ -869,6 +869,8 @@ La tabla de riesgos de la sección 16 está bien. Le faltan cuatro.
 | D-16 | El juego transcurre **de día**, con estética low-poly clara y mate | 🔴 |
 | D-17 | **Un solo convenio de ángulos**, en `core/rumbo.js`: rumbo 0 mira a `-Z`. Ningún `atan2` de rumbos fuera de ahí | 🔴 |
 | D-18 | Ningún destello dura menos que el techo de `dt`, o puede no dibujarse nunca | 🟡 |
+| D-19 | `pointer-events: auto` es sólo para lo que TIENE un manejador; lo decorativo nunca | 🔴 |
+| D-20 | Los objetos se levantan caminándolos, sin botón; y lo que no sirve no se levanta | 🟡 |
 
 ---
 
@@ -930,6 +932,60 @@ pruebas comprobaban que el efecto se *activara*, no que se *viera*.
 `PERF.maxDeltaTime`, con margen. Siguen siendo destellos —a 60 cuadros por
 segundo, seis o siete cuadros— pero no se pueden saltear. Vale para el
 trazado, el fogonazo, el arco del cuchillo y cualquier cosa que venga.
+
+---
+
+---
+
+### 🔴 D-19 — `pointer-events: auto` es sólo para lo que tiene un manejador
+
+**El problema, dos veces.** En la Fase 5 la capa de interfaz entera cubría
+el canvas sin `pointer-events: none` y se tragaba todos los toques: el juego
+no respondía a nada en el teléfono. Se arregló.
+
+Y volvió a pasar, en otra forma, con el **dibujo del joystick**. El joystick
+no escucha nada —quien escucha los dedos es el canvas, y el dibujo sólo se
+mueve a donde el canvas dice que está el dedo— pero tenía
+`pointer-events: auto`, así que se convertía en una tapa justo encima del
+lugar donde el jugador acababa de tocar:
+
+1. Apoyás el dedo en la zona de movimiento → no pasa nada.
+2. Apoyás en otro lado → anda, y el joystick **se muda ahí**.
+3. Volvés a apoyar en ese mismo lugar → deja de andar.
+
+**El joystick se escapaba del dedo.** Imposible de encontrar leyendo el
+código; lo reportó Gustavo jugando.
+
+**La decisión.** `pointer-events: auto` se le da únicamente a lo que tiene
+un manejador de eventos propio: los botones y las pantallas modales. Todo
+lo demás que vive sobre el canvas —joystick, barras, avisos, brújula,
+viñeta— es decoración y va con `none`.
+
+**Y la prueba correspondiente no alcanza con `dispatchEvent`**, que entrega
+el evento directamente al elemento que uno nombra y saltea la detección de
+impacto del navegador. Hay que preguntar quién recibe de verdad un toque en
+cada punto (`elementFromPoint`) o usar eventos táctiles por CDP.
+
+---
+
+### 🟡 D-20 — Los objetos se levantan caminándolos
+
+**El problema.** El documento 01 y la Fase 8 planeaban un botón contextual
+de recoger, a 1,8 m del objeto.
+
+**Por qué no funciona en el teléfono.** Con el pulgar izquierdo en el
+joystick y el derecho en disparar, no queda dedo libre. Pedir un tercer
+toque significa frenar, mirar el HUD, buscar el botón y apretarlo, con
+zombis encima. Eso no es una decisión interesante: es fricción.
+
+**La decisión.** Se levantan pisándolos. El botón de interactuar queda
+reservado para lo que sí es una decisión: abrir una puerta, activar algo.
+
+**Con una regla que lo hace funcionar: lo que no sirve no se levanta.** Un
+botiquín pisado con la vida llena se perdería para siempre y el jugador ni
+se enteraría de que lo pisó. Dejándolo en el piso, el recurso se administra
+en vez de desperdiciarse por caminar distraído. Sin esta regla, el recogido
+automático sería peor que el botón.
 
 ---
 

@@ -8,8 +8,10 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6 y **7**.
-> **Fase siguiente:** **Fase 8 — Objetos e inventario.** No empezada.
+> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6 y 7. **Fase 8 empezada**:
+> ya hay objetos que se recogen; falta el inventario.
+> **Fase siguiente:** terminar la **Fase 8**, o saltar a la **9** (la misión
+> completa) si lo que hay alcanza.
 >
 > El repositorio está en
 > **[github.com/gusoliva85/Explora_BA](https://github.com/gusoliva85/Explora_BA)**.
@@ -44,9 +46,18 @@
 > de dirección se salva. La explosión mata en el centro y deja heridos en
 > el borde.
 >
+> **Y los controles llegaron al control.** Cada checkpoint deja tres cajas
+> en el piso —dos de munición y un botiquín— que se levantan caminándolas.
+> El botiquín cura la mitad de la vida total, sumando. Lo que no te sirve
+> se queda en el piso.
+>
+> **Y se puede apuntar con el pulgar.** Un toque al botón dispara hacia
+> adelante; manteniéndolo y arrastrando, se convierte en un segundo
+> joystick: se camina para un lado y se dispara para el otro.
+>
 > **Ya es un juego**: hay un objetivo, enemigos que te buscan, y decisiones
-> con costo. Lo que falta es profundidad: los objetos y la misión
-> completa.
+> con costo. Lo que falta es el inventario, la misión completa y el
+> audio.
 >
 > **Lo que no existe todavía:** objetos, audio y cualquier arte que no sean
 > cajas de colores. **No hay sonido**, lo cual es una ironía incómoda para
@@ -966,45 +977,186 @@ Con una estela se leería mejor la trayectoria; es trabajo de la Fase 12.
 
 ---
 
-# FASE 8 — Objetos e inventario ⬜
+# FASE 8 — Objetos e inventario 🔶 EMPEZADA
 
 **Objetivo:** recursos que se recogen y se usan.
 
-### Tareas
+Lo que sigue salió de probar el juego en el teléfono, no del plan original.
+Se hizo antes que el resto de la fase porque sin esto la munición no se
+podía reponer de ninguna manera.
 
-| # | Tarea |
-|---|---|
-| 8.1 | `InventorySystem`: munición, botiquines, vendas, con topes de carga |
-| 8.2 | `PickupItem`: objeto en el mundo, visible y distinguible del decorado |
-| 8.3 | Que los objetos giren o floten suavemente para que se noten |
-| 8.4 | Detección de proximidad (1,8 m) y botón contextual que aparece solo entonces |
-| 8.5 | Recoger: el objeto desaparece, el inventario se actualiza, hay confirmación visible |
-| 8.6 | Que un objeto no se pueda recoger dos veces |
-| 8.7 | Que no se pueda recoger si ya estás al tope (y que se avise por qué) |
-| 8.8 | Curarse: lleva tiempo (1,2 s) y durante ese tiempo sos vulnerable |
-| 8.9 | Cancelar la curación si te golpean |
-| 8.10 | Colocar los objetos de la Misión 001 según el plano de la Fase 3 |
-| 8.11 | Mostrar el inventario en el HUD de forma compacta |
-| 8.12 | Pruebas unitarias del inventario (topes, duplicados, consumo) |
+### Lo que ya está
+
+| # | Tarea | Estado |
+|---|---|---|
+| 8.a | Objetos tirados en el piso, con su entidad y su disco | ✅ |
+| 8.b | Se levantan **caminándolos**, sin botón | ✅ |
+| 8.c | Lo que no sirve **no se levanta** | ✅ |
+| 8.d | Cada control deja 2 municiones (12 c/u) y 1 botiquín | ✅ |
+| 8.e | El botiquín cura **la mitad de la vida total**, sumando | ✅ |
+
+### Decisiones que se tomaron
+
+**Se levantan caminándolos, no con el botón de interactuar.** Hay un botón
+reservado desde la Fase 0 y no se usa acá. Con el pulgar izquierdo en el
+joystick y el derecho en disparar, no queda dedo libre: pedir un tercer
+toque significa frenar, buscar el botón y apretarlo, con zombis encima.
+Pisarlo y que se levante solo hace que recoger sea parte de moverse. El
+botón queda para lo que sí es una decisión: abrir una puerta, activar algo.
+
+**Lo que no sirve se queda en el piso.** Un botiquín pisado con la vida
+llena se perdería para siempre y el jugador ni se enteraría. Es la
+diferencia entre un recurso que se administra y uno que se desperdicia por
+caminar distraído.
+
+**El control no rellena nada: suelta cajas.** Un relleno automático es un
+premio que no se siente y no da ninguna decisión. Tres cajas tiradas que
+hay que ir a pisar —con lo que eso implica si hay zombis cerca— son un
+respiro que el jugador se gana caminando.
+
+**El botiquín cura la mitad del TOTAL, no la mitad de lo que falta.** La
+segunda cura mucho cuando estás por morir y casi nada cuando estás bien, o
+sea que premia llegar hecho pedazos. Y el número sale de
+`PLAYER.maxHealth`, no escrito a mano: si la vida máxima cambia, la cura la
+acompaña sola.
+
+**Los objetos son más grandes de lo que "deberían".** A veinte metros de
+cámara, una caja de treinta centímetros son unos pocos píxeles y se
+confunde con los escombros que ya hay en la calle. Lo que tiene que leerse
+no es el tamaño real del objeto: es que **eso se levanta**. Por eso además
+flotan y giran — nada más en la escena lo hace, así que cualquier cosa que
+se mueva así se lee como interactiva sin explicar nada.
+
+### Lo que falta de la Fase 8
+
+Este era el plan original. Tres tareas ya están hechas por el camino corto,
+y **una se decidió al revés a propósito** (la 8.4): ver las decisiones de
+arriba.
+
+| # | Tarea | Estado |
+|---|---|---|
+| 8.1 | `InventorySystem`: munición, botiquines, vendas, con topes de carga | ⬜ hay tope de munición, no inventario |
+| 8.2 | `PickupItem`: objeto en el mundo, visible y distinguible del decorado | ✅ |
+| 8.3 | Que los objetos giren o floten suavemente para que se noten | ✅ |
+| 8.4 | Detección de proximidad y botón contextual | ❌ **descartada**: se levantan caminándolos, sin botón |
+| 8.5 | Recoger: el objeto desaparece y hay confirmación visible | ✅ |
+| 8.6 | Que un objeto no se pueda recoger dos veces | ✅ con prueba |
+| 8.7 | Que no se pueda recoger si ya estás al tope | ✅ se queda en el piso, que es mejor que avisar |
+| 8.8 | Curarse: lleva tiempo (1,2 s) y durante ese tiempo sos vulnerable | ⬜ |
+| 8.9 | Cancelar la curación si te golpean | ⬜ |
+| 8.10 | Colocar los objetos de la Misión 001 según el plano de la Fase 3 | ⬜ hoy sólo salen en los controles |
+| 8.11 | Mostrar el inventario en el HUD de forma compacta | ⬜ la munición ya está |
+| 8.12 | Pruebas unitarias del inventario (topes, duplicados, consumo) | ✅ para lo que hay |
 
 ### Cómo se prueba
 
-1. Acercarse a un botiquín → aparece el botón de recoger.
-2. Alejarse → el botón desaparece.
-3. Recoger → el objeto desaparece y el contador sube.
-4. Volver a pasar por el mismo lugar → no hay nada.
-5. Recoger 3 botiquines y buscar un cuarto → avisa que estás al tope.
-6. Curarse con la vida baja → tarda, y la vida sube.
-7. **Curarse mientras un zombi te muerde** → la curación se cancela. Esta es la
-   prueba clave: define si curarse es una decisión táctica o un botón.
-8. Recorrer la misión entera → ¿alcanzan los recursos? ¿sobran?
+```
+npm test             248 pruebas; 22 nuevas de objetos y apuntado
+npm run test:e2e     7 nuevas en el navegador, con perfil de celular
+```
+
+A mano, en el teléfono:
+
+1. Llegar a un control → aparecen tres cajas en el piso.
+2. Caminarlas → se levantan solas, con aviso en pantalla.
+3. Llegar con la vida llena → el botiquín **se queda** esperando.
+4. Perder vida y volver → ahora sí se levanta.
+5. Con un cuarto de vida → el botiquín deja tres cuartos.
+6. Reiniciar → no queda nada tirado de la vuelta anterior.
+7. Mantener el botón de disparar y arrastrar → el personaje gira y se ve la
+   mira; se puede caminar para un lado y tirar para el otro.
+8. Un toque corto → dispara hacia adelante, sin girar.
 
 ### Criterio de salida
 
-- [ ] Recoger y usar un objeto hace exactamente lo que se espera
-- [ ] Los objetos se distinguen del decorado de un vistazo
-- [ ] Curarse en medio del combate es una decisión arriesgada
-- [ ] La misión se puede completar con los recursos que hay, pero sin sobrar
+- [x] Recoger un objeto hace exactamente lo que se espera, y lo que no
+      sirve se queda en el piso
+- [x] Los objetos se distinguen del decorado de un vistazo: flotan y giran,
+      y nada más en la escena lo hace
+- [ ] Curarse en medio del combate es una decisión arriesgada — **todavía
+      no**: el botiquín se levanta y cura al instante. Falta el tiempo de
+      uso y la cancelación al recibir un golpe
+- [ ] La misión se puede completar con los recursos que hay, pero sin
+      sobrar — pendiente de jugarla entera
+
+---
+
+# APUNTADO CON EL PULGAR ✅
+
+**Objetivo:** poder caminar para un lado y disparar para el otro.
+
+Pedido jugando. No estaba en ninguna fase del plan.
+
+| Cómo | Qué hace |
+|---|---|
+| Un toque al botón | Dispara hacia donde mira el personaje |
+| Mantener y arrastrar | Segundo joystick: apunta, y dispara seguido hacia allá |
+
+### Decisiones que se tomaron
+
+**El umbral de 18 px no es un detalle.** Un pulgar nunca toca un punto
+exacto: al apoyarlo y levantarlo se mueve solo unos píxeles. Sin umbral,
+cada disparo simple saldría apuntado a un lado al azar, que es peor que no
+tener apuntado.
+
+**Apuntar implica disparar, y tiene costo.** Mientras el pulgar está
+arrastrado, el arma tira seguido respetando su cadencia. No hay forma de
+"mirar" sin tirar, y con la pistola eso sale caro en ruido. Apuntar sin
+tirar es para lo que están el cuchillo y las piernas. **Es lo primero que
+hay que validar jugando**: si sale demasiado caro, se separa en dos gestos.
+
+**El giro hacia el rumbo apuntado es instantáneo, no suavizado.** El pulgar
+ya es el suavizado. Pasarlo por el mismo `turnSpeed` que el caminar haría
+que la mira vaya atrás del dedo, que se siente como que el juego no
+responde.
+
+**La cuenta pantalla → mundo se sacó a `core/rumbo.js`.** La usan el
+joystick de movimiento y el de apuntado, y tienen que coincidir
+exactamente: si cada uno tuviera su versión, el día que una cambie el
+personaje caminaría hacia un lado y dispararía hacia otro. Hay una prueba
+que compara la función nueva contra la fórmula vieja copiada tal cual, para
+que mover trigonometría de lugar no cuele un signo cambiado.
+
+**La mira muestra el alcance REAL del arma.** Dos metros con el cuchillo,
+veintiocho con la pistola. Es la forma más barata de que se entienda la
+diferencia entre las dos armas sin leer nada.
+
+---
+
+# 🔧 EL ERROR DEL JOYSTICK ✅
+
+Reportado jugando, y de los que no se encuentran leyendo el código:
+
+> *"Si mantenés ahí, no se mueve. Tenés que apretar en cualquier otro lugar
+> en blanco... Cuando hacés eso, si levantás y volvés a apretar el mismo
+> lugar donde ahora se puso el stick, no te lo toma."*
+
+**El joystick se escapaba del dedo.** La causa: `pointer-events: auto` sobre
+el **dibujo** del joystick. El joystick no escucha nada —quien escucha los
+dedos es el canvas, y el dibujo sólo se mueve a donde el canvas dice que
+está el dedo—, pero al pedir eventos se convertía en una tapa justo encima
+del lugar donde el jugador acababa de tocar:
+
+1. Apoyás el dedo → cae sobre el dibujo, el canvas no se entera.
+2. Apoyás en otro lado → anda, y el joystick **se muda ahí**.
+3. Volvés a ese lugar → deja de andar.
+
+Es la misma familia que el error de `#ui-layer` de la Fase 5: algo
+decorativo puesto encima del canvas pidiendo eventos que no usa. **La regla
+que queda: `pointer-events: auto` es para lo que TIENE un manejador.**
+
+Hay una prueba que hace exactamente esa secuencia —tocar, soltar, y volver
+a tocar el mismo punto— y se validó reintroduciendo el error: falla
+nombrando al culpable.
+
+### ⚠️ Lo que se aprendió de las pruebas
+
+**El navegador de prueba corre a unos CUATRO cuadros por segundo** (WebGL
+por software). Un `waitForTimeout(300)` puede no incluir ni un solo cuadro,
+así que leer "lo que dibujó el juego" después de un tiempo fijo da
+resultados al azar. Las primeras pruebas del apuntado fallaban por eso con
+el juego funcionando bien. Ahora todo lo que depende del bucle se espera
+**por condición**, contando cuadros reales.
 
 ---
 

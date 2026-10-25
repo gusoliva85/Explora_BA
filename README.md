@@ -35,7 +35,7 @@ además muestra la dirección para abrirlo desde el celular.
 | Mover | `WASD` o flechas | Dedo en la mitad izquierda |
 | Cámara | Arrastrar / rueda para acercar | Dedo en la mitad derecha |
 | Correr | `Shift` | Botón |
-| Atacar / disparar | Click o `Espacio` | Botón grande |
+| Atacar / disparar | Click o `Espacio` | Botón grande (**arrastralo para apuntar**) |
 | Cambiar de arma | `Q` | Botón `⇄` |
 | Recargar | `R` | Botón `R` |
 | Bazooka | `F` | Botón naranja (sólo cuando está lista) |
@@ -169,6 +169,38 @@ juego y es completamente invisible.
 
 Las perillas están en `src/config/balance.js`: `noiseRadius` por arma, y
 `NOISE.rangeMultiplier` para subir la tensión de todo el juego de una vez.
+
+### Apuntar con el pulgar
+
+El botón de disparar hace dos cosas según cómo se lo toque:
+
+- **Un toque** dispara hacia donde el personaje ya está mirando.
+- **Mantenerlo y arrastrar** lo convierte en un segundo joystick: la
+  dirección del arrastre es hacia dónde apuntás, y mientras tanto el pulgar
+  izquierdo sigue manejando el movimiento. Eso es lo que permite
+  **retroceder disparando** en vez de sólo correr.
+
+Mientras apuntás se ve una línea en el piso con el **alcance real del arma**
+— dos metros con el cuchillo, veintiocho con la pistola.
+
+Apuntar implica disparar: no hay forma de "mirar" sin tirar, y con la
+pistola eso sale caro en ruido. Apuntar sin tirar es para lo que están el
+cuchillo y las piernas.
+
+### Los objetos
+
+Cada control deja **tres cajas en el piso**: dos de munición (12 balas cada
+una) y un botiquín. Se levantan **caminándolas**, sin botón: con un pulgar
+en el joystick y el otro en disparar no queda dedo libre, y frenar a buscar
+un tercer botón con zombis encima no es una decisión interesante.
+
+El botiquín cura **la mitad de la vida total**, sumando: con un cuarto de
+vida te deja en tres cuartos.
+
+**Lo que no te sirve no se levanta.** Un botiquín pisado con la vida llena
+se perdería para siempre sin que te enteres; así se queda esperando. Es la
+diferencia entre un recurso que se administra y uno que se desperdicia por
+caminar distraído.
 
 ### La bazooka
 

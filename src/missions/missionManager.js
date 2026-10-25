@@ -102,7 +102,15 @@ export class MissionManager {
       if (within(playerPos, p, cp.radius)) {
         this.nextCheckpoint++;
         this.respawn = { x: p.x, z: p.z, yaw: 0 };
-        this.bus.emit(EV.CHECKPOINT_REACHED, { index: this.nextCheckpoint, label: cp.label });
+        // La POSICION va en el evento. Sin ella, quien quiera soltar algo
+        // en el control tendria que volver a buscar el punto por su cuenta,
+        // y seria la segunda copia de una cuenta que ya esta hecha aca.
+        this.bus.emit(EV.CHECKPOINT_REACHED, {
+          index: this.nextCheckpoint,
+          label: cp.label,
+          x: p.x,
+          z: p.z
+        });
         this.bus.emit(EV.OBJECTIVE_CHANGED, { text: this.objectiveText });
       }
       return;

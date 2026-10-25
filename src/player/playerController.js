@@ -1,7 +1,7 @@
 import * as pc from 'playcanvas';
 import { PLAYER, UNITS } from '../config/balance.js';
 import { EV } from '../core/events.js';
-import { rumboHacia } from '../core/rumbo.js';
+import { rumboHacia, direccionDeEntrada, normalizarRumbo } from '../core/rumbo.js';
 
 /**
  * Controlador cinematico del protagonista (Gus).
@@ -53,22 +53,16 @@ export class PlayerController {
    * @param {{x:number,y:number}} moveInput vector de entrada normalizado
    * @param {boolean} runHeld
    * @param {number} cameraYaw orientacion horizontal de la camara, en grados
+   * @param {number} [rumboForzado] si se pasa, el personaje MIRA hacia ahi
+   *   aunque camine para otro lado. Lo usa el apuntado con el pulgar.
    */
-  update(dt, moveInput, runHeld, cameraYaw) {
+  update(dt, moveInput, runHeld, cameraYaw, rumboForzado = null) {
     if (this.invulnerableFor > 0) this.invulnerableFor -= dt;
 
     // 1. Entrada -> direccion en el mundo, relativa a la camara.
-    const rad = cameraYaw * pc.math.DEG_TO_RAD;
-    const sin = Math.sin(rad);
-    const cos = Math.cos(rad);
-    // Adelante de la camara es -Z rotado por yaw.
-    const forwardX = -sin;
-    const forwardZ = -cos;
-    const rightX = cos;
-    const rightZ = -sin;
-
-    const dirX = moveInput.x * rightX + moveInput.y * forwardX;
-    const dirZ = moveInput.x * rightZ + moveInput.y * forwardZ;
+    const dir = direccionDeEntrada(moveInput.x, moveInput.y, cameraYaw);
+    const dirX = dir.x;
+    const dirZ = dir.z;
     const inputMag = Math.hypot(dirX, dirZ);
 
     // 2. Velocidad objetivo con aceleracion, no instantanea.
@@ -95,7 +89,25 @@ export class PlayerController {
     if (res.hitZ) this.velocity.z = 0;
     this.entity.setPosition(res.x, 0, res.z);
 
-    // 4. Girar el personaje hacia donde se mueve.
+    /*
+     * 4. Girar el personaje.
+     *
+     * Normalmente mira hacia donde camina. Pero si viene un rumbo forzado
+     * —el pulgar derecho apuntando— MANDA ESE, y entonces se puede caminar
+     * para un lado y disparar para el otro. Es lo que separa "correr" de
+     * "retroceder tirando", que es la diferencia entre escapar y pelear.
+     *
+     * El giro hacia el rumbo apuntado es instantaneo y no suavizado: el
+     * pulgar ya es el suavizado. Pasarlo por el mismo `turnSpeed` que el
+     * caminar haria que la mira vaya atras del dedo, que se siente como
+     * que el juego no responde.
+     */
+    if (rumboForzado !== null) {
+      this.yaw = normalizarRumbo(rumboForzado);
+      this.entity.setEulerAngles(0, this.yaw, 0);
+      return;
+    }
+
     const speed = Math.hypot(this.velocity.x, this.velocity.z);
     if (speed > 0.15) {
       // Mismo convenio que todo el resto: ver core/rumbo.js.

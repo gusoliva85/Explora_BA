@@ -28,6 +28,25 @@ export class InputManager {
     /** Delta de camara acumulado este frame (pixeles). */
     this.look = { x: 0, y: 0 };
 
+    /**
+     * Apuntado con el pulgar derecho.
+     *
+     * El boton de atacar hace dos cosas segun como se lo toque:
+     *
+     * - **Un toque** dispara hacia donde el personaje ya esta mirando.
+     * - **Mantenerlo y arrastrar** lo convierte en un segundo joystick:
+     *   la direccion del arrastre es hacia donde se apunta, y mientras
+     *   tanto el pulgar izquierdo sigue manejando el movimiento. Eso es lo
+     *   que permite retroceder disparando en vez de solo correr.
+     *
+     * `aim` esta en ejes de PANTALLA (x derecha, y arriba), igual que
+     * `move`: quien lo usa lo convierte a mundo con la misma funcion que
+     * el movimiento, para que caminar y apuntar nunca se desalineen.
+     */
+    this.aim = { x: 0, y: 0 };
+    /** true mientras el arrastre pasa el umbral y hay direccion de apuntado. */
+    this.apuntando = false;
+
     this.buttons = {
       run: false,
       attack: false,
@@ -73,6 +92,9 @@ export class InputManager {
   reset() {
     this.move.x = this.move.y = 0;
     this.look.x = this.look.y = 0;
+    this.aim.x = this.aim.y = 0;
+    this.apuntando = false;
+    this.aimTouch = null;
     this.keys.clear();
     this.moveTouch = null;
     this.lookTouch = null;
@@ -198,6 +220,75 @@ export class InputManager {
    * Conecta los botones del HUD. Se usa pointerdown/up en vez de click para
    * que el ataque responda al apoyar el dedo, no al soltarlo.
    */
+  /**
+   * El boton de atacar: boton y joystick de apuntado a la vez.
+   *
+   * @param {HTMLElement} el
+   * @param {string} name boton logico que se activa
+   */
+  bindAimButton(el, name) {
+    if (!el) return;
+
+    /*
+     * El umbral existe para que un toque no se lea como un arrastre.
+     *
+     * Un pulgar nunca toca un punto exacto: al apoyarlo y levantarlo se
+     * mueve unos pixeles solo. Sin umbral, cada disparo simple saldria
+     * apuntado a un lado al azar, que es peor que no tener apuntado.
+     *
+     * 18 px es aproximadamente el temblor de un pulgar apoyado, medido en
+     * pixeles CSS para que no dependa de la densidad de la pantalla.
+     */
+    const UMBRAL = 18;
+    /* Mas alla de este radio el stick ya esta al maximo. */
+    const RADIO = 56;
+
+    const down = (e) => {
+      e.preventDefault();
+      el.setPointerCapture?.(e.pointerId);
+      this.aimTouch = { id: e.pointerId, x: e.clientX, y: e.clientY };
+      this.apuntando = false;
+      this.aim.x = this.aim.y = 0;
+      this.#setButton(name, true);
+    };
+
+    const move = (e) => {
+      if (!this.aimTouch || this.aimTouch.id !== e.pointerId) return;
+      e.preventDefault();
+      const dx = e.clientX - this.aimTouch.x;
+      // En pantalla, Y crece hacia ABAJO. Se invierte para que arrastrar
+      // hacia arriba signifique apuntar hacia adelante.
+      const dy = this.aimTouch.y - e.clientY;
+      const largo = Math.hypot(dx, dy);
+
+      if (largo < UMBRAL) {
+        this.apuntando = false;
+        this.aim.x = this.aim.y = 0;
+        return;
+      }
+
+      const k = Math.min(1, largo / RADIO) / largo;
+      this.aim.x = dx * k;
+      this.aim.y = dy * k;
+      this.apuntando = true;
+    };
+
+    const up = (e) => {
+      if (this.aimTouch && this.aimTouch.id !== e.pointerId) return;
+      e.preventDefault();
+      el.releasePointerCapture?.(e.pointerId);
+      this.aimTouch = null;
+      this.apuntando = false;
+      this.aim.x = this.aim.y = 0;
+      this.#setButton(name, false);
+    };
+
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  }
+
   bindHudButton(el, name) {
     if (!el) return;
     const down = (e) => {
