@@ -9,7 +9,9 @@
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
 > **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6, 7, 8 y **9**.
-> **En curso:** **Fase 12 — Arte original**, salteada a pedido. La 10 y la
+> **En curso:** **Fase 12 — Arte original**, salteada a pedido.
+> **12.A, 12.B, 12.C y 12.D cerradas.** Falta **12.E — La ciudad**, que es
+> la que decide dos de los seis criterios de salida de la fase. La 10 y la
 > 11 quedan para después.
 >
 > **🏁 Éste es el "primer hito" del documento 01: a partir de acá el juego
@@ -1718,12 +1720,99 @@ agrupado dinámico funde las mallas de los zombis que comparten material, y
 las tres variantes siguen entrando. Las piezas por zombi pasaron de 8 a 13,
 y sólo el torso y los dos muslos proyectan sombra.
 
-### 12.D — Armas y objetos
+### 12.D — Armas y objetos ✅
 
-| # | Tarea |
+| # | Tarea | Estado |
+|---|---|---|
+| 12.17 | Cuchillo, pistola y bazooka | ✅ y se ven en la mano de Gus |
+| 12.18 | Botiquín y caja de munición con silueta reconocible | ✅ las vendas no existen todavía (ver Fase 8) |
+
+#### El largo es lo que separa las siluetas
+
+Un arma en la mano de un personaje de cuarenta píxeles ocupa unos ocho. A
+esa escala no existe el detalle: lo único que llega es el **contorno contra
+el fondo**.
+
+| Arma | Largo | Lo que la identifica |
+|---|---|---|
+| Cuchillo | 0,26 m | Corto y fino. Casi no sobresale de la mano |
+| Pistola | 0,26 m | Corta pero con guardamonte: una **L** |
+| Bazooka | **1,15 m** | Pasa el ancho del cuerpo y se apoya en el hombro |
+
+Dos armas del mismo largo con formas distintas son la misma mancha; una
+corta y una larga se distinguen aunque sean dos palos. Por eso la bazooka
+mide más del doble del ancho de hombros de Gus, con la **cola marcada hacia
+atrás**: esa cola es la mitad de lo que la identifica.
+
+Los largos **no son los reales** —una 9 mm mide 19 cm, no 26— por la misma
+razón que el pelo de Gus tiene más volumen del natural.
+
+#### La bazooka aparece sólo al disparar
+
+No se equipa: es un botón aparte (Fase 7). Pero disparar un cohete sin que
+se vea de dónde sale es de las cosas que hacen que un juego se sienta hecho
+de piezas sueltas. Aparece al hombro durante segundo y medio y vuelve el
+arma que estaba.
+
+#### Los objetos del piso tienen el problema contrario
+
+No tienen que distinguirse entre sí: tienen que distinguirse **del
+decorado**. La calle ya está llena de cajas chicas —escombros, bolsas,
+cordones— así que lo que los separa es que **se mueven**: flotan y giran, y
+nada más en la escena lo hace.
+
+Lo que agrega esta parte es una marca encima que dice **qué** se va a
+levantar: una cruz para el botiquín, una tapa alargada para la munición.
+Dos siluetas que se distinguen a veinte metros sin leer un ícono.
+
+#### Las armas no proyectan sombra
+
+Son chicas, están en movimiento y su sombra cae dentro de la del brazo. Es
+una llamada de dibujo por pieza que no cambia nada en pantalla.
+
+---
+
+## 🏁 FASE 12 — Revisión del criterio de salida
+
+| Criterio | Estado |
 |---|---|
-| 12.17 | Cuchillo, pistola y bazooka |
-| 12.18 | Botiquín, vendas y caja de munición, con una silueta reconocible a distancia |
+| No quedan cajas grises provisionales | ⬜ **No.** Falta **12.E — La ciudad**: calles, fachadas, mobiliario, vehículos y cartelería siguen siendo el kit generado de la Fase 3 |
+| El estilo es coherente entre todos los recursos | ✅ todo sale de `styleGuide.js` y hay pruebas que lo verifican |
+| La escala es consistente | ✅ Gus 1,80, zombi 1,72, puerta 2,10, y pruebas que lo fijan |
+| Los FPS en el teléfono no bajaron respecto a la Fase 9 | ⚠️ **las llamadas de dibujo subieron de 181 a 238.** Ver abajo |
+| Alguien que conoce Buenos Aires la reconoce | ⬜ depende de 12.E, que es la parte porteña |
+| Todos los recursos están en el registro de licencias | ✅ **no hay recursos externos**: todo es geometría generada en código |
+
+### Lo que falta: 12.E
+
+Las partes A, B, C y D están cerradas. **12.E — La ciudad** es la más larga
+de todas —nueve tareas: kit modular de calles, fachadas, mobiliario
+urbano, props porteños, vehículos, cartelería, barricadas, reemplazo del
+generador y repaso de iluminación— y es la que decide dos de los seis
+criterios de salida.
+
+No se hizo porque no estaba en lo pedido. Queda como el siguiente paso
+natural de la fase.
+
+### ⚠️ El costo acumulado, medido
+
+| Momento | Llamadas de dibujo |
+|---|---|
+| Fin de la Fase 9 | 181 |
+| Con Gus (12.B) | 232 |
+| Con los zombis (12.C) | 232 |
+| Con armas y objetos (12.D) | **238** |
+
+Los zombis salieron gratis gracias al agrupado dinámico: las mallas que
+comparten material se funden. Gus no, porque es uno solo y se anima entero.
+
+**La salida está identificada y es trabajo de la Fase 13**, que es la de
+optimización: fundir en una sola malla los grupos de piezas que nunca se
+mueven entre sí. En Gus, la cabeza con el pelo son cuatro piezas rígidas y
+el torso con la campera y las solapas son otras cuatro; de 24 piezas se
+bajaría a unas 14. Conviene hacerlo **con 12.E ya puesta**, para medir todo
+junto una sola vez en vez de tres.
+
 
 ### 12.E — La ciudad
 

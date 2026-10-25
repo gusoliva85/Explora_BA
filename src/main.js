@@ -17,6 +17,7 @@ import { SpawnManager } from './enemies/spawnManager.js';
 import { WeaponController } from './combat/weaponController.js';
 import { CombatFx } from './combat/combatFx.js';
 import { Gus, Pose } from './characters/gus.js';
+import { ArmasEnMano } from './characters/armas.js';
 import { GestorProyectiles } from './combat/projectile.js';
 import { BolsaDeObjetos, TipoObjeto, curaDeBotiquin } from './items/itemLogic.js';
 import { VistaObjetos } from './items/itemView.js';
@@ -225,6 +226,15 @@ const efectos = new CombatFx(app, builder.mats);
  * mallas, y Gus usa varios tonos oscuros que el mundo ya tiene.
  */
 const gus = new Gus(playerEntity, builder.mats);
+
+/*
+ * Las armas cuelgan del anclaje de la mano derecha de Gus, asi que se
+ * mueven solas con la animacion: el arma no sabe nada del personaje y el
+ * personaje no sabe nada del arma.
+ */
+const armasEnMano = new ArmasEnMano(gus.anclaArma, builder.mats);
+/** Temporizador que devuelve el arma normal a la mano tras un bazookazo. */
+let bazookaEnMano = null;
 
 /*
  * El azar del combate: su propio generador, con su propia semilla.
@@ -451,6 +461,18 @@ const arma = new WeaponController({
 
   alDispararEspecial: () => {
     stats.bazookasUsadas++;
+    gus.gesto(Pose.DISPARAR);
+    /*
+     * La bazooka aparece en la mano solo mientras dura el disparo.
+     *
+     * No se "equipa": es un boton aparte (ver Fase 7). Pero disparar un
+     * cohete sin que se vea de donde sale es de las cosas que hacen que un
+     * juego se sienta hecho de piezas sueltas. Un segundo y medio alcanza
+     * para que se vea el tubo al hombro.
+     */
+    armasEnMano.equipar('bazooka');
+    clearTimeout(bazookaEnMano);
+    bazookaEnMano = setTimeout(() => armasEnMano.equipar(arma.equipada), 1500);
     hud.flash('BAZOOKA', 1000);
     camera.sacudir(0.3, 0.18);
   },
@@ -481,6 +503,7 @@ const arma = new WeaponController({
 function actualizarHudArma() {
   // Lo que esta en la mano no puede estar tambien en el cinto.
   gus.mostrarPistolaAlCinto(arma.equipada !== 'pistol');
+  armasEnMano.equipar(arma.equipada);
   hud.setArma({
     nombre: arma.arma.name,
     cargador: arma.enCargador,
@@ -627,6 +650,7 @@ function startMission({ fromCheckpoint = false } = {}) {
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
   zombis.reiniciar();
   arma.reiniciar('knife');
+  clearTimeout(bazookaEnMano);
   actualizarHudArma();
   hud.setRecarga(false);
   hud.setEspecial(0, false);

@@ -142,6 +142,20 @@ test.describe('el surtido del control', () => {
 
   test('lo que no sirve se queda en el piso', async ({ page }) => {
     /*
+     * Timeout largo a proposito.
+     *
+     * Esta prueba camina sobre TODOS los objetos del mapa dos veces: una
+     * con la mochila llena para comprobar que no los levanta, y otra
+     * vacia para comprobar que si. Son ocho objetos por dos pasadas, y
+     * este navegador corre con WebGL por software a unos cuatro cuadros
+     * por segundo.
+     *
+     * Empezo a agotar los 30 s por omision cuando el mapa paso a tener
+     * objetos repartidos ademas de los del control. No es lentitud del
+     * juego: en un telefono de verdad esto son dos segundos.
+     */
+    test.setTimeout(120000);
+    /*
      * La regla que evita que un botiquin pisado con la vida llena se
      * pierda para siempre sin que el jugador se entere.
      */

@@ -100,6 +100,15 @@ export class VistaObjetos {
       castShadows: true
     });
     /*
+     * Marca encima de la caja, para saber QUE se va a levantar (12.18).
+     *
+     * El movimiento ya dice "esto se recoge"; lo que faltaba era decir
+     * que cosa. Una cruz para el botiquin y una tapa alargada para la caja
+     * de municion: dos siluetas que se distinguen a veinte metros sin
+     * necesidad de leer un icono.
+     */
+    this.#marca(caja, objeto.tipo);
+    /*
      * Mas grande de lo que un botiquin "deberia" ser.
      *
      * A veinte metros de camara, una caja de treinta centimetros son unos
@@ -124,6 +133,39 @@ export class VistaObjetos {
 
     this.raiz.addChild(raiz);
     this.vistas.set(objeto.id, { raiz, caja });
+  }
+
+  /**
+   * La marca que dice de que objeto se trata.
+   *
+   * Va encima de la caja y gira con ella. Son dos o tres piezas chicas sin
+   * sombra: a esta distancia la sombra de una cruz de diez centimetros cae
+   * dentro de la de la caja.
+   */
+  #marca(caja, tipo) {
+    const blanco = [0.92, 0.92, 0.9];
+    const agregar = (nombre, escala, pos) => {
+      const e = new pc.Entity(nombre);
+      e.addComponent('render', {
+        type: 'box',
+        material: this.#material(blanco, false),
+        castShadows: false
+      });
+      // La escala es RELATIVA a la caja, que ya esta escalada: por eso los
+      // numeros son fracciones y no metros.
+      e.setLocalScale(escala[0], escala[1], escala[2]);
+      e.setLocalPosition(pos[0], pos[1], pos[2]);
+      caja.addChild(e);
+    };
+
+    if (tipo === TipoObjeto.BOTIQUIN) {
+      // Una cruz en la tapa.
+      agregar('CruzH', [0.62, 0.12, 0.16], [0, 0.56, 0]);
+      agregar('CruzV', [0.16, 0.12, 0.62], [0, 0.56, 0]);
+    } else {
+      // Una tapa alargada: silueta de cajon, no de cruz.
+      agregar('Tapa', [0.84, 0.16, 0.44], [0, 0.56, 0]);
+    }
   }
 
   /** Saca de escena un objeto levantado. */
