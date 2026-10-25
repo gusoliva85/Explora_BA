@@ -11,6 +11,8 @@ import { COLORS, ACABADO } from '../world/palette.js';
 import { montarLuzAmbiente, crearMaterialesLuz } from '../world/lighting.js';
 import { montarPostProceso } from '../render/postProcess.js';
 import { UNITS } from '../config/balance.js';
+import { Gus } from '../characters/gus.js';
+import { Pose } from '../characters/pose.js';
 
 /**
  * ===========================================================================
@@ -45,11 +47,28 @@ const muestrario = montarMuestrario(app, mats);
 muestrario.enabled = false;
 
 /*
- * Las figuras provisionales.
+ * GUS, el modelo de verdad (12.B).
  *
- * Hoy son la cápsula de Gus y el cuerpo del zombi tal como están en el
- * juego. Las reemplazan 12.B y 12.C, y el punto de esta escena es
- * justamente poder comparar el antes y el después sin cambiar nada más.
+ * Es el mismo objeto que usa el juego, no una copia: si alguien le cambia
+ * una medida, esta escena lo muestra sin que haya que tocarla.
+ */
+const raizGus = new pc.Entity('Gus');
+raizGus.setLocalPosition(-5.4, 0, 0.3);
+/*
+ * De frente a la camara.
+ *
+ * El frente de los modelos es -Z (el convenio de todo el proyecto, ver
+ * core/rumbo.js) y la camara mira desde +Z: sin este giro, la ficha del
+ * personaje mostraba a Gus DE ESPALDAS. Se veia bien y era la vista
+ * equivocada: lo que hay que juzgar son las solapas y la cara.
+ */
+raizGus.setLocalEulerAngles(0, 180, 0);
+app.root.addChild(raizGus);
+const gus = new Gus(raizGus, mats);
+
+/*
+ * El zombi sigue siendo provisional: lo reemplaza 12.C. Queda la capsula a
+ * proposito, para poder comparar el antes y el despues en la misma escena.
  */
 function figuraProvisional(nombre, x, alto, color) {
   const g = new pc.Entity(nombre);
@@ -68,8 +87,38 @@ function figuraProvisional(nombre, x, alto, color) {
   return g;
 }
 
-figuraProvisional('Gus', -5.4, ESCALA.gus, COLORS.police);
 figuraProvisional('Zombi', -1, ESCALA.zombi, [0.42, 0.5, 0.3]);
+
+/*
+ * Gus se anima aca tambien. Una ficha de personaje con el modelo congelado
+ * en pose neutral no sirve para juzgar nada: lo que hay que validar es si
+ * se lee EN MOVIMIENTO, que es como lo va a ver el jugador.
+ *
+ * Las teclas 1..6 cambian de pose.
+ */
+const POSES = [Pose.QUIETO, Pose.CAMINAR, Pose.CORRER, Pose.ATACAR, Pose.RECARGAR, Pose.CURARSE];
+let poseActual = 0;
+let velocidadFingida = 0;
+
+app.on('update', (dt) => {
+  const estado = POSES[poseActual];
+  if (estado === Pose.CAMINAR) velocidadFingida = 3.2;
+  else if (estado === Pose.CORRER) velocidadFingida = 6;
+  else velocidadFingida = 0;
+
+  if (estado === Pose.ATACAR || estado === Pose.RECARGAR) gus.animador.pedir(estado);
+  else gus.animador.pedir(estado);
+  gus.animador.update(dt, velocidadFingida);
+  gus.aplicar(gus.animador.pose());
+});
+
+addEventListener('keydown', (e) => {
+  const n = Number(e.key);
+  if (n >= 1 && n <= POSES.length) {
+    poseActual = n - 1;
+    e.preventDefault();
+  }
+});
 
 // Un objeto del piso, para ver si se distingue del decorado.
 const objeto = new pc.Entity('Botiquin');
@@ -255,5 +304,6 @@ globalThis.estilo = {
   colocarCamara,
   muestrario,
   guia: { PRESUPUESTO, TEXTURAS, ESCALA, luminancia, tono, rgbAHex },
+  gus,
   unidades: UNITS
 };

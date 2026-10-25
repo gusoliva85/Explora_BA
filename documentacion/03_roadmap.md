@@ -1515,19 +1515,123 @@ deja de abrirse en cuanto alguien quiere mirarla desde el teléfono, que es
 justo donde hay que mirarla.
 
 
-### 12.B — Gus
+### 12.B — Gus ✅
 
-| # | Tarea |
-|---|---|
-| 12.5 | **Completar la ficha:** vistas de frente, perfil, espalda y cuerpo entero (ver documento 02, sección 5) |
-| 12.6 | Decidir mochila, guantes y dónde se guardan las armas |
-| 12.7 | Modelar o generar, y limpiar en Blender |
-| 12.8 | Exagerar los dos rasgos que se leen a distancia: el pelo con volumen y las solapas de la campera |
-| 12.9 | Esqueleto compatible con Mixamo, revisando los pesos |
-| 12.10 | Animaciones: quieto, caminar, correr, cuchillazo, disparar, recargar, recibir daño, morir, curarse |
-| 12.11 | Mezcla entre animaciones para que los cambios no sean bruscos |
-| 12.12 | Puntos de anclaje de las armas en la mano |
-| 12.13 | Exportar a GLB e integrar, reemplazando la cápsula |
+| # | Tarea | Estado |
+|---|---|---|
+| 12.5 | Completar la ficha | ✅ **como decisiones, no como dibujos**: ver abajo |
+| 12.6 | Decidir mochila, guantes y dónde se guardan las armas | ✅ sin mochila, con guantes, pistola al cinto y cuchillo en la bota |
+| 12.7 | Modelar o generar, y limpiar en Blender | ❌ **descartado**: se construye con primitivas en código |
+| 12.8 | Exagerar el pelo con volumen y las solapas | ✅ son los dos rasgos de la silueta |
+| 12.9 | Esqueleto compatible con Mixamo | ❌ **descartado**: jerarquía de primitivas, ver abajo |
+| 12.10 | Nueve animaciones | ✅ todas, en `src/characters/pose.js` |
+| 12.11 | Mezcla entre animaciones | ✅ 0,12 s |
+| 12.12 | Anclaje del arma en la mano | ✅ `gus.anclaArma` |
+| 12.13 | Reemplazar la cápsula | ✅ el controlador no cambió una línea |
+
+#### La ficha se cerró con decisiones, no con dibujos
+
+El documento 02 marcaba en 🔴 que faltaban vistas de frente, espalda, perfil
+y cuerpo entero. **Siguen faltando**, y eso bloquea un modelo *realista*. No
+bloquea éste.
+
+A veinte metros de cámara Gus mide unos cuarenta píxeles de alto. A esa
+escala no existen la barba de pocos días, el cierre en diagonal ni la
+costura del bolsillo: lo único que llega al jugador es la **silueta** y el
+**valor**. Así que lo que había que decidir no era cómo es la espalda de la
+campera, sino **qué dos rasgos se exageran**. El propio 02 ya los nombraba:
+el pelo con volumen y las solapas.
+
+Las decisiones 🟡 que el 02 dejaba abiertas, cerradas:
+
+| Pregunta | Decisión | Por qué |
+|---|---|---|
+| ¿Mochila? | **No** | Redondea la espalda y mata el trapecio de los hombros, que es el rasgo que lo identifica desde arriba |
+| ¿Guantes? | **Sí, oscuros** | Las manos son lo único de piel que se mueve rápido; con guantes la silueta del brazo queda limpia |
+| ¿Dónde van las armas? | **Pistola al cinto, cuchillo en la bota** | Se ven, suman silueta y cuentan que está preparado |
+| ¿La bazooka a la espalda? | **No** | Cambiaría la silueta por completo y aparece dos veces por partida |
+| ¿Detalle facial? | **Ninguno** | A esa distancia la cara son tres píxeles |
+
+#### Sin Blender y sin Mixamo, a propósito
+
+- Un `.glb` con esqueleto y nueve animaciones pesa cientos de kilobytes. El
+  juego se abre desde un enlace en el teléfono, muchas veces con datos: ese
+  peso es tiempo antes de poder jugar. Es el mismo razonamiento que la
+  decisión de no usar texturas.
+- Todo el proyecto es texto versionable (D-01). Un binario exportado desde
+  una herramienta externa no se revisa en un diff, no se prueba, y cuando
+  algo sale mal no se sabe qué cambió.
+- A veinte metros, lo que se lee de una animación no es la deformación de
+  la malla: es el movimiento de los volúmenes grandes.
+
+En su lugar hay un **esqueleto jerárquico de primitivas** —cada parte
+cuelga de su padre y gira sobre su pivote, como un muñeco articulado— y las
+poses se calculan con números que **se pueden probar**. Si algún día hace
+falta deformación de verdad, el camino es el `.glb` y esta capa se
+reemplaza entera.
+
+#### Lo que las pruebas fijaron
+
+Una animación mal hecha se ve rara pero no se puede describir, así que es
+de las cosas que se "arreglan" moviendo números al azar. Ahora hay
+condiciones que se cumplen o no:
+
+- Las piernas van en oposición y los brazos al revés que las piernas del
+  mismo lado. Sin eso, un caminar se lee como un muñeco arrastrado.
+- **Las rodillas nunca doblan para el lado contrario.** Es el error más
+  fácil de cometer y el más difícil de nombrar mirando la pantalla: se ve
+  como una pata de saltamontes.
+- El ciclo cierra: la fase 0 y la 1 son la misma pose, así que no hay un
+  salto visible una vez por paso.
+- Correr no es caminar más rápido: zancada más larga, torso más volcado y
+  brazos más altos. Hay una prueba por cada una.
+- La muerte avanza una sola vez y se queda. Un muerto que repite su caída
+  en bucle es lo primero que delata que un juego está hecho de ciclos.
+
+#### 🔧 Dos errores que encontró la medición
+
+**Los pies quedaron enterrados.** El modelo medía 1,86 y la guía declara
+1,80, así que se bajó la cadera seis centímetros. Lo que pasó no fue que el
+personaje se achicara: **se hundió**. La altura total quedó igual y las
+suelas quedaron bajo el asfalto. No tira ningún error y en el juego casi no
+se nota.
+
+Ahora la cadera **se deduce** de la cadena de la pierna, que es una
+invariante y no una preferencia, y hay una prueba que exige que la suela
+esté a altura cero.
+
+**Los brazos se veían despegados del cuerpo.** Colgaban a 0,218 del eje;
+con la campera de 0,44 de ancho y brazos de 0,12 de grosor, la mitad del
+brazo quedaba fuera del torso. Se ve en una captura y no en un número.
+
+**Y la ficha mostraba a Gus de espaldas.** El frente de los modelos es `-Z`
+y la cámara mira desde `+Z`. Se veía bien, y era la vista equivocada: lo
+que hay que juzgar son las solapas y la cara.
+
+#### ⚠️ El costo, medido
+
+Las llamadas de dibujo pasaron de **181 a 232**. Gus son 24 piezas, y las
+que proyectan sombra cuestan una llamada extra cada una (por eso sólo
+proyectan la campera, el cráneo y los dos muslos: a veinte metros la sombra
+de un mechón cae dentro de la del cuerpo).
+
+Es una regresión real y queda anotada. La salida natural es **fundir en una
+sola malla los grupos que nunca se mueven entre sí** —cabeza y pelo son
+cuatro piezas rígidas, el torso con la campera y las solapas son otras
+cuatro— lo que bajaría de 24 piezas a unas 14. Es trabajo de la **Fase 13**,
+que es la de optimización, y conviene hacerlo con los zombis y los props ya
+puestos para medir todo junto una sola vez.
+
+#### Cómo se mira
+
+```
+npm run dev     y después http://localhost:5173/estilo.html
+```
+
+Gus está en la escena de estilo, **animado**: las teclas `1` a `6` cambian
+entre quieto, caminar, correr, atacar, recargar y curarse. Una ficha de
+personaje con el modelo congelado en pose neutral no sirve para juzgar
+nada; lo que hay que validar es si se lee **en movimiento**.
 
 ### 12.C — Zombis
 

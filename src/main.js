@@ -16,6 +16,7 @@ import { montarPostProceso } from './render/postProcess.js';
 import { SpawnManager } from './enemies/spawnManager.js';
 import { WeaponController } from './combat/weaponController.js';
 import { CombatFx } from './combat/combatFx.js';
+import { Gus, Pose } from './characters/gus.js';
 import { GestorProyectiles } from './combat/projectile.js';
 import { BolsaDeObjetos, TipoObjeto, curaDeBotiquin } from './items/itemLogic.js';
 import { VistaObjetos } from './items/itemView.js';
@@ -155,39 +156,13 @@ app.root.addChild(ground);
 // --- Jugador ---------------------------------------------------------------
 
 /**
- * Gus provisional: una capsula con un bloque al frente que marca hacia donde
- * mira. Se reemplaza por el modelo en la Fase 11; el controlador no cambia.
+ * Gus (Fase 12.B).
+ *
+ * La capsula provisional con un bloque al frente se fue. El modelo cuelga
+ * de la misma entidad, asi que el controlador no cambio ni una linea: el
+ * personaje se mueve igual, lo que cambio es lo que se ve.
  */
 const playerEntity = new pc.Entity('Gus');
-/*
- * La campera de cuero de la referencia es negra, pero un negro puro sobre
- * asfalto gris desaparece. Se usa un gris muy oscuro y azulado: a la
- * distancia de camara lee como negro, y al mismo tiempo se recorta contra
- * la calzada. Mate, para no verse de plastico.
- */
-const bodyMat = new pc.StandardMaterial();
-bodyMat.diffuse = new pc.Color(0.1, 0.105, 0.125);
-bodyMat.metalness = 0;
-bodyMat.gloss = 0.22;
-bodyMat.useMetalness = true;
-bodyMat.update();
-const body = new pc.Entity('Cuerpo');
-body.addComponent('render', { type: 'capsule', material: bodyMat, castShadows: true });
-body.setLocalScale(UNITS.playerRadius * 2, UNITS.playerHeight / 2, UNITS.playerRadius * 2);
-body.setLocalPosition(0, UNITS.playerHeight / 2, 0);
-playerEntity.addChild(body);
-
-const noseMat = new pc.StandardMaterial();
-noseMat.diffuse = new pc.Color(0.95, 0.72, 0.18);
-noseMat.gloss = 0.2;
-noseMat.metalness = 0;
-noseMat.useMetalness = true;
-noseMat.update();
-const nose = new pc.Entity('Frente');
-nose.addComponent('render', { type: 'box', material: noseMat, castShadows: false });
-nose.setLocalScale(0.18, 0.18, 0.45);
-nose.setLocalPosition(0, 1.5, -0.42);
-playerEntity.addChild(nose);
 
 /**
  * Anillo ambar en el piso.
@@ -243,6 +218,13 @@ console.info(`[zombis] ${zombis.stats.total} puestos repartidos en el mapa`);
 // --- Combate ---------------------------------------------------------------
 
 const efectos = new CombatFx(app, builder.mats);
+
+/*
+ * El modelo de Gus se construye DESPUES del constructor de materiales del
+ * mundo, para compartir su cache. Cada material nuevo rompe el agrupado de
+ * mallas, y Gus usa varios tonos oscuros que el mundo ya tiene.
+ */
+const gus = new Gus(playerEntity, builder.mats);
 
 /*
  * El azar del combate: su propio generador, con su propia semilla.
@@ -397,6 +379,7 @@ const arma = new WeaponController({
      * diria que la pistola alcanza dos metros en noventa grados, que es
      * exactamente lo contrario de lo que hace.
      */
+    gus.gesto(Pose.ATACAR);
     if (id !== 'knife') return;
     efectos.mostrarArco({ x, y: 0, z }, rumbo, conectaria);
   },
@@ -439,6 +422,7 @@ const arma = new WeaponController({
 
   alDisparar: ({ desde, hasta, altura, acerto }) => {
     stats.disparos++;
+    gus.gesto(Pose.DISPARAR);
     efectos.mostrarDisparo(desde, hasta, altura, acerto);
     /*
      * Retroceso de camara, mas corto y mas seco que el del cuerpo a
@@ -453,6 +437,7 @@ const arma = new WeaponController({
   },
 
   alRecargar: () => {
+    gus.gesto(Pose.RECARGAR);
     hud.flash('RECARGANDO', 900);
   },
 
@@ -494,6 +479,8 @@ const arma = new WeaponController({
  * una animacion.
  */
 function actualizarHudArma() {
+  // Lo que esta en la mano no puede estar tambien en el cinto.
+  gus.mostrarPistolaAlCinto(arma.equipada !== 'pistol');
   hud.setArma({
     nombre: arma.arma.name,
     cargador: arma.enCargador,
@@ -695,6 +682,7 @@ bus.on(EV.CHECKPOINT_REACHED, ({ x, z, index }) => {
  * la explosion de la propia bazooka.
  */
 bus.on(EV.PLAYER_DAMAGED, ({ amount }) => {
+  gus.gesto(Pose.GOLPEADO);
   uso.cancelar(MotivoCancelacion.GOLPE);
   stats.golpesRecibidos++;
   stats.dañoRecibido += amount;
@@ -1003,6 +991,19 @@ app.on('update', (rawDt) => {
 
     efectos.update(dt);
 
+    /*
+     * Gus se anima a partir de lo que YA paso en este cuadro: su velocidad
+     * real, si esta corriendo, si esta vivo y si se esta curando. No hay
+     * una maquina de estados aparte que haya que mantener sincronizada con
+     * la del juego; la animacion es una lectura del estado, no una copia.
+     */
+    gus.update(dt, {
+      velocidad: player.velocidadActual,
+      corriendo: player.isRunning,
+      vivo: player.health > 0,
+      curandose: uso.enCurso
+    });
+
     recogerObjetos(pos2d);
     vistaObjetos.update(dt);
     actualizarHudObjetos();
@@ -1068,7 +1069,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis, arma, efectos, cohetes, objetos, vistaObjetos,
+  postProceso, calidad, zombis, arma, efectos, cohetes, objetos, vistaObjetos, gus,
   inventario, uso,
   stats, progreso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
