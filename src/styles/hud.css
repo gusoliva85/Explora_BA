@@ -359,6 +359,56 @@
   75% { transform: translateX(4px); }
 }
 
+/* --- Marcador de fin de partida ------------------------------------------
+   Dos columnas: etiqueta a la izquierda, número a la derecha. Los números
+   van en cifras tabulares y un punto más grandes que las etiquetas, porque
+   son lo que se lee; la etiqueta solo dice de qué. */
+
+.marcador {
+  width: 100%;
+  margin: 4px 0 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--hud-borde);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 9px 16px;
+  text-align: left;
+}
+.marcador dt {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--hud-dim);
+  align-self: center;
+}
+.marcador dd {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--hud-ink);
+  text-align: right;
+}
+/* El dato principal —el tiempo— va más grande que el resto. */
+.marcador dd.principal { font-size: 22px; color: var(--hud-ambar); }
+
+.record {
+  margin: -10px 0 18px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--hud-ambar);
+  text-shadow: 0 0 24px rgba(255, 182, 39, 0.5);
+  animation: entraRecord 0.5s var(--sal);
+}
+@keyframes entraRecord {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 /* --- Uso de un objeto -----------------------------------------------------
    Verde, que es el color de curarse, y bien distinta de la recarga ámbar:
    son dos esperas con consecuencias muy distintas. Durante ésta el jugador

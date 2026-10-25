@@ -186,6 +186,13 @@
         <div class="panel">
           <h2 class="title-sm ok">MISION COMPLETA</h2>
           <p id="complete-detail" class="subtitle"></p>
+
+          <!-- Las estadísticas no son adorno: le cuentan al jugador CÓMO
+               ganó, y eso es lo que hace que quiera volver a intentarlo
+               distinto. Más rápido, o más entero, o sin disparar. -->
+          <dl class="marcador" id="marcador-win"></dl>
+          <p id="record" class="record hidden">¡RÉCORD NUEVO!</p>
+
           <button id="btn-restart-win" class="btn btn-primary">JUGAR DE NUEVO</button>
         </div>
       </section>
@@ -194,6 +201,7 @@
         <div class="panel">
           <h2 class="title-sm bad">TE ALCANZARON</h2>
           <p id="gameover-detail" class="subtitle"></p>
+          <dl class="marcador" id="marcador-lose"></dl>
           <button id="btn-restart-lose" class="btn btn-primary">REINTENTAR</button>
         </div>
       </section>

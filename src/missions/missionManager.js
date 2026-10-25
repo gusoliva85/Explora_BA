@@ -23,7 +23,17 @@ export class MissionManager {
     /** Indice del proximo control pendiente. */
     this.nextCheckpoint = 0;
     this.completed = false;
-    this.elapsed = 0;
+    /*
+     * El reloj de la partida NO vive aca: vive en `Estadisticas`.
+     *
+     * Hubo un tiempo en que vivia en los dos lados. Los dos avanzaban con
+     * el mismo `dt` y por lo tanto coincidian, asi que el problema no se
+     * veia... hasta que la pantalla de victoria mostro el de la mision en
+     * el subtitulo y el de las estadisticas en el marcador, y aparecieron
+     * dos tiempos distintos para la misma partida.
+     *
+     * Dos fuentes para el mismo dato siempre terminan asi.
+     */
     const s = this.mission.spawn;
     this.respawn = { x: s.x, z: s.z, yaw: s.yaw ?? 0 };
   }
@@ -93,7 +103,6 @@ export class MissionManager {
    */
   update(dt, playerPos) {
     if (this.completed) return;
-    this.elapsed += dt;
 
     // Control intermedio. Se exige en orden: no se saltea ninguno.
     const cp = this.mission.checkpoints[this.nextCheckpoint];
@@ -120,7 +129,7 @@ export class MissionManager {
     const goalPoint = this.mission.route[this.mission.goal.atRouteIndex];
     if (within(playerPos, goalPoint, this.mission.goal.radius)) {
       this.completed = true;
-      this.bus.emit(EV.MISSION_COMPLETE, { elapsed: this.elapsed });
+      this.bus.emit(EV.MISSION_COMPLETE, {});
     }
   }
 }

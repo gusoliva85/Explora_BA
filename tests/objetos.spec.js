@@ -315,19 +315,41 @@ test.describe('apuntar arrastrando el boton de disparar', () => {
     const durante = await page.evaluate(() => {
       const g = globalThis.game;
       const m = g.efectos.mira;
+
+      /*
+       * El rumbo ESPERADO se calcula con las mismas funciones del juego, a
+       * partir del arrastre que el propio juego registro.
+       *
+       * La primera version solo pedia que el yaw fuera DISTINTO del de
+       * antes, y salia inestable: si el arrastre apuntaba casi hacia donde
+       * el personaje ya miraba —cosa que depende de como quedo orientado
+       * al aparecer— el yaw no cambiaba y la prueba acusaba al juego de
+       * algo que estaba bien. Comparar contra la direccion arrastrada es
+       * mas fuerte y no depende del estado inicial.
+       */
+      const dir = g.rumbo.direccionDeEntrada(g.input.aim.x, g.input.aim.y, g.camera.yaw);
+      const esperado = g.rumbo.rumboHacia(dir.x, dir.z);
+
       return {
         apuntando: g.input.apuntando,
         mira: m.enabled,
         alturaMira: +m.getPosition().y.toFixed(2),
         largoMira: +m.getLocalScale().z.toFixed(1),
         alcance: g.arma.arma.range,
-        yaw: g.player.yaw
+        yaw: g.player.yaw,
+        esperado
       };
     });
 
     expect(durante.apuntando, 'el arrastre no se leyo como apuntado').toBe(true);
     expect(durante.mira).toBe(true);
-    expect(durante.yaw).not.toBeCloseTo(antes.yaw, 1);
+
+    // El personaje mira hacia donde apunta el pulgar, no a cualquier lado.
+    const dif = Math.abs(((durante.yaw - durante.esperado + 540) % 360) - 180);
+    expect(
+      dif,
+      `mira a ${durante.yaw.toFixed(0)} y el pulgar apunta a ${durante.esperado.toFixed(0)}`
+    ).toBeLessThan(2);
 
     /*
      * La mira mide el alcance REAL del arma, no un largo decorativo: es lo

@@ -15,7 +15,7 @@ export default defineConfig({
   projects: [
     {
       name: 'escritorio',
-      testMatch: /(smoke|recorrido|zombis|combate|pistola|bazooka)\.spec\.js/,
+      testMatch: /(smoke|recorrido|zombis|combate|pistola|bazooka|mision)\.spec\.js/,
       use: { ...devices['Desktop Chrome'] }
     },
     {

@@ -41,6 +41,9 @@ export class Hud {
       joystickKnob: document.getElementById('joystick-knob'),
       completeDetail: document.getElementById('complete-detail'),
       gameoverDetail: document.getElementById('gameover-detail'),
+      marcadorWin: document.getElementById('marcador-win'),
+      marcadorLose: document.getElementById('marcador-lose'),
+      record: document.getElementById('record'),
       loadingBar: document.getElementById('loading-bar'),
       bar: document.querySelector('.bar-health'),
       brujula: document.getElementById('brujula'),
@@ -79,8 +82,17 @@ export class Hud {
     bus.on(EV.PLAYER_HEALED, ({ health }) => this.setHealth(health));
     bus.on(EV.OBJECTIVE_CHANGED, ({ text }) => this.setObjective(text));
     bus.on(EV.CHECKPOINT_REACHED, ({ label }) => this.flash(label));
-    bus.on(EV.MISSION_COMPLETE, ({ elapsed }) => {
-      this.el.completeDetail.textContent = `Llegaste en ${formatTime(elapsed)}.`;
+    /*
+     * El subtitulo de la victoria NO repite el tiempo: el marcador ya lo
+     * dice, mas grande y acompañado del resto. Repetirlo obligaba a tener
+     * dos relojes, y los dos relojes terminaron mostrando numeros
+     * distintos en la misma pantalla.
+     *
+     * Lo que dice es a donde se llego, que es lo unico que el marcador no
+     * cuenta y lo que cierra la mision como historia.
+     */
+    bus.on(EV.MISSION_COMPLETE, () => {
+      this.el.completeDetail.textContent = 'Llegaste a Billinghurst 240.';
     });
 
     addEventListener('resize', () => this.#checkOrientation());
@@ -319,6 +331,37 @@ export class Hud {
     el.classList.add('nuevo');
   }
 
+  /**
+   * Llena el marcador de fin de partida.
+   *
+   * @param {'win'|'lose'} cual
+   * @param {Array<{etiqueta:string, valor:string, principal?:boolean}>} filas
+   */
+  setMarcador(cual, filas) {
+    const dl = cual === 'win' ? this.el.marcadorWin : this.el.marcadorLose;
+    if (!dl) return;
+
+    /*
+     * Se arma con `textContent` fila por fila y no con una plantilla de
+     * HTML. Son pocos elementos y asi ningun texto —el nombre de un
+     * objetivo, un motivo de muerte— puede inyectar marcado.
+     */
+    dl.replaceChildren();
+    for (const fila of filas) {
+      const dt = document.createElement('dt');
+      dt.textContent = fila.etiqueta;
+      const dd = document.createElement('dd');
+      dd.textContent = fila.valor;
+      if (fila.principal) dd.classList.add('principal');
+      dl.append(dt, dd);
+    }
+  }
+
+  /** Muestra u oculta el cartel de record. */
+  setRecord(visible) {
+    this.el.record?.classList.toggle('hidden', !visible);
+  }
+
   setGameOverReason(text) {
     this.el.gameoverDetail.textContent = text;
   }
@@ -360,10 +403,4 @@ export class Hud {
     // porque el HUD si tiene que reacomodarse al girar, cosa que hace el
     // CSS a traves de la clase `is-portrait` que pone `device`.
   }
-}
-
-export function formatTime(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
 }

@@ -8,8 +8,12 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6, 7 y **8**.
-> **Fase siguiente:** **Fase 9 — La misión completa.**
+> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6, 7, 8 y **9**.
+> **Fase siguiente:** **Fase 10 — Interfaz completa**, o **11 (audio)**.
+>
+> **🏁 Éste es el "primer hito" del documento 01: a partir de acá el juego
+> existe.** Se puede jugar de principio a fin, ganar, perder, reintentar, y
+> el récord sobrevive a cerrar la pestaña.
 >
 > El repositorio está en
 > **[github.com/gusoliva85/Explora_BA](https://github.com/gusoliva85/Explora_BA)**.
@@ -48,6 +52,11 @@
 > munición y un botiquín— y hay más repartidos por el mapa, en las zonas
 > que el plano marcaba desde la Fase 3. Se levantan caminándolos; lo que no
 > te sirve se queda en el piso.
+>
+> **Y la misión se termina.** Los controles se toman en orden, la meta no
+> cuenta sin ellos, y al llegar hay una pantalla con el tiempo, los zombis
+> eliminados, la vida que quedó y los golpes recibidos. Si es récord, lo
+> dice y lo guarda.
 >
 > **Curarse es una decisión.** El botiquín se guarda, no se usa al pisarlo.
 > Usarlo tarda 1,2 s y hay que **estar quieto**: moverse lo corta, y un
@@ -1206,46 +1215,130 @@ el juego funcionando bien. Ahora todo lo que depende del bucle se espera
 
 ---
 
-# FASE 9 — La misión completa ⬜
+# FASE 9 — La misión completa ✅ 🏁
 
 **Objetivo:** que se pueda jugar de principio a fin, ganar, perder y reintentar.
 
+> **Éste es el "primer hito" del documento 01.** A partir de acá el juego
+> existe: tiene principio, final, y una razón para volver a intentarlo.
+
 ### Tareas
 
-| # | Tarea |
-|---|---|
-| 9.1 | Controles intermedios: detección, guardado y aviso en pantalla |
-| 9.2 | Que no se puedan saltear: hay que tomarlos en orden |
-| 9.3 | Reaparecer en el último control al morir |
-| 9.4 | Meta final: solo cuenta con todos los controles tomados |
-| 9.5 | Pantalla de victoria con tiempo, zombis eliminados y vida restante |
-| 9.6 | Pantalla de derrota, con el motivo y desde dónde se reanuda |
-| 9.7 | **Reinicio limpio:** ni un zombi duplicado, ni un objeto recogido que vuelve a estar recogido, ni un temporizador que quedó corriendo |
-| 9.8 | Guardar en `localStorage`: último control y mejor tiempo (D-14) |
-| 9.9 | Objetivo que se actualiza en cada tramo |
-| 9.10 | Indicador de dirección hacia el próximo objetivo |
-| 9.11 | Ajuste de dificultad: cantidad y ubicación de zombis por tramo |
-| 9.12 | Pruebas automáticas del recorrido completo |
+| # | Tarea | Estado |
+|---|---|---|
+| 9.1 | Controles intermedios: detección, guardado y aviso | ✅ venía de la Fase 3 |
+| 9.2 | Que no se puedan saltear: hay que tomarlos en orden | ✅ con prueba |
+| 9.3 | Reaparecer en el último control al morir | ✅ |
+| 9.4 | Meta final: sólo cuenta con todos los controles tomados | ✅ con prueba |
+| 9.5 | Pantalla de victoria con tiempo, zombis y vida restante | ✅ |
+| 9.6 | Pantalla de derrota, con el motivo y desde dónde se reanuda | ✅ y con su propio marcador |
+| 9.7 | **Reinicio limpio** | ✅ con prueba que reinicia cinco veces |
+| 9.8 | Guardar en `localStorage`: último control y mejor tiempo (D-14) | ✅ |
+| 9.9 | Objetivo que se actualiza en cada tramo | ✅ venía de la Fase 3 |
+| 9.10 | Indicador de dirección hacia el próximo objetivo | ✅ la brújula, de la Fase 3 |
+| 9.11 | Ajuste de dificultad por tramo | ⚠️ las zonas tienen peso desde la Fase 3; falta **jugarlo** para ajustar |
+| 9.12 | Pruebas automáticas del recorrido completo | ✅ `recorrido.spec.js` camina la ruta; `mision.spec.js` prueba las reglas |
+
+### Decisiones que se tomaron
+
+**El reloj NO se reinicia al morir.** Volver desde un control continúa el
+**mismo** intento: el tiempo sigue corriendo y la muerte queda contada. Es
+lo que hace que el mejor tiempo signifique algo —morir cuesta— sin
+castigar con nada más. Un reloj que se pone en cero convertiría morir en
+una forma barata de volver a empezar el cronómetro. Sólo *Reiniciar misión*
+empieza de cero.
+
+**Las estadísticas cuentan lo que el jugador puede cambiar jugando**:
+tiempo, zombis eliminados, vida restante, golpes recibidos. No cosas que
+simplemente pasan. Una pantalla que dice "ganaste" no enseña nada; una que
+dice "11:42, 14 zombis, 38 de vida" le cuenta **cómo** ganó, y eso es lo
+que hace que quiera volver a intentarlo distinto: más rápido, o más
+entero, o sin disparar.
+
+**Sin disparos, la puntería es `null` y no cero.** Un "0 %" al lado de "0
+disparos" acusa al jugador de errar todos los tiros que no hizo — y pasar
+la misión sin disparar es justamente una de las formas buenas de jugarla.
+
+**El marcador se arma con el récord VIEJO, y recién después se guarda el
+nuevo.** Al revés, la fila "mejor tiempo" siempre coincidiría con el tiempo
+de arriba y no diría nada.
+
+**La pantalla de derrota también lleva marcador.** Un "perdiste" sin
+contexto se lee como un castigo; con el marcador, el intento fallido igual
+dejó algo medido —cuántos controles, cuántos zombis, cuánto faltaba— y eso
+es lo que invita a reintentar.
+
+**Las muertes sólo se muestran si hubo.** Un "0 muertes" ocupa una línea
+para no decir nada, y en una pantalla de teléfono las líneas valen.
+
+**Todo el acceso a `localStorage` va envuelto.** En una ventana privada
+tira excepción al escribir, con las cookies bloqueadas lanza al leer, y lo
+guardado lo pudo escribir una versión vieja del juego. Hay pruebas con un
+almacén que **falla en todo** y con datos corruptos: el juego tiene que ser
+jugable igual, sólo que sin recordar. Si esto tirara, la pantalla de
+victoria no se mostraría y parecería que el juego se colgó al ganar.
+
+### 🔧 Lo que encontró la captura de pantalla
+
+**Había DOS relojes**, `mission.elapsed` y `stats.tiempo`. Avanzaban con el
+mismo `dt`, así que coincidían y el problema estuvo invisible... hasta que
+la pantalla de victoria mostró uno en el subtítulo y el otro en el
+marcador: **"0:00" arriba y "11:42" abajo, en la misma pantalla**.
+
+No lo encontró ninguna prueba: lo encontró mirar la captura. Dos fuentes
+para el mismo dato siempre terminan así.
+
+Quedó uno solo —`stats`— y el subtítulo pasó a decir algo que el marcador
+no dice ("Llegaste a Billinghurst 240"). De paso se borró `formatTime` de
+`hud.js`, que era un segundo formateador de tiempo sin usar: la misma
+duplicación un escalón más abajo.
+
+Hay una prueba que exige que **ningún otro número con forma de reloj**
+aparezca en la pantalla de victoria. Se validó reintroduciendo el error.
 
 ### Cómo se prueba
 
-1. Jugar la misión entera sin morir → victoria, con estadísticas correctas.
-2. Morir en el segundo tramo → reaparecer en el primer control, con vida llena.
-3. Reiniciar desde la pausa cinco veces seguidas → el mundo queda igual cada
-   vez, sin zombis ni objetos duplicados.
-4. Ir directo a la meta salteando los controles → no completa la misión.
-5. Cerrar la pestaña y volver a abrir → el mejor tiempo sigue ahí.
-6. **Darle el teléfono a alguien que nunca lo vio, sin explicarle nada.**
-   ¿Entiende qué tiene que hacer? Esta es la prueba más valiosa del roadmap.
+```
+npm test             295 pruebas; 23 nuevas de estadísticas y progreso
+npm run test:e2e     11 nuevas en el navegador
+npm run verificar    la versión compilada, con perfil de celular
+```
+
+A mano, en el teléfono:
+
+1. Ir directo a la meta salteando los controles → no completa.
+2. Jugar la misión entera → victoria, con el marcador.
+3. Ganar rápido y después lento → el récord no se pisa.
+4. Cerrar la pestaña y volver → el récord sigue ahí.
+5. Morir en el segundo tramo → se vuelve al primer control, **el reloj
+   sigue corriendo** y la muerte queda contada.
+6. Reiniciar desde la pausa cinco veces → el mundo queda igual cada vez.
+7. **Darle el teléfono a alguien que nunca lo vio, sin explicarle nada.**
+   ¿Entiende qué tiene que hacer? Ésta es la prueba más valiosa del
+   roadmap, y es la única que no se puede automatizar.
 
 ### Criterio de salida
 
-- [ ] La misión se completa de principio a fin
-- [ ] Se puede reiniciar infinitas veces sin que nada se rompa
-- [ ] Una persona nueva entiende el objetivo sin que se lo expliquen
-- [ ] El progreso sobrevive a cerrar la pestaña
-- [ ] **Este es el "primer hito" del documento 01.** A partir de acá el juego
-      existe.
+- [x] La misión se completa de principio a fin
+- [x] Se puede reiniciar infinitas veces sin que nada se rompa — hay una
+      prueba que reinicia cinco veces ensuciando el estado antes de cada
+      una, y compara la escena entera; se validó metiendo una fuga de
+      entidades a propósito
+- [x] El progreso sobrevive a cerrar la pestaña, y también a no poder
+      guardar
+- [ ] **Una persona nueva entiende el objetivo sin que se lo expliquen** —
+      pendiente: necesita una persona, no una prueba
+- [ ] **El balance de dificultad por tramo** (9.11) — pendiente de jugarla
+      entera. Las zonas ya tienen peso; falta saber si sobra o falta
+
+### ⚠️ Lo que quedó anotado
+
+**La misión nunca se jugó entera de verdad.** Las pruebas la completan
+teletransportándose entre controles, que es lo correcto para probar las
+reglas, y `recorrido.spec.js` camina la ruta con todos los obstáculos. Pero
+nadie la jugó de punta a punta con zombis encima. Hasta que eso pase, el
+balance —cuántos zombis, cuánta munición, cuántos botiquines— es una
+hipótesis.
 
 ---
 

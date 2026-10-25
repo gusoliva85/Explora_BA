@@ -148,6 +148,24 @@ para medir la geometría.
 
 ---
 
+## Cómo se gana
+
+Hay que tomar **los controles en orden** y recién después llegar a la meta:
+ir directo no completa la misión. Al llegar aparece el tiempo, los zombis
+eliminados, la vida que quedó y los golpes recibidos — y si es récord, lo
+dice y lo guarda.
+
+**Al morir se vuelve al último control, pero el reloj sigue corriendo** y
+la muerte queda contada. Es lo que hace que el mejor tiempo signifique
+algo: morir cuesta, sin necesidad de castigar con nada más. *Reiniciar
+misión* sí empieza de cero.
+
+El récord y hasta dónde llegaste sobreviven a cerrar la pestaña. Si el
+navegador no deja guardar —una ventana privada, las cookies bloqueadas— el
+juego funciona igual: lo único que se pierde es el récord.
+
+---
+
 ## El ruido, que es la mecánica central
 
 Hay tres armas y la elección entre ellas no es "mejor o peor": es **callado

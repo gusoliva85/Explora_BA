@@ -26,6 +26,7 @@ import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
 import { ajustes } from './core/settings.js';
 import { createRng } from './core/rng.js';
+import { Estadisticas, Progreso, formatearTiempo } from './core/progreso.js';
 import {
   rumboHacia,
   rumboEntre,
@@ -269,6 +270,10 @@ const vistaObjetos = new VistaObjetos(app);
 /** Lo que el jugador lleva encima. */
 const inventario = new Inventario(ITEMS);
 
+/** Lo que dura un intento, y lo que sobrevive a cerrar la pestaña (D-14). */
+const stats = new Estadisticas();
+const progreso = new Progreso();
+
 /*
  * El uso de un objeto: lleva tiempo y se puede interrumpir.
  *
@@ -280,6 +285,7 @@ const inventario = new Inventario(ITEMS);
 const uso = new UsoDeObjeto({
   alCompletar: ({ clave }) => {
     if (!inventario.quitar(clave)) return;
+    stats.botiquinesUsados++;
     const antes = player.health;
     player.heal(ITEMS[clave].heal);
     hud.flash(`+${Math.round(player.health - antes)} VIDA`, 1200);
@@ -324,12 +330,14 @@ const cohetes = new GestorProyectiles({
     });
 
     for (const a of alcanzados) {
+      const vivoAntes = a.objetivo.vivo;
       a.objetivo.recibirDaño(a.daño, {
         dirX: a.dirX,
         dirZ: a.dirZ,
         fuerza: arma.blastPush,
         fuente: 'explosion'
       });
+      if (vivoAntes && !a.objetivo.vivo) stats.zombisEliminados++;
     }
 
     /*
@@ -394,7 +402,12 @@ const arma = new WeaponController({
   },
 
   alGolpear: ({ objetivo, daño, dirX, dirZ }) => {
+    const vivoAntes = objetivo.vivo;
     objetivo.recibirDaño(daño, { dirX, dirZ, fuente: 'jugador' });
+    // La baja se cuenta en el cruce, mirando si estaba vivo antes: el
+    // zombi no avisa cuando muere, y agregarle un aviso solo para esto
+    // seria cablear dos sistemas que no se necesitan.
+    if (vivoAntes && !objetivo.vivo) stats.zombisEliminados++;
     const q = objetivo.posicion;
     efectos.mostrarImpacto(q.x, q.z);
     // Sacudon corto: marca el impacto sin estorbar la lectura.
@@ -425,6 +438,7 @@ const arma = new WeaponController({
   },
 
   alDisparar: ({ desde, hasta, altura, acerto }) => {
+    stats.disparos++;
     efectos.mostrarDisparo(desde, hasta, altura, acerto);
     /*
      * Retroceso de camara, mas corto y mas seco que el del cuerpo a
@@ -451,6 +465,7 @@ const arma = new WeaponController({
   },
 
   alDispararEspecial: () => {
+    stats.bazookasUsadas++;
     hud.flash('BAZOOKA', 1000);
     camera.sacudir(0.3, 0.18);
   },
@@ -601,6 +616,25 @@ console.info(
 
 function startMission({ fromCheckpoint = false } = {}) {
   if (!fromCheckpoint) mission.reset();
+
+  /*
+   * EL RELOJ NO SE REINICIA AL MORIR.
+   *
+   * Volver desde un control continua el MISMO intento: el tiempo sigue
+   * corriendo y la muerte queda contada. Es lo que hace que el mejor
+   * tiempo signifique algo —morir cuesta— sin necesidad de castigar con
+   * nada mas. Un reloj que se pone en cero convertiria morir en una forma
+   * barata de volver a empezar el cronometro.
+   *
+   * Solo un arranque limpio borra la cuenta.
+   */
+  if (fromCheckpoint) {
+    stats.muertes++;
+  } else {
+    stats.reiniciar();
+    progreso.contarPartida();
+  }
+  hud.setRecord(false);
   const sp = fromCheckpoint ? mission.respawn : mission001.spawn;
 
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
@@ -645,8 +679,11 @@ function startMission({ fromCheckpoint = false } = {}) {
  * tiradas que hay que ir a pisar —con lo que eso implica si hay zombis
  * cerca— son un respiro que el jugador se gana caminando.
  */
-bus.on(EV.CHECKPOINT_REACHED, ({ x, z }) => {
+bus.on(EV.CHECKPOINT_REACHED, ({ x, z, index }) => {
   soltarEnControl({ x, z });
+  stats.controles = index;
+  // Hasta donde se llego alguna vez, no donde termino este intento (D-14).
+  progreso.registrarControl(index);
 });
 
 /*
@@ -657,17 +694,81 @@ bus.on(EV.CHECKPOINT_REACHED, ({ x, z }) => {
  * daño y no al bucle para que valga para CUALQUIER fuente de daño, incluida
  * la explosion de la propia bazooka.
  */
-bus.on(EV.PLAYER_DAMAGED, () => {
+bus.on(EV.PLAYER_DAMAGED, ({ amount }) => {
   uso.cancelar(MotivoCancelacion.GOLPE);
+  stats.golpesRecibidos++;
+  stats.dañoRecibido += amount;
+});
+
+/**
+ * Arma las filas del marcador de fin de partida.
+ *
+ * El tiempo va primero y marcado como principal: es el dato que compara
+ * un intento con otro. El resto cuenta COMO se jugo, que es lo que invita
+ * a probar distinto la proxima.
+ */
+function filasDelMarcador(resumen) {
+  const filas = [
+    { etiqueta: 'TIEMPO', valor: formatearTiempo(resumen.tiempo), principal: true },
+    { etiqueta: 'ZOMBIS ELIMINADOS', valor: String(resumen.zombis) },
+    { etiqueta: 'VIDA RESTANTE', valor: `${resumen.vida}` },
+    { etiqueta: 'GOLPES RECIBIDOS', valor: String(resumen.golpes) }
+  ];
+
+  // Las muertes solo se muestran si hubo: un "0 muertes" ocupa una linea
+  // para no decir nada, y en una pantalla de telefono las lineas valen.
+  if (resumen.muertes > 0) {
+    filas.push({ etiqueta: 'MUERTES', valor: String(resumen.muertes) });
+  }
+
+  if (progreso.mejorTiempo !== null) {
+    filas.push({ etiqueta: 'MEJOR TIEMPO', valor: formatearTiempo(progreso.mejorTiempo) });
+  }
+  return filas;
+}
+
+bus.on(EV.MISSION_COMPLETE, () => {
+  const resumen = stats.resumen(player.health);
+
+  /*
+   * El orden importa: primero se arma la tabla con el record VIEJO, y
+   * recien despues se guarda el nuevo.
+   *
+   * Al reves, el "mejor tiempo" que se muestra seria el de esta misma
+   * partida y la fila no diria nada: siempre coincidiria con el tiempo de
+   * arriba.
+   */
+  const filas = filasDelMarcador(resumen);
+  const esRecord = progreso.registrarVictoria(resumen.tiempo);
+
+  hud.setMarcador('win', filas);
+  hud.setRecord(esRecord);
 });
 
 bus.on(EV.PLAYER_DIED, () => {
   input.setEnabled(false);
+
+  /*
+   * La pantalla de derrota dice DOS cosas, y las dos importan: desde donde
+   * se vuelve, y cuanto se habia avanzado. Un "perdiste" sin contexto se
+   * lee como un castigo; con el marcador, el intento fallido igual dejo
+   * algo medido, y eso es lo que invita a reintentar.
+   */
   hud.setGameOverReason(
     mission.nextCheckpoint > 0
-      ? `Volvés al control ${mission.nextCheckpoint}.`
+      ? `Volvés al control ${mission.nextCheckpoint}. El reloj sigue corriendo.`
       : 'Volvés al punto de partida.'
   );
+
+  // La muerte de este intento todavia no esta contada: se suma al reaparecer.
+  const resumen = stats.resumen(0);
+  hud.setMarcador('lose', [
+    { etiqueta: 'TIEMPO', valor: formatearTiempo(resumen.tiempo), principal: true },
+    { etiqueta: 'CONTROLES', valor: `${stats.controles} de ${mission001.checkpoints.length}` },
+    { etiqueta: 'ZOMBIS ELIMINADOS', valor: String(resumen.zombis) },
+    { etiqueta: 'DISTANCIA AL OBJETIVO', valor: `${Math.round(distanciaAlObjetivo())} m` }
+  ]);
+
   state.set(State.GAME_OVER);
 });
 
@@ -675,6 +776,14 @@ bus.on(EV.MISSION_COMPLETE, () => {
   input.setEnabled(false);
   state.set(State.MISSION_COMPLETE);
 });
+
+/** Cuanto falta hasta el proximo objetivo, en metros. */
+function distanciaAlObjetivo() {
+  const destino = mission.objetivoActual();
+  if (!destino) return 0;
+  const p = player.position;
+  return Math.hypot(destino.x - p.x, destino.z - p.z);
+}
 
 /**
  * Actualiza la flecha que apunta al proximo objetivo.
@@ -802,6 +911,14 @@ app.on('update', (rawDt) => {
   input.sample();
 
   if (state.isSimulating) {
+    /*
+     * El reloj avanza aca y no en el bucle de afuera: en pausa y en las
+     * pantallas de resultado la simulacion esta congelada, y un cronometro
+     * que corre durante la pausa convertiria el mejor tiempo en una medida
+     * de cuanto tardaste en leer la pantalla.
+     */
+    stats.update(dt);
+
     /*
      * El rumbo apuntado se calcula ANTES de mover al jugador, para que el
      * personaje ya mire hacia alla en el mismo cuadro en que se dispara.
@@ -953,6 +1070,7 @@ globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
   postProceso, calidad, zombis, arma, efectos, cohetes, objetos, vistaObjetos,
   inventario, uso,
+  stats, progreso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.
   pc,
@@ -965,7 +1083,7 @@ globalThis.game = {
    * el convenio invertido y los dos errores se cancelaban. Una prueba que
    * afirma un angulo tiene que pedirselo al juego, no adivinarlo.
    */
-  rumbo: { rumboHacia, rumboEntre, dirDeRumbo },
+  rumbo: { rumboHacia, rumboEntre, dirDeRumbo, direccionDeEntrada },
   // Los numeros de balance, para poder verificarlos desde una prueba.
   balance: { PLAYER, CAMERA, UNITS, PERF, ZOMBIE_STANDARD }
 };

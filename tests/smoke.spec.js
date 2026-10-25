@@ -156,7 +156,18 @@ test('la mision se completa al recorrer los controles y llegar a la meta', async
   });
 
   await expect(page.locator('#screen-complete')).toBeVisible();
-  await expect(page.locator('#complete-detail')).toContainText(':');
+
+  /*
+   * El tiempo se busca en el MARCADOR, no en el subtitulo.
+   *
+   * Antes esta prueba pedia que el subtitulo tuviera dos puntos, como
+   * manera barata de comprobar que mostraba un reloj. Ese reloj se saco a
+   * proposito: habia dos relojes en el juego y la pantalla de victoria
+   * mostraba uno arriba y otro abajo, con numeros distintos. Ahora el
+   * tiempo vive en un solo lugar, y aca se lo comprueba ahi.
+   */
+  await expect(page.locator('#marcador-win')).toContainText('TIEMPO');
+  await expect(page.locator('#marcador-win')).toContainText(/\d+:\d{2}/);
   expect(errors).toEqual([]);
 });
 
