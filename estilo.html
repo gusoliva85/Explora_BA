@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Explorar BA — Guía de estilo</title>
+
+    <!--
+      ESCENA DE PRUEBA DE ESTILO (tarea 12.2)
+
+      Una página aparte del juego. Existe porque en el juego la cámara está
+      a veinte metros y a 57 grados: desde ahí se ve si algo SE LEE, pero no
+      si las proporciones están bien. Un Gus de dos metros y medio, visto
+      desde arriba, parece correcto.
+
+      Acá la cámara mira de frente, con una puerta de 2,10 m al lado de cada
+      figura. Es la única vista donde un error de escala salta.
+    -->
+    <style>
+      :root {
+        --tinta: #f2f5f8;
+        --apagado: #9aa6b4;
+        --borde: rgba(255, 255, 255, 0.12);
+        --panel: rgba(12, 15, 20, 0.82);
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #11141a;
+        color: var(--tinta);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+      }
+      #lienzo { display: block; width: 100%; height: 100%; }
+
+      .panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 330px;
+        max-width: 92vw;
+        height: 100%;
+        overflow-y: auto;
+        padding: 18px 18px 40px;
+        background: var(--panel);
+        backdrop-filter: blur(14px);
+        border-left: 1px solid var(--borde);
+      }
+      .panel h1 { margin: 0 0 4px; font-size: 17px; letter-spacing: 0.04em; }
+      .panel p.sub { margin: 0 0 18px; font-size: 12px; color: var(--apagado); line-height: 1.6; }
+      .panel h2 {
+        margin: 22px 0 8px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        color: var(--apagado);
+        text-transform: uppercase;
+      }
+
+      .familia { margin-bottom: 9px; }
+      .familia .nombre {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        margin-bottom: 3px;
+      }
+      .rampa { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+      .muestra {
+        height: 34px;
+        border-radius: 5px;
+        border: 1px solid rgba(0, 0, 0, 0.35);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding-bottom: 2px;
+        font-size: 8px;
+        font-weight: 700;
+        color: rgba(0, 0, 0, 0.55);
+      }
+      /* La etiqueta se pone clara sobre los escalones oscuros, para que se
+         pueda leer en los dos extremos de la rampa. */
+      .muestra.oscura { color: rgba(255, 255, 255, 0.72); }
+
+      table { width: 100%; border-collapse: collapse; font-size: 12px; }
+      td { padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+      td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+      .nota {
+        margin-top: 18px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(255, 182, 39, 0.1);
+        border: 1px solid rgba(255, 182, 39, 0.3);
+        font-size: 11px;
+        line-height: 1.65;
+        color: #ffd89a;
+      }
+      .ayuda {
+        position: absolute;
+        left: 14px;
+        bottom: 14px;
+        font-size: 11px;
+        color: var(--apagado);
+        background: var(--panel);
+        padding: 8px 12px;
+        border-radius: 10px;
+        border: 1px solid var(--borde);
+        line-height: 1.7;
+      }
+      kbd {
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-family: inherit;
+        font-size: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="lienzo"></canvas>
+
+    <aside class="panel">
+      <h1>Guía de estilo</h1>
+      <p class="sub">
+        Fase 12.A. La cámara mira de frente a propósito: es la única vista
+        donde un error de escala salta. Cada figura tiene al lado una regla
+        de 3 m con una marca ámbar a la altura de una puerta (2,10 m).
+      </p>
+
+      <h2>Familias y rampa</h2>
+      <div id="familias"></div>
+
+      <h2>Escala de referencia</h2>
+      <table id="escala"></table>
+
+      <h2>Presupuesto de detalle</h2>
+      <table id="presupuesto"></table>
+
+      <div class="nota" id="nota-texturas"></div>
+    </aside>
+
+    <div class="ayuda">
+      <kbd>←</kbd> <kbd>→</kbd> girar &nbsp;·&nbsp; <kbd>↑</kbd> <kbd>↓</kbd> acercar
+      &nbsp;·&nbsp; <kbd>M</kbd> muestrario
+    </div>
+
+    <script type="module" src="/src/art/mainEstilo.js"></script>
+  </body>
+</html>

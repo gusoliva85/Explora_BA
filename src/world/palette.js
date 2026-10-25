@@ -17,9 +17,19 @@ import * as pc from 'playcanvas';
  *   1. Dos superficies que se tocan nunca comparten valor. El asfalto es
  *      medio, la vereda clara, el cordon mas claro todavia. Asi los planos
  *      se separan solos aunque no haya ni una textura.
- *   2. Los colores saturados se reservan. Toldos, taxis, semaforos y
- *      objetos de mision. Si todo tiene color, nada resalta, y el jugador
- *      pierde la pista de lo que importa.
+ *   2. Los colores saturados se reservan, Y HAY UN ORDEN entre ellos.
+ *
+ *      Lo de mision —control, meta, objetos— va siempre MAS saturado que
+ *      cualquier decorado. Antes esta regla decia "toldos, taxis,
+ *      semaforos y objetos de mision" en la misma frase, como si fueran lo
+ *      mismo, y el resultado medido fue que el toldo amarillo de un
+ *      comercio (0,79 de saturacion) le ganaba a la meta de la mision
+ *      (0,63). Un toldo hay veinte; la meta hay una.
+ *
+ *      Lo encontro una prueba de la guia de estilo, no el ojo: en una
+ *      captura los dos se ven "de color" y nadie los compara.
+ *
+ *      El tope de los decorados es 0,75; lo de mision arranca en 0,82.
  *   3. Todo es mate salvo chapa y persianas. El especular fuerte es lo que
  *      hace que un low-poly se vea de plastico, y encima compite con la
  *      lectura de las formas.
@@ -66,16 +76,19 @@ export const COLORS = {
   balcony: [0.3, 0.31, 0.33],
 
   // --- Acentos --------------------------------------------------------------
+  // El amarillo bajo de 0,79 a 0,70 de saturacion: era el decorado mas
+  // llamativo de todo el juego, por encima de la meta de la mision.
   toldo: [
     [0.62, 0.22, 0.18],
     [0.18, 0.42, 0.28],
     [0.17, 0.32, 0.52],
-    [0.66, 0.5, 0.14]
+    [0.64, 0.5, 0.19]
   ],
 
   // --- Vehiculos ------------------------------------------------------------
   car: [
-    [0.6, 0.17, 0.14],
+    // El rojo baja un punto por lo mismo que el toldo amarillo.
+    [0.58, 0.2, 0.17],
     [0.16, 0.3, 0.54],
     [0.78, 0.78, 0.76],
     [0.24, 0.25, 0.27]
@@ -83,7 +96,13 @@ export const COLORS = {
   glass: [0.26, 0.33, 0.38],
   tire: [0.09, 0.09, 0.1],
   taxi: [0.12, 0.12, 0.13],
-  taxiTecho: [0.88, 0.72, 0.1],
+  /*
+   * El techo del taxi es lo mas llamativo que puede haber en la calzada, y
+   * aun asi tiene que quedar por debajo de un control. Estaba en 0,89 de
+   * saturacion —mas que cualquier cosa del juego salvo el semaforo— y un
+   * taxi abandonado llamaba mas la atencion que el objetivo.
+   */
+  taxiTecho: [0.86, 0.72, 0.22],
   bus: [0.2, 0.36, 0.58],
   busFranja: [0.78, 0.3, 0.2],
 
@@ -109,7 +128,12 @@ export const COLORS = {
 
   // --- Mision ---------------------------------------------------------------
   checkpoint: [0.95, 0.72, 0.15],
-  goal: [0.3, 0.8, 0.48],
+  /*
+   * La meta: el verde mas saturado del juego, por encima de todo decorado.
+   * Subio de 0,63 a 0,83 de saturacion por el mismo motivo que bajaron los
+   * toldos: es lo que el jugador tiene que encontrar.
+   */
+  goal: [0.14, 0.82, 0.42],
   police: [0.16, 0.26, 0.45]
 };
 

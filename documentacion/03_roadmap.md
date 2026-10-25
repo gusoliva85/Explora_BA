@@ -9,7 +9,8 @@
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
 > **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6, 7, 8 y **9**.
-> **Fase siguiente:** **Fase 10 — Interfaz completa**, o **11 (audio)**.
+> **En curso:** **Fase 12 — Arte original**, salteada a pedido. La 10 y la
+> 11 quedan para después.
 >
 > **🏁 Éste es el "primer hito" del documento 01: a partir de acá el juego
 > existe.** Se puede jugar de principio a fin, ganar, perder, reintentar, y
@@ -1429,14 +1430,90 @@ hipótesis.
 Es la fase más larga. Conviene hacerla en el orden de abajo, que es el de mayor
 impacto visual por hora de trabajo.
 
-### 12.A — Guía de estilo
+### 12.A — Guía de estilo ✅
 
-| # | Tarea |
-|---|---|
-| 12.1 | Paleta cerrada: 8 a 12 colores para todo el juego |
-| 12.2 | Escena de prueba con una fachada, una vereda, Gus, un zombi y un objeto, para validar escala y estilo juntos |
-| 12.3 | Definir resolución de texturas por tipo de objeto |
-| 12.4 | Definir nivel de detalle: cuántos polígonos para personaje, prop y edificio |
+| # | Tarea | Estado |
+|---|---|---|
+| 12.1 | Paleta cerrada: 8 a 12 colores | ✅ **12 familias con rampa**, ver abajo |
+| 12.2 | Escena de prueba con fachada, vereda, Gus, zombi y objeto | ✅ `estilo.html` |
+| 12.3 | Resolución de texturas por tipo de objeto | ✅ **ninguna**, y está justificado |
+| 12.4 | Nivel de detalle por tipo | ✅ presupuesto de triángulos |
+
+**Dónde está:** `src/art/styleGuide.js` es la guía, y es **código**, no un
+PDF que nadie vuelve a abrir. `tests/estilo.test.js` falla si la paleta
+deja de cumplir sus propias reglas. `estilo.html` es la escena de prueba.
+
+#### Por qué NO son 8 a 12 colores planos
+
+La tarea pedía "paleta cerrada: 8 a 12 colores". La intención —coherencia—
+se cumple, pero 8 a 12 colores *planos* rompen la regla que hace legible a
+este juego: **dos superficies que se tocan nunca comparten valor**. El
+asfalto, el cordón y la vereda se tocan entre sí y los tres tienen que
+separarse solos.
+
+Son **12 familias**, cada una con una rampa de cinco escalones derivados
+del mismo tono. Todos los grises de la calle son la misma familia; lo que
+cambia es cuánta luz reflejan. Hay coherencia de verdad —nada se elige a
+ojo— y legibilidad al mismo tiempo. Y si mañana la calle tiene que tirar
+más a marrón, se cambia **un** valor.
+
+#### Lo que encontró la guía apenas se pudo medir
+
+**Un toldo de comercio era más llamativo que la meta de la misión.** El
+toldo amarillo estaba en 0,79 de saturación y la meta en 0,63. La regla
+vieja decía "los colores saturados se reservan: toldos, taxis, semáforos y
+objetos de misión", juntando en una frase cosas que no son lo mismo: un
+toldo hay veinte, la meta hay una.
+
+No se ve en una captura —los dos se ven "de color" y nadie los compara— y
+sí se ve con un número. Ahora los decorados topan en 0,75 y lo de misión
+arranca en 0,82, con una prueba que lo verifica.
+
+#### Decisiones
+
+**Sin texturas, y es una decisión.** El juego se abre desde un enlace en el
+teléfono, muchas veces con datos: cada kilobyte es tiempo antes de poder
+jugar. Las texturas además rompen el agrupado de mallas igual que los
+materiales. Y a veinte metros de cámara el detalle de textura no se ve: lo
+que se ve es la **silueta** y el **valor**. Lo que reemplaza a la textura
+es geometría — un balcón de verdad en vez de un balcón pintado.
+
+**El presupuesto de triángulos se ordena por cuántos hay en pantalla.** Gus
+puede gastar porque hay uno; un objeto del piso no, porque hay muchos. El
+número que de verdad limita en un teléfono son las llamadas de dibujo, no
+los triángulos; estos topes están para que nadie meta un modelo de cien mil
+"porque total los triángulos son gratis".
+
+#### La escena de prueba tiene cámara ortográfica
+
+Y eso es el motivo de que exista. En el juego la cámara está a veinte
+metros y a 57 grados: desde ahí se ve si algo **se lee**, pero no si las
+proporciones están bien.
+
+La primera versión usaba perspectiva cerrada y tenía un defecto que la
+invalidaba: la puerta de la fachada se veía más alta que la marca de 2,10 m
+de una regla parada tres metros más adelante, **aunque las dos midieran lo
+mismo**. Una herramienta para validar escala que deforma las alturas según
+la profundidad no sirve. En ortográfica, lo que mide dos metros se ve de
+dos metros esté donde esté.
+
+Y monta **el mismo post-proceso que el juego**. Sin eso, la fachada ocre se
+veía amarillo limón: el juego mapea los tonos con `TONEMAP_NEUTRAL` y sin
+eso los claros se queman. Una escena de prueba que miente sobre los colores
+es peor que no tenerla, porque lleva a "corregir" una paleta que estaba
+bien.
+
+#### Cómo se abre
+
+```
+npm run dev     y después http://localhost:5173/estilo.html
+```
+
+`←` `→` giran, `↑` `↓` acercan, `M` muestra las rampas de color en el piso.
+Se compila junto con el juego: una guía que sólo funciona en desarrollo
+deja de abrirse en cuanto alguien quiere mirarla desde el teléfono, que es
+justo donde hay que mirarla.
+
 
 ### 12.B — Gus
 
