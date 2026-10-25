@@ -1633,13 +1633,90 @@ entre quieto, caminar, correr, atacar, recargar y curarse. Una ficha de
 personaje con el modelo congelado en pose neutral no sirve para juzgar
 nada; lo que hay que validar es si se lee **en movimiento**.
 
-### 12.C — Zombis
+### 12.C — Zombis ✅
 
-| # | Tarea |
-|---|---|
-| 12.14 | Diseñar el zombi estándar con una silueta claramente distinta de Gus |
-| 12.15 | Modelar, riggear y animar: caminar, correr, atacar, recibir daño, morir |
-| 12.16 | Dos o tres variantes de ropa y color sobre el mismo modelo |
+| # | Tarea | Estado |
+|---|---|---|
+| 12.14 | Silueta claramente distinta de Gus | ✅ y hay pruebas que lo fijan |
+| 12.15 | Modelar, riggear y animar | ✅ seis poses, misma jerarquía que Gus |
+| 12.16 | Dos o tres variantes de ropa | ✅ tres, repartidas parejo |
+
+#### Qué hace que un zombi se lea como zombi
+
+No es la sangre ni la cara: a veinte metros nada de eso existe. Son tres
+cosas, y las tres son de **movimiento**:
+
+1. **Asimetría.** Un humano camina parejo. Un zombi arrastra una pierna y
+   lleva un brazo más caído que el otro. Es lo primero que el ojo marca
+   como "algo anda mal" sin poder decir qué. Está en el código como un
+   desfase de 0,12 de ciclo entre un lado y el otro, con una prueba que
+   avisa si alguien lo "arregla" creyendo que es un error.
+2. **Los brazos adelante y arriba**, no colgando. Es la silueta que lo
+   separa de Gus desde la cámara cenital, que es el único ángulo desde el
+   que se lo va a ver.
+3. **El torso volcado** con la cabeza caída. Lo hace más bajo y más ancho
+   aunque midan parecido.
+
+Y una cuarta, que es la que más cuesta notar: **el zombi no contrapesa**.
+Un humano camina con el brazo izquierdo acompañando la pierna derecha; el
+zombi lleva los brazos tiesos adelante y apenas oscilan. Hay una prueba que
+mide la relación entre la amplitud del brazo y la de la pierna: en Gus
+tiene que ser alta, en el zombi baja.
+
+#### Las medidas también los separan
+
+| | Gus | Zombi |
+|---|---|---|
+| Alto | 1,80 m | 1,72 m |
+| Ancho de hombros | 0,52 m | **0,38 m** |
+| Postura | erguido | 26° volcado |
+| Brazos en reposo | a los costados | al frente |
+
+Gus tiene un trapecio ancho; el zombi, hombros caídos y angostos. A la
+distancia de cámara esa diferencia de ancho es lo primero que separa las
+dos siluetas, **antes que el color**.
+
+#### Tres variantes, y por qué no más
+
+Cada combinación de color crea un material, y cada material rompe el
+agrupado de mallas. Con doce zombis en pantalla, tres variantes siguen
+agrupando de a cuatro; con ocho variantes cada zombi sería su propio lote.
+
+Lo que cambia es el **valor**, no el tono: una ropa clara, una media y una
+oscura. A veinte metros eso es lo único que se nota, y alcanza para que una
+horda no se lea como doce copias del mismo muñeco. Se reparten por índice y
+no al azar: con azar podrían salir doce iguales, que es justo lo que las
+variantes vienen a evitar.
+
+#### 🔧 Lo que encontraron las pruebas
+
+**Al recibir un golpe, el zombi se enderezaba pasando la vertical.** El
+latigazo hacia atrás restaba 34 grados y lo dejaba en −8: por un instante
+quedaba parado derecho, incluso inclinado hacia atrás, y en ese instante su
+silueta era la de una persona. Dura dos décimas y es justo el momento en
+que el jugador lo está mirando, porque le acaba de pegar.
+
+**El animador volvía al reposo equivocado.** La máquina de estados de las
+poses se reusó para el zombi, pero al terminar un mordisco volvía al estado
+`QUIETO` de Gus, que no existe en la tabla del zombi: se quedaba en pose
+neutral **humana**, parado derecho. Ahora el repertorio —poses, gestos,
+estado de reposo, estado de muerte— entra por parámetro.
+
+**El desplome dejó de ser un giro de la entidad.** Antes se rotaba la raíz
+80 grados, lo que tumbaba también el eje sobre el que gira el cuerpo: el
+zombi quedaba acostado pero seguía "mirando" hacia donde caminaba, y al
+reciclarse había que acordarse de enderezarlo. Ahora es una pose.
+
+**El destello de impacto colgaba de la raíz** con una posición fija
+calculada contra el cuerpo viejo, que no se movía. Con el torso animado,
+quedaría flotando separado del zombi justo cuando uno lo está mirando.
+
+#### El costo
+
+Las llamadas de dibujo quedaron en **232**, las mismas que con Gus solo: el
+agrupado dinámico funde las mallas de los zombis que comparten material, y
+las tres variantes siguen entrando. Las piezas por zombi pasaron de 8 a 13,
+y sólo el torso y los dos muslos proyectan sombra.
 
 ### 12.D — Armas y objetos
 

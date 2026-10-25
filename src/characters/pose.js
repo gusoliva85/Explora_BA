@@ -337,7 +337,24 @@ export function esGesto(estado) {
  * le pide `pose()` y aplica los números a donde quiera.
  */
 export class Animador {
-  constructor(estadoInicial = Pose.QUIETO) {
+  /**
+   * @param {string} [estadoInicial]
+   * @param {object} [repertorio] con que poses trabaja
+   * @param {Function} [repertorio.poseDe]
+   * @param {Record<string, number>} [repertorio.gestos]
+   * @param {Function} [repertorio.velocidadDeCiclo]
+   *
+   * El repertorio entra por parametro para que el zombi pueda usar la
+   * MISMA maquina de estados con otras poses. Lo que comparten es el
+   * mecanismo —mezclas, gestos que se reproducen enteros, ciclos que se
+   * repiten—; lo que los separa es como se mueven, que es justamente lo
+   * que tiene que distinguirlos en pantalla.
+   */
+  constructor(estadoInicial = Pose.QUIETO, repertorio = {}) {
+    this.poseDe = repertorio.poseDe ?? poseDe;
+    this.gestos = repertorio.gestos ?? GESTOS;
+    this.velocidadDeCiclo = repertorio.velocidadDeCiclo ?? velocidadDeCiclo;
+
     this.estado = estadoInicial;
     this.anterior = estadoInicial;
     this.fase = 0;
@@ -346,6 +363,18 @@ export class Animador {
     /** Cuánto falta para terminar de mezclar, en segundos. */
     this.mezclando = 0;
     this.faseAnterior = 0;
+
+    /*
+     * A que estado vuelve cuando termina un gesto, y cual es "estar
+     * muerto" para este repertorio.
+     *
+     * Entran por parametro porque el zombi tiene sus propias claves. Sin
+     * esto, al terminar un mordisco el zombi volvia al estado QUIETO de
+     * Gus, que no existe en su repertorio, y se quedaba en pose neutral
+     * humana: parado derecho, indistinguible de una persona.
+     */
+    this.estadoDeReposo = repertorio.reposo ?? Pose.QUIETO;
+    this.estadoDeMuerte = repertorio.muerte ?? Pose.MUERTO;
   }
 
   /**
@@ -353,8 +382,13 @@ export class Animador {
    *
    * @returns {boolean} true si el estado cambió
    */
+  /** Si un estado es un gesto, segun el repertorio de ESTE animador. */
+  esGesto(estado) {
+    return Object.prototype.hasOwnProperty.call(this.gestos, estado);
+  }
+
   pedir(estado) {
-    if (esGesto(estado)) {
+    if (this.esGesto(estado)) {
       // Un gesto nuevo reinicia el gesto en curso: apretar atacar dos veces
       // tiene que dar dos golpes, no uno largo.
       this.#cambiarA(estado);
@@ -397,31 +431,31 @@ export class Animador {
 
     if (this.gesto !== null) {
       this.gesto += dt;
-      const dura = GESTOS[this.estado];
+      const dura = this.gestos[this.estado];
       this.fase = Math.min(1, this.gesto / dura);
       if (this.gesto >= dura) {
         this.gesto = null;
-        const volverA = this.estadoDeFondo ?? Pose.QUIETO;
+        const volverA = this.estadoDeFondo ?? this.estadoDeReposo;
         this.estadoDeFondo = null;
         this.#cambiarA(volverA);
       }
       return;
     }
 
-    if (this.estado === Pose.MUERTO) {
+    if (this.estado === this.estadoDeMuerte) {
       // La caída avanza una sola vez y se queda ahí.
       this.fase = Math.min(1, this.fase + dt * 2.2);
       return;
     }
 
-    this.fase += dt * velocidadDeCiclo(this.estado, velocidad);
+    this.fase += dt * this.velocidadDeCiclo(this.estado, velocidad);
   }
 
   /** La pose de este instante, ya mezclada. */
   pose() {
-    const actual = poseDe(this.estado, this.fase);
+    const actual = this.poseDe(this.estado, this.fase);
     if (this.mezclando <= 0 || this.anterior === this.estado) return actual;
-    const vieja = poseDe(this.anterior, this.faseAnterior);
+    const vieja = this.poseDe(this.anterior, this.faseAnterior);
     // `mezclando` baja de MEZCLA a 0, así que el peso de la nueva sube.
     const k = 1 - this.mezclando / MEZCLA;
     return mezclarPoses(vieja, actual, k);

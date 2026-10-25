@@ -87,7 +87,16 @@ export class SpawnManager {
     // no por el total del mapa: los lejanos estan apagados igual.
     const necesarios = Math.min(this.puestos.length, PERF.maxActiveZombies + 6);
     while (this.reserva.length < necesarios) {
-      this.reserva.push(new Zombie(this.app, this.world, this.mats, this.grupoLote.id));
+      /*
+       * La variante sale del indice, no del azar.
+       *
+       * Asi quedan repartidas parejo: con doce zombis en reserva hay
+       * cuatro de cada una. Con azar podrian salir doce iguales, que es
+       * justo lo que las variantes vienen a evitar.
+       */
+      this.reserva.push(
+        new Zombie(this.app, this.world, this.mats, this.grupoLote.id, this.reserva.length)
+      );
     }
     this.stats.total = this.puestos.length;
     // Armar los lotes una vez creadas todas las entidades.
