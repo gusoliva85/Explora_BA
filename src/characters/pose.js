@@ -73,7 +73,21 @@ export function poseNeutral() {
     cadera: 0,
     cabeza: 0,
     cabezaGiro: 0,
-    /** Brazos: negativo echa el brazo hacia atrás. */
+    /**
+     * Brazos. **POSITIVO lleva el brazo hacia ADELANTE.**
+     *
+     * El signo no es arbitrario y conviene tenerlo escrito: una pieza que
+     * cuelga hacia -Y, rotada en X por un angulo t, termina apuntando a
+     * `z' = -sin(t)`. Como el frente de los modelos es -Z, positivo es
+     * adelante. Es el mismo convenio que usan las piernas.
+     *
+     * Estuvo al reves. Las poses de apuntar, acuchillar y curarse usaban
+     * valores negativos con comentarios que decian "adelante", y el
+     * resultado en el juego fue que Gus disparaba con el brazo estirado
+     * hacia atras y los zombis corrian con los brazos a la espalda. Se
+     * midio en pantalla: el producto escalar entre el frente del zombi y
+     * la direccion de su mano daba -0,89.
+     */
     brazoI: 0,
     brazoD: 0,
     /** Codos: siempre doblan en el mismo sentido. */
@@ -86,6 +100,29 @@ export function poseNeutral() {
     /** Giro del cuerpo entero al caer. */
     desplome: 0
   };
+}
+
+/**
+ * Hacia donde apunta un miembro rotado `anguloX` grados.
+ *
+ * Existe para que nadie —ni el codigo ni una prueba— tenga que razonar el
+ * signo de memoria. Fue exactamente ese razonamiento de memoria el que
+ * dejo a Gus disparando hacia atras y a los zombis corriendo con los
+ * brazos a la espalda durante toda una fase.
+ *
+ * Un miembro cuelga hacia -Y; rotado en X por `t`, apunta a
+ * `(0, -cos t, -sin t)`. El frente del modelo es -Z.
+ *
+ * @returns {{y:number, z:number}} direccion unitaria
+ */
+export function direccionDelMiembro(anguloX) {
+  const t = (anguloX * Math.PI) / 180;
+  return { y: -Math.cos(t), z: -Math.sin(t) };
+}
+
+/** true si el miembro apunta hacia el frente del modelo. */
+export function apuntaAdelante(anguloX) {
+  return direccionDelMiembro(anguloX).z < -0.05;
 }
 
 /** Interpola linealmente dos poses. */
@@ -185,11 +222,11 @@ export function poseDe(estado, fase) {
        */
       const p = poseNeutral();
       const golpe = f < 0.25 ? f / 0.25 : 1 - (f - 0.25) / 0.75;
-      p.brazoD = -40 - golpe * 95;
+      p.brazoD = 40 + golpe * 95;
       p.codoD = 70 - golpe * 60;
       p.torsoGiro = -golpe * 26;
       p.torso = golpe * 10;
-      p.brazoI = golpe * 22;
+      p.brazoI = -golpe * 22;
       p.codoI = 30;
       return p;
     }
@@ -198,9 +235,9 @@ export function poseDe(estado, fase) {
       // Brazo extendido al frente y un retroceso corto hacia atrás.
       const p = poseNeutral();
       const culatazo = Math.max(0, 1 - f * 5);
-      p.brazoD = -88 + culatazo * 16;
+      p.brazoD = 88 - culatazo * 16;
       p.codoD = 10;
-      p.brazoI = -62;
+      p.brazoI = 62;
       p.codoI = 38;
       p.torsoGiro = -12;
       p.torso = 5 - culatazo * 4;
@@ -215,9 +252,9 @@ export function poseDe(estado, fase) {
        */
       const p = poseNeutral();
       const baja = f < 0.5 ? f / 0.5 : 1 - (f - 0.5) / 0.5;
-      p.brazoD = -70;
+      p.brazoD = 70;
       p.codoD = 40;
-      p.brazoI = -20 + baja * 50;
+      p.brazoI = 20 + baja * 50;
       p.codoI = 30 + baja * 70;
       p.cabeza = -baja * 14;
       p.torso = baja * 8;
@@ -230,8 +267,8 @@ export function poseDe(estado, fase) {
       const respirar = Math.sin(f * Math.PI * 2) * 0.5 + 0.5;
       p.torso = 22 + respirar * 4;
       p.cabeza = -18;
-      p.brazoI = -52;
-      p.brazoD = -46;
+      p.brazoI = 52;
+      p.brazoD = 46;
       p.codoI = 85;
       p.codoD = 80;
       p.cadera = -0.06;

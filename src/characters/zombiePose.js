@@ -46,9 +46,15 @@ export function posturaDeZombi() {
   p.torso = 26;
   p.cabeza = -14;
   p.cabezaGiro = 11;
-  // Los brazos adelante y arriba: el rasgo de silueta.
-  p.brazoI = -74;
-  p.brazoD = -68;
+  /*
+   * Los brazos adelante y arriba: el rasgo de silueta.
+   *
+   * POSITIVO es adelante (ver `poseNeutral` en pose.js). Estos valores
+   * estaban en negativo, y los zombis corrian con los brazos estirados
+   * hacia la espalda: se veian caminando al reves.
+   */
+  p.brazoI = 74;
+  p.brazoD = 68;
   p.codoI = 24;
   p.codoD = 30;
   p.cadera = -0.04;
@@ -142,8 +148,8 @@ export function poseZombiDe(estado, fase) {
       const salto = f < 0.3 ? f / 0.3 : 1 - (f - 0.3) / 0.7;
       p.torso = 26 + salto * 24;
       p.cabeza = -14 - salto * 16;
-      p.brazoI = -74 - salto * 42;
-      p.brazoD = -68 - salto * 48;
+      p.brazoI = 74 + salto * 42;
+      p.brazoD = 68 + salto * 48;
       p.codoI = 24 - salto * 20;
       p.codoD = 30 - salto * 24;
       p.cadera = -0.04 + salto * 0.06;
@@ -166,8 +172,8 @@ export function poseZombiDe(estado, fase) {
       const k = Math.max(0, 1 - f * 2.2);
       p.torso = 26 - 14 * k;
       p.cabeza = -14 - 14 * k;
-      p.brazoI = -74 + 40 * k;
-      p.brazoD = -68 + 46 * k;
+      p.brazoI = 74 - 40 * k;
+      p.brazoD = 68 - 46 * k;
       p.torsoGiro = 18 * k;
       return p;
     }
@@ -183,8 +189,8 @@ export function poseZombiDe(estado, fase) {
       p.cadera = -0.04 - caida * 0.22;
       p.torso = 26 + caida * 16;
       p.torsoGiro = caida * 22;
-      p.brazoI = -74 + caida * 96;
-      p.brazoD = -68 + caida * 72;
+      p.brazoI = 74 - caida * 96;
+      p.brazoD = 68 - caida * 72;
       p.piernaI = caida * 26;
       p.piernaD = -caida * 9;
       p.cabeza = -14 - caida * 18;

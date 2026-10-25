@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   Pose,
+  apuntaAdelante,
+  direccionDelMiembro,
   poseNeutral,
   poseDe,
   mezclarPoses,
@@ -193,9 +195,30 @@ describe('disparar tiene retroceso', () => {
     expect(alSalir.brazoD).not.toBeCloseTo(despues.brazoD, 1);
   });
 
-  it('el brazo queda extendido al frente, no colgando', () => {
-    // Noventa grados aproximadamente: apuntando.
-    expect(poseDe(Pose.DISPARAR, 0.5).brazoD).toBeLessThan(-70);
+  it('el brazo queda extendido AL FRENTE, no hacia atras', () => {
+    /*
+     * Se mide la DIRECCION, no el signo del angulo.
+     *
+     * La version anterior pedia que el angulo fuera menor que -70, que es
+     * justo lo contrario: con ese valor el brazo apunta a la espalda. Gus
+     * estuvo disparando hacia atras toda una fase, y esta prueba lo daba
+     * por bueno porque codificaba el mismo error de signo que el codigo.
+     */
+    const p = poseDe(Pose.DISPARAR, 0.5);
+    expect(apuntaAdelante(p.brazoD), `brazoD en ${p.brazoD}`).toBe(true);
+    // Y bien extendido: casi horizontal.
+    expect(Math.abs(direccionDelMiembro(p.brazoD).z)).toBeGreaterThan(0.85);
+  });
+
+  it('el cuchillazo tambien sale para adelante', () => {
+    const p = poseDe(Pose.ATACAR, 0.25);
+    expect(apuntaAdelante(p.brazoD), `brazoD en ${p.brazoD}`).toBe(true);
+  });
+
+  it('curarse lleva las manos adelante, contra el cuerpo', () => {
+    const p = poseDe(Pose.CURARSE, 0.5);
+    expect(apuntaAdelante(p.brazoI)).toBe(true);
+    expect(apuntaAdelante(p.brazoD)).toBe(true);
   });
 });
 

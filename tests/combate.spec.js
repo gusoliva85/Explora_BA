@@ -112,6 +112,69 @@ test.describe('direccion del ataque', () => {
     });
   }
 
+  test('los brazos apuntan hacia ADELANTE, no a la espalda', async ({ page }) => {
+    /*
+     * Lo reporto Gustavo mirando el juego: "los zombies caminan al reves".
+     *
+     * El cuerpo iba bien; lo que iba al reves eran los BRAZOS. Las poses
+     * usaban angulos negativos con comentarios que decian "adelante",
+     * cuando en este convenio positivo es adelante. Medido en pantalla, el
+     * producto escalar entre el frente del zombi y la direccion de su mano
+     * daba -0,89: los brazos estirados hacia la espalda.
+     *
+     * Ninguna prueba unitaria lo vio porque las unitarias comprobaban el
+     * SIGNO del angulo, codificando el mismo error que el codigo. Esto se
+     * mide en el mundo, con las transformaciones ya aplicadas.
+     */
+    await page.goto('/');
+    await page.locator('#btn-start').click();
+    await expect(page.locator('#screen-hud')).toBeVisible();
+
+    const r = await page.evaluate(async () => {
+      const g = globalThis.game;
+      const esperar = (n) =>
+        new Promise((res) => {
+          let i = 0;
+          const paso = () => (++i >= n ? res() : requestAnimationFrame(paso));
+          requestAnimationFrame(paso);
+        });
+
+      const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
+      g.player.teleport(zona.x, zona.z + 14);
+      await esperar(40);
+
+      /** Cuanto apunta una mano hacia el frente de su cuerpo. */
+      const haciaAdelante = (cuerpo, mano) => {
+        const f = cuerpo.forward;
+        const c = cuerpo.getPosition();
+        const m = mano.getPosition();
+        const d = { x: m.x - c.x, z: m.z - c.z };
+        const largo = Math.hypot(d.x, d.z) || 1;
+        return (f.x * d.x + f.z * d.z) / largo;
+      };
+
+      g.arma.cambiarA('pistol');
+      g.gus.gesto('disparar');
+      await esperar(3);
+      const gus = haciaAdelante(g.player.entity, g.gus.manoD);
+
+      const z = g.zombis.enJuego.find((x) => x.vivo);
+      const zombi = z ? haciaAdelante(z.entity, z.codoD) : null;
+      return { gus, zombi };
+    });
+
+    expect(
+      r.gus,
+      `Gus dispara con el brazo hacia atras (escalar ${r.gus.toFixed(2)})`
+    ).toBeGreaterThan(0.4);
+
+    test.skip(r.zombi === null, 'no habia zombis en juego');
+    expect(
+      r.zombi,
+      `el zombi lleva los brazos a la espalda (escalar ${r.zombi.toFixed(2)})`
+    ).toBeGreaterThan(0);
+  });
+
   test('el zombi que persigue camina de frente, no de espaldas', async ({ page }) => {
     /*
      * El mismo error de convenio afectaba al zombi: su cuerpo se orientaba

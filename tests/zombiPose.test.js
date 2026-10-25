@@ -8,7 +8,14 @@ import {
   esGestoZombi,
   DESFASE
 } from '../src/characters/zombiePose.js';
-import { Pose, poseDe, poseNeutral, Animador } from '../src/characters/pose.js';
+import {
+  Pose,
+  poseDe,
+  poseNeutral,
+  Animador,
+  apuntaAdelante,
+  direccionDelMiembro
+} from '../src/characters/pose.js';
 import { MEDIDAS as GUS } from '../src/characters/gus.js';
 import { ESCALA, separacion, saturacion } from '../src/art/styleGuide.js';
 import { COLORS } from '../src/world/palette.js';
@@ -45,8 +52,11 @@ describe('la postura base ya los separa', () => {
     // Es el rasgo que lo identifica desde la cámara cenital, que es el
     // único ángulo desde el que se lo va a ver.
     const p = posturaDeZombi();
-    expect(p.brazoI).toBeLessThan(-50);
-    expect(p.brazoD).toBeLessThan(-50);
+    // Se mide la DIRECCION, no el signo: medir el signo fue lo que dejo a
+    // los zombis corriendo con los brazos a la espalda.
+    expect(apuntaAdelante(p.brazoI), `brazoI en ${p.brazoI}`).toBe(true);
+    expect(apuntaAdelante(p.brazoD), `brazoD en ${p.brazoD}`).toBe(true);
+    expect(Math.abs(direccionDelMiembro(p.brazoI).z)).toBeGreaterThan(0.8);
   });
 
   it('Gus NO lleva los brazos adelante estando quieto', () => {
@@ -160,8 +170,11 @@ describe('atacar: se abalanza con los dos brazos', () => {
     // Gus golpea con uno; el zombi se tira encima. Es otra manera de
     // separarlos.
     const z = poseZombiDe(PoseZ.ATACAR, 0.3);
-    expect(z.brazoI).toBeLessThan(-100);
-    expect(z.brazoD).toBeLessThan(-100);
+    expect(apuntaAdelante(z.brazoI)).toBe(true);
+    expect(apuntaAdelante(z.brazoD)).toBe(true);
+    // Los dos pasan de la horizontal: se tira encima.
+    expect(z.brazoI).toBeGreaterThan(100);
+    expect(z.brazoD).toBeGreaterThan(100);
 
     const g = poseDe(Pose.ATACAR, 0.25);
     // En Gus, un brazo va muy lejos y el otro no.
