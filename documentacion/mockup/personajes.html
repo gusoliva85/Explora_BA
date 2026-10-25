@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explorar BA — Mockups de personaje</title>
+
+    <!--
+      MOCKUPS DE PERSONAJE
+
+      Esto NO es el juego: es una página para mirar y elegir, antes de
+      implementar nada. Se construye con el mismo motor, la misma paleta y
+      el mismo post-proceso que el juego, así que los colores y la luz son
+      los de verdad.
+
+      Cada figura es una propuesta distinta. La idea es verlas juntas, a la
+      misma escala y con la misma luz, y decidir cuál se implementa.
+    -->
+    <style>
+      :root { --tinta: #eef2f6; --apagado: #93a0ae; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: #0f1218; color: var(--tinta);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+      #lienzo { display: block; width: 100%; height: 100%; }
+
+      .barra {
+        position: absolute; left: 0; right: 0; top: 0;
+        padding: 12px 18px; display: flex; gap: 18px; align-items: baseline;
+        background: linear-gradient(180deg, rgba(10,13,18,0.92), rgba(10,13,18,0));
+      }
+      .barra h1 { margin: 0; font-size: 16px; letter-spacing: 0.04em; }
+      .barra p { margin: 0; font-size: 12px; color: var(--apagado); }
+
+      .etiquetas {
+        position: absolute; left: 0; right: 0; bottom: 0; height: 96px;
+        display: flex; align-items: flex-start; justify-content: center;
+        background: linear-gradient(0deg, rgba(10,13,18,0.94), rgba(10,13,18,0));
+        pointer-events: none;
+      }
+      .etiqueta { width: 330px; text-align: center; padding-top: 8px; }
+      .etiqueta b { display: block; font-size: 13px; letter-spacing: 0.04em; }
+      .etiqueta span { display: block; font-size: 11px; color: var(--apagado); line-height: 1.5; margin-top: 3px; }
+
+      .ayuda {
+        position: absolute; right: 16px; bottom: 104px;
+        font-size: 11px; color: var(--apagado);
+        background: rgba(12,15,20,0.8); border: 1px solid rgba(255,255,255,0.1);
+        padding: 7px 11px; border-radius: 9px; line-height: 1.7;
+      }
+      kbd { background: rgba(255,255,255,0.12); border-radius: 4px; padding: 1px 5px; font-size: 10px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="lienzo"></canvas>
+
+    <div class="barra">
+      <h1>Mockups de personaje</h1>
+      <p id="subtitulo">Mismo motor, misma luz y misma paleta que el juego. La puerta de la izquierda mide 2,10 m.</p>
+    </div>
+
+    <div class="etiquetas" id="etiquetas"></div>
+
+    <div class="ayuda">
+      <kbd>←</kbd> <kbd>→</kbd> girar &nbsp;·&nbsp; <kbd>↑</kbd> <kbd>↓</kbd> acercar
+      &nbsp;·&nbsp; <kbd>Z</kbd> zombis / Gus &nbsp;·&nbsp; <kbd>C</kbd> vista de cámara del juego
+    </div>
+
+    <script type="module" src="./personajes.js"></script>
+  </body>
+</html>
