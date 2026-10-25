@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Explorar BA — Gus detallado</title>
+    <!--
+      La foto de referencia y el modelo, lado a lado, a la misma altura, con
+      la misma luz y el mismo post-proceso. Es la unica forma honesta de
+      comparar: cualquier otra comparacion se hace de memoria entre dos
+      pantallas distintas.
+    -->
+    <style>
+      :root { --tinta: #eef2f6; --apagado: #93a0ae; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: #0f1218; color: var(--tinta);
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; overflow: hidden; }
+      #lienzo { display: block; width: 100%; height: 100%; }
+      .barra { position: absolute; left: 0; right: 0; top: 0; padding: 12px 18px;
+        display: flex; gap: 16px; align-items: baseline;
+        background: linear-gradient(180deg, rgba(10,13,18,0.9), rgba(10,13,18,0)); }
+      .barra h1 { margin: 0; font-size: 16px; }
+      .barra p { margin: 0; font-size: 12px; color: var(--apagado); }
+      .ayuda { position: absolute; right: 16px; bottom: 16px; font-size: 11px;
+        color: var(--apagado); background: rgba(12,15,20,0.82);
+        border: 1px solid rgba(255,255,255,0.1); padding: 7px 11px;
+        border-radius: 9px; line-height: 1.7; }
+      kbd { background: rgba(255,255,255,0.12); border-radius: 4px; padding: 1px 5px; font-size: 10px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="lienzo"></canvas>
+    <div class="barra">
+      <h1>Gus detallado</h1>
+      <p>La foto de referencia a la izquierda, el modelo a la derecha, a la misma altura (1,80 m).</p>
+    </div>
+    <div class="ayuda">
+      <kbd>←</kbd> <kbd>→</kbd> girar &nbsp;·&nbsp; <kbd>↑</kbd> <kbd>↓</kbd> acercar
+      &nbsp;·&nbsp; <kbd>C</kbd> cámara del juego
+    </div>
+    <script type="module" src="./gusDetallado.js"></script>
+  </body>
+</html>
