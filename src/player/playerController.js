@@ -117,6 +117,18 @@ export class PlayerController {
     }
   }
 
+  /**
+   * Velocidad actual en el plano, en m/s.
+   *
+   * La usa la curacion para saber si el jugador freno de verdad. Se mira
+   * la VELOCIDAD y no la entrada del joystick a proposito: soltar el dedo
+   * no frena en seco —hay desaceleracion— y cancelar la curacion por un
+   * resbalon de inercia se sentiria arbitrario.
+   */
+  get velocidadActual() {
+    return Math.hypot(this.velocity.x, this.velocity.z);
+  }
+
   /** @returns {boolean} true si el daño se aplico. */
   applyDamage(amount, source = 'unknown') {
     if (this.invulnerableFor > 0 || this.health <= 0) return false;

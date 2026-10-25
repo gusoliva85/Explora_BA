@@ -18,6 +18,7 @@ export class Hud {
   /** Ultimo texto escrito en la barra especial, para no tocar el DOM de mas. */
   #textoEspecial = null;
   #listaEspecial = null;
+  #curaciones = null;
 
   constructor(bus, state) {
     this.bus = bus;
@@ -56,7 +57,11 @@ export class Hud {
       filaEspecial: document.querySelector('.fila-especial'),
       especialFill: document.getElementById('especial-fill'),
       especialEstado: document.getElementById('especial-estado'),
-      btnSpecial: document.getElementById('btn-special')
+      btnSpecial: document.getElementById('btn-special'),
+      btnHeal: document.getElementById('btn-heal'),
+      healCount: document.getElementById('heal-count'),
+      filaUso: document.getElementById('fila-uso'),
+      usoFill: document.getElementById('uso-fill')
     };
 
     // Si el dispositivo cambia de modo (girar, conectar un mouse, forzarlo
@@ -189,6 +194,41 @@ export class Hud {
       this.el.filaEspecial?.classList.toggle('lista', lista);
       // El boton no existe hasta que sirve. Ver el comentario del CSS.
       this.el.btnSpecial?.classList.toggle('hidden', !lista);
+    }
+  }
+
+  /**
+   * Botiquines encima.
+   *
+   * El botón sólo existe si hay alguno: uno que no sirve enseña a
+   * apretarlo en vano. Y late si además estás herido, que es el único
+   * momento en que apretar es la decisión correcta.
+   *
+   * @param {number} cantidad
+   * @param {boolean} herido
+   */
+  setCuraciones(cantidad, herido) {
+    const b = this.el.btnHeal;
+    if (!b) return;
+    if (this.#curaciones !== cantidad) {
+      this.#curaciones = cantidad;
+      this.el.healCount.textContent = String(cantidad);
+      b.classList.toggle('hidden', cantidad <= 0);
+    }
+    b.classList.toggle('urgente', cantidad > 0 && herido);
+  }
+
+  /**
+   * Barra del objeto que se está usando.
+   *
+   * @param {boolean} visible
+   * @param {number} progreso 0..1
+   */
+  setUso(visible, progreso = 0) {
+    if (!this.el.filaUso) return;
+    this.el.filaUso.classList.toggle('hidden', !visible);
+    if (visible) {
+      this.el.usoFill.style.width = `${Math.max(0, Math.min(100, progreso * 100))}%`;
     }
   }
 

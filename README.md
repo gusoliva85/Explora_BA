@@ -39,6 +39,7 @@ además muestra la dirección para abrirlo desde el celular.
 | Cambiar de arma | `Q` | Botón `⇄` |
 | Recargar | `R` | Botón `R` |
 | Bazooka | `F` | Botón naranja (sólo cuando está lista) |
+| Curarse | `H` | Botón verde (sólo si tenés botiquines) |
 | Pausa | `Esc` | Botón |
 | Diagnóstico | `F1` | Tres dedos |
 
@@ -194,13 +195,28 @@ una) y un botiquín. Se levantan **caminándolas**, sin botón: con un pulgar
 en el joystick y el otro en disparar no queda dedo libre, y frenar a buscar
 un tercer botón con zombis encima no es una decisión interesante.
 
-El botiquín cura **la mitad de la vida total**, sumando: con un cuarto de
-vida te deja en tres cuartos.
+Hay más repartidos por el mapa, en las zonas que el plano marca desde la
+Fase 3: explorar tiene premio.
 
-**Lo que no te sirve no se levanta.** Un botiquín pisado con la vida llena
-se perdería para siempre sin que te enteres; así se queda esperando. Es la
-diferencia entre un recurso que se administra y uno que se desperdicia por
-caminar distraído.
+**Lo que no te sirve no se levanta.** Una caja de munición con la reserva
+llena se perdería para siempre sin que te enteres; así se queda esperando.
+Es la diferencia entre un recurso que se administra y uno que se
+desperdicia por caminar distraído.
+
+### Curarse es una decisión
+
+El botiquín **se guarda**, no se usa al pisarlo. Usarlo cura la mitad de la
+vida total —con un cuarto te deja en tres cuartos— pero:
+
+- **Tarda 1,2 s.**
+- **Hay que estar quieto**: moverse lo corta.
+- **Cualquier golpe lo corta**, incluida tu propia bazooka.
+
+Si te cortan, **el botiquín no se pierde**: perderlo además del segundo
+sería castigar dos veces el mismo error, y nadie se animaría a usarlo.
+
+Un botiquín que cura al apretar un botón no es una decisión, es un segundo
+medidor de vida. Con tiempo de uso la pregunta pasa a ser **cuándo**.
 
 ### La bazooka
 

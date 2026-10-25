@@ -8,10 +8,8 @@
 
 ## 📍 Dónde estamos — 24 de octubre de 2026
 
-> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6 y 7. **Fase 8 empezada**:
-> ya hay objetos que se recogen; falta el inventario.
-> **Fase siguiente:** terminar la **Fase 8**, o saltar a la **9** (la misión
-> completa) si lo que hay alcanza.
+> **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6, 7 y **8**.
+> **Fase siguiente:** **Fase 9 — La misión completa.**
 >
 > El repositorio está en
 > **[github.com/gusoliva85/Explora_BA](https://github.com/gusoliva85/Explora_BA)**.
@@ -46,10 +44,15 @@
 > de dirección se salva. La explosión mata en el centro y deja heridos en
 > el borde.
 >
-> **Y los controles llegaron al control.** Cada checkpoint deja tres cajas
-> en el piso —dos de munición y un botiquín— que se levantan caminándolas.
-> El botiquín cura la mitad de la vida total, sumando. Lo que no te sirve
-> se queda en el piso.
+> **Y hay recursos.** Cada checkpoint deja tres cajas en el piso —dos de
+> munición y un botiquín— y hay más repartidos por el mapa, en las zonas
+> que el plano marcaba desde la Fase 3. Se levantan caminándolos; lo que no
+> te sirve se queda en el piso.
+>
+> **Curarse es una decisión.** El botiquín se guarda, no se usa al pisarlo.
+> Usarlo tarda 1,2 s y hay que **estar quieto**: moverse lo corta, y un
+> golpe también. Cura la mitad de la vida total, sumando. Si te cortan, el
+> botiquín **no se pierde**.
 >
 > **Y se puede apuntar con el pulgar.** Un toque al botón dispara hacia
 > adelante; manteniéndolo y arrastrando, se convierte en un segundo
@@ -977,7 +980,7 @@ Con una estela se leería mejor la trayectoria; es trabajo de la Fase 12.
 
 ---
 
-# FASE 8 — Objetos e inventario 🔶 EMPEZADA
+# FASE 8 — Objetos e inventario ✅
 
 **Objetivo:** recursos que se recogen y se usan.
 
@@ -985,7 +988,7 @@ Lo que sigue salió de probar el juego en el teléfono, no del plan original.
 Se hizo antes que el resto de la fase porque sin esto la munición no se
 podía reponer de ninguna manera.
 
-### Lo que ya está
+### Lo que se hizo primero, pedido jugando
 
 | # | Tarea | Estado |
 |---|---|---|
@@ -1027,6 +1030,43 @@ no es el tamaño real del objeto: es que **eso se levanta**. Por eso además
 flotan y giran — nada más en la escena lo hace, así que cualquier cosa que
 se mueva así se lee como interactiva sin explicar nada.
 
+### Decisiones de la curación
+
+**El botiquín se guarda; usarlo es una decisión aparte.** Antes curaba al
+pisarlo. Un botiquín que cura al apretar —o al caminarlo— no es una
+decisión: es un segundo medidor de vida, y la respuesta correcta a estar
+herido es siempre "curarse ya". Con tiempo de uso la pregunta cambia a
+**cuándo**.
+
+**Para curarse hay que parar.** Moverse lo corta. Sin esta regla, curarse
+mientras se corre sería gratis: el tiempo de uso no costaría nada porque se
+gastaría haciendo lo que uno iba a hacer igual. Teniendo que frenar, el
+costo es terreno y distancia, que es la moneda de este juego.
+
+**Un golpe lo corta, y el botiquín NO se pierde.** Perderlo además de los
+1,2 segundos sería castigar dos veces el mismo error, y llevaría a que
+nadie se anime a usarlo nunca: lo contrario de lo que se busca. Por eso el
+objeto se descuenta al **completar**, nunca al empezar — hay una prueba que
+falla si alguien invierte ese orden.
+
+**Se corta por cualquier daño, no sólo por un mordisco.** Está enganchado
+al evento de daño y no al bucle, así que vale también para la explosión de
+la propia bazooka. Es coherente: lo que corta la curación es que te pase
+algo, no quién te lo hizo.
+
+**Se mira la VELOCIDAD, no la entrada del joystick.** Soltar el dedo no
+frena en seco —hay desaceleración— y cancelar por un resbalón de inercia se
+sentiría arbitrario.
+
+**Con la vida llena no arranca.** Gastar un botiquín para no curar nada es
+el tipo de error que el juego tiene que impedir, no permitir y lamentar.
+
+**Las vendas quedan fuera por ahora.** Dos objetos curativos obligan a un
+selector, y en vertical con dos pulgares ocupados un selector es un
+problema sin solución simple. El inventario es genérico y las acepta el día
+que haya una forma de elegir que no estorbe. Con un solo tipo, la decisión
+sigue siendo la que importa: **cuándo**.
+
 ### Lo que falta de la Fase 8
 
 Este era el plan original. Tres tareas ya están hechas por el camino corto,
@@ -1035,37 +1075,40 @@ arriba.
 
 | # | Tarea | Estado |
 |---|---|---|
-| 8.1 | `InventorySystem`: munición, botiquines, vendas, con topes de carga | ⬜ hay tope de munición, no inventario |
+| 8.1 | `InventorySystem`: con topes de carga | ✅ genérico; hoy sólo se usan botiquines |
 | 8.2 | `PickupItem`: objeto en el mundo, visible y distinguible del decorado | ✅ |
+| — | Vendas, además del botiquín | ❌ **descartada por ahora**: ver abajo |
 | 8.3 | Que los objetos giren o floten suavemente para que se noten | ✅ |
 | 8.4 | Detección de proximidad y botón contextual | ❌ **descartada**: se levantan caminándolos, sin botón |
 | 8.5 | Recoger: el objeto desaparece y hay confirmación visible | ✅ |
 | 8.6 | Que un objeto no se pueda recoger dos veces | ✅ con prueba |
 | 8.7 | Que no se pueda recoger si ya estás al tope | ✅ se queda en el piso, que es mejor que avisar |
-| 8.8 | Curarse: lleva tiempo (1,2 s) y durante ese tiempo sos vulnerable | ⬜ |
-| 8.9 | Cancelar la curación si te golpean | ⬜ |
-| 8.10 | Colocar los objetos de la Misión 001 según el plano de la Fase 3 | ⬜ hoy sólo salen en los controles |
-| 8.11 | Mostrar el inventario en el HUD de forma compacta | ⬜ la munición ya está |
-| 8.12 | Pruebas unitarias del inventario (topes, duplicados, consumo) | ✅ para lo que hay |
+| 8.8 | Curarse: lleva tiempo (1,2 s) y hay que estar quieto | ✅ |
+| 8.9 | Cancelar la curación si te golpean | ✅ y si te movés |
+| 8.10 | Colocar los objetos según el plano de la Fase 3 | ✅ las zonas ya estaban definidas y nadie las usaba |
+| 8.11 | Mostrar el inventario en el HUD de forma compacta | ✅ el contador va dentro del botón de curarse |
+| 8.12 | Pruebas unitarias del inventario (topes, duplicados, consumo) | ✅ |
 
 ### Cómo se prueba
 
 ```
-npm test             248 pruebas; 22 nuevas de objetos y apuntado
-npm run test:e2e     7 nuevas en el navegador, con perfil de celular
+npm test             272 pruebas; 24 nuevas del inventario y la curación
+npm run test:e2e     10 nuevas en el navegador, con perfil de celular
 ```
 
 A mano, en el teléfono:
 
-1. Llegar a un control → aparecen tres cajas en el piso.
-2. Caminarlas → se levantan solas, con aviso en pantalla.
-3. Llegar con la vida llena → el botiquín **se queda** esperando.
-4. Perder vida y volver → ahora sí se levanta.
-5. Con un cuarto de vida → el botiquín deja tres cuartos.
-6. Reiniciar → no queda nada tirado de la vuelta anterior.
-7. Mantener el botón de disparar y arrastrar → el personaje gira y se ve la
+1. Arrancar → ya hay cajas repartidas por el mapa.
+2. Llegar a un control → aparecen tres más.
+3. Caminarlas → se levantan solas, con aviso en pantalla.
+4. Con la mochila llena de botiquines → el siguiente **se queda** esperando.
+5. Apretar curarse **parado** → tarda, y da media vida.
+6. Apretar curarse y **salir corriendo** → se corta, y el botiquín queda.
+7. Curarse **con un zombi encima** → el mordisco lo corta. Ésta es la
+   prueba clave de la fase.
+8. Reiniciar → el mapa vuelve como estaba, sin arrastrar lo del control.
+9. Mantener el botón de disparar y arrastrar → el personaje gira y se ve la
    mira; se puede caminar para un lado y tirar para el otro.
-8. Un toque corto → dispara hacia adelante, sin girar.
 
 ### Criterio de salida
 
@@ -1073,11 +1116,14 @@ A mano, en el teléfono:
       sirve se queda en el piso
 - [x] Los objetos se distinguen del decorado de un vistazo: flotan y giran,
       y nada más en la escena lo hace
-- [ ] Curarse en medio del combate es una decisión arriesgada — **todavía
-      no**: el botiquín se levanta y cura al instante. Falta el tiempo de
-      uso y la cancelación al recibir un golpe
+- [x] Curarse en medio del combate es una decisión arriesgada: tarda 1,2 s,
+      hay que estar quieto, y cualquier golpe lo corta. Se validó
+      reintroduciendo los dos errores posibles (que moverse no corte, y que
+      el botiquín se gaste al empezar) y las pruebas fallan como deben
 - [ ] La misión se puede completar con los recursos que hay, pero sin
-      sobrar — pendiente de jugarla entera
+      sobrar — **pendiente de jugarla entera**. Hoy hay 3 cajas de munición
+      y 2 botiquines en el mapa, más 3 por cada control. Si sobra, se sacan
+      del mapa; si falta, se suben los de los controles
 
 ---
 

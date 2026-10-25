@@ -359,6 +359,52 @@
   75% { transform: translateX(4px); }
 }
 
+/* --- Uso de un objeto -----------------------------------------------------
+   Verde, que es el color de curarse, y bien distinta de la recarga ámbar:
+   son dos esperas con consecuencias muy distintas. Durante ésta el jugador
+   está parado e indefenso. */
+
+.fila-uso { margin-top: 8px; }
+.bar.bar-uso { flex: 1; height: 8px; }
+.bar.bar-uso > div {
+  background: linear-gradient(90deg, #2f7d4f, #4ade80);
+  /* Sin transición: la mueve el bucle cuadro a cuadro. */
+  transition: none;
+}
+
+/* --- Botón de curarse -----------------------------------------------------
+   Lleva el contador adentro: cuántos te quedan es justo lo que decide si
+   lo apretás ahora o aguantás un poco más. */
+
+.btn.btn-action.btn-heal {
+  background: radial-gradient(circle at 50% 36%, rgba(74, 222, 128, 0.35), rgba(16, 70, 40, 0.5));
+  border-color: rgba(74, 222, 128, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1;
+}
+.btn.btn-action.btn-heal:active {
+  box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.16), 0 0 28px rgba(74, 222, 128, 0.45);
+}
+.glifo-cura { font-size: 20px; font-weight: 800; }
+.heal-count {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--hud-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Herido y con botiquín encima: el botón late. No es decoración, es el
+   aviso de que tenés una salida y la estás ignorando. */
+.btn.btn-action.btn-heal.urgente {
+  animation: pulsoCura 1.2s ease-in-out infinite;
+}
+@keyframes pulsoCura {
+  0%, 100% { box-shadow: 0 8px 26px -10px rgba(0, 0, 0, 0.95); }
+  50% { box-shadow: 0 0 0 7px rgba(74, 222, 128, 0.16), 0 0 26px rgba(74, 222, 128, 0.4); }
+}
+
 /* --- Barra de la bazooka --------------------------------------------------
    Un reloj de treinta segundos. Mientras carga es fría y discreta: no hay
    nada que hacer al respecto. Cuando se llena cambia de color y late, que

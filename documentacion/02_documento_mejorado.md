@@ -871,6 +871,7 @@ La tabla de riesgos de la sección 16 está bien. Le faltan cuatro.
 | D-18 | Ningún destello dura menos que el techo de `dt`, o puede no dibujarse nunca | 🟡 |
 | D-19 | `pointer-events: auto` es sólo para lo que TIENE un manejador; lo decorativo nunca | 🔴 |
 | D-20 | Los objetos se levantan caminándolos, sin botón; y lo que no sirve no se levanta | 🟡 |
+| D-21 | Curarse lleva tiempo, hay que estar quieto, y lo corta cualquier golpe. El objeto no se pierde | 🔴 |
 
 ---
 
@@ -986,6 +987,42 @@ botiquín pisado con la vida llena se perdería para siempre y el jugador ni
 se enteraría de que lo pisó. Dejándolo en el piso, el recurso se administra
 en vez de desperdiciarse por caminar distraído. Sin esta regla, el recogido
 automático sería peor que el botón.
+
+---
+
+---
+
+### 🔴 D-21 — Curarse lleva tiempo, y hay que parar
+
+**El problema.** La primera versión curaba al pisar el botiquín. Un
+botiquín que cura al apretar —o al caminarlo— no es una decisión: es un
+segundo medidor de vida. Si curarse es gratis e instantáneo, la respuesta
+correcta a estar herido es siempre *"curarse ya"*, y no hay nada que
+pensar.
+
+**La decisión.** El botiquín **se guarda**. Usarlo:
+
+| Regla | Por qué |
+|---|---|
+| Tarda 1,2 s | La pregunta pasa de *"¿me curo?"* a *"¿cuándo?"* |
+| Hay que estar **quieto**: moverse lo corta | Si no, curarse corriendo sería gratis: el tiempo se gastaría haciendo lo que uno iba a hacer igual. Frenando, el costo es terreno |
+| Cualquier **golpe** lo corta | Curarse con un zombi encima no funciona: hay que despegarse primero |
+| El objeto **no se pierde** si se corta | Perderlo además del segundo sería castigar dos veces el mismo error, y llevaría a que nadie se anime a usarlo |
+| Con la vida llena no arranca | Gastar un botiquín para no curar nada es un error que el juego debe impedir, no permitir y lamentar |
+
+El número de 1,2 s no vale solo: lo que importa es que un zombi
+persiguiendo recorre `chaseSpeed × useTime` metros mientras uno está
+parado, y eso tiene que ser **más que su alcance de ataque**. Hay una
+prueba que lo fija leyendo el balance real.
+
+**Consecuencia de implementación que conviene no volver a aprender:** el
+objeto se descuenta al **completar**, nunca al empezar. Invertir ese orden
+es el error natural y se ve igual en pantalla hasta que te cortan.
+
+**Las vendas quedan fuera por ahora.** Dos objetos curativos obligan a un
+selector, y en vertical con dos pulgares ocupados un selector es un
+problema sin solución simple. El inventario es genérico y las acepta el día
+que haya una forma de elegir que no estorbe.
 
 ---
 

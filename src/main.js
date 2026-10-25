@@ -19,6 +19,7 @@ import { CombatFx } from './combat/combatFx.js';
 import { GestorProyectiles } from './combat/projectile.js';
 import { BolsaDeObjetos, TipoObjeto, curaDeBotiquin } from './items/itemLogic.js';
 import { VistaObjetos } from './items/itemView.js';
+import { Inventario, UsoDeObjeto, MotivoCancelacion } from './items/inventario.js';
 import { alcanzadosPorExplosion } from './combat/explosion.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
@@ -265,6 +266,38 @@ const azarCombate = createRng(WORLD_SEED ^ 0x9e3779b9);
 const objetos = new BolsaDeObjetos();
 const vistaObjetos = new VistaObjetos(app);
 
+/** Lo que el jugador lleva encima. */
+const inventario = new Inventario(ITEMS);
+
+/*
+ * El uso de un objeto: lleva tiempo y se puede interrumpir.
+ *
+ * El objeto se descuenta al COMPLETAR, nunca al empezar. Si se descontara
+ * al apretar, un golpe a ultimo momento costaria el botiquin ademas del
+ * segundo perdido: castigar dos veces el mismo error lleva a que nadie se
+ * anime a usarlo.
+ */
+const uso = new UsoDeObjeto({
+  alCompletar: ({ clave }) => {
+    if (!inventario.quitar(clave)) return;
+    const antes = player.health;
+    player.heal(ITEMS[clave].heal);
+    hud.flash(`+${Math.round(player.health - antes)} VIDA`, 1200);
+    actualizarHudObjetos();
+  },
+
+  alCancelar: ({ motivo }) => {
+    /*
+     * Se dice POR QUE se corto. Una barra que se vacia sin explicacion se
+     * lee como un error del juego; con el motivo, el jugador aprende la
+     * regla en el primer intento.
+     */
+    if (motivo === MotivoCancelacion.GOLPE) hud.flash('TE INTERRUMPIERON', 1200);
+    else if (motivo === MotivoCancelacion.MOVIMIENTO) hud.flash('TENÉS QUE FRENAR', 1200);
+    hud.setUso(false);
+  }
+});
+
 /** Color del anillo de ruido en el diagnostico: el mismo ambar del HUD. */
 const COLOR_RUIDO = new pc.Color(1, 0.72, 0.15);
 
@@ -463,12 +496,41 @@ function actualizarHudArma() {
  * piso esperando a que haga falta.
  */
 function leSirve(tipo) {
-  if (tipo === TipoObjeto.BOTIQUIN) return player.health < PLAYER.maxHealth;
+  /*
+   * El botiquin ahora se GUARDA, no se usa al pisarlo. Asi que lo que
+   * decide si sirve ya no es la vida sino el lugar en el inventario: con
+   * la vida llena igual conviene levantarlo y llevarlo.
+   */
+  if (tipo === TipoObjeto.BOTIQUIN) return !inventario.lleno('medkit');
   if (tipo === TipoObjeto.MUNICION) {
     // Hay tope de reserva: con la reserva llena, la caja se queda.
     return arma.reserva.pistol < ITEMS.ammoPistol.maxCarried;
   }
   return true;
+}
+
+/** Pasa el inventario al HUD. */
+function actualizarHudObjetos() {
+  hud.setCuraciones(inventario.cuantos('medkit'), player.health < PLAYER.maxHealth);
+}
+
+/**
+ * Intenta empezar a curarse.
+ *
+ * Con la vida llena no arranca: gastar un botiquin para no curar nada es
+ * el tipo de error que el juego tiene que impedir, no permitir y lamentar.
+ */
+function intentarCurarse() {
+  if (uso.enCurso) {
+    uso.cancelar(MotivoCancelacion.MANUAL);
+    return;
+  }
+  if (inventario.cuantos('medkit') <= 0) return;
+  if (player.health >= PLAYER.maxHealth) {
+    hud.flash('YA ESTÁS ENTERO', 900);
+    return;
+  }
+  uso.iniciar('medkit', ITEMS.medkit.useTime);
 }
 
 /** Levanta lo que el jugador este pisando y le sirva. */
@@ -478,14 +540,39 @@ function recogerObjetos(pos) {
     vistaObjetos.quitar(o.id);
 
     if (o.tipo === TipoObjeto.BOTIQUIN) {
-      const cura = curaDeBotiquin(PLAYER.maxHealth);
-      const antes = player.health;
-      player.heal(cura);
-      hud.flash(`+${Math.round(player.health - antes)} VIDA`, 1200);
+      inventario.agregar('medkit', 1);
+      actualizarHudObjetos();
+      hud.flash(`BOTIQUÍN (${inventario.cuantos('medkit')})`, 1200);
     } else if (o.tipo === TipoObjeto.MUNICION) {
       arma.sumarMunicion('pistol', ITEMS.ammoPistol.amount);
       hud.flash(`+${ITEMS.ammoPistol.amount} BALAS`, 1200);
     }
+  }
+}
+
+/**
+ * Reparte los objetos que el plano de la mision ya tenia marcados.
+ *
+ * Las zonas de `municion` y `curacion` estan definidas desde la Fase 3 y
+ * hasta ahora no las usaba nadie. Son las que hacen que los recursos
+ * existan FUERA de los controles: si solo aparecieran al llegar a un
+ * control, explorar no tendria premio y el recorrido seria una linea recta.
+ */
+function soltarObjetosDelMapa() {
+  const zonas = mission001.zonas.filter(
+    (z) => z.tipo === 'municion' || z.tipo === 'curacion'
+  );
+  for (const z of zonas) {
+    const tipo = z.tipo === 'municion' ? TipoObjeto.MUNICION : TipoObjeto.BOTIQUIN;
+    /*
+     * Dentro de la zona, no en su centro exacto. El desvio sale del
+     * generador con semilla (D-12): la misma semilla deja los objetos
+     * siempre en el mismo lugar, asi que dos partidas son comparables.
+     */
+    const a = azarCombate() * Math.PI * 2;
+    const r = azarCombate() * (z.radio ?? 2) * 0.6;
+    const o = objetos.soltar(tipo, z.x + Math.sin(a) * r, z.z + Math.cos(a) * r);
+    vistaObjetos.mostrar(o);
   }
 }
 
@@ -528,6 +615,12 @@ function startMission({ fromCheckpoint = false } = {}) {
   cohetes.limpiar();
   objetos.limpiar();
   vistaObjetos.limpiar();
+  inventario.vaciar();
+  uso.cancelar(MotivoCancelacion.MANUAL);
+  hud.setUso(false);
+  actualizarHudObjetos();
+  // Los objetos repartidos por el mapa vuelven a estar donde el plano dice.
+  soltarObjetosDelMapa();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -554,6 +647,18 @@ function startMission({ fromCheckpoint = false } = {}) {
  */
 bus.on(EV.CHECKPOINT_REACHED, ({ x, z }) => {
   soltarEnControl({ x, z });
+});
+
+/*
+ * Un golpe corta la curacion.
+ *
+ * Es la regla que la convierte en una decision: curarse con un zombi
+ * encima no funciona, hay que despegarse primero. Se engancha al evento de
+ * daño y no al bucle para que valga para CUALQUIER fuente de daño, incluida
+ * la explosion de la propia bazooka.
+ */
+bus.on(EV.PLAYER_DAMAGED, () => {
+  uso.cancelar(MotivoCancelacion.GOLPE);
 });
 
 bus.on(EV.PLAYER_DIED, () => {
@@ -643,6 +748,7 @@ input.bindHudButton(byId('btn-interact'), 'interact');
 input.bindHudButton(byId('btn-swap'), 'swap');
 input.bindHudButton(byId('btn-reload'), 'reload');
 input.bindHudButton(byId('btn-special'), 'special');
+input.bindHudButton(byId('btn-heal'), 'heal');
 
 /*
  * Ajustes del menu de pausa.
@@ -726,6 +832,17 @@ app.on('update', (rawDt) => {
       hud.flash(arma.arma.name.toUpperCase(), 900);
     }
     if (input.wasPressed('reload')) arma.recargar();
+    if (input.wasPressed('heal')) intentarCurarse();
+
+    /*
+     * El uso se resuelve ANTES del movimiento, con la velocidad del cuadro
+     * anterior: si se hiciera despues, apretar y soltar el joystick en el
+     * mismo cuadro cancelaria sin que el jugador vea que se movio.
+     */
+    if (uso.enCurso) {
+      uso.update(dt, { moviendose: player.velocidadActual > 0.4 });
+      hud.setUso(uso.enCurso, uso.progreso);
+    }
     if (input.wasPressed('special')) arma.dispararEspecial(pos2d, zombis.enJuego);
 
     /*
@@ -771,6 +888,7 @@ app.on('update', (rawDt) => {
 
     recogerObjetos(pos2d);
     vistaObjetos.update(dt);
+    actualizarHudObjetos();
 
     const p = player.position;
     zombis.update(dt, { x: p.x, z: p.z }, player.health > 0, (daño, zombi) => {
@@ -793,7 +911,11 @@ app.on('update', (rawDt) => {
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
-  debug.set('objetos', JSON.stringify(objetos.contar()));
+  debug.set(
+    'objetos',
+    `piso ${JSON.stringify(objetos.contar())} · encima ${inventario.cuantos('medkit')}` +
+      `${uso.enCurso ? ` · usando ${(uso.progreso * 100).toFixed(0)}%` : ''}`
+  );
   debug.set(
     'bazooka',
     `${(arma.progresoEspecial * 100).toFixed(0)}%${arma.especialLista ? ' LISTA' : ''} ` +
@@ -830,6 +952,7 @@ hud.setObjective(mission.objectiveText);
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
   postProceso, calidad, zombis, arma, efectos, cohetes, objetos, vistaObjetos,
+  inventario, uso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.
   pc,

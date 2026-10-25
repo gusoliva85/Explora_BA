@@ -90,6 +90,14 @@
             </div>
           </div>
 
+          <!-- Uso de un objeto. Se ve porque durante ese rato el jugador
+               está indefenso y parado: si no se viera, no se entendería por
+               qué no responde. -->
+          <div class="hud-fila fila-uso hidden" id="fila-uso">
+            <span class="stat-label">CURANDO</span>
+            <div class="bar bar-uso"><div id="uso-fill"></div></div>
+          </div>
+
           <!-- Barra de la bazooka.
                Va arriba, con la vida y la munición, y no al lado de su
                botón: es un reloj de treinta segundos que se mira muchas
@@ -128,6 +136,13 @@
                  tiene que quedar libre: ahi pasa la accion, y una mano
                  tapandolo es el peor error posible en vertical. -->
             <div class="action-row action-row-chica">
+              <!-- Curarse aparece sólo si hay con qué, igual que la bazooka:
+                   un botón que no sirve enseña a apretarlo en vano. -->
+              <button id="btn-heal" class="btn btn-action btn-small btn-heal hidden"
+                      aria-label="Curarse">
+                <span class="glifo-cura">+</span>
+                <span id="heal-count" class="heal-count">0</span>
+              </button>
               <button id="btn-reload" class="btn btn-action btn-small hidden" aria-label="Recargar">R</button>
               <button id="btn-swap" class="btn btn-action btn-small" aria-label="Cambiar de arma">&#8646;</button>
             </div>
