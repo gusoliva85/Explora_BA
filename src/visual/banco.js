@@ -89,6 +89,21 @@ const ORIGEN = {
   'ZOMBI.chaleco_naranja': [660, 610, 130, 90],
   'ZOMBI.casco': [735, 535, 90, 40],
   'ZOMBI.calzado': [760, 925, 60, 50],
+  // Gus: todo lo que NO es la campera sale del panel del superviviente.
+  'GUS.remera': [1348, 160, 18, 20],
+  'GUS.jean': [1310, 295, 40, 30],
+  'GUS.jean_sombra': [1370, 380, 30, 40],
+  'GUS.pelo': [1348, 22, 26, 18],
+  'GUS.piel': [1358, 58, 16, 16],
+  'GUS.piel_sombra': [1358, 58, 16, 16],
+  'GUS.mochila': [1392, 105, 22, 26],
+  'GUS.correa': [1310, 118, 14, 30],
+  'GUS.cinturon': [1344, 228, 26, 10],
+  'GUS.cartuchera': [1392, 235, 22, 18],
+  'GUS.guante': [1270, 252, 18, 18],
+  'GUS.calzado': [1294, 468, 28, 20],
+  'GUS.suela': [1294, 480, 28, 16],
+  'GUS.reloj': [1436, 250, 14, 12],
   'OBJETO.botiquin': [1180, 830, 110, 90],
   'OBJETO.blanco': [1255, 860, 50, 50],
   'OBJETO.municion': [950, 830, 110, 80],
@@ -102,12 +117,12 @@ const ORIGEN = {
 
 /**
  * Por que un color puede no tener parche:
- *  - los de Gus salen de Gus.jpeg, que es otra imagen (D-24);
+ *  - la campera de Gus sale de Gus.jpeg, que es otra imagen (D-24);
  *  - los derivados no se midieron, se calcularon a partir de otro.
  * En los dos casos conviene que se vea, para no creer que se comparo algo
  * que no se comparo.
  */
-const sinParche = (familia) => (familia === 'GUS' ? 'Gus.jpeg' : 'derivado');
+const sinParche = (clave) => (clave.startsWith('GUS.cuero') ? 'Gus.jpeg' : 'derivado');
 
 const FAMILIAS = { CALLE, FACHADA, CARTEL, VERDE, VEHICULO, ABANDONO, ZOMBI, GUS, OBJETO };
 
@@ -307,7 +322,7 @@ function construirParches() {
     } else {
       const falta = document.createElement('div');
       falta.className = 'parche sin-parche';
-      falta.textContent = sinParche(e.familia);
+      falta.textContent = sinParche(e.clave);
       caja.appendChild(falta);
     }
 

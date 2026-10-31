@@ -78,6 +78,17 @@ describe('lo que se tiene que leer, se lee', () => {
     expect(lee(GUS.jean, CALLE.asfalto)).toBe(true);
   });
 
+  it('las piernas de Gus no se funden con la calle', () => {
+    // El jean medido daba 0.042 contra el asfalto. Con la campera oscura, si
+    // ademas las piernas desaparecen, lo unico que queda de Gus es un borron.
+    expect(lee(GUS.jean, CALLE.asfalto)).toBe(true);
+  });
+
+  it('la campera abierta se lee sobre la remera', () => {
+    // Es lo que hace que la silueta tenga un adentro y no sea una mancha.
+    expect(separacion(GUS.cuero, GUS.remera)).toBeGreaterThan(0.3);
+  });
+
   it('Gus se distingue de un zombi de un vistazo', () => {
     expect(separacion(GUS.cuero, ZOMBI.piel)).toBeGreaterThan(0.15);
     expect(separacion(GUS.cuero, ZOMBI.camisa)).toBeGreaterThan(0.15);

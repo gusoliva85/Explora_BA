@@ -2103,22 +2103,34 @@ adelante**, y se ajusta midiendo, no a ojo.
 **Va casi primera, y es la más barata.** Hasta que la cámara no esté donde va,
 cualquier detalle que se modele no se ve y no hay manera de juzgar si quedó bien.
 
-### D-24 — Gus es el de `Gus.jpeg`
+### D-24 — Gus es el modelo nuevo con la campera de cuero
 
-Manda la referencia del personaje, no la del paquete visual: **campera de cuero
-negra tipo motociclista con solapas anchas, remera negra, jean azul oscuro, pelo
-oscuro en puntas**. El prompt maestro describe un superviviente genérico; la
-foto describe a éste, y es el que viene desde el documento 01.
+**El cuerpo es el del paquete visual. La campera y la cara son las de Gus.**
 
-Del paquete visual se toma todo lo demás: la calidad de construcción, la
-anatomía, el acabado, y el **equipo** —mochila, guantes, cuchillo al cinto— que
-la referencia nueva muestra bien y la vieja no tiene.
+El superviviente del panel de `REFERENCIA_VISUAL.png` es la base de todo:
+anatomía, proporciones, postura, acabado, y el equipo que la referencia vieja
+no tenía —mochila verde oliva, guantes sin dedos, cinturón con cartucheras,
+reloj, zapatillas de lona—. Se copia entero, sin reinterpretar.
 
-> ⚠️ **Lo que esto arrastra.** De negro sobre asfalto gris, Gus se lee poco: es
-> justamente el problema que el anillo ámbar venía tapando. Con la cámara nueva
-> y a plena luz hay que resolverlo **con el personaje**, no con un anillo: un
-> acento de color en el equipo, el jean más claro, o un borde de luz. Se decide
-> mirando, en 12R.11.
+Lo único que cambia respecto de ese modelo son dos cosas, y son las que hacen
+que sea **Gus** y no un superviviente genérico:
+
+| | Qué |
+|---|---|
+| **La campera** | La de cuero negro tipo motociclista de `Gus.jpeg`, con solapas anchas, en lugar de la azul de jean del panel |
+| **La cara** | Se corre **levemente** hacia la de `Gus.jpeg` —mandíbula, cejas, el pelo en puntas— sin salirse de la estética del modelo nuevo |
+
+Todo lo demás del panel se respeta tal cual, incluida la **remera gris de
+cuello en V**, que no es la negra de la foto. Sobre el cuero negro, una remera
+gris es justamente lo que hace que la campera abierta se lea: con las dos
+negras, el torso es una mancha sola. La prueba lo verifica (0.5 de separación).
+
+> ✅ **La duda que esto arrastraba, resuelta en 12R.0.** De negro sobre asfalto
+> Gus queda a 0.145 de luminancia: **se lee**. El problema del juego viejo no
+> era que Gus fuera oscuro, era que el asfalto también lo era. Queda una sola
+> cosa medida que hubo que corregir: el jean del modelo nuevo daba 0.042 contra
+> el asfalto —las piernas se fundían con la calle— y se subió a 0.085. El
+> anillo ámbar del piso probablemente sobra; se decide en 12R.1.
 
 ### D-25 — Sol alto, color cálido
 
@@ -2426,15 +2438,19 @@ aparece: se pide el archivo, y mientras tanto se rehace la silueta con el nivel
 de detalle de la referencia, **declarado como provisional en el README y en el
 roadmap**.
 
-**Quién es Gus: D-24.** Campera de cuero negra con solapas anchas, remera negra,
-jean azul oscuro, pelo oscuro en puntas; más mochila, guantes y cuchillo al
-cinto. Los dos rasgos que se exageran, porque son los que llegan a la cámara,
-siguen siendo **el pelo con volumen y las solapas**.
+**Quién es Gus: D-24.** El superviviente del panel de la referencia, copiado
+entero —anatomía, proporciones, postura, mochila verde oliva, guantes sin
+dedos, cinturón con cartucheras, reloj, zapatillas de lona, remera gris de
+cuello en V— con **dos cambios y nada más**: la campera es la de cuero negro de
+`Gus.jpeg`, y la cara se corre **levemente** hacia la de la foto. Sin margen:
+lo que no esté en esas dos líneas sale del modelo nuevo tal cual.
 
-**El problema que hay que resolver acá:** de negro sobre asfalto gris se lee
-poco. Hay que despegarlo del piso con el personaje —un acento de color en el
-equipo, el jean más claro, un borde de luz— y recién entonces decidir si el
-anillo ámbar sigue haciendo falta o se saca.
+Los dos rasgos que se exageran, porque son los únicos que llegan a la distancia
+de cámara, siguen siendo **el pelo con volumen y las solapas**.
+
+Los colores ya están medidos y probados en `src/visual/paleta.js`, y el banco
+muestra cada uno al lado del píxel del que salió. **No hay nada que elegir a
+ojo en esta tarea: hay que construir la geometría.**
 
 **Lo que no puede romperse.** El contrato de arriba: `update` que lee el estado,
 `gesto`, `anclaArma`, `mostrarPistolaAlCinto`.

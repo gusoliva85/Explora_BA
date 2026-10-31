@@ -248,39 +248,71 @@ export const ZOMBI = {
 };
 
 /* =========================================================================
-   GUS — de Gus.jpeg, decision D-24
+   GUS — dos referencias, decision D-24
    ========================================================================= */
 
 /**
- * Sin balance de blancos: la foto tiene luz de estudio y ningun blanco con el
- * que medir. Si algun dia aparece una referencia nueva, esto se vuelve a medir.
+ * Gus sale de DOS referencias, y cada parte tiene la suya. Decision D-24.
  *
- * El cuero queda a 0.11 de luminancia del asfalto nuevo y a 0.24 de la piel de
- * los zombis: se lee. Era la duda que dejaba abierta D-24 y la respuesta es
- * que de negro se lo ve, siempre que el asfalto no sea tambien oscuro.
+ *   El cuerpo entero, la ropa y el equipo -> el superviviente del panel de
+ *   REFERENCIA_VISUAL.png, con el balance de blancos de los paneles.
+ *   La campera de cuero y la cara      -> Gus.jpeg, sin balance, porque esa
+ *   foto tiene luz de estudio y ningun blanco con el que medir.
+ *
+ * Que la campera sea de cuero negro y no la azul de jean del panel es lo
+ * unico que cambia respecto del modelo nuevo, y es a proposito: es lo que
+ * hace que sea Gus y no un superviviente generico.
+ *
+ * El cuero queda a 0.145 de luminancia del asfalto y a 0.24 de la piel de los
+ * zombis: se lee. Era la duda que dejaba abierta D-24 y la respuesta es que de
+ * negro se lo ve, siempre que el asfalto no sea tambien oscuro.
  */
 export const GUS = {
-  /** medido #352f32. Campera de cuero negra: negra con violeta, nunca 0,0,0. */
+  /* --- De Gus.jpeg: la campera -------------------------------------------- */
+  /** medido #352f32. Cuero negro: negro con violeta, nunca 0,0,0. */
   cuero: [0.208, 0.184, 0.196],
   /** medido #201d22. El lado en sombra de la campera. */
   cuero_sombra: [0.125, 0.114, 0.133],
   /** medido #4b3f40. El brillo del cuero donde le pega la luz. */
   cuero_luz: [0.294, 0.247, 0.251],
-  /** medido #1a1719. Remera negra lisa. */
-  remera: [0.102, 0.09, 0.098],
-  /** medido #324064. Jean azul oscuro. */
-  jean: [0.196, 0.251, 0.392],
-  /** medido #242f4d. El jean en sombra. */
-  jean_sombra: [0.141, 0.184, 0.302],
-  /** medido #1c1512. Pelo oscuro. */
-  pelo: [0.11, 0.082, 0.071],
-  /** medido #412e29. Las puntas del pelo, que son el rasgo de la silueta. */
-  pelo_luz: [0.255, 0.18, 0.161],
-  /** Del panel de la referencia (#e8ab86): piel calida. */
-  piel: [0.91, 0.671, 0.525],
-  /** Equipo que suma la referencia nueva: mochila y guantes. */
-  oliva: [0.33, 0.32, 0.2],
-  guante: [0.16, 0.15, 0.15]
+
+  /* --- Del panel de la referencia: el resto -------------------------------- */
+  /** medido #b5b1b4. Remera gris de cuello en V. */
+  remera: [0.71, 0.694, 0.706],
+  /**
+   * medido #51627b (lum 0.377) -> subido a 0.42.
+   *
+   * Medido quedaba a 0.042 del asfalto: las piernas de Gus se fundian con la
+   * calle. Es el mismo problema que tenian los zombis y se arregla igual, con
+   * la diferencia de que aca hay que subir, no bajar.
+   */
+  jean: [0.354, 0.428, 0.537],
+  /** medido #344156. El jean en sombra y los pliegues. */
+  jean_sombra: [0.204, 0.255, 0.337],
+  /** medido #4b4145. Pelo castaño oscuro. */
+  pelo: [0.294, 0.255, 0.271],
+  /** Derivado: las puntas, que son el rasgo de la silueta junto con las solapas. */
+  pelo_luz: [0.42, 0.37, 0.39],
+  /** medido #e2a380. Piel calida. */
+  piel: [0.886, 0.639, 0.502],
+  /** medido #c08b68. La piel en sombra, en el cuello y bajo el menton. */
+  piel_sombra: [0.753, 0.533, 0.424],
+  /** medido #83794b. Mochila verde oliva. */
+  mochila: [0.514, 0.475, 0.294],
+  /** medido #635d3e. Las correas de la mochila. */
+  correa: [0.388, 0.365, 0.243],
+  /** medido #4d403a. Cinturon de cuero marron. */
+  cinturon: [0.302, 0.251, 0.227],
+  /** medido #594d35. Las cartucheras del cinto. */
+  cartuchera: [0.349, 0.302, 0.208],
+  /** medido #3c393b. Guantes oscuros sin dedos. */
+  guante: [0.235, 0.224, 0.231],
+  /** medido #544a46. Zapatillas de lona con puntera de cuero. */
+  calzado: [0.329, 0.29, 0.275],
+  /** medido #b6bab4. La suela, que es lo unico claro de los pies. */
+  suela: [0.714, 0.729, 0.706],
+  /** medido #484447. El reloj de la muñeca derecha. */
+  reloj: [0.282, 0.267, 0.278]
 };
 
 /* =========================================================================
