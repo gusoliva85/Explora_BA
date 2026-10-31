@@ -77,8 +77,11 @@ su cono de visión y su estado.
 ```
 documentacion/     el proyecto entero explicado, empezar por acá
   01_documento_inicial.md    visión y alcance
-  02_documento_mejorado.md   decisiones técnicas numeradas (D-01…D-16)
-  03_roadmap.md              qué está hecho y qué sigue
+  02_documento_mejorado.md   decisiones técnicas numeradas (D-01…D-21)
+  03_roadmap.md              el plan: qué está hecho, qué falta y qué sigue
+  04_bitacora.md             el detalle y el porqué de cada fase
+  visual/                    la referencia de arte y el prompt maestro
+  personajes/                la referencia de Gus
   mockup/                    las tres cámaras que se evaluaron
 
 src/
