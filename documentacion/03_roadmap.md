@@ -2212,7 +2212,7 @@ una**: nada de un reemplazo grande que deja todo roto tres días.
 | 12R.15 | HUD | Medio | Bajo |
 | 12R.16 | Medición, borrado del arte viejo y cierre | — | Medio |
 
-### 12R.0 — Banco visual y paleta
+### 12R.0 — Banco visual y paleta ✅
 
 **Qué se hace.** Dos cosas que son la base de todo lo demás.
 
@@ -2230,6 +2230,74 @@ mienten.
 
 **Cómo se verifica.** La paleta se imprime en el banco al lado de los parches
 recortados de la referencia: tienen que ser el mismo color.
+
+#### Lo que se hizo
+
+| Archivo | Qué es |
+|---|---|
+| `src/visual/paleta.js` | 58 colores medidos, la luz y las herramientas de medición |
+| `tests/paleta.test.js` | 16 pruebas que fijan lo que la paleta promete |
+| `src/visual/banco.js` + `estilo.html` | El banco, rehecho |
+| ❌ `src/art/mainEstilo.js`, `src/art/escenaEstilo.js` | Borrados: 525 líneas |
+
+#### Un píxel no es un color
+
+Es lo primero que salió, y cambia el método entero. La referencia está bañada
+en luz dorada de tarde: un píxel es el material **multiplicado por la luz**. Si
+se copia el píxel como albedo y después el motor le pone su propio sol encima,
+el color se dora dos veces y la escena termina naranja.
+
+Así que primero hubo que medir la luz, sobre seis superficies que sabemos
+blancas —la raya vial, la franja de la barricada, la carrocería del colectivo,
+la franja del guante, la cruz del botiquín y la camisa del primer zombi—. Un
+blanco fotografiado **es** el color de la luz:
+
+| | R | G | B |
+|---|---|---|---|
+| La calle | 1.000 | 0.808 | 0.645 |
+| Los paneles de personajes y objetos | 1.000 | 0.843 | 0.729 |
+
+El albedo es el píxel dividido por eso. La calle está más dorada que los
+paneles, que es exactamente lo que uno esperaría: la calle es exterior a las
+17:30 y los paneles son de estudio.
+
+#### Cinco colores no se podían usar como salieron, y los encontró la prueba
+
+No se vieron mirando. Se escribieron las reglas como pruebas —"un zombi no se
+funde con el asfalto", "el botiquín es lo más saturado del juego"— y fallaron.
+
+| Qué | Medido | Puesto | Por qué |
+|---|---|---|---|
+| **Asfalto** | lum 0.42 | **0.335** | A 0.42 quedaba a **0.016** de la piel de los zombis: un zombi parado en la calle se fundía con el piso. Pero bajarlo tampoco era libre: el jean de Gus está en 0.25 y el cuero en 0.19, así que un asfalto oscuro se come al protagonista. La ventana que deja contento a todo el mundo va de 0.31 a 0.37 |
+| **Piel de zombi** | lum 0.433 | **0.46** | Quedaba a 0.098 del asfalto, en el límite. Y un muerto está pálido, no bronceado |
+| **Caja de munición** | lum 0.374 | **0.45** | En la referencia la caja está en sombra, y con ese valor no se despegaba del asfalto ni por luminancia (0.039) ni por color (0.107) |
+| **Botiquín** | sat 0.71 | **0.80** | Quedaba **por debajo** del chaleco reflectante de un zombi, que es decorado. El único objeto que el jugador necesita encontrar no puede perder contra un chaleco |
+| **Tronco de árbol** | lum 0.23 | **0.34** | Estaba a 0.044 de la hoja en sombra, y se tocan en todo el borde de la copa: el árbol se leía como una mancha sola. Además el plátano porteño tiene la corteza clara |
+
+#### Y una respuesta a una pregunta abierta
+
+**D-24 preguntaba si Gus de negro se iba a ver sobre el asfalto. Se ve.** El
+cuero queda a 0.145 de luminancia del asfalto nuevo y a 0.24 de la piel de los
+zombis. El problema que tenía el juego no era que Gus fuera oscuro: era que el
+asfalto también lo era. Con esto, **el anillo ámbar del piso probablemente
+sobra**, y se decide en 12R.1 con la cámara nueva.
+
+#### Lo que el banco dejó a la vista para 12R.2
+
+Comparando casillero por casillero, **todo el lado del juego se ve más rosado
+que la referencia**. No es la paleta: es que hoy el banco ilumina con un sol
+cálido y un rebote cálido, y nada aporta el frío del cielo sobre las caras que
+miran a la cámara. En la referencia esas caras reciben sol cálido **y** cielo
+frío a la vez. Es el primer trabajo de 12R.2.
+
+#### Cómo se abre
+
+```
+npm run dev     y después http://localhost:5173/estilo.html
+```
+
+`E` cambia entre muestras y escala, `M` alterna el sol del juego con el medido
+en la referencia, `H` esconde el panel.
 
 ### 12R.1 — Cámara y encuadre
 

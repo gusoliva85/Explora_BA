@@ -3,25 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Explorar BA — Guía de estilo</title>
+    <title>Explorar BA — Banco visual</title>
 
     <!--
-      ESCENA DE PRUEBA DE ESTILO (tarea 12.2)
+      BANCO VISUAL (Fase 12R, tarea 12R.0)
 
-      Una página aparte del juego. Existe porque en el juego la cámara está
-      a veinte metros y a 57 grados: desde ahí se ve si algo SE LEE, pero no
-      si las proporciones están bien. Un Gus de dos metros y medio, visto
-      desde arriba, parece correcto.
+      Reemplaza a la escena de prueba de la Fase 12, que validaba una paleta
+      elegida a ojo. Ésta valida una paleta medida: cada casillero está
+      partido al medio, con el píxel de la referencia a la izquierda y el
+      color del juego, iluminado por el sol del juego, a la derecha.
 
-      Acá la cámara mira de frente, con una puerta de 2,10 m al lado de cada
-      figura. Es la única vista donde un error de escala salta.
+      Si la costura del medio desaparece, el color está bien.
     -->
     <style>
       :root {
         --tinta: #f2f5f8;
         --apagado: #9aa6b4;
         --borde: rgba(255, 255, 255, 0.12);
-        --panel: rgba(12, 15, 20, 0.82);
+        --panel: rgba(12, 15, 20, 0.88);
       }
       * { box-sizing: border-box; }
       html, body {
@@ -34,115 +33,135 @@
       }
       #lienzo { display: block; width: 100%; height: 100%; }
 
-      .panel {
+      /* La capa de parches cae justo encima de la grilla 3D. */
+      #parches {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .muestra { position: absolute; }
+      .parche {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        background-repeat: no-repeat;
+      }
+      .sin-parche {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        line-height: 1.1;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.45);
+        background: repeating-linear-gradient(
+          45deg, rgba(255,255,255,0.05) 0 6px, transparent 6px 12px);
+      }
+      .etiqueta {
+        position: absolute;
+        left: 2px;
+        bottom: 2px;
+        font-size: 9px;
+        letter-spacing: 0.02em;
+        color: #fff;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+        pointer-events: none;
+      }
+
+      /* Las cotas de la vista de escala: nombre y altura sobre cada barra. */
+      .cota {
+        position: absolute;
+        transform: translate(-50%, -100%);
+        text-align: center;
+        white-space: nowrap;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+      }
+      .cota b { display: block; font-size: 12px; font-weight: 600; }
+      .cota span { font-size: 10.5px; color: var(--apagado); }
+
+      #panel {
         position: absolute;
         top: 0;
         right: 0;
-        width: 330px;
+        width: 320px;
         max-width: 92vw;
         height: 100%;
         overflow-y: auto;
-        padding: 18px 18px 40px;
+        padding: 16px 16px 40px;
         background: var(--panel);
         backdrop-filter: blur(14px);
         border-left: 1px solid var(--borde);
       }
-      .panel h1 { margin: 0 0 4px; font-size: 17px; letter-spacing: 0.04em; }
-      .panel p.sub { margin: 0 0 18px; font-size: 12px; color: var(--apagado); line-height: 1.6; }
-      .panel h2 {
-        margin: 22px 0 8px;
-        font-size: 11px;
-        letter-spacing: 0.14em;
+      #panel h1 { margin: 0 0 2px; font-size: 16px; letter-spacing: 0.04em; }
+      #panel .sub { margin: 0 0 14px; font-size: 11px; color: var(--apagado); line-height: 1.5; }
+      #panel h2 {
+        margin: 16px 0 6px;
+        font-size: 10px;
+        letter-spacing: 0.12em;
         color: var(--apagado);
-        text-transform: uppercase;
+        border-bottom: 1px solid var(--borde);
+        padding-bottom: 3px;
       }
-
-      .familia { margin-bottom: 9px; }
-      .familia .nombre {
+      .estado {
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        margin-bottom: 3px;
-      }
-      .rampa { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
-      .muestra {
-        height: 34px;
-        border-radius: 5px;
-        border: 1px solid rgba(0, 0, 0, 0.35);
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        padding-bottom: 2px;
-        font-size: 8px;
-        font-weight: 700;
-        color: rgba(0, 0, 0, 0.55);
-      }
-      /* La etiqueta se pone clara sobre los escalones oscuros, para que se
-         pueda leer en los dos extremos de la rampa. */
-      .muestra.oscura { color: rgba(255, 255, 255, 0.72); }
-
-      table { width: 100%; border-collapse: collapse; font-size: 12px; }
-      td { padding: 4px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
-      td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
-      .nota {
-        margin-top: 18px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: rgba(255, 182, 39, 0.1);
-        border: 1px solid rgba(255, 182, 39, 0.3);
-        font-size: 11px;
-        line-height: 1.65;
-        color: #ffd89a;
-      }
-      .ayuda {
-        position: absolute;
-        left: 14px;
-        bottom: 14px;
-        font-size: 11px;
+        line-height: 1.6;
         color: var(--apagado);
-        background: var(--panel);
-        padding: 8px 12px;
-        border-radius: 10px;
         border: 1px solid var(--borde);
-        line-height: 1.7;
+        border-radius: 7px;
+        padding: 8px 10px;
+        margin-bottom: 4px;
       }
-      kbd {
-        background: rgba(255, 255, 255, 0.12);
-        border-radius: 4px;
+      .estado b { color: var(--tinta); font-weight: 600; }
+      .fila {
+        display: grid;
+        grid-template-columns: 16px 1fr auto;
+        grid-template-areas: 'c n h' 'c m m';
+        gap: 1px 8px;
+        align-items: center;
+        padding: 3px 0;
+        font-size: 11px;
+      }
+      .fila i { grid-area: c; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--borde); }
+      .fila b { grid-area: n; font-weight: 500; }
+      .fila code { grid-area: h; font-size: 10px; color: var(--apagado); }
+      .fila em { grid-area: m; font-size: 9.5px; font-style: normal; color: #6d7a89; }
+      .teclas { margin-top: 18px; font-size: 10.5px; color: var(--apagado); line-height: 1.7; }
+      .teclas kbd {
+        background: rgba(255,255,255,0.1);
+        border-radius: 3px;
         padding: 1px 5px;
         font-family: inherit;
-        font-size: 10px;
       }
     </style>
   </head>
   <body>
     <canvas id="lienzo"></canvas>
+    <div id="parches"></div>
 
-    <aside class="panel">
-      <h1>Guía de estilo</h1>
+    <aside id="panel">
+      <h1>Banco visual</h1>
       <p class="sub">
-        Fase 12.A. La cámara mira de frente a propósito: es la única vista
-        donde un error de escala salta. Cada figura tiene al lado una regla
-        de 3 m con una marca ámbar a la altura de una puerta (2,10 m).
+        Fase 12R · tarea 12R.0. Izquierda de cada casillero: el píxel de
+        <code>REFERENCIA_VISUAL.png</code>. Derecha: el color del juego bajo el
+        sol del juego. Si se ve un escalón, el número está mal.
       </p>
 
-      <h2>Familias y rampa</h2>
-      <div id="familias"></div>
+      <div class="estado">
+        Vista: <b id="modo">—</b><br />
+        Sol: <b id="sol">—</b>
+      </div>
 
-      <h2>Escala de referencia</h2>
-      <table id="escala"></table>
+      <div id="tabla"></div>
 
-      <h2>Presupuesto de detalle</h2>
-      <table id="presupuesto"></table>
-
-      <div class="nota" id="nota-texturas"></div>
+      <p class="teclas">
+        <kbd>E</kbd> cambia entre muestras y escala<br />
+        <kbd>M</kbd> alterna el sol del juego y el medido<br />
+        <kbd>H</kbd> esconde este panel
+      </p>
     </aside>
 
-    <div class="ayuda">
-      <kbd>←</kbd> <kbd>→</kbd> girar &nbsp;·&nbsp; <kbd>↑</kbd> <kbd>↓</kbd> acercar
-      &nbsp;·&nbsp; <kbd>M</kbd> muestrario
-    </div>
-
-    <script type="module" src="/src/art/mainEstilo.js"></script>
+    <script type="module" src="/src/visual/banco.js"></script>
   </body>
 </html>
