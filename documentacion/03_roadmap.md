@@ -23,10 +23,11 @@
 > se pueda cambiar el arte sin romperlo, la Fase 12R arranca fijando el
 > **contrato entre la lógica y lo visual**, que está escrito ahí.
 >
-> Las dos decisiones nuevas son **D-20** (pipeline híbrido: la ciudad en
-> código pero diseñada, los personajes en `.glb` riggeado) y **D-21** (la
-> cámara baja de 57° y 20 m a ~40° y ~12 m, porque hoy Gus mide 40 píxeles).
-> La 10 y la 11 quedan para después.
+> Las decisiones nuevas son **D-22** (pipeline híbrido: la ciudad en código
+> pero diseñada, los personajes en `.glb` riggeado), **D-23** (la cámara se
+> acerca, con un piso de 16 m de calle visible), **D-24** (Gus es el de
+> `Gus.jpeg`: cuero negro) y **D-25** (sol alto, color cálido). La 10 y la 11
+> quedan para después.
 >
 > **🏁 Éste es el "primer hito" del documento 01: a partir de acá el juego
 > existe.** Se puede jugar de principio a fin, ganar, perder, reintentar, y
@@ -1936,7 +1937,7 @@ mal hecha.
 | `src/world/props.js` | 494 | Los 17 props de cajas | ❌ Reemplazado por `src/visual/kit/` |
 | `src/world/lighting.js` | 216 | Luz, sol, faroles | ❌ Reemplazado por `src/visual/escena.js` |
 | `src/characters/gus.js` | 463 | Gus de 24 primitivas | ❌ Reemplazado |
-| `src/characters/pose.js` | 500 | Nueve animaciones de Gus | ⚠️ Depende de D-20: si Gus pasa a `.glb` con esqueleto, se va entero |
+| `src/characters/pose.js` | 500 | Nueve animaciones de Gus | ⚠️ Depende de D-22: si Gus pasa a `.glb` con esqueleto, se va entero |
 | `src/characters/zombiePose.js` | 242 | Animación del zombi | ⚠️ Igual |
 | `src/characters/armas.js` | 181 | Cuchillo, pistola y bazooka de cajas | ❌ Reemplazado |
 | `src/world/worldBuilder.js` | 943 | Generador de la cuadra | ⚠️ **Se parte en dos**: el trazado y las colisiones se conservan, el armado visual se reemplaza |
@@ -2017,9 +2018,52 @@ tiene que cambiar, se cambia a propósito y se anota acá.
 
 ---
 
-## Las dos decisiones nuevas
+## Lo que encontró la revisión del 31 de octubre
 
-### D-20 — Pipeline híbrido
+Antes de escribir una línea se releyeron los documentos 01 y 02 enteros, el
+roadmap, el código visual y las pruebas. Salieron cinco cosas, y tres cambian
+el plan.
+
+**1. Los números D-20 y D-21 ya estaban ocupados.** El documento 02 los usa para
+"los objetos se levantan caminándolos" y "curarse lleva tiempo". Las decisiones
+nuevas pasan a ser **D-22** a **D-25**. Parece un detalle y no lo es: dos
+decisiones con el mismo número es la forma más rápida de que alguien aplique la
+equivocada dentro de seis meses.
+
+**2. Hay dos Gus, y no son el mismo personaje.** `documentacion/personajes/Gus.jpeg`
+—la referencia de siempre, la del mockup del 30 de octubre— es campera de cuero
+negra tipo motociclista, remera negra, jean y pelo en puntas.
+`REFERENCIA_VISUAL.png` trae un superviviente de campera azul de jean, remera
+gris y mochila. **Resuelto en D-24.**
+
+**3. La luz de la referencia contradice una medición.** La referencia es de
+tarde dorada, sol bajo y sombras largas. D-16 bajó eso con números: a 58° un
+edificio de 17 m tira 11 m de sombra sobre una calzada de 10 y la tapa entera.
+**Resuelto en D-25.**
+
+**4. Bajar la cámara a 40° roba tiempo de aviso.** Los mockups del documento 02
+están medidos: a 75° Gus mide 18 px y se ven 32 m de calle; a 66°, 26 px y 24 m;
+a 57°, 40 px y 16 m. **Menos ángulo es más personaje y menos calle por delante.**
+Y el zombi detecta a 16 m (`ZOMBIE_STANDARD.sightRange`). O sea que hoy lo ves
+justo cuando él te ve. Si la cámara pasa a mostrar 11 m, el zombi te detecta
+cinco metros antes de que vos lo veas, y eso no es una decisión artística: es
+un cambio de dificultad que nadie pidió. **Cambia el criterio de 12R.1.**
+
+**5. El anillo ámbar bajo Gus quedó sin justificación.** Se puso porque de noche,
+vestido de negro sobre asfalto, el jugador perdía de vista su personaje. Pero el
+juego pasó a ser de día (D-16) y la referencia no tiene nada parecido. Se revisa
+en 12R.1 con la cámara nueva: si con Gus más grande ya no hace falta, se saca.
+
+**La línea de base, medida hoy:** 418 pruebas unitarias en verde. De esas,
+**114 son del arte** —`estilo` 19, `gus` 16, `pose` 39, `zombiPose` 26, `armas`
+14— y se reescriben junto con lo que verifican. Las otras **304 son de lógica y
+tienen que seguir pasando siempre**. Ése es el semáforo de toda la fase.
+
+---
+
+## Las decisiones nuevas
+
+### D-22 — Pipeline híbrido
 
 - **Ciudad, mobiliario, vehículos y props: geometría generada en código, nueva y
   diseñada.** Lo que falla hoy no es la técnica, es que las formas son pobres.
@@ -2033,16 +2077,57 @@ tiene que cambiar, se cambia a propósito y se anota acá.
   cajas, y es lo que más mira el jugador. Si no aparece un modelo CC0 compatible,
   se pide el archivo, y mientras tanto lo que haya se declara **provisional**.
 
-### D-21 — La cámara baja y se acerca
+### D-23 — La cámara se acerca, con un piso que no se negocia
 
-De **57° y 20 m** a **~40° y ~12 m**, conservando la diagonal de la calle y el
-campo horizontal, que eran las dos partes de D-02 que resolvían un problema real
-de la pantalla vertical. Hoy Gus mide unos 40 píxeles: es un ícono. Con el
-cambio ocupa tres o cuatro veces más y las fachadas entran en el encuadre, que
-es donde vive la identidad porteña.
+Corrige a **D-02**. Se conservan la diagonal de la calle y el campo horizontal,
+que eran las dos partes de D-02 que resolvían un problema real de la pantalla
+vertical. Lo que cambia es que hoy Gus mide unos 40 píxeles y es un ícono.
+
+Pero bajar el ángulo a lo bruto sale caro, y está medido (ver el punto 4 de la
+revisión). Así que la decisión no es un número, son **dos restricciones**:
+
+| Restricción | Valor | Por qué |
+|---|---|---|
+| **Calle visible por delante** | **≥ 16 m**, nunca menos | Es el radio de detección del zombi. Si ves menos que eso, te detecta antes de que lo veas y la dificultad cambió sin que nadie lo decidiera |
+| **Alto de Gus en pantalla** | **El máximo posible** dentro de lo anterior | Es lo que lo saca de ser un ícono |
+
+**Y hay una tercera palanca, que es la que permite cumplir las dos:** correr el
+punto al que mira la cámara **hacia adelante** del jugador, en vez de dejarlo
+clavado sobre él. Así Gus baja en el encuadre y la calle que viene sube, sin
+tener que levantar el ángulo. Es lo que hace cualquier juego de este tipo y hoy
+no está.
+
+El punto de partida a probar es **~45° y ~13 m con la mira corrida 3 o 4 m hacia
+adelante**, y se ajusta midiendo, no a ojo.
 
 **Va casi primera, y es la más barata.** Hasta que la cámara no esté donde va,
 cualquier detalle que se modele no se ve y no hay manera de juzgar si quedó bien.
+
+### D-24 — Gus es el de `Gus.jpeg`
+
+Manda la referencia del personaje, no la del paquete visual: **campera de cuero
+negra tipo motociclista con solapas anchas, remera negra, jean azul oscuro, pelo
+oscuro en puntas**. El prompt maestro describe un superviviente genérico; la
+foto describe a éste, y es el que viene desde el documento 01.
+
+Del paquete visual se toma todo lo demás: la calidad de construcción, la
+anatomía, el acabado, y el **equipo** —mochila, guantes, cuchillo al cinto— que
+la referencia nueva muestra bien y la vieja no tiene.
+
+> ⚠️ **Lo que esto arrastra.** De negro sobre asfalto gris, Gus se lee poco: es
+> justamente el problema que el anillo ámbar venía tapando. Con la cámara nueva
+> y a plena luz hay que resolverlo **con el personaje**, no con un anillo: un
+> acento de color en el equipo, el jean más claro, o un borde de luz. Se decide
+> mirando, en 12R.11.
+
+### D-25 — Sol alto, color cálido
+
+La referencia es de tarde dorada; el juego se queda con el **sol a ~70-73°** de
+D-16, porque tener la calzada despejada es jugabilidad medida y no una opinión.
+
+De la referencia se toma **el color**: la luz cálida, el contraste, el cielo.
+Parecido a la imagen sin perder el piso, que es por donde caminás y por donde
+vienen los zombis.
 
 ---
 
@@ -2148,24 +2233,49 @@ recortados de la referencia: tienen que ser el mismo color.
 
 ### 12R.1 — Cámara y encuadre
 
-**Qué se hace.** `CAMERA.pitchDegrees` a ~40 y `distance` a ~12. Revisar
-`pitchMin`/`pitchMax`, `distanceMin`/`distanceMax` y el campo de visión, que a 12 m
-con 38° horizontales puede quedar corto. Revisar el rayo que evita que la cámara
-atraviese cosas: a 40° toca mucho más que a 57°.
+**Qué se hace.** Según **D-23**, y no es poner un número: es encontrar el punto
+donde Gus es lo más grande posible **sin bajar de 16 m de calle visible por
+delante**. Tres palancas, en este orden:
 
-**Cómo se verifica.** Caminar la cuadra entera y mirar si la cámara se clava en
-una fachada o en un árbol. Y mirar a Gus: tiene que distinguirse la campera del
-pantalón. **En el celular**, que es donde la pantalla es angosta.
+1. **Correr el punto de mira hacia adelante** del jugador (3-4 m). Es lo que
+   permite acercar la cámara sin perder la calle que viene. Hoy mira clavado
+   sobre Gus.
+2. **Bajar el ángulo y la distancia**: arrancar en ~45° y ~13 m.
+3. Revisar `pitchMin`/`pitchMax`, `distanceMin`/`distanceMax` y el campo de
+   visión, que al acercarse puede quedar corto.
+
+**Cómo se verifica, con números.** Se agrega al diagnóstico de F1 **dos
+lecturas**: alto de Gus en píxeles y metros de calle visibles por delante. Sin
+eso esto se discute a ojo y no se cierra nunca.
+
+| Medida | Hoy | Objetivo |
+|---|---|---|
+| Alto de Gus | ~40 px | el máximo que entre |
+| Calle por delante | ~16 m | **≥ 16 m**, es un piso duro |
+
+Y después, a mano: caminar la cuadra entera mirando si la cámara se clava en una
+fachada o en un árbol (a 45° el rayo toca mucho más que a 57°), y mirar a Gus
+**en el celular**, que es donde la pantalla es angosta.
 
 **Lo que no puede romperse.** El apuntado por arrastre, que usa la dirección de
-la cámara. La brújula al objetivo.
+la cámara. La brújula al objetivo. Y la distancia a la que te das cuenta de que
+viene un zombi: si bajó, la tarea está mal hecha.
+
+**Además:** revisar el anillo ámbar del piso (punto 5 de la revisión). Si con
+Gus más grande ya no hace falta, se saca; si hace falta, es porque el problema
+real es que Gus va de negro, y eso se resuelve en 12R.11, no acá.
 
 ### 12R.2 — Sol, cielo y atmósfera
 
-**Qué se hace.** Dirección de sol clara, sacada de la referencia (la luz viene
-de atrás y a la izquierda, con las fachadas de la derecha iluminadas). Cielo con
-horizonte, no un color plano. Sombras que den volumen sin tapar a Gus. Revisar
-la sombra estirada que se ve en la captura actual.
+**Qué se hace.** Según **D-25**: sol a ~70-73° de elevación —eso no se toca,
+está medido en D-16— pero con el color cálido de la referencia. La dirección se
+saca de la imagen: la luz viene de atrás y a la izquierda, con las fachadas de
+la derecha iluminadas. Cielo con horizonte, no un color plano. Sombras que den
+volumen sin tapar a Gus. Revisar la sombra estirada de la captura actual.
+
+**Ojo con dos cosas que D-16 ya aprendió a los golpes:** la saturación de la luz
+ambiente tiñe todo —con un cielo azul franco el asfalto gris se ve azul marino—
+y los albedos hay que calibrarlos **con la luz puesta**, no antes.
 
 **Cómo se verifica.** Una fachada tiene que mostrar tres valores distintos
 —frente, costado y hueco de balcón— sin tocarle el color.
@@ -2245,8 +2355,18 @@ PlayCanvas, que la escala da 1,80 m, que el pivote está en los pies, que mira
 para adelante y que trae animaciones de caminar, correr y atacar. Si aparece:
 reemplazo completo, incluido el enganche del arma en el hueso de la mano. Si no
 aparece: se pide el archivo, y mientras tanto se rehace la silueta con el nivel
-de detalle de la referencia —campera azul con solapas, jean, mochila, botas—
-**declarado como provisional en el README y en el roadmap**.
+de detalle de la referencia, **declarado como provisional en el README y en el
+roadmap**.
+
+**Quién es Gus: D-24.** Campera de cuero negra con solapas anchas, remera negra,
+jean azul oscuro, pelo oscuro en puntas; más mochila, guantes y cuchillo al
+cinto. Los dos rasgos que se exageran, porque son los que llegan a la cámara,
+siguen siendo **el pelo con volumen y las solapas**.
+
+**El problema que hay que resolver acá:** de negro sobre asfalto gris se lee
+poco. Hay que despegarlo del piso con el personaje —un acento de color en el
+equipo, el jean más claro, un borde de luz— y recién entonces decidir si el
+anillo ámbar sigue haciendo falta o se saca.
 
 **Lo que no puede romperse.** El contrato de arriba: `update` que lee el estado,
 `gesto`, `anclaArma`, `mostrarPistolaAlCinto`.
@@ -2488,8 +2608,9 @@ Ideas en orden de valor esperado:
 | 8 | Cantidad de recursos de la misión | Que se pueda terminar sin que sobre |
 | 9 | Dificultad general | Con alguien que nunca lo jugó |
 | 12 | Nivel de detalle del arte | Midiendo en el teléfono después de cada grupo |
-| 12R | Inclinación y distancia de cámara (D-21, corrige D-02) | Mirando a Gus en el teléfono: si no se le distingue la campera del pantalón, está lejos |
-| 12R | Si Gus y los zombis llegan a ser `.glb` riggeado (D-20) | Encontrando un modelo CC0 compatible, o consiguiendo el archivo |
+| 12R | Inclinación y distancia de cámara (D-23, corrige D-02) | Midiendo las dos cosas a la vez: alto de Gus en píxeles y metros de calle por delante, que no pueden bajar de 16 |
+| 12R | Si Gus y los zombis llegan a ser `.glb` riggeado (D-22) | Encontrando un modelo CC0 compatible, o consiguiendo el archivo |
+| 12R | Cómo se despega a Gus del asfalto yendo de negro (D-24) | Mirándolo en el celular con la cámara nueva, y de ahí si el anillo ámbar se queda o se va |
 
 ## Apéndice B — Comandos
 
