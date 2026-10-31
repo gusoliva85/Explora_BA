@@ -6,13 +6,20 @@
 
 ---
 
-## 📍 Dónde estamos — 24 de octubre de 2026
+## 📍 Dónde estamos — 31 de octubre de 2026
 
 > **Fases cerradas:** 0, 1, 2, 2B, 3, 4, 5, 6, 7, 8 y **9**.
-> **En curso:** **Fase 12 — Arte original**, salteada a pedido.
-> **12.A, 12.B, 12.C y 12.D cerradas.** Falta **12.E — La ciudad**, que es
-> la que decide dos de los seis criterios de salida de la fase. La 10 y la
-> 11 quedan para después.
+> **En curso:** **Fase 12R — Reconstrucción visual**, que arranca con el
+> paquete `documentacion/visual/` (referencia de dirección artística y
+> prompt maestro) y reemplaza a la 12.E.
+>
+> **Lo visual está mal y se rehace.** La Fase 12 cerró A, B, C y D antes de
+> que existiera una referencia; ahora existe, y lo que se ve en pantalla no
+> se le parece. La lógica del juego **no se toca**: se juega de principio a
+> fin y eso se conserva entero. Las dos decisiones nuevas son **D-20**
+> (pipeline híbrido: ciudad en código, personajes en `.glb`) y **D-21** (la
+> cámara baja de 57° y 20 m a ~40° y ~12 m). La 10 y la 11 quedan para
+> después.
 >
 > **🏁 Éste es el "primer hito" del documento 01: a partir de acá el juego
 > existe.** Se puede jugar de principio a fin, ganar, perder, reintentar, y
@@ -1814,7 +1821,11 @@ bajaría a unas 14. Conviene hacerlo **con 12.E ya puesta**, para medir todo
 junto una sola vez en vez de tres.
 
 
-### 12.E — La ciudad
+### 12.E — La ciudad ⏸️ **absorbida por la Fase 12R**
+
+Estas nueve tareas siguen siendo las correctas, pero se ejecutan dentro de la
+**Fase 12R**, que además corrige la cámara, la iluminación y los personajes.
+Quedan acá como referencia de lo que la 12.E pedía.
 
 | # | Tarea |
 |---|---|
@@ -1848,6 +1859,277 @@ Después de cada grupo (12.B, 12.C, 12.D, 12.E), por separado:
 - [ ] Los FPS en el teléfono no bajaron respecto a la Fase 9
 - [ ] Alguien que conoce Buenos Aires la reconoce
 - [ ] Todos los recursos están en el registro de licencias
+
+---
+
+# FASE 12R — Reconstrucción visual 🔄
+
+**Objetivo:** que el juego se vea como `documentacion/visual/REFERENCIA_VISUAL.png`.
+Reemplaza a **12.E** y corrige lo que 12.A–12.D dejaron corto.
+
+**Por qué existe.** La Fase 12 cerró A, B, C y D con una doctrina propia —cero
+archivos externos, todo geometría generada en código, sin texturas— decidida
+cuando no había referencia visual de nada. El 31 de octubre apareció
+`documentacion/visual/`, que trae una referencia de dirección artística y un
+prompt maestro con la doctrina contraria. Se miró el resultado en pantalla y la
+conclusión es corta: **lo visual está mal**. No está mal la lógica —el juego se
+juega de principio a fin— está mal lo que se ve.
+
+Esta fase no borra la 12: la corrige. Lo que sigue sirviendo —la paleta de 12
+familias, los presupuestos de triángulos, la escena de prueba `estilo.html`, el
+anclaje del arma en la mano— se conserva.
+
+---
+
+## El diagnóstico — 31 de octubre de 2026
+
+### Qué es el proyecto, medido
+
+| | |
+|---|---|
+| Motor | **PlayCanvas 2.23.3** por npm, no Three.js |
+| Empaquetador | Vite 8.3.5 |
+| Código | 12.244 líneas en 44 módulos bajo `src/` |
+| Assets externos | **cero**: no hay un solo `.glb`, `.png` ni `.ktx2` que el juego cargue |
+| Pruebas | Vitest (unitarias) y Playwright (de punta a punta), 25 archivos |
+| Cómo se corre | `npm run dev` → `localhost:5173`, o `iniciar.bat` |
+| Capturas | `node tools/captura.mjs`, con Playwright |
+
+> ⚠️ **El prompt maestro está escrito para Three.js.** Dice `GLTFLoader`,
+> `DRACOLoader`, `KTX2Loader`. Acá nada de eso existe. El equivalente en
+> PlayCanvas es cargar un **container asset** (`app.assets.loadFromUrl(url,
+> 'container', …)`), que acepta `.glb` igual. El prompt ya lo contempla: "si el
+> motor es PlayCanvas u otro, usá su mecanismo compatible; no copies el código
+> de carga de Three.js". **No se migra de motor.**
+
+### Lo que funciona y no se toca
+
+Movimiento, colisiones, cámara que esquiva obstáculos, IA de zombis con
+detección por vista y por ruido, cuchillo, pistola, bazooka con proyectil real,
+explosión, objetos en el piso, inventario, curación interrumpible, misión con
+controles en orden, victoria, derrota, récord guardado, controles táctiles con
+apuntado por arrastre, pausa, ajustes de calidad. **Nada de esto se reescribe.**
+Si una tarea visual rompe algo de esta lista, la tarea está mal hecha.
+
+### Lo que es provisional, elemento por elemento
+
+Esto sale de comparar `capturas/produccion.png` con la referencia.
+
+| Elemento | Cómo está hoy | Qué pide la referencia |
+|---|---|---|
+| **Cámara** | 57° y 20 m: casi cenital. Gus mide ~40 px, se lee como un ícono | Tercera persona, personaje con cuerpo, ropa y arma legibles |
+| **Calle** | Avenida de cuatro carriles con línea punteada central | Calle de barrio, angosta, con cordón y vereda bien separados |
+| **Fachadas** | Cajas de color liso. Hay persiana, zócalo, toldo y cartel, pero **no hay ventanas ni balcones** | Edificios de 2 a 6 plantas con balcones, ventanas, persianas, marquesinas |
+| **Árboles** | Tres esferas verdes sobre un cilindro | Explícitamente prohibido: "los árboles no son esferas verdes idénticas sobre cilindros" |
+| **Autos** | Caja sobre caja, ruedas apenas insinuadas | Carrocería y ruedas visibles, proporciones creíbles |
+| **Cartelería** | Una caja de color por cartel, sin texto | Carteles en español, comercios ficticios ("La Esquina", "Farmacia") |
+| **Parada y colectivo** | Props de cajas | Parada con techo y lateral, colectivo abandonado |
+| **Abandono** | Hay bolsas, contenedor, barricadas | Sumar cajones, basura, persianas bajas, grafiti |
+| **Iluminación** | Direccional más ambiente de hemisferio; se lee plana y la sombra de Gus se estira raro | Luz con dirección definida, volumen, sombras que ayuden a leer |
+| **Gus** | 24 primitivas. A 40 px se lee como un muñeco de cubos | Adulto con campera azul, jean, mochila, anatomía coherente |
+| **Zombis** | Mismo armado de primitivas, 3 variantes sólo de color de ropa | Humanoides inclinados, ropa civil rota, silueta distinta de la de Gus |
+| **HUD** | El objetivo se corta ("hasta C…") y el panel tapa la barra de la bazooka | "El texto del objetivo debe caber sin truncar información crítica" |
+
+### Lo que verifiqué sobre los assets
+
+| Pregunta | Respuesta medida |
+|---|---|
+| ¿Hay internet desde el agente? | Sí |
+| ¿Puedo mirar imágenes? | Sí — la referencia se analizó con visión |
+| ¿Puedo sacar capturas del juego? | Sí, `tools/captura.mjs` |
+| ¿Puedo bajar los `.glb` de threejsassets? | **No.** `https://threejsassets.com/models/….glb` responde 200 pero devuelve el HTML del login: hace falta la cuenta gratuita |
+| ¿Hay personajes riggeados gratis ahí? | **No**, su sección de personajes es de pago |
+| ¿PlayCanvas descomprime Draco de fábrica? | **No** en el paquete npm: está el parser pero no el `.wasm` del decodificador. Hay que agregarlo, o descomprimir los modelos antes con `gltf-transform` |
+| Kenney | Bloquea las descargas automáticas (403) |
+| Quaternius (CC0) | El sitio responde; el catálogo es JavaScript, hay que revisarlo a mano |
+
+**Consecuencia práctica:** los modelos de ciudad de threejsassets **sólo entran
+si vos creás la cuenta y bajás los archivos**. Por eso el plan de abajo no
+depende de que eso pase.
+
+`documentacion/visual/ASSET_AUDIT.md` se crea **cuando exista el primer archivo
+real**, con fuente, licencia, ruta y comprobación de carga. No se escribe antes:
+una tabla de assets que todavía no están es justo lo que el prompt maestro
+prohíbe.
+
+---
+
+## Las dos contradicciones, resueltas
+
+### D-20 — Pipeline híbrido
+
+El prompt maestro prohíbe primitivas como arte final. La decisión 12.A las
+eligió a propósito, y los motivos siguen siendo ciertos: el juego se abre desde
+un enlace en el celular, muchas veces con datos, y cada kilobyte es tiempo antes
+de poder jugar.
+
+Se parte en dos, porque los dos lados no tienen el mismo problema:
+
+- **Ciudad, mobiliario, vehículos y props: geometría en código, rehecha.** Lo
+  que falla hoy no es que sean primitivas, es que son *pocas y sin diseñar*. Una
+  fachada con balcones, ventanas hundidas y marquesina se puede armar con cajas
+  y se ve bien; una caja lisa de color no. Un árbol con tronco que se abre en
+  ramas y una copa de varios volúmenes irregulares, también. Lo que el prompt
+  prohíbe es *"geometría improvisada"*, y lo que pide es *"formas diseñadas,
+  siluetas legibles"*. Con esto la carga sigue siendo instantánea y no hay
+  licencias que revisar.
+- **Gus, zombis y armas: modelo `.glb` real, riggeado.** Acá las primitivas sí
+  son el techo. La anatomía y las animaciones de un humano no se improvisan con
+  cajas, y es lo que más mira el jugador. Se busca un modelo CC0 compatible; si
+  no aparece, se pide el archivo. Hasta que llegue, el Gus de primitivas se
+  queda **declarado como provisional**, no como terminado.
+
+### D-21 — La cámara baja y se acerca
+
+Corrige a **D-02**, no la borra. La diagonal de la calle y el campo horizontal
+se conservan: esas dos partes de D-02 resolvían un problema real de la pantalla
+vertical y lo siguen resolviendo.
+
+Lo que cambia es la inclinación y la distancia: de **57° y 20 m** a **~40° y
+~12 m**. Gus pasa a ocupar entre tres y cuatro veces más pantalla, y las
+fachadas —que es donde vive la identidad porteña— entran en el encuadre en vez
+de quedar arriba y afuera. El motivo original de los 20 m (que entrara la cuadra
+entera, como en el mockup casi ortográfico) deja de pesar cuando lo que hay que
+mostrar es la calle, no el plano.
+
+**Esta tarea va primera, y es la más barata de todas.** Hasta que la cámara no
+esté donde va, cualquier detalle que se modele no se ve, y no hay manera de
+juzgar si una fachada quedó bien.
+
+---
+
+## El orden de trabajo
+
+Ordenado por impacto visual sobre riesgo. Una tarea por vez; cada una termina
+con el juego corriendo y probado.
+
+| # | Tarea | Impacto | Riesgo |
+|---|---|---|---|
+| 12R.1 | **Cámara**: 40° y 12 m, manteniendo la diagonal | Altísimo | Bajo |
+| 12R.2 | **Iluminación y cielo**: dirección clara, volumen, horizonte | Alto | Bajo |
+| 12R.3 | **La calle**: de avenida a calle de barrio, con cordón y vereda | Alto | Medio |
+| 12R.4 | **Fachadas**: ventanas, balcones, persianas, marquesinas, alturas | Altísimo | Medio |
+| 12R.5 | **Árboles**: tronco con ramas, copa de volúmenes irregulares | Alto | Bajo |
+| 12R.6 | **Mobiliario**: postes, luminarias, semáforos, cables, parada | Medio | Bajo |
+| 12R.7 | **Vehículos**: autos con carrocería y ruedas, colectivo abandonado | Medio | Bajo |
+| 12R.8 | **Cartelería en español**, comercios ficticios | Medio | Medio |
+| 12R.9 | **Abandono**: cajones, bolsas, barricadas, grafiti, persianas bajas | Medio | Bajo |
+| 12R.10 | **Gus**: modelo riggeado, o mejora de la silueta si no hay modelo | Altísimo | Alto |
+| 12R.11 | **Zombis**: humanoides con postura y ropa, distintos de Gus | Alto | Alto |
+| 12R.12 | **Armas y objetos**: cuchillo, pistola, bazooka, munición, botiquín | Medio | Bajo |
+| 12R.13 | **HUD**: que el objetivo no se corte ni tape la barra de bazooka | Medio | Bajo |
+| 12R.14 | **Medición**: llamadas de dibujo y FPS en el teléfono | — | — |
+
+### Detalle de cada tarea
+
+**12R.1 — Cámara.** `CAMERA.pitchDegrees` a ~40, `distance` a ~12, revisar
+`pitchMin`/`pitchMax`, `distanceMin`/`distanceMax` y el campo de visión, que a
+12 m con 38° horizontales puede quedar corto. Revisar que la cámara no atraviese
+fachadas ni árboles al bajar: el rayo de colisión ya existe, pero a 40° toca
+mucho más. *Se prueba:* caminar una cuadra entera y mirar si la cámara se clava
+en algo. Y mirar a Gus: tiene que distinguirse la campera del pantalón.
+
+**12R.2 — Iluminación.** Hoy la escena se lee plana. Definir una dirección de
+sol clara, con sombras que apoyen el volumen sin tapar a Gus, y un cielo con
+horizonte en vez de un color plano. Revisar la sombra estirada de Gus que se ve
+en la captura. *Se prueba:* una fachada tiene que mostrar tres valores distintos
+—frente, costado y hueco de balcón— sin tocarle el color.
+
+**12R.3 — La calle.** Angostar la calzada, sacarle la línea punteada de avenida,
+levantar el cordón como volumen propio y darle a la vereda junta de geometría.
+Cruce peatonal. **Las colisiones no cambian**: la calzada define por dónde se
+camina y eso ya está probado.
+
+**12R.4 — Fachadas.** La tarea más grande. Módulos de planta baja (local con
+persiana, portal de edificio) y de piso tipo (ventana, balcón con baranda).
+Alturas de 2 a 6 plantas, sin repetir el mismo edificio en fila. Es lo que
+convierte la cuadra en una cuadra.
+
+**12R.5 — Árboles.** Tronco que se abre, copa de tres a cinco volúmenes
+irregulares de verdes distintos, cantero. Variación de altura y de giro: hoy se
+nota que son el mismo árbol copiado.
+
+**12R.6 a 12R.9 — Mobiliario, vehículos, carteles y abandono.** Reemplazo de
+`src/world/props.js` prop por prop, manteniendo la firma de cada función y las
+cajas de colisión. Los carteles necesitan texto: en PlayCanvas se resuelve con
+una textura generada por canvas, y es la única textura que vale la pena en todo
+el proyecto, porque un cartel sin letras no dice nada.
+
+**12R.10 y 12R.11 — Gus y los zombis.** Primero buscar modelo CC0 riggeado y
+probar que carga, que la escala coincide (Gus 1,80, zombi 1,72), que el pivote
+está en los pies y que trae animaciones. Si no aparece ninguno, se pide el
+archivo y mientras tanto se mejora la silueta de las primitivas. **No se declara
+terminado un personaje que no tiene animación real.**
+
+**12R.12 — Armas y objetos.** Con la cámara más cerca, el cuchillo y la pistola
+pasan a verse. Revisar escala y que el arma siga en la mano al moverse.
+
+**12R.13 — HUD.** Va al final a propósito: el prompt maestro dice que no se
+rediseña el HUD mientras el mundo sea provisional. Lo que sí es un error de hoy
+y se arregla: el objetivo truncado y el panel que tapa la barra de la bazooka.
+
+**12R.14 — Medición.** La Fase 12 dejó las llamadas de dibujo en 238, contra 181
+al final de la Fase 9. Todo lo de arriba las sube. Se mide **antes y después de
+cada bloque**, no al final, y si un bloque las dispara se resuelve en el
+momento. La fusión de mallas rígidas sigue siendo trabajo de la Fase 13.
+
+---
+
+## Qué queda fuera de esta fase
+
+La referencia muestra cosas que **hoy no existen en el juego** y que por lo tanto
+no se modelan todavía: escopeta, puños y guantes como arma, vendas, caja de
+munición abierta con cartuchos sueltos, y los tres arquetipos de zombi (lento,
+rápido, pesado) como enemigos con comportamiento propio —hoy hay un solo zombi
+con tres variantes de color—. Tampoco entran audio ni interfaz nueva.
+
+Se modela **lo que está activo**: cuchillo, pistola, bazooka, munición,
+botiquín, un tipo de zombi, Gus, y la ciudad.
+
+## Cómo se prueba cada bloque
+
+1. `npm run dev` y mirar la consola: **cero errores**.
+2. `npm test` y `npm run test:e2e`: lo que pasaba antes tiene que seguir pasando.
+3. Captura con `node tools/captura.mjs` y comparar con la referencia.
+4. **Subir y probarlo en el celular**, que es el dispositivo para el que está
+   hecho. Nada se informa como terminado sin eso.
+5. Medir llamadas de dibujo (F1) antes y después.
+
+## Criterio de salida
+
+Sacado del capítulo 10 del prompt maestro, filtrado a lo que hoy existe.
+
+**Entorno**
+
+- [ ] Calzada, cordón y vereda claramente diferenciados
+- [ ] Fachadas con ventanas, puertas y balcones de escala coherente
+- [ ] Se lee como un barrio porteño, no como edificios genéricos
+- [ ] Los árboles no son esferas verdes idénticas sobre cilindros
+- [ ] Los autos tienen carrocería y ruedas visibles
+- [ ] Nada flota ni se hunde
+- [ ] Variedad de alturas, colores, distancias y siluetas
+- [ ] La iluminación crea volumen
+- [ ] La cámara encuadra al personaje y deja leer la ruta
+
+**Personaje y zombis**
+
+- [ ] Gus no se lee como un conjunto de cubos
+- [ ] Se le distingue ropa, calzado, cabeza, brazos y piernas
+- [ ] Su escala coincide con puertas, autos y veredas
+- [ ] El zombi se distingue de Gus de un vistazo
+- [ ] El arma se ve en la mano
+
+**Jugabilidad**
+
+- [ ] Munición y botiquín se distinguen del decorado
+- [ ] Recogerlos sigue cambiando el estado del juego
+- [ ] Los controles táctiles siguen funcionando
+- [ ] La misión sigue pudiéndose terminar
+- [ ] Las llamadas de dibujo no se escaparon sin medición
+
+**Regla de bloqueo.** Si falla un requisito principal de personaje, zombi o
+entorno, **no se marca como terminado**. No se tapa la falta de modelos con
+iluminación, niebla ni interfaz.
 
 ---
 
@@ -1962,6 +2244,8 @@ Ideas en orden de valor esperado:
 | 8 | Cantidad de recursos de la misión | Que se pueda terminar sin que sobre |
 | 9 | Dificultad general | Con alguien que nunca lo jugó |
 | 12 | Nivel de detalle del arte | Midiendo en el teléfono después de cada grupo |
+| 12R | Inclinación y distancia de cámara (D-21, corrige D-02) | Mirando a Gus en el teléfono: si no se le distingue la campera del pantalón, está lejos |
+| 12R | Si Gus y los zombis llegan a ser `.glb` riggeado (D-20) | Encontrando un modelo CC0 compatible, o consiguiendo el archivo |
 
 ## Apéndice B — Comandos
 
