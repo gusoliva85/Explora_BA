@@ -25,7 +25,6 @@ import { VistaObjetos } from './items/itemView.js';
 import { Inventario, UsoDeObjeto, MotivoCancelacion } from './items/inventario.js';
 import { alcanzadosPorExplosion } from './combat/explosion.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
-import { crearMaterialesLuz } from './world/lighting.js';
 import { montarEscena } from './visual/escena.js';
 import { HORIZONTE } from './visual/paleta.js';
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
@@ -115,7 +114,6 @@ const input = new InputManager(canvas);
  * destiñe hacia el color del horizonte, que es lo que separa un plano del
  * siguiente sin tener que oscurecer nada.
  */
-const matsLuz = crearMaterialesLuz();
 const { sol, cupula } = montarEscena(app, { sombrasDeCalidad: calidadAlta() });
 
 const cameraEntity = new pc.Entity('Camara');
@@ -207,7 +205,7 @@ const camera = new CameraController(cameraEntity, collision);
 
 // --- Mundo y mision --------------------------------------------------------
 
-const builder = new WorldBuilder(app, collision, matsLuz);
+const builder = new WorldBuilder(app, collision);
 const built = builder.build(mission001);
 const mission = new MissionManager(mission001, bus);
 

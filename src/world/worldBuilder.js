@@ -2,9 +2,18 @@ import * as pc from 'playcanvas';
 import { Box2D } from '../physics/collisionWorld.js';
 import * as calle from '../visual/kit/calle.js';
 import * as fachada from '../visual/kit/fachada.js';
+import {
+  COMERCIOS,
+  materialDeCartel,
+  materialDeCalle,
+  limpiarCache,
+  ALTO_CARTEL
+} from '../visual/carteles.js';
 import { UNITS } from '../config/balance.js';
+
+/** Cada cuantos metros va un farol. Venia de `lighting.js`, que ya no existe. */
+const FAROL_CADA = 26;
 import { createRng } from '../core/rng.js';
-import { crearFarol, LUZ } from './lighting.js';
 import { COLORS, ACABADO, Materiales } from './palette.js';
 import { PROPS } from './props.js';
 
@@ -76,12 +85,10 @@ export class WorldBuilder {
   /**
    * @param {pc.Application} app
    * @param {import('../physics/collisionWorld.js').CollisionWorld} collision
-   * @param {object} matsLuz materiales compartidos de iluminacion
    */
-  constructor(app, collision, matsLuz) {
+  constructor(app, collision) {
     this.app = app;
     this.collision = collision;
-    this.matsLuz = matsLuz;
 
     /** @type {pc.Entity} raiz de todo lo construido, para poder borrarlo de una. */
     this.root = new pc.Entity('World');
@@ -159,12 +166,14 @@ export class WorldBuilder {
     pos,
     size,
     rgb,
-    { collide = false, tag = 'static', acabado, sombra = false, plano = false } = {}
+    { collide = false, tag = 'static', acabado, sombra = false, plano = false, material } = {}
   ) {
     const e = new pc.Entity(name);
     e.addComponent('render', {
       type: 'box',
-      material: plano ? this.mats.getPlano(rgb) : this.material(rgb, acabado),
+      // `material` gana cuando lo hay: es como entran los carteles con
+      // texto, que no se pueden describir con un color (12R.5).
+      material: material ?? (plano ? this.mats.getPlano(rgb) : this.material(rgb, acabado)),
       castShadows: sombra,
       batchGroupId: this.grupoEstatico.id
     });
@@ -360,6 +369,7 @@ export class WorldBuilder {
 
     this.#buildVehiculos(a, b, alongX, length, road, rng, index);
     this.#buildFaroles(a, b, alongX, length, road, index);
+    this.#buildCables(a, b, alongX, length, road, index);
   }
 
   /** Plancha de vereda en cada esquina, con senda peatonal y semaforo. */
@@ -379,62 +389,85 @@ export class WorldBuilder {
       this.addProp('semaforo', { x: p.x + esq, z: p.z + esq }, rng.range(0, 360), rng, {
         collide: { w: 0.4, d: 0.4, h: 3.6 }
       });
-      this.addProp('carteCalle', { x: p.x - esq, z: p.z - esq }, 0, rng);
+      this.addProp('carteCalle', { x: p.x - esq, z: p.z - esq }, 0, rng, {
+        args: { material: materialDeCalle(this.app, p.calle ?? 'CALLE') }
+      });
     }
   }
 
   /**
-   * Hilera de fachadas de ancho y altura variables.
+   * La hilera de fachadas: UNA PARED CONTINUA, no edificios sueltos.
    *
-   * La variacion no es decorativa: una hilera pareja se lee como un muro y
-   * el jugador pierde las referencias para ubicarse. Alturas distintas y
-   * retiros ocasionales le dan puntos de referencia.
+   * ---------------------------------------------------------------------------
+   * POR QUE SE REHIZO (12R.5)
+   * ---------------------------------------------------------------------------
+   * La version anterior recorria la cuadra poniendo edificios de ancho al azar
+   * y dejaba tres clases de agujero:
+   *
+   *  - el frente de cada edificio ocupaba el 72-96 % de su ancho, asi que entre
+   *    uno y otro quedaba pared pelada;
+   *  - algunos edificios se corrian hacia atras ("retiro") y abrian un escalon;
+   *  - los baldios eran literalmente nada: un hueco en la linea municipal.
+   *
+   * En una cuadra de Boedo eso no existe: los edificios comparten medianera y
+   * la linea municipal es continua de esquina a esquina. Lo que varia es la
+   * ALTURA, el COLOR y lo que pasa en la planta baja, no la posicion del plano.
+   *
+   * Asi que ahora las parcelas se reparten pegadas una a la otra, sin retiros,
+   * y el baldio deja un muro bajo en vez de un agujero. Lo unico que abre la
+   * pared de verdad es la boca de un pasaje, que es una decision de juego.
    */
   #buildFacadeRow(a, b, alongX, length, side, fullWidth, cfg, rng, index) {
     const depth = 12;
     const start = alongX ? Math.min(a.x, b.x) : Math.min(a.z, b.z);
     const margin = fullWidth / 2 + 2;
-    let cursor = start + margin;
     const end = start + length - margin;
-    let n = 0;
-
     const cruzado = (v) => (alongX ? (a.z + b.z) / 2 + v : (a.x + b.x) / 2 + v);
 
-    while (cursor < end - 4) {
-      const width = Math.min(rng.range(8, 18), end - cursor);
-      const centerAlong = cursor + width / 2;
-      const [hMin, hMax] = cfg.buildingHeight;
-      const height = rng.range(hMin, hMax);
+    // Las parcelas, pegadas una a la otra.
+    const parcelas = [];
+    let cursor = start + margin;
+    while (cursor < end - 6) {
+      const ancho = Math.min(rng.range(7, 13), end - cursor);
+      if (ancho < 6) break;
+      parcelas.push({ centro: cursor + ancho / 2, ancho });
+      cursor += ancho;
+    }
 
-      // Un hueco ocasional: un baldio. Rompe el muro continuo y da algo
-      // que explorar.
-      if (!rng.chance(cfg.density)) {
-        this.#baldio(centerAlong, cruzado((fullWidth / 2 + 3) * side), alongX, width, side, rng, index, n);
-        cursor += width;
-        n++;
-        continue;
-      }
+    const [hMin, hMax] = cfg.buildingHeight;
+    let alturaPrevia = null;
 
-      // Retiro: algunos edificios se corren hacia atras de la linea
-      // municipal y dejan un zaguan. Es lo que quiebra la pared continua.
-      const retiro = rng.chance(0.22) ? rng.range(1.0, 2.2) : 0;
-      const centerCross = (fullWidth / 2 + depth / 2 + retiro) * side;
-
-      const pos = alongX
-        ? { x: centerAlong, y: height / 2, z: cruzado(centerCross) }
-        : { x: cruzado(centerCross), y: height / 2, z: centerAlong };
-      const sz = alongX ? { x: width, y: height, z: depth } : { x: depth, y: height, z: width };
+    parcelas.forEach((parcela, n) => {
+      const { centro: centerAlong, ancho: width } = parcela;
 
       /*
-       * Si este edificio taparia la boca de un pasaje, no se construye.
-       * El hueco que queda ES la entrada: no hace falta dibujar nada, la
-       * ausencia de pared ya comunica que por ahi se pasa, sobre todo
-       * porque del otro lado se ve el piso del pasaje.
+       * La altura de cada parcela se separa de la de al lado por lo menos dos
+       * metros. Dos edificios casi iguales se leen como uno solo, y lo que le
+       * da ritmo a la cuadra es justamente el escalon entre medianeras.
+       */
+      let height = rng.range(hMin, hMax);
+      if (alturaPrevia !== null && Math.abs(height - alturaPrevia) < 2) {
+        height += height > alturaPrevia ? 2 : -2;
+        height = Math.max(hMin, Math.min(hMax, height));
+      }
+      alturaPrevia = height;
+
+      const esBaldio = !rng.chance(cfg.density);
+      const alto = esBaldio ? 3.2 : height;
+      const centerCross = (fullWidth / 2 + depth / 2) * side;
+
+      const pos = alongX
+        ? { x: centerAlong, y: alto / 2, z: cruzado(centerCross) }
+        : { x: cruzado(centerCross), y: alto / 2, z: centerAlong };
+      const sz = alongX ? { x: width, y: alto, z: depth } : { x: depth, y: alto, z: width };
+
+      /*
+       * Si la parcela taparia la boca de un pasaje, no se construye. El hueco
+       * que queda ES la entrada: la ausencia de pared ya comunica que por ahi
+       * se pasa, sobre todo porque del otro lado se ve el piso del pasaje.
        */
       if (this.tapaHueco(pos.x - sz.x / 2, pos.z - sz.z / 2, pos.x + sz.x / 2, pos.z + sz.z / 2)) {
-        cursor += width;
-        n++;
-        continue;
+        return;
       }
 
       this.addBox(`Edificio_${index}_${side}_${n}`, pos, sz, rng.pick(COLORS.facade), {
@@ -444,14 +477,17 @@ export class WorldBuilder {
         sombra: true
       });
 
-      this.#frenteEdificio(
-        centerAlong, cruzado, alongX, side, fullWidth, width, height, retiro, rng, index, n
-      );
+      if (esBaldio) {
+        this.#baldio(centerAlong, cruzado((fullWidth / 2 + 4) * side), alongX, width, side, rng, index, n);
+        return;
+      }
 
-      cursor += width;
-      n++;
-    }
+      this.#frenteEdificio(
+        centerAlong, cruzado, alongX, side, fullWidth, width, height, 0, rng, index, n
+      );
+    });
   }
+
 
   /**
    * El frente de un edificio. Lo diseña `src/visual/kit/fachada.js` (12R.4);
@@ -474,7 +510,11 @@ export class WorldBuilder {
         ? { x: a, y, z: cruzado(cross * side) }
         : { x: cruzado(cross * side), y, z: a };
       const sz = alongX ? { x: largo, y: alto, z: prof } : { x: prof, y: alto, z: largo };
-      this.addBox(nombre, pos, sz, color, { acabado: opt.acabado, sombra: opt.sombra });
+      this.addBox(nombre, pos, sz, color, {
+        acabado: opt.acabado,
+        sombra: opt.sombra,
+        material: opt.material
+      });
     };
 
     /*
@@ -496,7 +536,16 @@ export class WorldBuilder {
     const hayLocal = width > 7 && dado.chance(0.82);
     fachada.plantaBaja(poner, { width, rng: dado, clave, hayLocal });
     if (hayLocal) {
-      fachada.cartel(poner, { width, rng: dado, clave });
+      const comercio = dado.pick(COMERCIOS);
+      fachada.cartel(poner, {
+        width,
+        clave,
+        material: materialDeCartel(this.app, {
+          texto: comercio.texto,
+          fondo: comercio.fondo,
+          relacion: (width * 0.62) / ALTO_CARTEL
+        })
+      });
       if (dado.chance(0.55)) fachada.toldo(poner, { width, rng: dado, clave });
     }
     fachada.puerta(poner, { width, clave });
@@ -582,30 +631,47 @@ export class WorldBuilder {
     }
   }
 
-  /** Autos y colectivos estacionados o abandonados en la calzada. */
+  /**
+   * Autos y colectivos abandonados, SIEMPRE contra el cordon.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE NINGUNO VA CRUZADO
+   * ---------------------------------------------------------------------------
+   * La version anterior ponia el 22 % de los vehiculos cruzados en el medio de
+   * la calzada, girados hasta 125 grados. Se veia bien en una captura y rompia
+   * el juego: un colectivo mide 11 m y la calzada 10, asi que uno cruzado la
+   * tapia entera. La prueba que camina el recorrido se trabo en Boedo,
+   * "dando vueltas sin acercarse" al segundo control.
+   *
+   * Ahora todos van estacionados contra el cordon, con una inclinacion de
+   * hasta 18 grados que alcanza para que se lean como abandonados y no como
+   * estacionados con escuadra. Eso deja SIEMPRE un corredor libre por el medio
+   * de la calzada, que es lo que el juego necesita para poder jugarse.
+   *
+   * El corte de calle que el diseño quiere sigue existiendo: lo ponen las
+   * barricadas de la mision, a mano, donde esta decidido que esten.
+   */
   #buildVehiculos(a, b, alongX, length, road, rng, index) {
     const start = alongX ? Math.min(a.x, b.x) : Math.min(a.z, b.z);
     const crossCenter = alongX ? (a.z + b.z) / 2 : (a.x + b.x) / 2;
 
+
     for (let d = rng.range(12, 20); d < length - 12; d += rng.range(22, 34)) {
       const along = start + d;
       const lado = rng.chance(0.5) ? 1 : -1;
-      // Estacionado contra el cordon, o cruzado en medio de la calle.
-      const esCruzado = rng.chance(0.22);
-      const cross = esCruzado
-        ? crossCenter + rng.range(-road / 4, road / 4)
-        : crossCenter + (road / 2 - 1.5) * lado;
-
+      const cross = crossCenter + (road / 2 - 1.4) * lado;
       const pos = alongX ? { x: along, z: cross } : { x: cross, z: along };
 
-      // Si el diseño reservo esta zona, no se pone nada: lo colocado a
-      // mano manda. El margen extra es el largo de un auto.
+      // Si el diseño reservo esta zona, no se pone nada: lo colocado a mano
+      // manda. El margen extra es el largo de un auto.
       if (this.estaReservado(pos.x, pos.z, 6)) continue;
 
       const rotBase = alongX ? 90 : 0;
-      const rot = esCruzado ? rotBase + rng.range(55, 125) : rotBase + (lado > 0 ? 180 : 0);
+      const torcido = rng.range(-18, 18);
+      const rot = rotBase + (lado > 0 ? 180 : 0) + torcido;
 
       if (rng.chance(0.14)) {
+        // El colectivo va derecho: torcido, su trompa invade el corredor.
         this.addProp('colectivo', pos, rotBase, rng, {
           collide: { w: alongX ? 11 : 2.6, d: alongX ? 2.6 : 11, h: 3.2 },
           tag: 'vehicle'
@@ -614,8 +680,8 @@ export class WorldBuilder {
         const esTaxi = rng.chance(0.3);
         this.addProp('auto', pos, rot, rng, {
           collide: {
-            w: esCruzado ? 4.4 : alongX ? 4.4 : 2,
-            d: esCruzado ? 4.4 : alongX ? 2 : 4.4,
+            w: alongX ? 4.4 : 2.4,
+            d: alongX ? 2.4 : 4.4,
             h: 1.7
           },
           tag: 'vehicle',
@@ -624,6 +690,7 @@ export class WorldBuilder {
       }
     }
   }
+
 
   /**
    * Anota un hueco por cada boca de pasaje.
@@ -747,14 +814,12 @@ export class WorldBuilder {
 
   /** Faroles a lo largo de la cuadra, alternando de vereda. */
   #buildFaroles(a, b, alongX, length, road, index) {
-    if (!this.matsLuz) return;
-
     const start = alongX ? Math.min(a.x, b.x) : Math.min(a.z, b.z);
     const crossCenter = alongX ? (a.z + b.z) / 2 : (a.x + b.x) / 2;
     const offset = road / 2 + 1.2;
 
     let lado = index % 2 === 0 ? 1 : -1;
-    for (let d = LUZ.farolCada * 0.5; d < length; d += LUZ.farolCada) {
+    for (let d = FAROL_CADA * 0.5; d < length; d += FAROL_CADA) {
       const along = start + d;
       const cross = crossCenter + offset * lado;
       const pos = alongX ? { x: along, z: cross } : { x: cross, z: along };
@@ -770,9 +835,30 @@ export class WorldBuilder {
       if (alongX) angulo = lado > 0 ? 0 : 180;
       else angulo = lado > 0 ? 270 : 90;
 
-      this.faroles.push(crearFarol(this.app, pos, angulo, this.matsLuz));
+      this.addProp('farol', pos, angulo, null, { collide: { w: 0.4, d: 0.4, h: 7.2 } });
       this.stats.luces++;
       lado *= -1;
+    }
+  }
+
+  /**
+   * Cables cruzando la calle (12R.7).
+   *
+   * Son lo unico que pasa por encima de la calzada, y hacen dos cosas que
+   * ninguna otra pieza hace: le ponen un techo a la cuadra y dan una
+   * referencia de profundidad, porque al caminar se pasa por debajo de uno,
+   * despues de otro.
+   */
+  #buildCables(a, b, alongX, length, road, index) {
+    const start = alongX ? Math.min(a.x, b.x) : Math.min(a.z, b.z);
+    const crossCenter = alongX ? (a.z + b.z) / 2 : (a.x + b.x) / 2;
+    const vano = road + UNITS.sidewalkWidth * 2 - 2;
+
+    for (let d = 16; d < length - 10; d += 31) {
+      const along = start + d;
+      const pos = alongX ? { x: along, z: crossCenter } : { x: crossCenter, z: along };
+      this.addProp('cables', pos, alongX ? 90 : 0, null, { args: vano });
+      void index;
     }
   }
 
@@ -816,6 +902,12 @@ export class WorldBuilder {
     this.faroles.length = 0;
     this.collision.clear();
     this.mats.clear();
+    /*
+     * Las texturas de los carteles tambien. Son 31 por partida y el juego se
+     * reconstruye en cada reintento: sin esto quedan colgadas en la memoria
+     * de la placa.
+     */
+    limpiarCache();
     this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0, desvios: 0 };
   }
 }

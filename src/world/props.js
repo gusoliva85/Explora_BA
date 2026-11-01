@@ -1,5 +1,7 @@
 import * as pc from 'playcanvas';
 import { COLORS, ACABADO } from './palette.js';
+import * as kitArbol from '../visual/kit/arbol.js';
+import * as kitMobiliario from '../visual/kit/mobiliario.js';
 
 /**
  * ===========================================================================
@@ -84,49 +86,15 @@ class Armador {
    ========================================================================= */
 
 /**
- * Arbol de vereda, tipo fresno o platano: tronco recto y copa redonda.
+ * Arbol de vereda. Lo diseña `src/visual/kit/arbol.js` (12R.6).
  *
- * La copa son tres esferas achatadas y desplazadas, cada una de un verde
- * distinto. Una sola esfera se lee como una pelota; tres irregulares se
- * leen como follaje, y sigue siendo barato.
+ * Aca solo queda el enganche: el kit necesita un `Armador` y este archivo
+ * es el que lo tiene. El arbol viejo —un cilindro y tres esferas— se fue
+ * entero: era textualmente lo que el prompt maestro prohibe.
  */
 export function arbol(mats, rng) {
   const a = new Armador('Arbol', mats);
-  const alturaTronco = rng.range(2.2, 3.0);
-  const radioCopa = rng.range(1.5, 2.1);
-
-  // Cantero: el cuadrado de tierra sin baldosa. Detalle chico, muy porteño.
-  a.add('box', [0, 0.01, 0], [1.5, 0.06, 1.5], COLORS.soil, {
-    acabado: ACABADO.vereda,
-    sombra: false
-  });
-  // Cordon del cantero.
-  for (const [dx, dz, w, d] of [
-    [0, 0.78, 1.6, 0.14],
-    [0, -0.78, 1.6, 0.14],
-    [0.78, 0, 0.14, 1.6],
-    [-0.78, 0, 0.14, 1.6]
-  ]) {
-    a.add('box', [dx, 0.02, dz], [w, 0.14, d], COLORS.curb, { acabado: ACABADO.vereda });
-  }
-
-  a.add('cylinder', [0, 0, 0], [0.32, alturaTronco, 0.32], COLORS.trunk, {
-    acabado: ACABADO.madera
-  });
-
-  const base = alturaTronco - 0.2;
-  const lobulos = [
-    [0, base, 0, 1.0],
-    [radioCopa * 0.42, base + radioCopa * 0.35, radioCopa * 0.2, 0.72],
-    [-radioCopa * 0.35, base + radioCopa * 0.3, -radioCopa * 0.3, 0.66]
-  ];
-  lobulos.forEach(([dx, dy, dz, k], i) => {
-    const r = radioCopa * k;
-    a.add('sphere', [dx, dy, dz], [r * 2, r * 1.5, r * 2], COLORS.leaves[i % COLORS.leaves.length], {
-      acabado: ACABADO.hoja
-    });
-  });
-
+  kitArbol.construir(a, rng);
   return a.fin();
 }
 
@@ -176,8 +144,7 @@ export function bolsas(mats, rng) {
 /** Cesto de basura de vereda: canasto calado sobre un poste. */
 export function cesto(mats) {
   const a = new Armador('Cesto', mats);
-  a.add('cylinder', [0, 0, 0], [0.12, 1.0, 0.12], COLORS.metal, { acabado: ACABADO.metal });
-  a.add('cylinder', [0, 0.95, 0], [0.6, 0.6, 0.6], COLORS.metalDark, { acabado: ACABADO.metal });
+  kitMobiliario.cesto(a);
   return a.fin();
 }
 
@@ -191,18 +158,7 @@ export function cesto(mats) {
  */
 export function paradaColectivo(mats) {
   const a = new Armador('Parada', mats);
-  for (const dx of [-1.6, 1.6]) {
-    a.add('cylinder', [dx, 0, 0.5], [0.12, 2.6, 0.12], COLORS.metal, { acabado: ACABADO.metal });
-  }
-  a.add('box', [0, 2.6, 0.2], [3.8, 0.12, 1.5], COLORS.metalDark, { acabado: ACABADO.chapa });
-  // Panel trasero y banco.
-  a.add('box', [0, 0.4, 0.95], [3.4, 1.6, 0.08], COLORS.glass, { acabado: ACABADO.vidrio });
-  a.add('box', [0, 0.45, 0.65], [3.0, 0.1, 0.42], COLORS.wood, { acabado: ACABADO.madera });
-  for (const dx of [-1.2, 1.2]) {
-    a.add('box', [dx, 0, 0.65], [0.1, 0.45, 0.38], COLORS.metal, { acabado: ACABADO.metal });
-  }
-  // Cartel con el numero de linea: el acento de color.
-  a.add('box', [1.55, 2.0, -0.2], [0.5, 0.7, 0.08], COLORS.toldo[2], { acabado: ACABADO.pintura });
+  kitMobiliario.parada(a);
   return a.fin();
 }
 
@@ -228,14 +184,7 @@ export function kiosco(mats, rng) {
 /** Banco de plaza: asiento, respaldo y patas. */
 export function banco(mats) {
   const a = new Armador('Banco', mats);
-  a.add('box', [0, 0.45, 0], [1.9, 0.1, 0.55], COLORS.wood, { acabado: ACABADO.madera });
-  a.add('box', [0, 0.55, 0.26], [1.9, 0.5, 0.08], COLORS.wood, {
-    acabado: ACABADO.madera,
-    rot: [-12, 0, 0]
-  });
-  for (const dx of [-0.8, 0.8]) {
-    a.add('box', [dx, 0, 0], [0.1, 0.45, 0.5], COLORS.metalDark, { acabado: ACABADO.metal });
-  }
+  kitMobiliario.banco(a);
   return a.fin();
 }
 
@@ -245,29 +194,28 @@ export function banco(mats) {
  */
 export function semaforo(mats) {
   const a = new Armador('Semaforo', mats);
-  a.add('cylinder', [0, 0, 0], [0.16, 3.6, 0.16], COLORS.metalDark, { acabado: ACABADO.metal });
-  a.add('box', [0, 3.5, -0.15], [0.42, 1.15, 0.36], COLORS.metalDark, { acabado: ACABADO.metal });
-  const luces = [
-    [3.9, COLORS.lightRed],
-    [3.55, COLORS.lightAmber],
-    [3.2, COLORS.lightGreen]
-  ];
-  for (const [y, color] of luces) {
-    a.add('cylinder', [0, y, -0.34], [0.26, 0.06, 0.26], color, {
-      acabado: ACABADO.pintura,
-      rot: [90, 0, 0],
-      sombra: false
-    });
-  }
+  kitMobiliario.semaforo(a);
   return a.fin();
 }
 
 /** Cartel de nombre de calle: poste con dos chapas cruzadas. */
-export function carteCalle(mats) {
+export function carteCalle(mats, rng, args = {}) {
   const a = new Armador('CartelCalle', mats);
-  a.add('cylinder', [0, 0, 0], [0.1, 2.8, 0.1], COLORS.metal, { acabado: ACABADO.metal });
-  a.add('box', [0.4, 2.55, 0], [1.0, 0.26, 0.05], COLORS.police, { acabado: ACABADO.pintura });
-  a.add('box', [0, 2.25, 0.4], [0.05, 0.26, 1.0], COLORS.police, { acabado: ACABADO.pintura });
+  kitMobiliario.chapaDeCalle(a, { material: args.material });
+  return a.fin();
+}
+
+/** Farol de vereda. De dia es mobiliario, no una luz. */
+export function farol(mats) {
+  const a = new Armador('Farol', mats);
+  kitMobiliario.farol(a);
+  return a.fin();
+}
+
+/** Cables cruzando la calle. El ancho del vano llega como argumento. */
+export function cables(mats, rng, luz = 16) {
+  const a = new Armador('Cables', mats);
+  kitMobiliario.cables(a, luz);
   return a.fin();
 }
 
@@ -476,6 +424,8 @@ export function comisaria(mats) {
 
 /** Todos los constructores, por nombre, para colocarlos desde datos. */
 export const PROPS = {
+  farol,
+  cables,
   arbol,
   contenedor,
   bolsas,

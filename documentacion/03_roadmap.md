@@ -11,26 +11,20 @@
 
 ## ▶️ La tarea que sigue
 
-### **12R.5 — Cartelería**
+### **12R.8 — Vehículos**
 
-Los carteles de los comercios ya están puestos como volumen, pero son
-rectángulos de color: **no dicen nada**. Y la mitad de lo que hace que una
-calle se lea como porteña son las letras.
+Los autos son cajas sobre cajas con las ruedas apenas insinuadas. El
+criterio de salida pide carrocería y ruedas visibles con proporciones
+creíbles.
 
-**Qué hay que hacer:**
+**Qué entra:** auto con capó, techo, baúl y ventanas hundidas; ruedas de
+verdad; taxi con su techo amarillo; colectivo con su frente, sus ventanillas
+y la puerta.
 
-- Texto de verdad sobre los carteles, generado con canvas y subido como
-  textura. Es la única textura que vale la pena en todo el proyecto: no se
-  descarga nada y un cartel sin letras no comunica.
-- Nombres de comercios ficticios, en español. Nada de logos reales.
-- Carteles de calle en las esquinas, con nombres del barrio.
-- Alguna chapa de numeración.
+**Ya resuelto en 12R.5 y no se toca:** la colocación. Ningún vehículo va
+cruzado en el medio de la calzada, porque eso trababa el recorrido.
 
-**Ojo con la escala:** a 25 m sólo se ven los primeros 4 m de fachada, así
-que el cartel entra justo. Hay que comprobar que el texto se LEA en el
-celular, no sólo que esté.
-
-**Dónde:** nace `src/visual/carteles.js`, que genera las texturas.
+**Dónde:** nace `src/visual/kit/vehiculos.js`.
 
 ---
 
@@ -40,7 +34,7 @@ celular, no sólo que esté.
 |---|---|---|
 | ✅ | 0 a 9 — El juego | **Terminadas.** Se juega de principio a fin |
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
-| 🔄 | **12R — La capa visual nueva** | **5 de 17 tareas.** Es lo que estamos haciendo |
+| 🔄 | **12R — La capa visual nueva** | **8 de 17 tareas.** Es lo que estamos haciendo |
 | ⬜ | 10 — Interfaz completa | Pendiente, después de 12R |
 | ⬜ | 11 — Audio | Pendiente, después de 12R |
 | ⬜ | 13 — Optimización | Pendiente |
@@ -73,10 +67,10 @@ hay ahora. No se corrige, se reemplaza. Son unas 4.400 líneas.
 - [x] **12R.2 — Sol, cielo y atmósfera.** Tres luces con temperaturas distintas. Y apareció el error gordo: **el sol estaba a 17° creyendo que estaba a 73**, por eso la calle estaba siempre en sombra
 - [x] **12R.3 — El suelo.** Cordón con volumen, vereda con juntas, eje de doble mano y la bocacalle rehecha con cuatro ochavas. La paleta medida necesitó dos correcciones al salir del banco
 - [x] **12R.4 — Fachadas.** Planta baja con profundidad real: local hundido, persiana con lamas, cornisa que vuela. Y apareció por qué se veían lisas: **el relieve viejo sobresalía hacia adentro del edificio**
-- [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios ⬅️ *la que sigue*
-- [ ] **12R.6 — Árboles.** Tronco con ramas y copa de volúmenes irregulares
-- [ ] **12R.7 — Mobiliario urbano.** Postes, luminarias, semáforos, cables, parada
-- [ ] **12R.8 — Vehículos.** Autos con carrocería y ruedas, colectivo abandonado
+- [x] **12R.5 — Cartelería.** 31 carteles con texto de verdad. Y de paso se rehizo la hilera entera: pared continua sin huecos, y los vidrios dejaron de ser agujeros negros
+- [x] **12R.6 — Árboles.** Tronco que se abre en ramas y copa de cinco volúmenes irregulares, ninguno igual a otro
+- [x] **12R.7 — Mobiliario urbano.** Cables cruzando la calle, que era la pieza que faltaba, y el resto rehecho con la paleta medida. **Murió `src/world/lighting.js`**
+- [ ] **12R.8 — Vehículos.** Autos con carrocería y ruedas, colectivo abandonado ⬅️ *la que sigue*
 - [ ] **12R.9 — Abandono.** Barricadas, escombros, bolsas, cajones, grafiti
 - [ ] **12R.10 — Composición de la cuadra.** Que no se repita nada en fila
 - [ ] **12R.11 — Gus.** El modelo nuevo con la campera de cuero (D-24)

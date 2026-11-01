@@ -1,4 +1,5 @@
 import { FACHADA, CARTEL, CALLE, OBJETO } from '../paleta.js';
+import { ALTO_CARTEL } from '../carteles.js';
 
 /**
  * ===========================================================================
@@ -185,10 +186,15 @@ export function toldo(poner, { width, rng, clave }) {
  * Va entre el dintel y la cornisa, que es donde esta en la calle. Mas arriba
  * de la cornisa no se ve desde esta camara.
  */
-export function cartel(poner, { width, rng, clave }) {
-  const fondo = rng.pick([CARTEL.rojo, CARTEL.verde, FACHADA.metal_oscuro]);
-  poner(`${clave}_Cartel`, 0.2, 3.86, width * 0.62, 0.58, 0.18,
-    fondo, { acabado: ACABADO.revoque });
+export function cartel(poner, { width, clave, material }) {
+  /*
+   * La banda mide 0,95 y no 0,58 como antes, y es por legibilidad, no por
+   * gusto: a 25 m un cartel de 0,58 ocupa 8 pixeles en pantalla y el texto
+   * adentro seria la mitad. Es mas grande de lo que seria en la calle real,
+   * y un cartel que no se puede leer no cumple ninguna funcion.
+   */
+  poner(`${clave}_Cartel`, 0.22, 3.9, width * 0.62, ALTO_CARTEL, 0.14,
+    null, { acabado: ACABADO.revoque, material });
 }
 
 /**

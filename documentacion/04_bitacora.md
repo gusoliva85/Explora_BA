@@ -15,6 +15,131 @@ no, que es justamente para lo que sirve un roadmap. El contenido de abajo es
 el documento tal como estaba, sin tocar.
 
 ---
+## 12R.7 — Mobiliario urbano
+
+### Los cables eran la pieza que faltaba
+
+En la referencia cruzan la calle de lado a lado y son lo único que pasa por
+encima de la calzada. Cuestan tres cajas cada uno y hacen dos cosas que
+ninguna otra pieza hace: le ponen un techo a la cuadra, y dan una referencia
+de profundidad —al caminar uno pasa por debajo de uno, después de otro— que
+el piso solo no da.
+
+El primer intento los puso de 5 cm a 6,6 m de altura y se veían como caños
+de hierro cruzados. Quedaron en 3 cm y a 7,4 m.
+
+### Lo demás tenía bien la forma y mal el color
+
+El semáforo, el banco, el cesto y la parada estaban razonablemente
+resueltos de forma; lo que seguían usando era la paleta vieja, elegida a
+ojo. Se rehicieron con la medida, y de paso ganaron las piezas que les
+faltaban para leerse desde arriba: la visera del semáforo, el aro del cesto,
+el alero de la parada y las tablas separadas del banco.
+
+### Un verde que no se puede poner arriba
+
+La copa del árbol salió de un verde ácido que no existe en la calle. La
+causa es contraintuitiva: **la cámara mira desde arriba, así que el lóbulo
+superior es casi todo lo que se ve del árbol**, y tenía el verde más claro.
+Pintarlo con el claro pinta el árbol entero. Ahora el claro va en un lóbulo
+lateral, donde se lee como un reflejo del sol y no como el color del árbol.
+
+Es el mismo tipo de error que el relieve de las fachadas: una decisión que
+parece correcta mirando la pieza suelta y es incorrecta desde el ángulo en
+que se la ve.
+
+### Y murió `src/world/lighting.js`
+
+Era lo último que quedaba del arte de la Fase 2B. Sobrevivía sólo porque
+tenía el farol; ahora el farol es un prop como cualquier otro y el archivo
+se borró. Con él se fueron los materiales sueltos de ventana y lámpara que
+ya nadie usaba.
+
+Y se agregó algo que faltaba: las 31 texturas de cartel ahora **se liberan**
+al reconstruir el mundo. El juego se reconstruye en cada reintento, así que
+sin eso quedaban colgadas en la memoria de la placa.
+
+---
+## 12R.6 — Árboles
+
+El criterio de aceptación del prompt maestro es textual: *"los árboles no
+son esferas verdes idénticas sobre cilindros"*. El viejo era exactamente
+eso. Lo que lo arregla no es poner más esferas:
+
+- **El tronco se abre.** Un plátano sube un tramo y se parte en dos o tres
+  ramas gruesas en abanico. Ese contorno es el que se reconoce desde arriba.
+- **La copa es irregular**: cinco volúmenes de tamaños distintos,
+  desplazados y achatados cada uno a su manera, en los tres verdes medidos.
+  Ninguno centrado.
+- **Ninguno es igual a otro**: altura, giro, inclinación y mezcla salen del
+  generador.
+- **La corteza es clara**, como la del plátano porteño. Además así se separa
+  de la hoja en sombra, que era el otro problema del viejo: se leía como una
+  sola mancha. Ya estaba anotado en 12R.0 y acá se cobra.
+
+---
+
+## 12R.5 — Cartelería, y la pared que estaba rota
+
+### Lo que encontró Gus
+
+Dos cosas, jugando: paredes sueltas con huecos entre edificio y edificio, y
+"vidrios negros que parecen un error".
+
+### La hilera no era una hilera
+
+El generador recorría la cuadra poniendo edificios de ancho al azar y dejaba
+tres clases de agujero:
+
+- el frente ocupaba el 72-96 % del ancho del edificio, así que entre uno y
+  otro quedaba pared pelada;
+- algunos se corrían hacia atrás ("retiro") y abrían un escalón;
+- los baldíos eran literalmente nada: un hueco en la línea municipal.
+
+En una cuadra de Boedo eso no existe: los edificios comparten medianera y la
+línea municipal es continua de esquina a esquina. **Lo que varía es la
+altura, el color y lo que pasa en la planta baja, no la posición del plano.**
+
+Ahora las parcelas van pegadas una a la otra, sin retiros; la altura de cada
+una se separa por lo menos dos metros de la de al lado —dos edificios casi
+iguales se leen como uno solo—; el baldío deja un muro bajo en vez de un
+agujero; y lo único que abre la pared de verdad es la boca de un pasaje, que
+es una decisión de juego.
+
+### Los vidrios negros eran dos colores mal elegidos, y eran míos
+
+El fondo del local estaba en **0,11 de luminancia**: prácticamente negro.
+Puesto en la calle, cada local se leía como un agujero recortado. Un interior
+en penumbra no es negro, le entra luz de la calle. Y la vidriera usaba el
+color de la persiana, así que no había diferencia entre el vidrio y el hueco.
+
+Ahora el hueco está en 0,19 y hay un color de vidrio propio, un gris azulado
+**más claro que el hueco que tiene detrás**. Esa diferencia es exactamente lo
+que hace que se lea como vidrio y no como un agujero.
+
+### Las letras
+
+31 carteles, cada uno con su textura de texto dibujada en un canvas al
+arrancar: no se descarga nada. Nombres ficticios en español —FARMACIA, LA
+ESQUINA, VERDULERÍA, FERRETERÍA, LAVADERO— sin ninguna marca real.
+
+La banda pasó de 0,58 a **0,95 m de alto, por legibilidad y no por gusto**: a
+25 m un cartel de 0,58 ocupa 8 píxeles en pantalla y el texto adentro sería
+la mitad. Es más grande de lo que sería en la calle real, y un cartel que no
+se puede leer no cumple ninguna función. Comprobado en una captura: desde la
+cámara del juego se lee "LAVADERO".
+
+### Lo que se confirmó sobre los assets
+
+Gus pidió reemplazar los edificios por modelos de la biblioteca. **No hay**:
+`documentacion/visual/` tiene cuatro archivos y ninguno es un modelo, y los
+`.glb` de threejsassets devuelven la página de login —`text/html`, 54 KB,
+empiezan con `<!DOC`— porque hacen falta una cuenta. Probado con tres
+modelos distintos. Hasta que esos archivos existan localmente, "reemplazar
+por lo nuevo" sólo puede significar rehacerlo en código, que es lo que
+decidió D-22.
+
+---
 ## 12R.4 — Fachadas
 
 ### Lo que el plan decía era falso, y lo desmintió el propio motor

@@ -158,8 +158,26 @@ export const FACHADA = {
   persiana: [0.227, 0.243, 0.31],
   /** medido #262936. Barandas, rejas y carpinteria oscura. */
   metal_oscuro: [0.149, 0.161, 0.212],
-  /** Derivado del metal oscuro: el hueco de una ventana vista desde afuera. */
-  hueco: [0.11, 0.12, 0.16],
+  /**
+   * El fondo de un hueco: el interior de un local sin luz, visto desde la
+   * vereda.
+   *
+   * Estaba en 0,11 y era practicamente negro. Puesto en la calle, cada local
+   * se leia como un agujero recortado y la cuadra parecia rota. Un interior
+   * en penumbra NO es negro: le entra luz de la calle. A 0,19 sigue siendo
+   * lo mas oscuro de la fachada y deja de parecer un error.
+   */
+  hueco: [0.19, 0.185, 0.2],
+
+  /**
+   * El vidrio de una vidriera o una ventana.
+   *
+   * De dia un vidrio no es negro ni es un espejo: refleja el cielo, asi que
+   * es un gris azulado medio-oscuro, mas CLARO que el hueco que tiene
+   * detras. Esa diferencia entre el vidrio y el hueco es lo que hace que se
+   * lea como vidrio y no como un agujero.
+   */
+  vidrio: [0.27, 0.3, 0.36],
   /** medido #515a7b. Postes, columnas y luminarias. */
   poste: [0.318, 0.353, 0.482]
 };

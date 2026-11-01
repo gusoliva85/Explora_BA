@@ -32,11 +32,15 @@ export const mission001 = {
    * Esquinas del recorrido. El primer punto es el spawn.
    * Cada tramo es recto y alineado a un eje (asi lo exige el generador).
    */
+  /*
+   * `calle` es el nombre que va en la chapa de la esquina (12R.7). Es dato
+   * de la mision y no del generador: el nombre de una calle no se deduce.
+   */
   route: [
-    { x: 0, z: 0, label: 'Independencia al 3250' },
-    { x: 0, z: -110, label: 'Esquina de Carlos Calvo' },
-    { x: -90, z: -110, label: 'Av. Boedo al 900' },
-    { x: -90, z: -230, label: 'Comisaria de Carlos Calvo' }
+    { x: 0, z: 0, label: 'Independencia al 3250', calle: 'INDEPENDENCIA' },
+    { x: 0, z: -110, label: 'Esquina de Carlos Calvo', calle: 'CARLOS CALVO' },
+    { x: -90, z: -110, label: 'Av. Boedo al 900', calle: 'BOEDO' },
+    { x: -90, z: -230, label: 'Comisaria de Carlos Calvo', calle: 'CARLOS CALVO' }
   ],
 
   /**
