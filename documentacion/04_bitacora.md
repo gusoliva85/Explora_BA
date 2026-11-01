@@ -15,6 +15,86 @@ no, que es justamente para lo que sirve un roadmap. El contenido de abajo es
 el documento tal como estaba, sin tocar.
 
 ---
+## 12R.3 bis — Lo que encontró Gus probándolo en el celular
+
+Tres cosas, y una era grave. Vale la pena anotar que las tres se vieron
+jugando y ninguna había salido en mis capturas: yo había mirado el tramo
+recto y desde el punto de aparición.
+
+### 1. Una calle de doble mano SÍ lleva línea de eje
+
+Saqué toda la pintura de la calzada para que dejara de parecer una avenida, y
+me llevé puesta la que sí corresponde. Lo que sobraba eran las **dos líneas de
+borde**, que son de avenida; el eje discontinuo es de cualquier calle de doble
+mano. Volvió, y además ahora **se interrumpe en la bocacalle**, como en la
+calle de verdad.
+
+### 2. La bocacalle estaba rota, y la rompí yo al mejorar el cordón
+
+La esquina era una sola plancha de vereda de 16 x 16 m centrada en el cruce.
+O sea que **la bocacalle entera era vereda**: el asfalto desaparecía y los
+cordones de las dos calles se cruzaban uno encima del otro.
+
+Eso ya era así antes de 12R.3. Lo que pasó es que con el cordón viejo —chato y
+del mismo gris que la vereda— no se notaba, y con el cordón nuevo —amarillo y
+con volumen— el cruce se volvió un dibujo sin sentido. **Una mejora puede
+volver visible un error viejo**, y eso cuenta como haberlo causado.
+
+Ahora la esquina son **cuatro ochavas de 3 x 3** en las diagonales, cada una
+con sus dos cordones en L, y el centro del cruce es calzada. Y las veredas de
+las dos calles **se cortan media calzada antes** del cruce, o volverían a
+pasarle por encima.
+
+### 3. Las manchas del piso eran los remiendos, mal hechos
+
+Eran rectángulos de 3 x 6 m con demasiado contraste: se leían como manchas
+pegadas encima y no como una reparación. Ahora son tiras largas y angostas
+—que es la forma de la zanja que abren— y el tono está mucho más cerca del
+asfalto.
+
+### Y un efecto secundario que casi se me pasa
+
+Al cambiar cuántos remiendos se dibujan cambió **cuántos números al azar
+consume la calzada**, y como todo el mundo sale de un único generador con
+semilla, eso corrió la secuencia entera: se movieron props, vehículos y
+**siete cajas de colisión**, por un retoque de pintura.
+
+Se arregla de raíz: la calzada ahora tiene **su propio generador**, derivado
+de la semilla de la misión y del número de tramo. Lo visual ya no puede mover
+el juego.
+
+Pero eso solo no alcanzaba, y lo demostró la prueba de punta a punta: al
+dejar de consumir del generador compartido, la secuencia se corrió igual —en
+la otra dirección— y el mapa se reacomodó. **Dos autos quedaron tapando la
+calle y el recorrido automático se trabó**, dando vueltas sin poder llegar al
+primer control.
+
+Así que además hay una **reserva de aleatoriedad**: el generador del mundo
+consume, en el punto donde antes lo hacía la calzada, exactamente las mismas
+tiradas que consumía. No se usan para nada y tienen que estar: mantienen la
+secuencia donde el mapa está probado. Se van cuando el generador se rehaga en
+12R.10 y cada familia de objetos tenga su propia semilla.
+
+Con eso el mapa vuelve a ser idéntico: 105 cajas de colisión y 90 props, los
+mismos de siempre.
+
+> Vale la pena quedarse con esto: en un mundo con semilla, **cambiar cuántos
+> números al azar consume un paso visual es cambiar el mapa**. No se ve en
+> ninguna captura y lo encuentra una prueba que camina el recorrido entero.
+
+### Las llamadas de dibujo, medidas en los dos lados
+
+| Dónde | Antes | Después |
+|---|---|---|
+| Punto de aparición | 229 | 231 |
+| La bocacalle | 292 | **277** |
+
+Y de paso quedó claro que el techo de 238 que figuraba en el roadmap era el
+número **del punto de aparición**, no el peor caso del juego. El peor caso es
+la bocacalle, y ya estaba por encima antes de esta fase.
+
+---
+
 ## 12R.3 — El suelo
 
 ### No parecía una avenida por el ancho, parecía por la pintura

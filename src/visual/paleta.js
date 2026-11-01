@@ -112,8 +112,14 @@ export const CALLE = {
    *    no se nota; en diez metros de calzada, si.
    */
   asfalto: [0.31, 0.3, 0.295],
-  /** Derivado del asfalto: el parche remendado, mas oscuro y mas mate. */
-  asfalto_remiendo: [0.25, 0.243, 0.238],
+  /**
+   * Derivado del asfalto: el parche remendado.
+   *
+   * Apenas mas oscuro, y es a proposito. Con mas contraste deja de leerse
+   * como un remiendo y pasa a leerse como una mancha pegada encima: fue lo
+   * primero que se vio mal al probar 12R.3 en el celular.
+   */
+  asfalto_remiendo: [0.288, 0.279, 0.274],
   /** medido #e8e1db. Pintura vial: blanco sucio, nunca blanco puro. */
   raya: [0.91, 0.882, 0.859],
   /** medido #c19b40. El amarillo del cordon, gastado. */

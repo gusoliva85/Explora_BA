@@ -253,7 +253,12 @@ export class WorldBuilder {
       // esta cola, al arrancar se ve el borde del mapa.
       if (i === 0) a = extenderHaciaAtras(a, b, PROLOGO);
 
-      this.#buildStreetSegment(a, b, cfg, rng, i);
+      /*
+       * Si cada punta del tramo da a una bocacalle. Los extremos del
+       * recorrido no lo son: ahi la vereda sigue derecho hasta el borde.
+       */
+      const esquinas = { a: i > 0, b: i + 1 < mission.route.length - 1 };
+      this.#buildStreetSegment(a, b, cfg, rng, i, esquinas);
     }
 
     this.#buildEsquinas(mission, rng);
@@ -285,7 +290,7 @@ export class WorldBuilder {
   }
 
   /** Una cuadra: calzada, veredas, cordones, pintura, edificios y props. */
-  #buildStreetSegment(a, b, cfg, rng, index) {
+  #buildStreetSegment(a, b, cfg, rng, index, esquinas = { a: false, b: false }, semilla = 0) {
     const alongX = Math.abs(b.x - a.x) > Math.abs(b.z - a.z);
     const length = alongX ? Math.abs(b.x - a.x) : Math.abs(b.z - a.z);
     const cx = (a.x + b.x) / 2;
@@ -298,13 +303,55 @@ export class WorldBuilder {
     const size = (largo, ancho) => (alongX ? { x: largo, z: ancho } : { x: ancho, z: largo });
 
     // --- El suelo: lo arma src/visual/kit/calle.js (12R.3) -----------------
-    const suelo = { cx, cz, alongX, length, index, rng };
+    const suelo = { cx, cz, alongX, length, index, semilla };
+
+    /*
+     * Reserva de aleatoriedad del asfalto. No se usa para nada, y tiene que
+     * estar.
+     *
+     * Todo el mundo sale de un unico generador con semilla, asi que el lugar
+     * donde cae cada auto depende de cuantos numeros consumieron los pasos
+     * anteriores. Cuando la calzada paso a tener su propio generador (12R.3),
+     * dejo de consumir de este, la secuencia se corrio y el mapa se
+     * reacomodo entero: dos autos quedaron tapando la calle y el recorrido
+     * automatico se trabo.
+     *
+     * Estas tiradas mantienen la secuencia donde estaba, que es donde el mapa
+     * esta probado. Se van cuando el generador se rehaga (12R.10) y cada
+     * familia de objetos tenga su propia semilla.
+     */
+    const sorteosDelAsfaltoViejo = Math.floor(length / 22) * 4;
+    for (let i = 0; i < sorteosDelAsfaltoViejo; i++) rng();
+
+    // La calzada va entera: la bocacalle TIENE que ser asfalto.
     calle.calzada(this, suelo);
 
+    /*
+     * La vereda y el cordon, en cambio, se cortan antes de cada bocacalle.
+     * Sin esto la vereda de una calle le pasa por encima a la de la otra en
+     * el cruce, que es como se veia hasta 12R.3.
+     */
+    const rA = esquinas.a ? calle.RECORTE_EN_ESQUINA : 0;
+    const rB = esquinas.b ? calle.RECORTE_EN_ESQUINA : 0;
+    const ejeA = alongX ? a.x : a.z;
+    const ejeB = alongX ? b.x : b.z;
+    const lo = Math.min(ejeA, ejeB) + (ejeA < ejeB ? rA : rB);
+    const hi = Math.max(ejeA, ejeB) - (ejeA < ejeB ? rB : rA);
+    const acera = {
+      ...suelo,
+      length: hi - lo,
+      cx: alongX ? (lo + hi) / 2 : cx,
+      cz: alongX ? cz : (lo + hi) / 2
+    };
+
+    // El eje tambien se corta en la bocacalle: ninguna calle tiene la linea
+    // del medio pintada por encima del cruce.
+    calle.eje(this, acera);
+
     for (const side of [-1, 1]) {
-      calle.cordon(this, { ...suelo, side });
-      calle.vereda(this, { ...suelo, side });
-      calle.rejillas(this, { ...suelo, side });
+      calle.cordon(this, { ...acera, side });
+      calle.vereda(this, { ...acera, side });
+      calle.rejillas(this, { ...acera, side });
 
       this.#buildFacadeRow(a, b, alongX, length, side, full, cfg, rng, index);
       this.#buildVereda(a, b, alongX, length, side, road, walk, rng, index);

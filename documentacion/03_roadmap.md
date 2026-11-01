@@ -82,7 +82,7 @@ hay ahora. No se corrige, se reemplaza. Son unas 4.400 líneas.
 - [x] **12R.0 — Banco visual y paleta.** 58 colores medidos de la referencia, 16 pruebas, y el banco para compararlos contra el original
 - [x] **12R.1 — Cámara y encuadre.** 48° y 15 m con la mira 3 m adelante: Gus pasó de 29 a 43 px. Y la cámara ahora esquiva lo que la tapa aunque sea bajo
 - [x] **12R.2 — Sol, cielo y atmósfera.** Tres luces con temperaturas distintas. Y apareció el error gordo: **el sol estaba a 17° creyendo que estaba a 73**, por eso la calle estaba siempre en sombra
-- [x] **12R.3 — El suelo.** Sin la pintura de avenida, cordón con volumen y vereda con juntas. Y la paleta medida necesitó dos correcciones al salir del banco
+- [x] **12R.3 — El suelo.** Cordón con volumen, vereda con juntas, eje de doble mano y la bocacalle rehecha con cuatro ochavas. La paleta medida necesitó dos correcciones al salir del banco
 - [ ] **12R.4 — Fachadas.** Ventanas, balcones, persianas, marquesinas, de 2 a 6 plantas. *La tarea más grande* ⬅️ *la que sigue*
 - [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios
 - [ ] **12R.6 — Árboles.** Tronco con ramas y copa de volúmenes irregulares
@@ -304,7 +304,10 @@ correctas aunque las respuestas no sirvan.
 5. **`npm test` y `npm run test:e2e` en verde.** Hoy son 459 y 74. De las
    unitarias, 114 son del arte viejo y se van a reescribir junto con lo que
    verifican; el resto es lógica y tiene que pasar siempre.
-6. **Llamadas de dibujo con `F1`, antes y después.** Techo: 238; hoy van 229.
+6. **Llamadas de dibujo con `F1`, antes y después.** 231 en el punto de
+   aparición y 277 en la bocacalle, que es el peor caso. El "techo de 238"
+   que figuraba acá era el número del punto de aparición, no el máximo: el
+   presupuesto de verdad se fija en la Fase 13, midiendo el peor caso.
 7. **Se sube y se prueba en el celular.** Nada se informa como terminado sin eso.
 8. **Un commit por tarea**, diciendo qué se reemplazó y si se movió alguna caja
    de colisión.
