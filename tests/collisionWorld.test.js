@@ -82,4 +82,33 @@ describe('raycast y linea de vision', () => {
     const box = new Box2D(-1, -1, 1, 1);
     expect(rayBox2D(5, 0, 0, 10, box)).toBeNull();
   });
+
+  describe('el rayo que sube, que es el que usa la camara', () => {
+    /** Un colectivo de 3 m parado a mitad de camino. */
+    const conColectivo = () => {
+      const w = new CollisionWorld(8);
+      w.add(Box2D.fromCenter(0, 5, 3, 10, 'colectivo', 3));
+      return w;
+    };
+
+    it('tapa cuando el rayo todavia viene bajo', () => {
+      // Del pecho de Gus hacia una camara a 12 m: a mitad de camino el rayo
+      // va por los 6,7 m... pero el colectivo empieza antes, donde el rayo
+      // esta por debajo de sus 3 m.
+      const hit = conColectivo().raycast(0, 0, 0, 20, 1.2, 12.3);
+      expect(hit).not.toBeNull();
+      expect(hit.box.tag).toBe('colectivo');
+    });
+
+    it('no tapa cuando el rayo ya pasa por encima', () => {
+      // El mismo colectivo, pero con el rayo saliendo ya alto.
+      expect(conColectivo().raycast(0, 0, 0, 20, 12, 12.3)).toBeNull();
+    });
+
+    it('con una sola altura se comporta como siempre', () => {
+      const w = conColectivo();
+      expect(w.raycast(0, 0, 0, 20, 12.3)).toBeNull();
+      expect(w.raycast(0, 0, 0, 20, 1)).not.toBeNull();
+    });
+  });
 });

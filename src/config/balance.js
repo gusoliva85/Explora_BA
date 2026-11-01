@@ -48,12 +48,24 @@ export const PLAYER = {
 export const CAMERA = {
   /**
    * Inclinacion. 90 seria cenital pura, 0 seria a la altura del hombro.
-   * Decision D-02, cerrada en 57 grados sobre los mockups: es el angulo en
-   * el que Gus se lee como personaje y las persianas y carteles se ven.
+   *
+   * Estuvo en 57 grados, elegido sobre los mockups (D-02). Lo baja D-23,
+   * porque medido en el juego Gus quedaba en 29 pixeles de alto: a eso no
+   * se le ve ni la ropa ni el arma, y todo el trabajo de modelarlo se tira.
+   *
+   * 48 grados lo deja en 54 px, casi el doble, y las fachadas entran en el
+   * encuadre, que es donde vive la identidad porteña.
+   *
+   * ⚠️ **Lo contraintuitivo, y esta medido:** bajar el angulo NO hace ver
+   * menos calle por delante, hace ver mas (el borde de arriba de la pantalla
+   * se acerca al horizonte): de 40 m pasa a 59 m. Lo que de verdad se paga
+   * al acercarse es el ANCHO: de 13,8 m de calle visible se baja a 10,3 m,
+   * o sea que las veredas de los costados se ven menos. Las cuentas estan en
+   * `src/player/encuadre.js` y las verifican pruebas.
    */
-  pitchDegrees: 57,
-  pitchMin: 40,
-  pitchMax: 78,
+  pitchDegrees: 48,
+  pitchMin: 36,
+  pitchMax: 70,
 
   /**
    * Giro de la camara respecto del eje de la calle, en grados.
@@ -81,20 +93,32 @@ export const CAMERA = {
   /**
    * Distancia del pivote a la camara.
    *
-   * Es mucho mas de lo que parece necesario, y hay un motivo. El mockup
-   * elegido es una proyeccion casi ortografica: muestra 14 m de ancho de
-   * calle Y unos 50 m de profundidad al mismo tiempo. Una camara en
-   * perspectiva pegada al personaje no puede hacer las dos cosas: a 9,5 m
-   * con 57 grados de inclinacion solo se ve un parche de asfalto y los
-   * edificios quedan fuera del encuadre por arriba.
+   * Estuvo en 20 m para imitar la proyeccion casi ortografica del mockup,
+   * que mostraba el ancho de la calle y cincuenta metros de profundidad al
+   * mismo tiempo. Funcionaba para eso y convertia a Gus en un icono.
    *
-   * La forma de acercarse a la vista del mockup con una camara de verdad es
-   * alejarla y cerrar el campo, como un teleobjetivo. A 22 m y 36 grados la
-   * perspectiva casi no deforma y entra la cuadra entera.
+   * A 15 m, con 48 grados y la mira corrida (D-23), el personaje se lee y
+   * la cuadra sigue entrando. El tope de 26 deja mirar la cuadra entera
+   * cuando hace falta; el piso de 10 evita que la camara se meta adentro
+   * de Gus al chocar contra una fachada.
    */
-  distance: 20,
-  distanceMin: 13,
-  distanceMax: 32,
+  distance: 15,
+  distanceMin: 10,
+  distanceMax: 26,
+
+  /**
+   * Cuantos metros POR DELANTE del jugador mira la camara, decision D-23.
+   *
+   * Es la pieza que permite acercarse sin perder lo que viene. Con la mira
+   * clavada sobre Gus, acercar la camara se lleva puesta la calle de
+   * adelante; corriendo el punto de interes, Gus baja en el encuadre y la
+   * calle que viene sube, sin tocar el angulo.
+   *
+   * Tres metros es poco en el mundo y mucho en pantalla: son unos 70
+   * pixeles de un telefono. Mas que eso y Gus empieza a quedar pegado al
+   * borde de abajo, que es justo donde esta el pulgar.
+   */
+  lookAhead: 3,
   /**
    * Por encima de esta altura la camara vuela sobre los techos y ya nada
    * puede taparla, asi que se saltea la prueba de colision. Sin esto, la

@@ -15,6 +15,92 @@ no, que es justamente para lo que sirve un roadmap. El contenido de abajo es
 el documento tal como estaba, sin tocar.
 
 ---
+## 12R.1 — Cámara y encuadre
+
+### Los números del roadmap estaban mal, y eran míos
+
+El plan decía "hoy Gus mide 40 px y se ven 16 m de calle". Los dos números
+salían de la tabla de mockups del documento 02, que comparaba tres **dibujos**
+hechos con una cámara a 9,5 m. La del juego está a 20. Medido en el juego de
+verdad:
+
+| | Lo que decía el plan | Lo que mide el juego |
+|---|---|---|
+| Alto de Gus | 40 px | **29 px** |
+| Calle por delante | 16 m | **34 m** |
+
+Y con eso se cae el razonamiento entero del plan, que era "bajar el ángulo
+cuesta calle por delante". **Es al revés:** al bajar el ángulo, el borde de
+arriba de la pantalla se acerca al horizonte y se ve *más* lejos. El piso de
+16 m que iba a ser la restricción difícil se cumple solo, con margen.
+
+### Lo que de verdad limita es el ancho
+
+El costo de acercar la cámara no es la profundidad: es el **ancho**. La calzada
+mide 10 m entre cordones, y con un campo horizontal de 38° hay que estar a
+14,5 m como mínimo para que entre entera. Por debajo de eso el juego se vuelve
+un pasillo.
+
+Y no se puede comprar con el campo de visión: abrirlo deja ver más ancho pero
+achica a Gus en la misma proporción. Se probó —46° a 12 m da exactamente los
+mismos 43 px que 38° a 15 m— y es así por geometría, no por casualidad.
+
+**Conclusión honesta: el techo de esta tarea es un 50 %, no el doble.** Gus
+pasa de 29 a 43 px. El salto grande no lo va a dar la cámara, lo va a dar el
+modelo en 12R.11.
+
+### Lo elegido
+
+| | Antes | Ahora |
+|---|---|---|
+| Inclinación | 57° | **48°** |
+| Distancia | 20 m | **15 m** |
+| Mira corrida hacia adelante | — | **3 m** |
+| Alto de Gus | 29 px | **43 px** |
+| Calle por delante | 34 m | **47 m** |
+| Ancho visible | 13,8 m | 10,3 m |
+| Dónde queda Gus en pantalla | 51 % | 63 % |
+
+Correr la mira hacia adelante va en la dirección a la que mira la **cámara**, no
+a la que mira Gus. Si siguiera a Gus, girarse en el lugar barrería la escena
+entera y marearía.
+
+### La cuenta tenía un error del 25 %, y lo encontró el motor
+
+La primera versión de `encuadre.js` calculaba el tamaño de Gus con la
+inclinación de la cámara. Está mal: el ángulo que importa es el que hay **hasta
+el objeto**, y con la mira corrida Gus queda en la mitad de abajo de la
+pantalla, o sea que se lo mira más en picada que al centro. Daba 54 px donde el
+motor mide 43.
+
+Se detectó comparando la cuenta contra `worldToScreen` del propio motor.
+Corregido, la cuenta cae a menos del 3 % del valor real, y por eso se puede
+confiar en ella para elegir un ángulo sin tener que abrir el juego.
+
+### Un colectivo tapaba a Gus, y el rayo de la cámara no se enteraba
+
+La cámara tira un rayo para ver si algo se interpone, y descartaba **todas** las
+cajas más bajas que la cámara. Con la cámara a 20 m eso estaba bien: sólo los
+edificios podían taparla. A 12,3 m dejó de estarlo, y un colectivo de 3 m
+estacionado entre Gus y la cámara no contaba como obstáculo.
+
+Ahora el rayo tiene altura en los dos extremos: sale del pecho de Gus, a 1,2 m,
+y llega a la cámara. Cada caja tapa o no según lo alta que sea **donde el rayo
+la cruza**. Hay tres pruebas nuevas que lo fijan.
+
+Queda un caso que esto no arregla y que no tiene arreglo por acá: si Gus está
+parado pegado al colectivo, acercar la cámara no despeja nada, porque el bulto
+está al lado del personaje y no entre medio.
+
+### El anillo ámbar se queda, por ahora
+
+Con Gus más grande se nota más, pero todavía hace falta: el asfalto del juego
+sigue siendo el viejo, que es oscuro. La paleta nueva lo aclara a 0,335 y ahí
+Gus se despega solo. **La decisión se corre a 12R.3**, cuando el asfalto nuevo
+esté puesto y se pueda mirar en vez de suponer.
+
+---
+
 ## Apéndice — El roadmap tal como estaba hasta el 31 de octubre de 2026
 
 **Proyecto:** Explorar BA — supervivencia zombi en Buenos Aires para navegador móvil

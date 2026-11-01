@@ -8,6 +8,7 @@ import { CollisionWorld } from './physics/collisionWorld.js';
 import { InputManager } from './input/inputManager.js';
 import { PlayerController } from './player/playerController.js';
 import { CameraController } from './player/cameraController.js';
+import { medirEncuadre } from './player/encuadre.js';
 import { WorldBuilder } from './world/worldBuilder.js';
 import { MissionManager } from './missions/missionManager.js';
 import { Hud } from './ui/hud.js';
@@ -1068,6 +1069,24 @@ app.on('update', (rawDt) => {
     `${arma.equipada} ${arma.estado} ${arma.tipoMunicion ? `${arma.enCargador}/${arma.enReserva}` : ''}`
   );
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
+
+  /*
+   * Las dos medidas que deciden si la camara sirve (D-23). Van en el
+   * diagnostico y no en un comentario porque se miran EN EL TELEFONO, que es
+   * donde la pantalla es angosta y donde la decision se toma.
+   */
+  const enc = medirEncuadre(
+    { ...CAMERA, pitchDegrees: camera.pitch, distance: camera.distance },
+    app.graphicsDevice.width,
+    app.graphicsDevice.height,
+    UNITS.playerHeight
+  );
+  debug.set(
+    'encuadre',
+    `Gus ${enc.pixelesGus.toFixed(0)} px   calle adelante ` +
+      `${enc.metrosAdelante === Infinity ? 'horizonte' : `${enc.metrosAdelante.toFixed(0)} m`}`
+  );
+
   debug.set('equipo', device.describe());
 
   // Conos de vision y estado de cada zombi. Solo con el diagnostico

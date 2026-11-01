@@ -208,12 +208,22 @@ export class CollisionWorld {
   /**
    * Lanza un rayo de (ax,az) a (bx,bz).
    *
-   * @param {number} [alturaMinima] ignora las cajas mas bajas que esto. La
-   *   camara lo usa para que un auto o un cordon no le tapen la vista
-   *   cuando esta volando por encima de los techos.
+   * El rayo es 2D, pero tiene una altura: una caja solo tapa si es mas alta
+   * que el rayo donde lo cruza. Sin eso, el cordon le taparia la vista a una
+   * camara que vuela a doce metros.
+   *
+   * La altura puede ir cambiando a lo largo del rayo, y para la camara es
+   * imprescindible: el rayo sale del pecho de Gus, a 1,2 m, y llega a la
+   * camara, a 12,3 m. Con una sola altura hay que elegir, y las dos
+   * opciones estan mal: con la de la camara, un colectivo de 3 m no tapa
+   * nada y se come a Gus en pantalla; con la de Gus, cualquier auto tira la
+   * camara encima del personaje.
+   *
+   * @param {number} [alturaDesde] altura del rayo en el origen
+   * @param {number} [alturaHasta] altura en el destino; por defecto, la misma
    * @returns {{x:number, z:number, t:number, box:Box2D}|null} impacto mas cercano, o null.
    */
-  raycast(ax, az, bx, bz, alturaMinima = 0) {
+  raycast(ax, az, bx, bz, alturaDesde = 0, alturaHasta = alturaDesde) {
     const dx = bx - ax;
     const dz = bz - az;
     const len = Math.hypot(dx, dz);
@@ -232,11 +242,16 @@ export class CollisionWorld {
       if (cell) for (const b of cell) candidates.add(b);
     }
 
+    const plano = alturaDesde === alturaHasta;
     let best = null;
     for (const b of candidates) {
-      if (b.height < alturaMinima) continue;
+      // Con altura constante se puede descartar antes de cruzar la caja,
+      // que es lo barato y el caso mas comun.
+      if (plano && b.height < alturaDesde) continue;
       const hit = rayBox2D(ax, az, dx, dz, b);
-      if (hit !== null && (best === null || hit < best.t)) {
+      if (hit === null) continue;
+      if (!plano && b.height < alturaDesde + (alturaHasta - alturaDesde) * hit) continue;
+      if (best === null || hit < best.t) {
         best = { t: hit, box: b, x: ax + dx * hit, z: az + dz * hit };
       }
     }

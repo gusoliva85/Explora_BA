@@ -5,11 +5,11 @@ import { CAMERA } from '../config/balance.js';
  * ===========================================================================
  * CAMARA
  * ===========================================================================
- * Tercera persona a 57 grados, con la calle cruzando la pantalla en
- * diagonal. Es la variante 3 de los mockups, elegida como definitiva
- * (decision D-02).
+ * Tercera persona a 48 grados, con la calle cruzando la pantalla en
+ * diagonal. La diagonal viene de D-02; el angulo y la distancia los fija
+ * D-23, que acerco la camara porque Gus se leia como un icono.
  *
- * Dos cosas la distinguen de una camara orbital comun:
+ * Tres cosas la distinguen de una camara orbital comun:
  *
  * 1. **Se alinea sola a la calle.** No apunta hacia el objetivo ni hacia
  *    donde mira el jugador: apunta al eje del tramo que esta pisando, mas
@@ -21,6 +21,10 @@ import { CAMERA } from '../config/balance.js';
  *    regresa suavemente a la diagonal. Asi se puede mirar a los costados
  *    sin perder nunca la composicion, y sin obligar al pulgar a
  *    reorientarla todo el tiempo.
+ *
+ * 3. **No mira a Gus: mira unos metros por delante de Gus.** Es lo que deja
+ *    acercar la camara sin perder la calle que viene. Ver `CAMERA.lookAhead`
+ *    y las cuentas de `encuadre.js`.
  *
  * Incluye colision de camara: si hay un edificio entre el jugador y la
  * camara, la camara se acerca hasta despejar la vista.
@@ -132,10 +136,24 @@ export class CameraController {
       this.yaw = normalizarAngulo(this.yaw + diferenciaAngular(this.yaw, this.targetYaw) * k);
     }
 
-    // Punto de interes: a la altura del pecho, no de los pies.
-    const tx = targetPos.x;
+    /*
+     * Punto de interes: a la altura del pecho, no de los pies, y unos metros
+     * POR DELANTE del jugador (D-23).
+     *
+     * El adelanto va en la direccion a la que mira la camara, no a la que
+     * mira Gus: si siguiera a Gus, girarse en el lugar haria barrer la
+     * escena entera y marearia. Asi, Gus baja en el encuadre y la calle que
+     * viene sube, que es lo que permite acercar la camara sin perder lo que
+     * se ve venir.
+     *
+     * El yaw apunta DESDE el foco HACIA la camara, asi que adelante es el
+     * sentido contrario.
+     */
+    const adelanto = CAMERA.lookAhead ?? 0;
+    const yawRadMira = this.yaw * pc.math.DEG_TO_RAD;
+    const tx = targetPos.x - Math.sin(yawRadMira) * adelanto;
     const ty = targetPos.y + CAMERA.targetHeight;
-    const tz = targetPos.z;
+    const tz = targetPos.z - Math.cos(yawRadMira) * adelanto;
 
     if (!this.initialized) {
       this.focus.set(tx, ty, tz);
@@ -159,17 +177,21 @@ export class CameraController {
     /*
      * Colision de camara.
      *
-     * La prueba es en el plano XZ, pero la camara vuela a casi veinte
-     * metros: si no se tuviera en cuenta la altura, cualquier auto o
-     * cordon que cruce el rayo la tiraria encima del jugador aunque pase
-     * ocho metros por debajo. Por eso solo cuentan las cajas mas altas que
-     * la propia camara, que son las unicas que de verdad pueden taparla.
+     * El rayo va del foco a la camara y SUBE: sale a la altura del pecho y
+     * llega a doce metros. Cada caja tapa o no segun lo alta que sea donde
+     * el rayo la cruza.
+     *
+     * Antes se usaba una sola altura, la de la camara, y con la camara a
+     * veinte metros alcanzaba. Al bajarla (D-23) dejo de alcanzar: un
+     * colectivo de tres metros estacionado entre Gus y la camara no contaba
+     * como obstaculo y tapaba al personaje entero.
      */
     const alturaCamara = this.focus.y + offY;
     let dist = this.distance;
     const hit = this.world.raycast(
       this.focus.x, this.focus.z,
       this.focus.x + offX, this.focus.z + offZ,
+      this.focus.y,
       alturaCamara
     );
     if (hit) {

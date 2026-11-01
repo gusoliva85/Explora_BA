@@ -11,23 +11,28 @@
 
 ## ▶️ La tarea que sigue
 
-### **12R.1 — Cámara y encuadre**
+### **12R.2 — Sol, cielo y atmósfera**
 
-Hoy Gus mide 40 píxeles en pantalla: es un ícono visto casi desde arriba. Hay
-que acercarlo **sin perder calle por delante**, porque el zombi te detecta a
-16 m y si ves menos que eso te detecta antes de que vos lo veas.
+El banco visual dejó el problema a la vista: **todo el lado del juego se ve más
+rosado que la referencia**. No es la paleta. Hoy ilumina un sol cálido y un
+rebote cálido, y nada aporta el frío del cielo sobre las caras que miran a la
+cámara; en la referencia esas caras reciben las dos cosas a la vez.
 
-| | Hoy | Objetivo |
-|---|---|---|
-| Alto de Gus en pantalla | ~40 px | el máximo posible |
-| Calle visible por delante | ~16 m | **nunca menos de 16 m** |
+Y las capturas del juego muestran lo otro: **la calle está casi toda en
+sombra**, y lo que no está en sombra se lee plano.
 
-**Cómo:** correr el punto de mira 3-4 m hacia adelante (hoy está clavado sobre
-Gus), y de ahí bajar a ~45° y ~13 m. Agregar las dos lecturas al diagnóstico
-`F1`, o esto se discute a ojo y no se cierra nunca.
+**Qué hay que lograr:**
 
-**No puede romperse:** el apuntado por arrastre, la brújula, y la distancia a
-la que te das cuenta de que viene un zombi.
+- Sol a ~70-73° con el color cálido de la referencia (D-25). La elevación no se
+  toca: está medida en D-16 y un sol bajo tapa la calzada entera.
+- Luz de cielo fría de verdad, que es la que separa el frente del costado.
+- Cielo con horizonte en vez de un color plano.
+- Una fachada tiene que mostrar tres valores distintos —frente, costado y hueco
+  de balcón— sin tocarle el color.
+- Revisar por qué la sombra de Gus se estira como se estira.
+
+**Dónde:** nace `src/visual/escena.js`, y el banco pasa a importar la luz de
+ahí en vez de tenerla suelta.
 
 ---
 
@@ -37,7 +42,7 @@ la que te das cuenta de que viene un zombi.
 |---|---|---|
 | ✅ | 0 a 9 — El juego | **Terminadas.** Se juega de principio a fin |
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
-| 🔄 | **12R — La capa visual nueva** | **1 de 17 tareas.** Es lo que estamos haciendo |
+| 🔄 | **12R — La capa visual nueva** | **2 de 17 tareas.** Es lo que estamos haciendo |
 | ⬜ | 10 — Interfaz completa | Pendiente, después de 12R |
 | ⬜ | 11 — Audio | Pendiente, después de 12R |
 | ⬜ | 13 — Optimización | Pendiente |
@@ -66,8 +71,8 @@ hay ahora. No se corrige, se reemplaza. Son unas 4.400 líneas.
 ### Las 17 tareas
 
 - [x] **12R.0 — Banco visual y paleta.** 58 colores medidos de la referencia, 16 pruebas, y el banco para compararlos contra el original
-- [ ] **12R.1 — Cámara y encuadre** ⬅️ *la que sigue*
-- [ ] **12R.2 — Sol, cielo y atmósfera.** Sol alto con color cálido, y el frío del cielo que hoy falta
+- [x] **12R.1 — Cámara y encuadre.** 48° y 15 m con la mira 3 m adelante: Gus pasó de 29 a 43 px. Y la cámara ahora esquiva lo que la tapa aunque sea bajo
+- [ ] **12R.2 — Sol, cielo y atmósfera.** Sol alto con color cálido, y el frío del cielo que hoy falta ⬅️ *la que sigue*
 - [ ] **12R.3 — El suelo.** Calzada de barrio, cordón con volumen, vereda con junta, cruce peatonal
 - [ ] **12R.4 — Fachadas.** Ventanas, balcones, persianas, marquesinas, de 2 a 6 plantas. *La tarea más grande*
 - [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios
@@ -303,8 +308,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 
 | Decisión | Se cierra en | Cómo |
 |---|---|---|
-| Inclinación y distancia de cámara (D-23) | 12R.1 | Midiendo alto de Gus en píxeles y metros de calle por delante, que no pueden bajar de 16 |
-| Si el anillo ámbar del piso se queda o se va (D-24) | 12R.1 | Mirando a Gus en el celular con la cámara nueva |
+| Si el anillo ámbar del piso se queda o se va (D-24) | 12R.3 | Hoy todavía hace falta, pero porque el asfalto sigue siendo el viejo y oscuro. Se decide cuando esté el asfalto nuevo, que es más claro |
 | Si Gus y los zombis llegan a ser `.glb` riggeado (D-22) | 12R.11 y 12R.12 | Encontrando un modelo CC0 compatible, o consiguiendo el archivo |
 | Nivel de detalle que soporta el teléfono | 12R.16 | Midiendo después de cada bloque |
 
