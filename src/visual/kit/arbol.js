@@ -53,13 +53,13 @@ export const MEDIDAS = {
  *   con `pos[1]` = base de la pieza, no su centro
  * @param {object} rng
  */
-export function construir(a, rng) {
+export function construir(a, rng, { sinCantero = false } = {}) {
   const fuste = rng.range(MEDIDAS.fusteMin, MEDIDAS.fusteMax);
   const radio = rng.range(MEDIDAS.copaMin, MEDIDAS.copaMax);
   const grosor = rng.range(0.3, 0.42);
   const giro = rng.range(0, 360);
 
-  cantero(a);
+  if (!sinCantero) cantero(a);
 
   // El fuste, apenas inclinado: un arbol de vereda nunca esta a plomo.
   const inclina = rng.range(-3, 3);
@@ -98,7 +98,7 @@ export function construir(a, rng) {
 }
 
 /** El cantero: el cuadrado de tierra sin baldosa, con su cordon. */
-function cantero(a) {
+export function cantero(a) {
   const l = MEDIDAS.cantero;
   a.add('box', [0, 0.01, 0], [l, 0.06, l], VERDE.oscuro, {
     acabado: ACABADO.tierra,

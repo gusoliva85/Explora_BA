@@ -26,6 +26,7 @@ import { Inventario, UsoDeObjeto, MotivoCancelacion } from './items/inventario.j
 import { alcanzadosPorExplosion } from './combat/explosion.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarEscena } from './visual/escena.js';
+import { precargar as precargarModelos } from './visual/modelos.js';
 import { HORIZONTE } from './visual/paleta.js';
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
 import { ajustes } from './core/settings.js';
@@ -204,6 +205,14 @@ const player = new PlayerController(playerEntity, collision, bus);
 const camera = new CameraController(cameraEntity, collision);
 
 // --- Mundo y mision --------------------------------------------------------
+
+/*
+ * Los modelos externos se cargan ANTES de construir el mundo, porque el
+ * generador es sincronico: pide un arbol y lo quiere en el momento. Son
+ * 120 KB en total; si alguno falla, el generador usa geometria propia y el
+ * juego arranca igual.
+ */
+await precargarModelos(app);
 
 const builder = new WorldBuilder(app, collision);
 const built = builder.build(mission001);

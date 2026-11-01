@@ -369,7 +369,6 @@ export class WorldBuilder {
 
     this.#buildVehiculos(a, b, alongX, length, road, rng, index);
     this.#buildFaroles(a, b, alongX, length, road, index);
-    this.#buildCables(a, b, alongX, length, road, index);
   }
 
   /** Plancha de vereda en cada esquina, con senda peatonal y semaforo. */
@@ -838,27 +837,6 @@ export class WorldBuilder {
       this.addProp('farol', pos, angulo, null, { collide: { w: 0.4, d: 0.4, h: 7.2 } });
       this.stats.luces++;
       lado *= -1;
-    }
-  }
-
-  /**
-   * Cables cruzando la calle (12R.7).
-   *
-   * Son lo unico que pasa por encima de la calzada, y hacen dos cosas que
-   * ninguna otra pieza hace: le ponen un techo a la cuadra y dan una
-   * referencia de profundidad, porque al caminar se pasa por debajo de uno,
-   * despues de otro.
-   */
-  #buildCables(a, b, alongX, length, road, index) {
-    const start = alongX ? Math.min(a.x, b.x) : Math.min(a.z, b.z);
-    const crossCenter = alongX ? (a.z + b.z) / 2 : (a.x + b.x) / 2;
-    const vano = road + UNITS.sidewalkWidth * 2 - 2;
-
-    for (let d = 16; d < length - 10; d += 31) {
-      const along = start + d;
-      const pos = alongX ? { x: along, z: crossCenter } : { x: crossCenter, z: along };
-      this.addProp('cables', pos, alongX ? 90 : 0, null, { args: vano });
-      void index;
     }
   }
 

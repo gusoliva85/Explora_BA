@@ -10,9 +10,6 @@ import { FACHADA, CALLE, VEHICULO, OBJETO, CARTEL, ZOMBI } from '../paleta.js';
  * `src/world/lighting.js`, que con esto se borra: era lo ultimo que quedaba
  * de la iluminacion vieja.
  *
- * ---------------------------------------------------------------------------
- * LOS CABLES SON LA PIEZA QUE FALTABA
- * ---------------------------------------------------------------------------
  * En la referencia cruzan la calle de lado a lado, y son lo unico que pasa
  * por encima de la calzada. Cuestan tres cajas cada uno y hacen dos cosas que
  * ninguna otra pieza hace: le ponen un techo a la cuadra, y dan una
@@ -36,10 +33,6 @@ export const ACABADO = {
 export const MEDIDAS = {
   farolAlto: 7.2,
   farolBrazo: 1.9,
-  /** Altura a la que cruzan los cables. Por encima de cualquier colectivo. */
-  cableAlto: 7.4,
-  /** Cuanto cuelga el cable en el medio del vano. */
-  cableFlecha: 0.55
 };
 
 /* =========================================================================
@@ -174,44 +167,6 @@ export function parada(a) {
     a.add('box', [dx, 0, 0.62], [0.09, 0.46, 0.4], FACHADA.metal_oscuro, {
       acabado: ACABADO.metal
     });
-  }
-}
-
-/* =========================================================================
-   CABLES
-   ========================================================================= */
-
-/**
- * Un cruce de cables de vereda a vereda.
- *
- * Son tres tramos rectos encadenados, no una curva: a la distancia de camara
- * la catenaria de verdad y tres rectas con la misma flecha se ven igual, y
- * tres cajas cuestan nada.
- *
- * @param {object} a el Armador
- * @param {number} luz ancho que tiene que cruzar, de cordon a cordon
- */
-export function cables(a, luz) {
-  const f = MEDIDAS.cableFlecha;
-  const h = MEDIDAS.cableAlto;
-  const tramos = [
-    { x: -luz / 3, y: h - f * 0.55, largo: luz / 3 + 0.4, inc: 14 },
-    { x: 0, y: h - f, largo: luz / 3 + 0.4, inc: 0 },
-    { x: luz / 3, y: h - f * 0.55, largo: luz / 3 + 0.4, inc: -14 }
-  ];
-  for (const [i, t] of tramos.entries()) {
-    a.add('box', [t.x, t.y, 0], [t.largo, 0.03, 0.03], FACHADA.metal_oscuro, {
-      acabado: ACABADO.mate,
-      rot: [0, 0, t.inc],
-      sombra: false
-    });
-    // Un segundo cable, apenas mas abajo: los tendidos nunca son uno.
-    a.add('box', [t.x, t.y - 0.3, 0.3], [t.largo, 0.025, 0.025], FACHADA.metal_oscuro, {
-      acabado: ACABADO.mate,
-      rot: [0, 0, t.inc],
-      sombra: false
-    });
-    void i;
   }
 }
 

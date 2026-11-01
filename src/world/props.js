@@ -2,6 +2,7 @@ import * as pc from 'playcanvas';
 import { COLORS, ACABADO } from './palette.js';
 import * as kitArbol from '../visual/kit/arbol.js';
 import * as kitMobiliario from '../visual/kit/mobiliario.js';
+import * as modelos from '../visual/modelos.js';
 
 /**
  * ===========================================================================
@@ -94,7 +95,25 @@ class Armador {
  */
 export function arbol(mats, rng) {
   const a = new Armador('Arbol', mats);
-  kitArbol.construir(a, rng);
+
+  /*
+   * El cantero va siempre: es geometria nuestra, tiene que calzar con la
+   * vereda y es muy porteño. Lo que cambia es el arbol de arriba.
+   */
+  kitArbol.cantero(a);
+
+  const cual = rng.chance(0.5) ? 'arbol-01' : 'arbol-02';
+  const alto = rng.range(5.2, 7.0);
+  const modelo = modelos.instanciar(cual, { alto });
+  if (modelo) {
+    modelo.setLocalEulerAngles(0, rng.range(0, 360), 0);
+    a.fin().addChild(modelo);
+    return a.fin();
+  }
+
+  // Sin modelo cargado, el de geometria. No es tan bueno y no deberia
+  // verse nunca, pero el juego no se queda sin arboles por una descarga.
+  kitArbol.construir(a, rng, { sinCantero: true });
   return a.fin();
 }
 
@@ -209,13 +228,6 @@ export function carteCalle(mats, rng, args = {}) {
 export function farol(mats) {
   const a = new Armador('Farol', mats);
   kitMobiliario.farol(a);
-  return a.fin();
-}
-
-/** Cables cruzando la calle. El ancho del vano llega como argumento. */
-export function cables(mats, rng, luz = 16) {
-  const a = new Armador('Cables', mats);
-  kitMobiliario.cables(a, luz);
   return a.fin();
 }
 
@@ -425,7 +437,6 @@ export function comisaria(mats) {
 /** Todos los constructores, por nombre, para colocarlos desde datos. */
 export const PROPS = {
   farol,
-  cables,
   arbol,
   contenedor,
   bolsas,
