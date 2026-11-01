@@ -15,6 +15,91 @@ no, que es justamente para lo que sirve un roadmap. El contenido de abajo es
 el documento tal como estaba, sin tocar.
 
 ---
+## 12R.2 — Sol, cielo y atmósfera
+
+### El sol estaba a 17 grados, no a 73
+
+Es el hallazgo de la tarea, y explica por qué el juego se veía mal desde la
+Fase 2B.
+
+La escena ponía el sol con `setEulerAngles(73, …)` creyendo que eso eran 73
+grados sobre el horizonte. **La cuenta está invertida: eso pone el sol a 17**,
+que es casi un atardecer. Con un sol a 17 grados una fachada de 18 m tira
+**59 m de sombra**, así que la cuadra entera estaba permanentemente en sombra.
+Ésa era la mancha oscura que cruzaba la calle en todas las capturas, y por eso
+la escena se veía sucia haga uno lo que haga con los colores.
+
+Y hay algo peor. **D-16 intentó arreglar exactamente este problema y lo
+empeoró.** Decía: "a 58 grados un edificio de 17 m proyecta casi once metros
+de sombra y la calzada mide diez, así que la cubría entera; a 73 la sombra
+baja a cinco". El razonamiento es correcto; el número no existía. Subir de 58
+a 73 **bajó** el sol de 32 a 17 grados, o sea que duplicó el problema que
+quería resolver. La medición era sobre un número imaginario.
+
+Se comprobó poniendo el sol en cuatro ángulos y mirando:
+
+| `eulerX` | Lo que se ve | Elevación real |
+|---|---|---|
+| 89 | la cuadra entera en sombra | ~1° |
+| 73 | una banda de sombra cruzando la calzada | ~17° |
+| 40 | casi despejado | ~50° |
+| **17** | **despejado, sombras cortas bajo los árboles** | **~73°** |
+
+Ahora la conversión vive sola en `src/visual/angulos.js`, con cinco pruebas.
+Estaba enterrada en el medio del armado de la escena, y por eso nadie pudo
+verla en meses.
+
+### Cómo se encontró
+
+No se encontró mirando: se encontró descartando. Primero se escondió a Gus
+—la mancha seguía—, después se apagaron las sombras del sol —la mancha
+desaparecía, así que era una sombra—, después se apagaron árboles y edificios
+por nombre —la mancha seguía, porque las mallas están agrupadas y los nombres
+ya no mandan—, y al final se movió el sol, que fue lo que lo delató.
+
+### Tres luces en vez de una
+
+El banco de 12R.0 había dejado anotado que todo se veía más rosado que la
+referencia. No era la paleta: era que había un sol cálido y un relleno parejo,
+y nada más. Una cara que mira a la cámara recibía cálido más cálido.
+
+| Luz | Color | Qué hace |
+|---|---|---|
+| Sol | cálido | dibuja, y es la única que tira sombra |
+| Cielo | frío, desde arriba y del lado opuesto | rellena y **enfría** las caras que el sol no toca |
+| Rebote | cálido, muy débil, desde abajo | la vereda devolviendo luz, para que los bajos no queden negros |
+
+Hubo que bajar bastante todas las intensidades: con el sol de verdad alto la
+calle recibe mucha más luz que antes, y el asfalto renderizaba en 0,53 de
+luminancia teniendo 0,33 de albedo. Ahora da 0,43.
+
+### El banco también estaba mal, y por lo mismo
+
+Sus muestras eran cuadrados verticales de cara a la cámara. Con el sol
+arreglado les pegaba de refilón y salían casi negras: no se comparaba el color
+del material, se comparaba una cara en penumbra. Ahora van inclinadas 40
+grados, que es lo que recibe una superficie de la calle.
+
+### El cielo no se ve, así que no se paga
+
+La tarea pedía un cielo con degradé en vez de un color plano. Se escribió —una
+cúpula con una textura de 2 x 64 generada en el navegador, sin descargar
+nada— y después se midió: **con esta cámara el cielo no se ve nunca.** El
+borde de arriba de la pantalla todavía mira 10 grados hacia abajo, y sólo
+asomaría 1,4 grados si el jugador inclina la cámara hasta el tope, donde lo
+que se vería es el color del horizonte, que es el que ya tiene el fondo.
+
+Queda escrita y apagada por defecto, para cuando haga falta. Un dibujado por
+algo invisible no se paga.
+
+> ⚠️ El primer intento tenía dos errores que conviene no repetir: la cúpula
+> tenía 260 m de radio contra un `farClip` de 230, así que quedaba entera
+> detrás del plano lejano y no se dibujaba nunca; y usaba
+> `useLighting = false`, que en PlayCanvas además de la luz apaga el emisivo
+> y la dejaba negra.
+
+---
+
 ## 12R.1 — Cámara y encuadre
 
 ### Los números del roadmap estaban mal, y eran míos

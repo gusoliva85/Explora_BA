@@ -11,28 +11,33 @@
 
 ## ▶️ La tarea que sigue
 
-### **12R.2 — Sol, cielo y atmósfera**
+### **12R.3 — El suelo**
 
-El banco visual dejó el problema a la vista: **todo el lado del juego se ve más
-rosado que la referencia**. No es la paleta. Hoy ilumina un sol cálido y un
-rebote cálido, y nada aporta el frío del cielo sobre las caras que miran a la
-cámara; en la referencia esas caras reciben las dos cosas a la vez.
+Es la primera tarea que reemplaza geometría del mundo, y la que cierra dos
+cosas que quedaron esperándola.
 
-Y las capturas del juego muestran lo otro: **la calle está casi toda en
-sombra**, y lo que no está en sombra se lee plano.
+**Qué hay que hacer:**
 
-**Qué hay que lograr:**
+- Calzada **de calle de barrio**, no de avenida: más angosta y sin la línea
+  punteada del medio.
+- **Cordón como volumen propio**, con su amarillo gastado. Hoy es una franja
+  pintada en el piso.
+- Vereda con **junta de geometría** entre baldosas, no un plano liso.
+- Cruce peatonal y rejilla de desagüe.
+- Todo con la paleta medida: el asfalto pasa del gris oscuro viejo al 0,335
+  que salió de la referencia.
 
-- Sol a ~70-73° con el color cálido de la referencia (D-25). La elevación no se
-  toca: está medida en D-16 y un sol bajo tapa la calzada entera.
-- Luz de cielo fría de verdad, que es la que separa el frente del costado.
-- Cielo con horizonte en vez de un color plano.
-- Una fachada tiene que mostrar tres valores distintos —frente, costado y hueco
-  de balcón— sin tocarle el color.
-- Revisar por qué la sombra de Gus se estira como se estira.
+**Lo que no puede romperse:** las cajas de colisión de cordón y vereda. Definen
+por dónde se camina y eso ya está probado. Si alguna se mueve, se dice.
 
-**Dónde:** nace `src/visual/escena.js`, y el banco pasa a importar la luz de
-ahí en vez de tenerla suelta.
+**Dos decisiones que se cierran acá:**
+
+- **El anillo ámbar del piso.** Con el asfalto nuevo, más claro, Gus debería
+  despegarse solo. Si es así, se saca.
+- **Si la paleta medida funciona puesta en el mundo.** Hasta ahora sólo se vio
+  en el banco, de a un color por vez.
+
+**Dónde:** nace `src/visual/kit/calle.js`.
 
 ---
 
@@ -42,7 +47,7 @@ ahí en vez de tenerla suelta.
 |---|---|---|
 | ✅ | 0 a 9 — El juego | **Terminadas.** Se juega de principio a fin |
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
-| 🔄 | **12R — La capa visual nueva** | **2 de 17 tareas.** Es lo que estamos haciendo |
+| 🔄 | **12R — La capa visual nueva** | **3 de 17 tareas.** Es lo que estamos haciendo |
 | ⬜ | 10 — Interfaz completa | Pendiente, después de 12R |
 | ⬜ | 11 — Audio | Pendiente, después de 12R |
 | ⬜ | 13 — Optimización | Pendiente |
@@ -72,8 +77,8 @@ hay ahora. No se corrige, se reemplaza. Son unas 4.400 líneas.
 
 - [x] **12R.0 — Banco visual y paleta.** 58 colores medidos de la referencia, 16 pruebas, y el banco para compararlos contra el original
 - [x] **12R.1 — Cámara y encuadre.** 48° y 15 m con la mira 3 m adelante: Gus pasó de 29 a 43 px. Y la cámara ahora esquiva lo que la tapa aunque sea bajo
-- [ ] **12R.2 — Sol, cielo y atmósfera.** Sol alto con color cálido, y el frío del cielo que hoy falta ⬅️ *la que sigue*
-- [ ] **12R.3 — El suelo.** Calzada de barrio, cordón con volumen, vereda con junta, cruce peatonal
+- [x] **12R.2 — Sol, cielo y atmósfera.** Tres luces con temperaturas distintas. Y apareció el error gordo: **el sol estaba a 17° creyendo que estaba a 73**, por eso la calle estaba siempre en sombra
+- [ ] **12R.3 — El suelo.** Calzada de barrio, cordón con volumen, vereda con junta, cruce peatonal ⬅️ *la que sigue*
 - [ ] **12R.4 — Fachadas.** Ventanas, balcones, persianas, marquesinas, de 2 a 6 plantas. *La tarea más grande*
 - [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios
 - [ ] **12R.6 — Árboles.** Tronco con ramas y copa de volúmenes irregulares
@@ -292,10 +297,10 @@ correctas aunque las respuestas no sirvan.
 3. **Lo visual se mira primero en el banco** (`estilo.html`), contra la
    referencia, antes de enchufarlo al juego.
 4. **Consola sin un solo error.**
-5. **`npm test` y `npm run test:e2e` en verde.** Hoy son 436 y 74. De las
+5. **`npm test` y `npm run test:e2e` en verde.** Hoy son 459 y 74. De las
    unitarias, 114 son del arte viejo y se van a reescribir junto con lo que
    verifican; el resto es lógica y tiene que pasar siempre.
-6. **Llamadas de dibujo con `F1`, antes y después.** Techo: 238.
+6. **Llamadas de dibujo con `F1`, antes y después.** Techo: 238; hoy van 224.
 7. **Se sube y se prueba en el celular.** Nada se informa como terminado sin eso.
 8. **Un commit por tarea**, diciendo qué se reemplazó y si se movió alguna caja
    de colisión.

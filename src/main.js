@@ -25,7 +25,9 @@ import { VistaObjetos } from './items/itemView.js';
 import { Inventario, UsoDeObjeto, MotivoCancelacion } from './items/inventario.js';
 import { alcanzadosPorExplosion } from './combat/explosion.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
-import { montarLuzAmbiente, crearMaterialesLuz, COLOR_HORIZONTE } from './world/lighting.js';
+import { crearMaterialesLuz } from './world/lighting.js';
+import { montarEscena } from './visual/escena.js';
+import { HORIZONTE } from './visual/paleta.js';
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
 import { ajustes } from './core/settings.js';
 import { createRng } from './core/rng.js';
@@ -106,28 +108,21 @@ const input = new InputManager(canvas);
 // --- Escena ----------------------------------------------------------------
 
 /*
- * Iluminacion de dia: sol con sombras y mucha luz de cielo de relleno.
- * Ver src/world/lighting.js para el porque de cada numero.
+ * Luz, niebla y cielo: tres luces con temperaturas distintas y una cupula
+ * con degrade. El porque de cada numero esta en src/visual/escena.js.
+ *
+ * La niebla va adentro de eso: de dia no oscurece, aclara. Lo lejano se
+ * destiñe hacia el color del horizonte, que es lo que separa un plano del
+ * siguiente sin tener que oscurecer nada.
  */
 const matsLuz = crearMaterialesLuz();
-const sol = montarLuzAmbiente(app, calidadAlta());
-
-/*
- * Bruma de distancia, muy suave y del color del horizonte.
- *
- * De dia la niebla no oscurece: aclara. Lo lejano se va destiñendo hacia
- * el celeste del cielo, que es lo que separa un plano del siguiente y da
- * profundidad sin tener que oscurecer nada. La densidad es baja a
- * proposito: lo justo para que el fondo de la cuadra se despegue, no para
- * tapar.
- */
-app.scene.fog.type = pc.FOG_EXP2;
-app.scene.fog.color = COLOR_HORIZONTE;
-app.scene.fog.density = 0.0055;
+const { sol, cupula } = montarEscena(app, { sombrasDeCalidad: calidadAlta() });
 
 const cameraEntity = new pc.Entity('Camara');
 cameraEntity.addComponent('camera', {
-  clearColor: COLOR_HORIZONTE,
+  // El color de fondo iguala al del horizonte de la cupula: donde se
+  // termina la cupula no tiene que verse un escalon.
+  clearColor: new pc.Color(HORIZONTE[0], HORIZONTE[1], HORIZONTE[2]),
   fov: CAMERA.fov,
   // El campo se mide a lo ancho, no a lo alto: ver la nota en balance.js.
   horizontalFov: CAMERA.fovHorizontal,
@@ -1047,6 +1042,13 @@ app.on('update', (rawDt) => {
   // La camara se actualiza siempre: en pausa y en los resultados la escena
   // sigue viva, solo que la simulacion esta congelada.
   camera.update(dt, player.position, input.look, input.hasTouch);
+
+  /*
+   * La cupula del cielo viaja con la camara. Si se quedara quieta, al
+   * caminar se llegaria al borde y se veria el filo de la esfera.
+   */
+  if (cupula) cupula.setPosition(cameraEntity.getPosition());
+
   hud.updateJoystick(input.getJoystickVisual());
 
   debug.set('estado', state.current);

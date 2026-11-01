@@ -2,127 +2,28 @@ import * as pc from 'playcanvas';
 
 /**
  * ===========================================================================
- * ILUMINACION — DE DIA
+ * MOBILIARIO HEREDADO DE LA ILUMINACION
  * ===========================================================================
- * El juego transcurre de DIA. La version nocturna anterior se descarto por
- * un motivo simple: obligaba a esforzarse para ver. En un telefono, a
- * pleno sol y con el brillo a la mitad, una escena oscura no se juega.
+ * Lo que queda de la iluminacion vieja despues de 12R.2: el farol y unos
+ * materiales compartidos. La luz, el cielo y la niebla viven ahora en
+ * `src/visual/escena.js`.
  *
- * El objetivo es un low-poly claro: colores algo apagados y mates, pero con
- * mucha separacion entre superficies. La definicion no viene del detalle
- * sino del contraste entre planos, y eso se consigue con tres cosas:
- *
- *   1. Un sol fuerte y alto, CON sombras. De dia las sombras no son un
- *      problema sino la herramienta principal: una sombra nitida en el
- *      piso dice "esto esta apoyado aca" mejor que cualquier textura.
- *   2. Luz de cielo abundante y azulada. Rellena las sombras para que
- *      sigan siendo legibles en vez de ser agujeros negros, y de paso las
- *      tiñe de azul, que es lo que hace que una escena de dia parezca de
- *      dia y no un gris sucio.
- *   3. Oclusion ambiental marcada, que dibuja el contacto entre cada
- *      objeto y el piso.
- *
- * Lo que NO se usa: emisivos fuertes ni bloom pronunciado. De dia no hay
- * nada que brille mas que el cielo, y un bloom alto solo lava la imagen y
- * se come justamente la definicion que se busca.
+ * Esto es arte viejo y se borra en 12R.7, cuando se rehaga el mobiliario
+ * urbano. Esta separado para que el reemplazo de la luz no tuviera que
+ * esperar al reemplazo de los postes.
  */
-
-/** Color del sol: calido, casi blanco. */
-export const COLOR_SOL = new pc.Color(1.0, 0.96, 0.88);
 
 /**
- * Luz de cielo: el relleno de las sombras.
+ * Cada cuantos metros va un farol, y cuanto mide.
  *
- * Lleva algo de azul porque el cielo lo tiene, pero mucho menos de lo que
- * parece razonable. Con un azul franco, el asfalto gris se teñia entero y
- * la calzada se veia azul marino en vez de gris. La luz ambiente tiñe
- * TODO, asi que su saturacion se nota mucho mas que la de cualquier
- * material.
+ * De dia son props, no luces: lo unico que queda de este archivo que
+ * todavia usa el mundo. Se va entero en 12R.7, cuando el mobiliario
+ * urbano se rehaga.
  */
-export const COLOR_CIELO = new pc.Color(0.56, 0.59, 0.63);
-
-/** Color del horizonte: fondo del cielo y bruma de distancia. */
-export const COLOR_HORIZONTE = new pc.Color(0.74, 0.81, 0.87);
-
 export const LUZ = {
-  /** Relleno global. Alto a proposito: es lo que mantiene todo legible. */
-  ambiente: COLOR_CIELO,
-  solIntensidad: 2.7,
-  /*
-   * Elevacion del sol. Es el numero mas sensible de todo el archivo.
-   *
-   * A 58 grados, un edificio de diecisiete metros proyecta una sombra de
-   * casi once, y como la calzada mide diez, la sombra la cubria entera: la
-   * calle quedaba como un corredor gris oscuro. A 73 la sombra baja a unos
-   * cinco metros y solo alcanza hasta la mitad, que es justo lo que se
-   * quiere: una vereda al sol, la otra en sombra, y la calzada despejada.
-   */
-  solElevacion: 73,
-  /*
-   * Azimut. Se elige para que la sombra caiga sesgada respecto del eje de
-   * la calle y no perpendicular: cruzada deja franjas regulares que leen
-   * como rayas; sesgada acompaña la diagonal de la camara.
-   */
-  solAzimut: -24,
-  /**
-   * Hasta donde se calculan sombras. Mas alla el terreno se ve igual pero
-   * sin sombra, y como la camara mira desde arriba, no se nota.
-   */
-  /*
-   * Hasta donde se calculan sombras. Se bajo de 80 a 60 midiendo: las
-   * sombras eran casi la mitad de las llamadas de dibujo, y a sesenta
-   * metros el corte cae donde la bruma de distancia ya empezo a lavar
-   * todo, asi que no se nota.
-   */
-  sombraDistancia: 60,
-
-  /** Cada cuantos metros va un farol. De dia son props, no luces. */
   farolCada: 26,
   farolAltura: 7.2
 };
-
-/**
- * Luz general de la escena.
- *
- * @param {pc.AppBase} app
- * @param {boolean} sombrasDeCalidad perfil alto o movil
- * @returns {pc.Entity} la entidad del sol
- */
-export function montarLuzAmbiente(app, sombrasDeCalidad = true) {
-  app.scene.ambientLight = LUZ.ambiente;
-  app.scene.exposure = 1.0;
-  app.scene.skyboxIntensity = 0;
-
-  const sol = new pc.Entity('Sol');
-  sol.addComponent('light', {
-    type: 'directional',
-    color: COLOR_SOL,
-    intensity: LUZ.solIntensidad,
-    castShadows: true,
-    /*
-     * Cascadas: la camara abarca mucha calle de golpe, asi que una sola
-     * resolucion de sombra o queda pixelada cerca o se desperdicia lejos.
-     * Varias cascadas con distribucion corta concentran la resolucion
-     * donde esta el jugador, que es donde se mira.
-     */
-    numCascades: sombrasDeCalidad ? 3 : 2,
-    cascadeDistribution: 0.45,
-    shadowDistance: LUZ.sombraDistancia,
-    shadowResolution: sombrasDeCalidad ? 2048 : 1024,
-    shadowType: pc.SHADOW_PCF3_32F,
-    shadowBias: 0.04,
-    normalOffsetBias: 0.04,
-    /*
-     * La sombra no llega a negro. Es la decision que mantiene legible la
-     * vereda del lado en sombra: en la realidad el cielo la rellena, y aca
-     * se imita bajando cuanto oscurece la sombra.
-     */
-    shadowIntensity: 0.52
-  });
-  sol.setEulerAngles(LUZ.solElevacion, LUZ.solAzimut, 0);
-  app.root.addChild(sol);
-  return sol;
-}
 
 /**
  * Un farol: poste, brazo y lampara.

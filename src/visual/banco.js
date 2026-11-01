@@ -1,7 +1,8 @@
 import * as pc from 'playcanvas';
 import { montarPostProceso } from '../render/postProcess.js';
+import { montarEscena } from './escena.js';
 import {
-  SOL, SOL_MEDIDO, CIELO, REBOTE,
+  SOL, SOL_MEDIDO,
   CALLE, FACHADA, CARTEL, VERDE, VEHICULO, ABANDONO, ZOMBI, GUS, OBJETO,
   luminancia, saturacion
 } from './paleta.js';
@@ -148,40 +149,22 @@ app.start();
 addEventListener('resize', () => app.resizeCanvas());
 
 /*
- * La luz va acá y no en un modulo porque `src/visual/escena.js` se escribe en
- * 12R.2. Cuando exista, esto se borra y el banco la importa, que es el punto:
- * el banco tiene que iluminar IGUAL que el juego o no sirve para nada.
+ * La luz sale del MISMO modulo que la del juego. Es el punto entero del
+ * banco: si acá se iluminara distinto, lo que se mira acá no diria nada
+ * sobre lo que se ve jugando.
+ *
+ * Sin cupula: el banco mira de frente y con camara ortografica, y una
+ * esfera de doscientos metros alrededor solo taparia las muestras.
  */
 const col = (c) => new pc.Color(c[0], c[1], c[2]);
+const { sol } = montarEscena(app, { sombrasDeCalidad: true, conCupula: false });
 
-app.scene.ambientLight = col(REBOTE);
-app.scene.skyboxIntensity = 1;
-
-const sol = new pc.Entity('Sol');
-sol.addComponent('light', {
-  type: 'directional',
-  color: col(SOL),
-  intensity: 1.9,
-  castShadows: true,
-  shadowBias: 0.05,
-  normalOffsetBias: 0.05,
-  shadowDistance: 40,
-  shadowResolution: 1024
-});
-// 73 grados de elevacion: D-16. El azimut viene de la referencia, donde la luz
-// entra desde atras y a la izquierda.
-sol.setEulerAngles(73, 38, 0);
-app.root.addChild(sol);
-
-const cieloLuz = new pc.Entity('Cielo');
-cieloLuz.addComponent('light', {
-  type: 'directional',
-  color: col(CIELO),
-  intensity: 0.5,
-  castShadows: false
-});
-cieloLuz.setEulerAngles(-55, 200, 0);
-app.root.addChild(cieloLuz);
+/*
+ * Y sin niebla, que es lo unico que el banco tiene que anular: las muestras
+ * estan a veinte metros de la camara y la niebla las desteñiria, que es
+ * justo lo que no se quiere cuando lo que se compara es el color.
+ */
+app.scene.fog.type = pc.FOG_NONE;
 
 /* =========================================================================
    LA GRILLA DE MUESTRAS
@@ -259,9 +242,24 @@ entradas.forEach((e, i) => {
 
   const q = new pc.Entity(e.clave);
   q.addComponent('render', { type: 'plane', material: m, castShadows: false });
-  q.setLocalScale(LADO, 1, LADO);
-  // El plano de PlayCanvas nace horizontal: se para de cara a la camara.
-  q.setEulerAngles(90, 0, 0);
+  /*
+   * Las muestras NO van de cara a la camara: van inclinadas 40 grados.
+   *
+   * De frente parecia lo obvio, y estaba mal. El sol del juego viene de
+   * arriba (73 grados), asi que a una cara vertical le pega de refilon y la
+   * muestra salia casi negra: no se estaba comparando el color del material,
+   * se estaba comparando una cara en penumbra.
+   *
+   * Inclinada, recibe sol y cielo en la misma proporcion que una superficie
+   * de la calle, que es lo que hay que juzgar. El plano de PlayCanvas nace
+   * horizontal; 50 grados lo dejan mirando hacia arriba y hacia la camara.
+   */
+  const INCLINACION = 50;
+  const rad = (INCLINACION * Math.PI) / 180;
+  // Se estira en profundidad lo que la inclinacion acorta, para que en
+  // pantalla siga siendo un cuadrado.
+  q.setLocalScale(LADO, 1, LADO / Math.sin(rad));
+  q.setEulerAngles(INCLINACION, 0, 0);
   q.setPosition(c * PASO, -f * PASO, 0);
   app.root.addChild(q);
   e.entidad = q;
