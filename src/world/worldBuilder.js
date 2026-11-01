@@ -1,6 +1,7 @@
 import * as pc from 'playcanvas';
 import { Box2D } from '../physics/collisionWorld.js';
 import * as calle from '../visual/kit/calle.js';
+import * as fachada from '../visual/kit/fachada.js';
 import { UNITS } from '../config/balance.js';
 import { createRng } from '../core/rng.js';
 import { crearFarol, LUZ } from './lighting.js';
@@ -453,93 +454,53 @@ export class WorldBuilder {
   }
 
   /**
-   * El frente de un edificio: zocalo, persiana, toldo, cartel y balcones.
-   * Es donde esta casi todo el detalle que se ve desde la calle.
+   * El frente de un edificio. Lo diseña `src/visual/kit/fachada.js` (12R.4);
+   * aca solo se traduce a ejes del mundo.
+   *
+   * `vuela` es cuanto sobresale una pieza HACIA LA CALLE desde la linea
+   * municipal: positivo vuela sobre la vereda, negativo se hunde en el
+   * edificio. Esa traduccion vive en un solo lugar a proposito: el frente
+   * viejo tenia el toldo y el cartel enterrados en la pared por haberse
+   * equivocado de signo, y la fachada se veia lisa teniendo piezas.
    */
   #frenteEdificio(centerAlong, cruzado, alongX, side, fullWidth, width, height, retiro, rng, index, n) {
     const linea = fullWidth / 2 + retiro;
+    const clave = `F${index}_${side}_${n}`;
 
-    const poner = (nombre, cross, y, largo, alto, prof, color, opt) => {
+    const poner = (nombre, vuela, y, largo, alto, prof, color, opt = {}) => {
+      const cross = linea - vuela;
+      const a = centerAlong + (opt.offset ?? 0);
       const pos = alongX
-        ? { x: centerAlong, y, z: cruzado(cross * side) }
-        : { x: cruzado(cross * side), y, z: centerAlong };
+        ? { x: a, y, z: cruzado(cross * side) }
+        : { x: cruzado(cross * side), y, z: a };
       const sz = alongX ? { x: largo, y: alto, z: prof } : { x: prof, y: alto, z: largo };
-      this.addBox(nombre, pos, sz, color, opt);
+      this.addBox(nombre, pos, sz, color, { acabado: opt.acabado, sombra: opt.sombra });
     };
 
-    // Planta baja: persiana metalica con zocalo mas oscuro abajo.
-    poner(`Persiana_${index}_${side}_${n}`, linea + 0.2, 1.75, width * 0.88, 3.1, 0.4,
-      COLORS.shutter, { acabado: ACABADO.persiana });
-    poner(`Zocalo_${index}_${side}_${n}`, linea + 0.26, 0.3, width * 0.9, 0.6, 0.5,
-      COLORS.plinth, { acabado: ACABADO.revoque });
+    /*
+     * Reserva de aleatoriedad del frente viejo, y su propio generador para
+     * el nuevo. Mismo motivo que en la calzada (12R.3): el mundo sale de un
+     * unico generador con semilla, asi que cambiar cuantos numeros consume
+     * una fachada mueve los autos de la otra punta del mapa.
+     *
+     * Estas tiradas replican exactamente las que hacia el frente viejo. Se
+     * van en 12R.10, cuando cada familia tenga su semilla.
+     */
+    if (width > 9 && rng.chance(0.6)) rng();
+    const pisosViejo = Math.max(0, Math.floor((height - 5.2) / 3));
+    const colsViejo = Math.max(1, Math.round(width / 4.5));
+    for (let i = 0; i < pisosViejo * colsViejo; i++) { rng(); rng(); }
 
-    // Toldo volado: proyecta sombra sobre la vereda y aporta el color.
-    if (width > 9 && rng.chance(0.6)) {
-      poner(`Toldo_${index}_${side}_${n}`, linea + 0.75, 3.5, width * 0.78, 0.18, 1.5,
-        rng.pick(COLORS.toldo), { acabado: ACABADO.tela, sombra: true });
+    const dado = createRng(70001 + index * 7919 + side * 311 + n * 17);
+
+    const hayLocal = width > 7 && dado.chance(0.82);
+    fachada.plantaBaja(poner, { width, rng: dado, clave, hayLocal });
+    if (hayLocal) {
+      fachada.cartel(poner, { width, rng: dado, clave });
+      if (dado.chance(0.55)) fachada.toldo(poner, { width, rng: dado, clave });
     }
-
-    // Cartel del comercio.
-    if (width > 8) {
-      poner(`Cartel_${index}_${side}_${n}`, linea + 0.3, 4.4, width * 0.72, 0.9, 0.25,
-        COLORS.metalDark, { acabado: ACABADO.pintura });
-    }
-
-    // Puerta de entrada al edificio, al costado del local.
-    const offPuerta = width * 0.38;
-    const posPuerta = alongX
-      ? { x: centerAlong + offPuerta, y: 1.15, z: cruzado((linea + 0.22) * side) }
-      : { x: cruzado((linea + 0.22) * side), y: 1.15, z: centerAlong + offPuerta };
-    const szPuerta = alongX ? { x: 1.3, y: 2.3, z: 0.44 } : { x: 0.44, y: 2.3, z: 1.3 };
-    this.addBox(`Puerta_${index}_${side}_${n}`, posPuerta, szPuerta, COLORS.wood, {
-      acabado: ACABADO.madera
-    });
-
-    // Balcones y ventanas de los pisos altos.
-    const pisos = Math.max(0, Math.floor((height - 5.2) / 3));
-    const cols = Math.max(1, Math.round(width / 4.5));
-    for (let p = 0; p < pisos; p++) {
-      const y = 5.4 + p * 3;
-      for (let c = 0; c < cols; c++) {
-        const off = -width / 2 + ((c + 0.5) * width) / cols;
-
-        const posV = alongX
-          ? { x: centerAlong + off, y: y + 0.75, z: cruzado((linea + 0.12) * side) }
-          : { x: cruzado((linea + 0.12) * side), y: y + 0.75, z: centerAlong + off };
-        const szV = alongX ? { x: 1.5, y: 1.5, z: 0.2 } : { x: 0.2, y: 1.5, z: 1.5 };
-        this.addBox(`Ventana_${index}_${side}_${n}_${p}_${c}`, posV, szV,
-          rng.chance(0.78) ? COLORS.glass : COLORS.shutter, { acabado: ACABADO.vidrio });
-
-        /*
-         * Balcon: losa y baranda. La losa es lo que de verdad se ve desde
-         * la camara, porque sobresale y proyecta sombra sobre la fachada.
-         * Sin ella los pisos altos son una pared lisa con cuadraditos.
-         */
-        if (rng.chance(0.45)) {
-          const posB = alongX
-            ? { x: centerAlong + off, y, z: cruzado((linea + 0.5) * side) }
-            : { x: cruzado((linea + 0.5) * side), y, z: centerAlong + off };
-          const szB = alongX ? { x: 2.2, y: 0.14, z: 0.95 } : { x: 0.95, y: 0.14, z: 2.2 };
-          /*
-           * El balcon NO proyecta sombra. Es la unica concesion de la
-           * fachada, y se midio: los balcones solos eran casi la mitad de
-           * las llamadas de dibujo del mapa de sombras. La losa igual se
-           * lee porque sobresale y recibe la luz de canto.
-           */
-          this.addBox(`Balcon_${index}_${side}_${n}_${p}_${c}`, posB, szB, COLORS.plinth, {
-            acabado: ACABADO.revoque
-          });
-
-          const posR = alongX
-            ? { x: centerAlong + off, y: y + 0.5, z: cruzado((linea + 0.95) * side) }
-            : { x: cruzado((linea + 0.95) * side), y: y + 0.5, z: centerAlong + off };
-          const szR = alongX ? { x: 2.2, y: 0.9, z: 0.08 } : { x: 0.08, y: 0.9, z: 2.2 };
-          this.addBox(`Baranda_${index}_${side}_${n}_${p}_${c}`, posR, szR, COLORS.balcony, {
-            acabado: ACABADO.metal
-          });
-        }
-      }
-    }
+    fachada.puerta(poner, { width, clave });
+    fachada.pisosAltos(poner, { width, height, rng: dado, clave });
 
     // Medianera de ladrillo a la vista entre edificios de distinta altura.
     if (rng.chance(0.5)) {

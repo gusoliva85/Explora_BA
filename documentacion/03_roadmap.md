@@ -11,37 +11,26 @@
 
 ## ▶️ La tarea que sigue
 
-### **12R.4 — Fachadas**
+### **12R.5 — Cartelería**
 
-**Es la tarea más grande de la fase y la que más decide.** Hoy los edificios
-son cajas de color liso: no tienen una sola ventana. Mirando una captura, lo
-que grita "esto es un prototipo" son las fachadas.
+Los carteles de los comercios ya están puestos como volumen, pero son
+rectángulos de color: **no dicen nada**. Y la mitad de lo que hace que una
+calle se lea como porteña son las letras.
 
-**El kit, en tres piezas:**
+**Qué hay que hacer:**
 
-- **Planta baja:** local con persiana metálica, portal de edificio, local
-  tapiado, zócalo, marquesina, toldo.
-- **Piso tipo:** ventana con marco hundido, balcón con baranda y losa,
-  persiana de enrollar.
-- **Remate:** cornisa, tanque de agua, antenas.
+- Texto de verdad sobre los carteles, generado con canvas y subido como
+  textura. Es la única textura que vale la pena en todo el proyecto: no se
+  descarga nada y un cartel sin letras no comunica.
+- Nombres de comercios ficticios, en español. Nada de logos reales.
+- Carteles de calle en las esquinas, con nombres del barrio.
+- Alguna chapa de numeración.
 
-**Las reglas:**
+**Ojo con la escala:** a 25 m sólo se ven los primeros 4 m de fachada, así
+que el cartel entra justo. Hay que comprobar que el texto se LEA en el
+celular, no sólo que esté.
 
-- Alturas de 2 a 6 plantas, **sin repetir el mismo edificio en fila**: varía
-  la altura, el ancho, el color, cuántos balcones y dónde.
-- La puerta mide 2,10 m y es la referencia de escala de todo lo demás.
-- Las cajas de colisión de los edificios **no se mueven**: hoy son el bloque
-  entero y así se quedan. Los balcones vuelan sobre la vereda y no chocan,
-  igual que en la calle de verdad.
-
-**Cómo se verifica:** captura desde la cámara de juego al lado de la
-referencia. Si la cuadra se lee como una fila de cajas, no está.
-
-**Ojo con el costo:** es la tarea que más piezas agrega de toda la fase. Hay
-que medir las llamadas de dibujo antes y después, y si se disparan, resolverlo
-ahí mismo.
-
-**Dónde:** nace `src/visual/kit/fachada.js`.
+**Dónde:** nace `src/visual/carteles.js`, que genera las texturas.
 
 ---
 
@@ -51,7 +40,7 @@ ahí mismo.
 |---|---|---|
 | ✅ | 0 a 9 — El juego | **Terminadas.** Se juega de principio a fin |
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
-| 🔄 | **12R — La capa visual nueva** | **4 de 17 tareas.** Es lo que estamos haciendo |
+| 🔄 | **12R — La capa visual nueva** | **5 de 17 tareas.** Es lo que estamos haciendo |
 | ⬜ | 10 — Interfaz completa | Pendiente, después de 12R |
 | ⬜ | 11 — Audio | Pendiente, después de 12R |
 | ⬜ | 13 — Optimización | Pendiente |
@@ -83,8 +72,8 @@ hay ahora. No se corrige, se reemplaza. Son unas 4.400 líneas.
 - [x] **12R.1 — Cámara y encuadre.** 48° y 15 m con la mira 3 m adelante: Gus pasó de 29 a 43 px. Y la cámara ahora esquiva lo que la tapa aunque sea bajo
 - [x] **12R.2 — Sol, cielo y atmósfera.** Tres luces con temperaturas distintas. Y apareció el error gordo: **el sol estaba a 17° creyendo que estaba a 73**, por eso la calle estaba siempre en sombra
 - [x] **12R.3 — El suelo.** Cordón con volumen, vereda con juntas, eje de doble mano y la bocacalle rehecha con cuatro ochavas. La paleta medida necesitó dos correcciones al salir del banco
-- [ ] **12R.4 — Fachadas.** Ventanas, balcones, persianas, marquesinas, de 2 a 6 plantas. *La tarea más grande* ⬅️ *la que sigue*
-- [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios
+- [x] **12R.4 — Fachadas.** Planta baja con profundidad real: local hundido, persiana con lamas, cornisa que vuela. Y apareció por qué se veían lisas: **el relieve viejo sobresalía hacia adentro del edificio**
+- [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios ⬅️ *la que sigue*
 - [ ] **12R.6 — Árboles.** Tronco con ramas y copa de volúmenes irregulares
 - [ ] **12R.7 — Mobiliario urbano.** Postes, luminarias, semáforos, cables, parada
 - [ ] **12R.8 — Vehículos.** Autos con carrocería y ruedas, colectivo abandonado

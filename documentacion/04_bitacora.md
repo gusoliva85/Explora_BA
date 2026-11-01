@@ -15,6 +15,85 @@ no, que es justamente para lo que sirve un roadmap. El contenido de abajo es
 el documento tal como estaba, sin tocar.
 
 ---
+## 12R.4 — Fachadas
+
+### Lo que el plan decía era falso, y lo desmintió el propio motor
+
+El roadmap decía "los edificios son cajas de color liso: no tienen una sola
+ventana". **Era mío y estaba mal.** El generador viejo ya ponía 180 ventanas,
+79 balcones con su baranda, 33 persianas, toldos, carteles, medianeras y
+tanques de agua. Lo verifiqué contándolos en la escena, no mirando.
+
+Lo que pasaba era otra cosa, y hubo que buscarla.
+
+### Primero: la fachada casi no entra en el encuadre
+
+Proyectando la línea municipal a la pantalla con la cámara del juego:
+
+| Distancia por delante | Altura de fachada visible |
+|---|---|
+| al lado del jugador | **nada**: queda fuera por arriba |
+| 10 m | hasta 8 m |
+| 25 m | hasta 4 m |
+| 45 m | apenas el pie |
+
+O sea que **los pisos altos casi no se ven nunca**. Todo ese detalle se
+estaba dibujando para nadie, y los primeros cuatro metros —que se ven
+siempre— tenían menos trabajo que el resto.
+
+Esto se preguntó y Gus eligió: el esfuerzo va a la planta baja.
+
+### Y segundo: el relieve apuntaba para el lado equivocado
+
+Ésta es la causa real de que la fachada se viera lisa teniendo piezas. El
+toldo viejo "volaba" 1,5 m **hacia adentro del edificio**. Medido: la cara de
+la fachada estaba en x = 10,04 y el toldo ocupaba de 10,04 a 11,54, enterrado
+en la pared. Lo mismo el cartel, la persiana y el zócalo.
+
+Con todas las piezas enterradas, una fachada es un plano liso por más piezas
+que tenga.
+
+Para que no vuelva a pasar, el kit nuevo **no habla de coordenadas**: habla
+de cuánto sobresale cada pieza hacia la calle. Positivo vuela sobre la
+vereda, negativo se hunde. La traducción a ejes vive en un solo lugar.
+
+### Qué tiene ahora la planta baja
+
+Local hundido 45 cm con su vidriera, jambas y dintel; persiana metálica con
+lamas, que puede estar baja, a media asta o levantada dejando ver el hueco
+negro; zócalo; puerta de edificio con marco, hoja hundida y escalón; toldo
+con faldilla; cartel; y la cornisa que vuela 38 cm y le tira una sombra dura
+a todo lo de abajo.
+
+La cornisa es la pieza más barata y la que más rinde: sin ella la fachada es
+una pared que sube sin accidentes.
+
+Los pisos altos quedaron al revés que antes: ventana hundida en todos, pero
+balcón **sólo en el primero**, que es el único que se ve. Y un remate arriba,
+que es lo que recorta el edificio contra el cielo.
+
+### El costo
+
+| | Antes | Después |
+|---|---|---|
+| Piezas | 925 | 1289 |
+| Llamadas de dibujo (aparición) | 232 | 252 |
+
+Las 20 llamadas de más no son las piezas —el agrupado estático se las come—
+sino que los lotes se parten en más grupos. Se mide de nuevo en la Fase 13.
+
+### Y otra vez la semilla
+
+Cambiar el frente cambió cuántos números al azar consume, y volvió a mover el
+mapa: una caja de colisión de diferencia. Mismo arreglo que en la calzada: la
+fachada tiene su propio generador y el del mundo consume en ese punto la
+misma reserva que consumía el frente viejo. Mapa verificado idéntico: 105
+cajas y 90 props.
+
+**Van dos veces que esto pasa en dos tareas seguidas.** Queda anotado como lo
+primero a resolver en 12R.10.
+
+---
 ## 12R.3 bis — Lo que encontró Gus probándolo en el celular
 
 Tres cosas, y una era grave. Vale la pena anotar que las tres se vieron
