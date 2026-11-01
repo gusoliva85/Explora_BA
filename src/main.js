@@ -162,21 +162,24 @@ app.root.addChild(ground);
 const playerEntity = new pc.Entity('Gus');
 
 /**
- * Anillo ambar en el piso.
+ * Marca de posicion en el piso: un aro fino, no un disco.
  *
- * No es decoracion. Gus va vestido de negro sobre asfalto nocturno y, a la
- * distancia de camara elegida, mide unos 40 px: sin una marca permanente el
- * jugador pierde de vista su propio personaje entre los zombis y los autos.
- * Salio de mirar los mockups, y vale para cualquier angulo.
- */
-/*
- * Marca de posicion en el piso.
+ * ---------------------------------------------------------------------------
+ * POR QUE DEJO DE SER UN DISCO (12R.3)
+ * ---------------------------------------------------------------------------
+ * Nacio como un disco ambar de 2,5 m lleno, y estaba justificado: "Gus va de
+ * negro sobre asfalto NOCTURNO y mide 40 px". Las dos premisas se cayeron.
+ * El juego es de dia (D-16), la camara se acerco y Gus pasa a 43 px (D-23), y
+ * el asfalto nuevo tiene 0,30 de albedo contra los 0,19 del cuero: se lee
+ * solo. Se comparo con y sin, y sin el disco la escena mejora.
  *
- * De noche alcanzaba con un resplandor aditivo. De dia eso no se ve: sobre
- * una calzada clara, sumar luz no cambia casi nada. Hace falta un disco
- * de color solido y semitransparente, como el selector de un juego de
- * estrategia. Plano, sin iluminar, para que mantenga el mismo color este
- * al sol o en sombra.
+ * Pero en el medio de una horda, perder de vista al personaje propio se paga
+ * caro, asi que la red de seguridad se queda: un aro fino, del ancho de los
+ * hombros, con la mitad de opacidad. Marca donde esta sin taparle los pies ni
+ * parecer el selector de un juego de estrategia.
+ *
+ * Plano y sin iluminar, para que no cambie de color al entrar en sombra: es
+ * informacion, no decorado.
  */
 const ringMat = new pc.StandardMaterial();
 ringMat.diffuse = new pc.Color(0, 0, 0);
@@ -185,11 +188,15 @@ ringMat.emissiveIntensity = 1;
 ringMat.useLighting = false;
 ringMat.blendType = pc.BLEND_NORMAL;
 ringMat.depthWrite = false;
-ringMat.opacity = 0.55;
+ringMat.opacity = 0.26;
 ringMat.update();
 const ring = new pc.Entity('MarcaJugador');
+/*
+ * Un cilindro chato y chico, no un toro: la primitiva de toro de PlayCanvas
+ * tiene tan pocos segmentos que achatada se dibuja como dos manchas.
+ */
 ring.addComponent('render', { type: 'cylinder', material: ringMat, castShadows: false });
-ring.setLocalScale(1.25, 0.01, 1.25);
+ring.setLocalScale(0.95, 0.01, 0.95);
 ring.setLocalPosition(0, 0.025, 0);
 playerEntity.addChild(ring);
 

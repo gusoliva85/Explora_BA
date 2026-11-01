@@ -11,33 +11,37 @@
 
 ## ▶️ La tarea que sigue
 
-### **12R.3 — El suelo**
+### **12R.4 — Fachadas**
 
-Es la primera tarea que reemplaza geometría del mundo, y la que cierra dos
-cosas que quedaron esperándola.
+**Es la tarea más grande de la fase y la que más decide.** Hoy los edificios
+son cajas de color liso: no tienen una sola ventana. Mirando una captura, lo
+que grita "esto es un prototipo" son las fachadas.
 
-**Qué hay que hacer:**
+**El kit, en tres piezas:**
 
-- Calzada **de calle de barrio**, no de avenida: más angosta y sin la línea
-  punteada del medio.
-- **Cordón como volumen propio**, con su amarillo gastado. Hoy es una franja
-  pintada en el piso.
-- Vereda con **junta de geometría** entre baldosas, no un plano liso.
-- Cruce peatonal y rejilla de desagüe.
-- Todo con la paleta medida: el asfalto pasa del gris oscuro viejo al 0,335
-  que salió de la referencia.
+- **Planta baja:** local con persiana metálica, portal de edificio, local
+  tapiado, zócalo, marquesina, toldo.
+- **Piso tipo:** ventana con marco hundido, balcón con baranda y losa,
+  persiana de enrollar.
+- **Remate:** cornisa, tanque de agua, antenas.
 
-**Lo que no puede romperse:** las cajas de colisión de cordón y vereda. Definen
-por dónde se camina y eso ya está probado. Si alguna se mueve, se dice.
+**Las reglas:**
 
-**Dos decisiones que se cierran acá:**
+- Alturas de 2 a 6 plantas, **sin repetir el mismo edificio en fila**: varía
+  la altura, el ancho, el color, cuántos balcones y dónde.
+- La puerta mide 2,10 m y es la referencia de escala de todo lo demás.
+- Las cajas de colisión de los edificios **no se mueven**: hoy son el bloque
+  entero y así se quedan. Los balcones vuelan sobre la vereda y no chocan,
+  igual que en la calle de verdad.
 
-- **El anillo ámbar del piso.** Con el asfalto nuevo, más claro, Gus debería
-  despegarse solo. Si es así, se saca.
-- **Si la paleta medida funciona puesta en el mundo.** Hasta ahora sólo se vio
-  en el banco, de a un color por vez.
+**Cómo se verifica:** captura desde la cámara de juego al lado de la
+referencia. Si la cuadra se lee como una fila de cajas, no está.
 
-**Dónde:** nace `src/visual/kit/calle.js`.
+**Ojo con el costo:** es la tarea que más piezas agrega de toda la fase. Hay
+que medir las llamadas de dibujo antes y después, y si se disparan, resolverlo
+ahí mismo.
+
+**Dónde:** nace `src/visual/kit/fachada.js`.
 
 ---
 
@@ -47,7 +51,7 @@ por dónde se camina y eso ya está probado. Si alguna se mueve, se dice.
 |---|---|---|
 | ✅ | 0 a 9 — El juego | **Terminadas.** Se juega de principio a fin |
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
-| 🔄 | **12R — La capa visual nueva** | **3 de 17 tareas.** Es lo que estamos haciendo |
+| 🔄 | **12R — La capa visual nueva** | **4 de 17 tareas.** Es lo que estamos haciendo |
 | ⬜ | 10 — Interfaz completa | Pendiente, después de 12R |
 | ⬜ | 11 — Audio | Pendiente, después de 12R |
 | ⬜ | 13 — Optimización | Pendiente |
@@ -78,8 +82,8 @@ hay ahora. No se corrige, se reemplaza. Son unas 4.400 líneas.
 - [x] **12R.0 — Banco visual y paleta.** 58 colores medidos de la referencia, 16 pruebas, y el banco para compararlos contra el original
 - [x] **12R.1 — Cámara y encuadre.** 48° y 15 m con la mira 3 m adelante: Gus pasó de 29 a 43 px. Y la cámara ahora esquiva lo que la tapa aunque sea bajo
 - [x] **12R.2 — Sol, cielo y atmósfera.** Tres luces con temperaturas distintas. Y apareció el error gordo: **el sol estaba a 17° creyendo que estaba a 73**, por eso la calle estaba siempre en sombra
-- [ ] **12R.3 — El suelo.** Calzada de barrio, cordón con volumen, vereda con junta, cruce peatonal ⬅️ *la que sigue*
-- [ ] **12R.4 — Fachadas.** Ventanas, balcones, persianas, marquesinas, de 2 a 6 plantas. *La tarea más grande*
+- [x] **12R.3 — El suelo.** Sin la pintura de avenida, cordón con volumen y vereda con juntas. Y la paleta medida necesitó dos correcciones al salir del banco
+- [ ] **12R.4 — Fachadas.** Ventanas, balcones, persianas, marquesinas, de 2 a 6 plantas. *La tarea más grande* ⬅️ *la que sigue*
 - [ ] **12R.5 — Cartelería.** Texto en español, comercios ficticios
 - [ ] **12R.6 — Árboles.** Tronco con ramas y copa de volúmenes irregulares
 - [ ] **12R.7 — Mobiliario urbano.** Postes, luminarias, semáforos, cables, parada
@@ -300,7 +304,7 @@ correctas aunque las respuestas no sirvan.
 5. **`npm test` y `npm run test:e2e` en verde.** Hoy son 459 y 74. De las
    unitarias, 114 son del arte viejo y se van a reescribir junto con lo que
    verifican; el resto es lógica y tiene que pasar siempre.
-6. **Llamadas de dibujo con `F1`, antes y después.** Techo: 238; hoy van 224.
+6. **Llamadas de dibujo con `F1`, antes y después.** Techo: 238; hoy van 229.
 7. **Se sube y se prueba en el celular.** Nada se informa como terminado sin eso.
 8. **Un commit por tarea**, diciendo qué se reemplazó y si se movió alguna caja
    de colisión.
@@ -313,7 +317,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 
 | Decisión | Se cierra en | Cómo |
 |---|---|---|
-| Si el anillo ámbar del piso se queda o se va (D-24) | 12R.3 | Hoy todavía hace falta, pero porque el asfalto sigue siendo el viejo y oscuro. Se decide cuando esté el asfalto nuevo, que es más claro |
+
 | Si Gus y los zombis llegan a ser `.glb` riggeado (D-22) | 12R.11 y 12R.12 | Encontrando un modelo CC0 compatible, o consiguiendo el archivo |
 | Nivel de detalle que soporta el teléfono | 12R.16 | Midiendo después de cada bloque |
 

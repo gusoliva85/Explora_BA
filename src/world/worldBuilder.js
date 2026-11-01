@@ -1,5 +1,6 @@
 import * as pc from 'playcanvas';
 import { Box2D } from '../physics/collisionWorld.js';
+import * as calle from '../visual/kit/calle.js';
 import { UNITS } from '../config/balance.js';
 import { createRng } from '../core/rng.js';
 import { crearFarol, LUZ } from './lighting.js';
@@ -296,83 +297,14 @@ export class WorldBuilder {
 
     const size = (largo, ancho) => (alongX ? { x: largo, z: ancho } : { x: ancho, z: largo });
 
-    // --- Calzada ------------------------------------------------------------
-    const roadSize = size(length, road);
-    this.addBox(
-      `Calzada_${index}`,
-      { x: cx, y: -0.06, z: cz },
-      { x: roadSize.x, y: 0.12, z: roadSize.z },
-      COLORS.asphalt,
-      { acabado: ACABADO.asfalto }
-    );
+    // --- El suelo: lo arma src/visual/kit/calle.js (12R.3) -----------------
+    const suelo = { cx, cz, alongX, length, index, rng };
+    calle.calzada(this, suelo);
 
-    /*
-     * Parches de reparacion. Van muy cerca del tono del asfalto: con mas
-     * contraste se leen como manchas geometricas pegadas encima, no como
-     * un remiendo. La variacion tiene que insinuarse, no anunciarse.
-     */
-    for (let i = 0; i < Math.floor(length / 22); i++) {
-      const largo = rng.range(2.5, 7);
-      const ancho = rng.range(1.5, 3.5);
-      const along = rng.range(-length / 2 + 4, length / 2 - 4);
-      const cross = rng.range(-road / 2 + 1, road / 2 - 1);
-      const p = size(largo, ancho);
-      this.addBox(
-        `Parche_${index}_${i}`,
-        {
-          x: cx + (alongX ? along : cross),
-          y: -0.005,
-          z: cz + (alongX ? cross : along)
-        },
-        { x: p.x, y: 0.02, z: p.z },
-        COLORS.asphaltWet,
-        { acabado: ACABADO.asfalto }
-      );
-    }
-
-    this.#pintura(cx, cz, alongX, length, road, index);
-
-    // --- Veredas y cordones -------------------------------------------------
     for (const side of [-1, 1]) {
-      const offset = ((road + walk) / 2) * side;
-      const wSize = size(length, walk);
-      this.addBox(
-        `Vereda_${index}_${side}`,
-        { x: cx + (alongX ? 0 : offset), y: UNITS.curbHeight / 2, z: cz + (alongX ? offset : 0) },
-        { x: wSize.x, y: UNITS.curbHeight, z: wSize.z },
-        COLORS.sidewalk,
-        { acabado: ACABADO.vereda }
-      );
-
-      // Franja de baldosa distinta pegada a la fachada: parte la vereda en
-      // dos y se lee muy bien desde arriba.
-      const franjaOff = ((full - walk * 0.45) / 2) * side;
-      const fSize = size(length, walk * 0.45);
-      this.addBox(
-        `VeredaFranja_${index}_${side}`,
-        {
-          x: cx + (alongX ? 0 : franjaOff),
-          y: UNITS.curbHeight + 0.005,
-          z: cz + (alongX ? franjaOff : 0)
-        },
-        { x: fSize.x, y: 0.02, z: fSize.z },
-        COLORS.sidewalkAlt,
-        { acabado: ACABADO.vereda }
-      );
-
-      const curbOffset = (road / 2) * side;
-      const cSize = size(length, 0.3);
-      this.addBox(
-        `Cordon_${index}_${side}`,
-        {
-          x: cx + (alongX ? 0 : curbOffset),
-          y: UNITS.curbHeight / 2,
-          z: cz + (alongX ? curbOffset : 0)
-        },
-        { x: cSize.x, y: UNITS.curbHeight + 0.04, z: cSize.z },
-        COLORS.curb,
-        { acabado: ACABADO.vereda }
-      );
+      calle.cordon(this, { ...suelo, side });
+      calle.vereda(this, { ...suelo, side });
+      calle.rejillas(this, { ...suelo, side });
 
       this.#buildFacadeRow(a, b, alongX, length, side, full, cfg, rng, index);
       this.#buildVereda(a, b, alongX, length, side, road, walk, rng, index);
@@ -382,79 +314,17 @@ export class WorldBuilder {
     this.#buildFaroles(a, b, alongX, length, road, index);
   }
 
-  /**
-   * Pintura vial: eje central discontinuo y lineas de borde.
-   *
-   * Se dibuja con material plano, sin iluminar. La pintura de una calle no
-   * cambia de color al entrar en sombra, y ademas asi sigue marcando el
-   * carril en la mitad sombreada de la calzada, que es donde mas falta
-   * hace.
-   */
-  #pintura(cx, cz, alongX, length, road, index) {
-    const size = (largo, ancho) => (alongX ? { x: largo, z: ancho } : { x: ancho, z: largo });
-
-    for (let d = -length / 2; d < length / 2; d += 4.5) {
-      const s = size(2.4, 0.16);
-      this.addBox(
-        `Eje_${index}_${d.toFixed(0)}`,
-        { x: cx + (alongX ? d : 0), y: 0.012, z: cz + (alongX ? 0 : d) },
-        { x: s.x, y: 0.02, z: s.z },
-        COLORS.paint,
-        { plano: true }
-      );
-    }
-
-    // Linea continua de borde, a un metro del cordon.
-    for (const side of [-1, 1]) {
-      const off = (road / 2 - 1.0) * side;
-      const s = size(length - 2, 0.12);
-      this.addBox(
-        `Borde_${index}_${side}`,
-        { x: cx + (alongX ? 0 : off), y: 0.012, z: cz + (alongX ? off : 0) },
-        { x: s.x, y: 0.02, z: s.z },
-        COLORS.paint,
-        { plano: true }
-      );
-    }
-  }
-
-  /** Senda peatonal cruzando la calzada. */
-  #senda(punto, alongX, road, nombre) {
-    const size = (largo, ancho) => (alongX ? { x: largo, z: ancho } : { x: ancho, z: largo });
-    for (let i = 0; i < 7; i++) {
-      const off = -2.4 + i * 0.8;
-      const s = size(0.45, road);
-      this.addBox(
-        `Senda_${nombre}_${i}`,
-        {
-          x: punto.x + (alongX ? off : 0),
-          y: 0.014,
-          z: punto.z + (alongX ? 0 : off)
-        },
-        { x: s.x, y: 0.02, z: s.z },
-        COLORS.paint,
-        { plano: true }
-      );
-    }
-  }
-
   /** Plancha de vereda en cada esquina, con senda peatonal y semaforo. */
   #buildEsquinas(mission, rng) {
     const w = UNITS.streetWidth + UNITS.sidewalkWidth * 2;
     for (let i = 1; i < mission.route.length - 1; i++) {
       const p = mission.route[i];
-      this.addBox(
-        `Esquina_${i}`,
-        { x: p.x, y: UNITS.curbHeight / 2, z: p.z },
-        { x: w, y: UNITS.curbHeight, z: w },
-        COLORS.sidewalk,
-        { acabado: ACABADO.vereda }
-      );
+      calle.esquina(this, { punto: p, nombre: String(i) });
 
       const previo = mission.route[i - 1];
       const alongX = Math.abs(p.x - previo.x) > Math.abs(p.z - previo.z);
       const retroceso = alongX ? { x: p.x + 9, z: p.z } : { x: p.x, z: p.z + 9 };
-      this.#senda(retroceso, alongX, UNITS.streetWidth, `e${i}`);
+      calle.senda(this, { punto: retroceso, alongX, nombre: `e${i}` });
 
       // Semaforo y cartel de calle: marcan que ahi hay un cruce desde lejos.
       const esq = UNITS.streetWidth / 2 + 1.4;

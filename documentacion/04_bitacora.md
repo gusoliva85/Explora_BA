@@ -15,6 +15,81 @@ no, que es justamente para lo que sirve un roadmap. El contenido de abajo es
 el documento tal como estaba, sin tocar.
 
 ---
+## 12R.3 — El suelo
+
+### No parecía una avenida por el ancho, parecía por la pintura
+
+El plan decía "angostar la calzada". Se midió antes de tocar: tiene **10 m
+entre cordones**, que es exactamente lo que mide una calle de barrio porteña
+—un carril y estacionamiento de los dos lados—. **El ancho estaba bien.**
+
+Lo que la hacía parecer avenida era la pintura: línea de eje discontinua y dos
+líneas de borde. Una calle de Boedo no tiene nada de eso; tiene asfalto pelado,
+la senda peatonal en las esquinas y el cordón pintado. Sacando las tres líneas,
+la misma calzada pasa a leerse como barrio.
+
+Y fue una suerte, porque angostarla habría corrido las fachadas, y con las
+fachadas se mueven todas sus cajas de colisión.
+
+### La paleta medida no funcionaba tal cual en el mundo
+
+Era la otra pregunta que esta tarea tenía que contestar, y la respuesta es
+**no: hubo que corregir dos colores**. Los dos se veían bien en el banco, de a
+un casillero por vez, y se veían mal cubriendo una calle entera.
+
+| Color | Qué pasaba | Corrección |
+|---|---|---|
+| **Asfalto** | Salía **lila**: el medido tiene más azul que rojo | Neutralizado, y bajado a 0,30 |
+| **Vereda** | Brillaba como papel: 0,81 de albedo | Bajada a 0,62 |
+
+Lo del asfalto tiene una explicación que vale para todo lo que venga: el
+descuento de la luz **divide por un sol cálido**, y eso sobre-corrige, porque
+da por sentado que el sol es la única luz cuando en la referencia la calle
+también recibe el azul del cielo. En un parche de 40 px no se nota; en diez
+metros de calzada, sí.
+
+Lo de la vereda es el límite que ya estaba anotado en `paleta.js`: el método
+corrige el **color** de la luz, no su **intensidad**. Una baldosa al sol medida
+da el albedo de una hoja de papel.
+
+### El cordón era una franja pintada
+
+Estaba a la misma altura que la vereda, así que desde la cámara se leía como
+una raya de color en el piso. Ahora es un volumen de hormigón que sobresale
+dos centímetros, con **la cara vertical a la vista** contra la calzada, y el
+amarillo pintado sólo en el canto de arriba. Con la cámara de D-23 esa cara se
+ve, y es lo que hace que la vereda esté arriba y la calle abajo.
+
+Pintar el bloque entero de amarillo lo convertía en una barra de color que
+competía con los objetos de misión.
+
+> Un error intermedio: al rehacer el cordón lo corrí hacia afuera del borde de
+> la calzada, y con él se corrió la vereda 32 cm, metiéndose adentro de las
+> fachadas. Va centrado en el borde, como el viejo.
+
+### Las juntas son lo que le da escala a la vereda
+
+Tres metros de plano gris no dicen de qué tamaño es nada. Ahora hay dos juntas
+a lo largo y una cruzada cada 2,4 m, en geometría y no en textura. Son 244
+piezas más y, como entran al agrupado estático, casi no cuestan llamadas de
+dibujo: de 224 se pasó a 229.
+
+### El anillo ámbar: se queda, pero chico
+
+Se comparó con y sin. Sin el disco, Gus **se lee solo**: el asfalto nuevo tiene
+0,30 de albedo contra los 0,19 del cuero, y la cámara lo dejó en 43 px. Las dos
+premisas que justificaban el disco —"de noche" y "40 px"— ya no existen.
+
+Pero perder de vista al personaje propio en medio de una horda se paga caro,
+así que la red de seguridad queda en una versión discreta: de 2,5 m de diámetro
+a 0,95, y de 0,55 de opacidad a 0,26.
+
+> El intento intermedio fue un aro fino en vez de un disco, con la primitiva de
+> toro. No sirve: el toro de PlayCanvas tiene tan pocos segmentos que achatado
+> se dibuja como dos manchas.
+
+---
+
 ## 12R.2 — Sol, cielo y atmósfera
 
 ### El sol estaba a 17 grados, no a 73

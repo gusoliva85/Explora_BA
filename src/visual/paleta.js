@@ -97,20 +97,40 @@ export const REBOTE = [0.45, 0.4, 0.34];
    ========================================================================= */
 
 export const CALLE = {
-  /** medido #706873 (lum 0.42) -> bajado a 0.335. Ver la nota 1 de arriba. */
-  asfalto: [0.351, 0.327, 0.361],
+  /**
+   * medido #706873 (lum 0.42) -> bajado a 0.30 Y NEUTRALIZADO.
+   *
+   * Dos correcciones, y la segunda la encontro recien 12R.3, cuando el
+   * color se puso en el mundo en vez de mirarse en un casillero:
+   *
+   * 1. La luminancia. Ver la nota 1 de la cabecera.
+   * 2. **El tono.** El medido tiene mas azul que rojo, y puesto en una
+   *    calle entera bajo la luz de cielo la calzada se veia LILA. El
+   *    descuento de la luz divide por un sol calido, y eso sobre-corrige:
+   *    da por sentado que el sol es la unica luz, cuando en la referencia
+   *    la calle tambien recibe el azul del cielo. En un parche de 40 px
+   *    no se nota; en diez metros de calzada, si.
+   */
+  asfalto: [0.31, 0.3, 0.295],
   /** Derivado del asfalto: el parche remendado, mas oscuro y mas mate. */
-  asfalto_remiendo: [0.281, 0.262, 0.289],
+  asfalto_remiendo: [0.25, 0.243, 0.238],
   /** medido #e8e1db. Pintura vial: blanco sucio, nunca blanco puro. */
   raya: [0.91, 0.882, 0.859],
   /** medido #c19b40. El amarillo del cordon, gastado. */
   cordon: [0.757, 0.608, 0.251],
-  /** medido #ddccc2. Baldosa de vereda al sol. */
-  vereda: [0.867, 0.8, 0.761],
+  /**
+   * medido #ddccc2 (lum 0.81) -> bajado a 0.62.
+   *
+   * 0,81 es el albedo de una hoja de papel. La baldosa medida sale tan
+   * clara porque en la referencia le pega el sol de frente, y el descuento
+   * de la luz corrige el color pero no la intensidad. Puesta en el mundo,
+   * la vereda brillaba mas que la ropa de los zombis.
+   */
+  vereda: [0.663, 0.612, 0.582],
   /** medido #baa8a4. La junta entre baldosas, y la baldosa alterna. */
-  vereda_junta: [0.729, 0.659, 0.643],
+  vereda_junta: [0.513, 0.464, 0.453],
   /** Derivado de la vereda: hormigon de cordon, rampa y tapas. */
-  hormigon: [0.78, 0.74, 0.71]
+  hormigon: [0.572, 0.542, 0.521]
 };
 
 /* =========================================================================
