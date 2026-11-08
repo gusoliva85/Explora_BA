@@ -4213,6 +4213,155 @@ deja de ser cierta. Queda anotado en la tarea.
 
 ---
 
+## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
+
+Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo
+había entendido leyendo la especificación el día anterior.
+
+Yo había leído quince cartas y había mirado cada una por separado: *esta sube
+el daño un 30 %, esta agrega un proyectil*. Desde ahí llegué a un diagnóstico
+—una carta Premium de daño sola no cambia nada— y a una propuesta: subir los
+porcentajes. **El diagnóstico estaba bien. La propuesta estaba al revés.**
+
+Lo que Gus describió es otra cosa:
+
+> *"Tenés la mejora premium. Después te salta el que dispara 2 proyectiles al
+> mismo tiempo: ahí cada tiro vale 2, más encima una mejora premium. Después
+> la tercera carta es la que dispara un proyectil tras otro. Entonces en cada
+> tiro que antes era uno solo, ahora dispara 4 tiros de una sola vez. Y encima
+> con una mejora premium. Eso cambia un montón."*
+
+### Lo que faltaba escribir, y era lo único importante
+
+**La especificación decía "se suman" y eso no alcanza.** Con quince cartas que
+se toman en cualquier orden, "se suman" no define el resultado: hay que decir
+qué se suma y qué se multiplica, o la misma mano de cartas da números
+distintos según el orden en que salieron. Eso es una ambigüedad de
+especificación, y es el tipo de cosa que no se descubre leyendo: se descubre
+haciendo la cuenta.
+
+De la frase de Gus sale la fórmula, y quedó como **D-44**:
+
+```
+proyectiles = (1 + tiro_doble + 2 × diagonales) × (1 + disparo_múltiple)
+daño_c/u    = base × (1 + Σ aditivos − Σ penalidades)
+```
+
+Dos carriles por dos repeticiones son **cuatro**, no tres. Gus lo dijo con esas
+palabras —*"4 tiros de una sola vez"*— y es la diferencia entre un sistema que
+escala y uno que se acerca a un techo.
+
+### Por qué mi propuesta de subir los porcentajes era mala
+
+Porque una carta de daño vale `proyectiles ×` su porcentaje.
+
+| | Proyectiles | Lo que regala el Premium |
+|---|---|---|
+| Al principio de la partida | 1 | 7,5 de daño por ráfaga |
+| Al final | 8 | **60 de daño por ráfaga** |
+
+**Las cartas de daño no son flojas: son flojas al principio y enormes al
+final.** Y eso es exactamente la curva que Gus quiere, la que hace que el
+jugador quiera seguir jugando para ver cómo se descontrola. Si yo subía los
+porcentajes para que la primera se sintiera, rompía la última.
+
+La solución verdadera no está en los números: está en **el sorteo**. Que una
+carta de daño no salga cuando el jugador todavía no tiene proyectiles que
+multiplicar. Es una línea de código y es la 19B.9, que cambió de forma entera.
+
+**La lección, que es la misma que la del sol a 17° y la de los 1.624 m, pero en
+otro terreno:** esta vez la intuición no falló por falta de medición, falló por
+*leer las partes sin hacer la cuenta del conjunto*. Quince cartas se pueden
+leer una por una y entender cada una perfectamente, y no entender el sistema.
+Alcanzaba con multiplicar dos números.
+
+### Y después, lo que sale gratis: dos techos que nadie había buscado
+
+Haciendo la fórmula aparecieron dos consecuencias de la regla de **no repetir
+cartas**, que yo había anotado como una regla de variedad. No lo es: es el
+techo de todo. Es **D-45**.
+
+**El techo de proyectiles.** Si tiro doble y disparo múltiple se toman una vez
+cada uno, el producto tiene un máximo: `4 carriles × 2 repeticiones = 8
+proyectiles por ráfaga`. **Ocho, siempre, por más larga que sea la partida.**
+Un número conocido es lo que hace que una reserva de objetos se pueda
+dimensionar y medir. Si las cartas se pudieran repetir, ese techo no existe.
+
+**El techo de controles, que es el que importa ahora.** Con 15 cartas y 3 por
+control, en el control 13 quedan exactamente 3 cartas en el pool: las tres que
+salen, o sea que no hay elección. En el 14 ya no se pueden repartir tres.
+**Trece es el máximo matemático y doce el último que es una decisión.**
+
+Esto importa porque Gus dijo en el mismo mensaje que está pensando en pasar a
+un control por cuadra sobre el recorrido real, 16 controles. **No se puede sin
+romper la regla de no repetir, que es la que sostiene el techo de proyectiles.**
+Las dos decisiones están acopladas y conviene verlo antes de tocar cualquiera:
+
+> más controles → cartas repetibles o con nivel → se cae el máximo de 8
+> proyectiles → el costo en el teléfono deja de tener techo
+
+No es un impedimento, es un precio. Queda en decisiones abiertas y se decide
+antes de la 19B.1, porque el sistema de modificadores se escribe distinto si
+las cartas tienen nivel.
+
+### Una cuenta que hay que corregirle a Gus, y es a favor
+
+Gus dijo *"si no me equivoco son 8 fases en total, o sea cada 2 cuadras es un
+checkpoint"*. El número 8 está bien y el *cada 2 cuadras* no:
+
+| | Hoy |
+|---|---|
+| Puntos del recorrido | **8** — inicio, 6 controles, casa de Sergio |
+| Tramos | **7**, de 100 m cada uno |
+| Controles por cuadra | **uno** |
+
+**Lo que Gus quiere para más adelante ya es lo que hay**, sólo que sobre 700 m
+en lugar de 1.624. El trazado ortogonal de D-35 ya comprimió el recorrido real
+a siete cuadras, y cada esquina es un control.
+
+O sea que la pregunta de los 16 controles no es *"¿controles más seguidos?"* —
+eso ya está— sino **"¿16 cuadras de ciudad en vez de 7?"**. Eso es Fase 18 y
+Fase 13: el doble y algo de ciudad para construir, iluminar, poblar y hacer
+entrar en un teléfono, cuando bajar de 238 llamadas de dibujo a 150 sobre
+*siete* cuadras todavía es una tarea pendiente. Es una decisión de alcance, no
+de ritmo, y por eso dejarlo como está hoy es lo correcto.
+
+### Dos cartas que tocan cosas que acabo de borrar
+
+**"Sanar" restaura el 40 % de la salud**, y el botón de curarse se fue en la
+16.1, con `Pose.CURARSE` borrada en la 16.3. La carta la trae de vuelta pero
+cambiada, y mejor: no es un recurso que se administra —que es lo que D-28 vino
+a sacar— es **un premio de una sola vez**. No devuelve ningún botón y no
+contradice D-31, porque el daño sigue sin regenerarse solo. Lo que falta es
+poder bajarle el daño a Gus desde afuera del combate, que hoy no está
+conectado: tarea 19B.12.
+
+**Y "HP Boost" y "Sanar" se van a confundir.** Una sube el techo, la otra llena
+lo que falta. Con 120 de vida base, HP Boost lleva el máximo a 144 **sin curar
+nada**: tomarla con 30 de vida deja al jugador con 30 de 144. Es el mismo
+síntoma que el Premium de daño —una carta que se elige y no pasa nada visible—
+y la misma solución, que es el texto de la carta y no el número.
+
+### Lo que esto cerró de la Fase 17
+
+La 17.3 ter estaba anotada como *"¿rayo o proyectil?"* con una propuesta mía y
+un pedido de discutirla. **Ya no hace falta discutirla.** Si la progresión de
+toda la partida es la multiplicación de proyectiles, tiene que haber
+proyectiles que viajen; no es una opción de implementación, es el eje del
+juego. Lo único que quedaba era si el tiro apuntado sigue siendo rayo, y las
+dos cosas conviven: el primero va al blanco y no falla (D-36), los demás vuelan
+y pueden errar.
+
+Y queda una obligación chica que vale mucho: **la Fase 17 escribe "una ráfaga
+de uno", no "un tiro"**, con la fórmula de D-44 adentro y todos los
+multiplicadores en 1. Cuesta nada hoy y es la diferencia entre que la 19B
+enchufe cartas o rehaga el disparo entero. Esto es la tercera vez en dos días
+que una decisión de la 19B se empuja hacia la 17; la razón es siempre la misma,
+y es que el disparo es el único lugar del código donde los power-ups se tocan
+todos.
+
+---
+
 ## Apéndice A — Decisiones que se cierran en cada fase
 
 | Fase | Decisión pendiente | Cómo se cierra |

@@ -70,7 +70,7 @@ está limpia y todo en verde.
 | ⬜ | 17 — Combate automático | Depende de la 16 |
 | ⬜ | 18 — El recorrido real | Depende de la 16 |
 | ⬜ | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Va con la 18 |
-| ⏸️ | 19B — Las cartas de power-up | **Espera la lista de mejoras de Gus** |
+| ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
 | ⬜ | 11 — Audio | Pendiente |
@@ -84,7 +84,7 @@ combate son el corazón del cambio y hay que poder jugarlas antes de construir
 mapa para ellas. La 18 y la 20 pueden ir en paralelo si hiciera falta: la 18
 usa los props provisionales que ya existen y la 20 los reemplaza después. La
 19A va con la 18, porque un control que marca la llegada es parte del
-recorrido; la 19B espera la lista de power-ups de Gus. La 12R se retoma
+recorrido; la 19B ya tiene su especificación y espera a la 17 y a la 18. La 12R se retoma
 recién cuando el juego nuevo se pueda jugar.
 
 **Lo que hay hoy:** Gus camina tres cuadras de Boedo, los zombis lo detectan
@@ -108,9 +108,9 @@ frenar, porque moverse y disparar no se pueden a la vez. La única decisión del
 jugador es *dónde pararse y cuánto tiempo*. Y la razón para hacerlo es ir a
 buscar a Sergio.
 
-### Las dieciocho decisiones nuevas
+### Las veinte decisiones nuevas
 
-Numeradas **D-26 a D-43**, porque D-01 a D-21 son del documento 02 y D-22 a
+Numeradas **D-26 a D-45**, porque D-01 a D-21 son del documento 02 y D-22 a
 D-25 son de la 12R.
 
 #### 🔴 D-26 — El recorrido es el real, comprimido a siete cuadras
@@ -497,6 +497,151 @@ no agrega tareas, les da un criterio.
 sobrevivientes: nada. La contención se cuenta **con lo que se ve**, y nada
 más. Contarla con texto es Fase 15, junto con el resto de la campaña de D-41.
 
+#### 🔴 D-44 — Cómo se acumulan los power-ups: el conteo multiplica, el daño suma
+
+**De dónde sale.** El 8/11 Gus explicó para qué sirven las cartas, y no era
+lo que yo había entendido. Yo las había leído como quince aumentos sueltos; no
+lo son. **Son dos ejes que se multiplican entre sí**, y la partida es la
+escalada de ese producto:
+
+> *"Un solo power-up no cambia nada, pero tener muchos cambia totalmente la
+> jugabilidad. En las últimas fases tenés 6 o 7 power-ups, tu personaje
+> dispara para todos lados y es un lío terrible de proyectiles. Esa es la
+> gracia."*
+
+**La fórmula, que hasta hoy no estaba escrita en ninguna parte.** Con quince
+cartas que se acumulan en cualquier orden, "se suman" no alcanza como
+especificación: hay que decir *qué* se suma y *qué* se multiplica, o el
+resultado depende del orden en que se tomaron las cartas.
+
+```
+proyectiles_por_ráfaga = (1 + tiro_doble + 2 × diagonales) × (1 + disparo_múltiple)
+                          └──────── carriles ────────────┘   └── repeticiones ──┘
+
+daño_por_proyectil      = daño_base × (1 + Σ aditivos − Σ penalidades)
+
+daño_por_ráfaga         = proyectiles_por_ráfaga × daño_por_proyectil
+```
+
+**Los carriles y las repeticiones se multiplican.** Es lo que Gus describió
+literalmente: *"en cada tiro que antes era uno solo, ahora dispara 4 tiros de
+una sola vez"*. Dos carriles por dos repeticiones son cuatro proyectiles, no
+tres. Esa multiplicación **es** el juego.
+
+**El daño se suma sobre la base, nunca se compone.** Las penalidades también:
+`−25 %` de tiro doble y `−10 %` de disparo múltiple se restan del mismo 100 %
+original. Si se compusieran, cada carta nueva valdría menos que la anterior y
+el final de la partida se sentiría más chato que el principio — exactamente lo
+contrario de lo que se busca.
+
+**La cuenta del ejemplo de Gus, verificada.** Mejora Premium, después tiro
+doble, después disparo múltiple, con los números de D-31 y la cadencia de
+0,4 s que hay hoy:
+
+| | Proyectiles | Daño c/u | Por ráfaga | Daño por segundo | vs. base |
+|---|---|---|---|---|---|
+| Nada | 1 | 25,00 | 25,00 | 62,5 | — |
+| + Mejora Premium | 1 | 32,50 | 32,50 | 81,3 | 1,30× |
+| + Tiro doble | 2 | 23,75 | **47,50** | 118,8 | 1,90× |
+| + Disparo múltiple | **4** | 23,75 | **95,00** | **201,9** | **3,23×** |
+
+Tres cartas y el zombi pasa de morir en cuatro tiros a morir en dos ráfagas.
+Gus tiene razón: *cambia un montón*. Y la cuarta carta que él nombra —rebote
+entre enemigos, tres saltos a −30 % cada uno— lleva los 4 proyectiles a **16
+impactos** contra un grupo: unos 240 de daño por ráfaga, casi diez veces la
+base. Eso ya es el "lío terrible" que describe, y sale de los números, no de
+la intención.
+
+**Y acá está lo que esto me corrige.** Yo había anotado como problema que una
+carta Premium de daño sola no cambia nada, y proponía subir los porcentajes.
+**Era el diagnóstico correcto y la solución equivocada.** Mirando la fórmula
+se ve por qué: una carta de daño vale `proyectiles ×` su porcentaje. Con un
+proyectil, el Premium regala 7,5 de daño por ráfaga; con ocho, regala 60. No
+es que las cartas de daño sean flojas: **es que el eje del conteo es el que
+fija cuánto vale el eje del daño.**
+
+O sea que son flojas al principio y enormes al final, que es precisamente la
+curva que Gus quiere. Lo que hay que arreglar no son los porcentajes: es **el
+sorteo**, para que una carta de daño no aparezca cuando el jugador todavía
+tiene un solo proyectil y no va a notar nada. Eso es la 19B.9, y cambió de
+forma.
+
+**El valor marginal de cada carta, medido desde cero.** Sirve para pesar el
+sorteo y para no volver a discutirlo de memoria:
+
+| Primera carta de la partida | Daño por ráfaga | Daño por segundo | Tiros para matar |
+|---|---|---|---|
+| Mejora de Ataque (+15 %) | 28,75 | 71,9 | 4 |
+| Mejora Premium (+30 %) | 32,50 | 81,3 | **4** ← no se nota |
+| **Tiro doble** | **37,50** | 93,8 | **3** |
+| **Disparo múltiple** | **45,00** | 95,6 | **3** |
+| Disparos diagonales | 25,00 | 62,5 | 4 |
+
+**Las diagonales son el caso raro y hay que decirlo:** contra un solo zombi
+**no hacen absolutamente nada**, porque los dos proyectiles que agrega salen
+hacia los costados. Es una carta de multitud. Con el combate automático de
+D-28 —donde Gus frena y el blanco es el más cercano— eso se va a sentir como
+una carta rota la primera vez que se elija peleando contra uno solo. No está
+rota: está mal explicada. Es trabajo de la 19B.5, en el texto de la carta.
+
+#### 🔴 D-45 — "No repetir" no es una regla de variedad: es el techo de todo
+
+**Qué dice la especificación.** *"Si el usuario ya obtuvo la habilidad, no se
+vuelve a repetir la misma tarjeta durante la partida."* Cada carta se toma una
+vez y nunca más.
+
+**Eso tiene dos consecuencias que no son evidentes, y las dos son buenas.**
+
+**1. Pone un techo duro a la cantidad de proyectiles, y por eso el juego entra
+en un teléfono.** Si tiro doble y disparo múltiple sólo se pueden tomar una
+vez cada uno, el producto de la fórmula de D-44 tiene un máximo:
+
+```
+máximo = (1 + 1 + 2×1) × (1 + 1) = 4 carriles × 2 repeticiones = 8 proyectiles
+```
+
+**Ocho por ráfaga, siempre, por más larga que sea la partida.** Con rebote
+—tres saltos— son hasta 32 impactos, más uno por el rebote de pared, más 8 por
+cada zombi que muera con Muerte Nova. A 2,5 ráfagas por segundo eso es del
+orden de **20 proyectiles nuevos por segundo**, que es mucho pero es un número
+*conocido*, y con un número conocido se dimensiona una reserva de objetos y se
+mide. Es la tarea 19B.10.
+
+**2. Pone un techo a la cantidad de controles, y acá hay que frenar.** Con 15
+cartas para Gus y 3 por control, el sorteo se queda sin con qué:
+
+| Control | Cartas usadas | Quedan en el pool | ¿Hay elección? |
+|---|---|---|---|
+| 1 | 0 | 15 | Sí |
+| 6 (hoy) | 5 | **10** | Sí, cómodo |
+| 13 | 12 | **3** | Las tres últimas: no hay elección |
+| 14 | 13 | 2 | **No se pueden repartir tres cartas** |
+
+**Trece controles es el máximo matemático, y el último ya no es una decisión.**
+Doce es el último control donde el jugador realmente elige. Esto importa
+porque Gus está pensando en pasar a un control por cuadra sobre el recorrido
+real —16 controles— y **eso no se puede hacer sin cambiar la regla de no
+repetir**, que es justo la regla que sostiene el techo de proyectiles del punto
+anterior.
+
+**Las dos decisiones están acopladas, y conviene verlo antes de tocar
+cualquiera de las dos:**
+
+> más controles → hace falta que las cartas se puedan repetir o subir de nivel
+> → desaparece el máximo de 8 proyectiles → el costo en el teléfono deja de
+> tener techo
+
+No es un impedimento: es un precio. Hay salidas —que sólo repitan las cartas
+de daño y velocidad, que son las que no agregan proyectiles; o cartas de nivel
+2 y 3— y las dos son trabajo real. Queda en decisiones abiertas y **se decide
+antes de la 19B.1**, porque el sistema de modificadores se escribe distinto si
+las cartas tienen nivel.
+
+**Y una cosa que ya se puede decir: con 6 controles el pool alcanza de sobra.**
+Diez cartas sin usar al terminar la partida significa que dos partidas seguidas
+no se parecen, que es lo que uno quiere de un juego así. El problema de los 16
+controles es un problema de la versión larga, no de la demo.
+
 #### 🔴 D-27 — El joystick a la derecha
 
 **Qué dice.** El joystick de movimiento pasa a la **mitad derecha** de la
@@ -571,17 +716,18 @@ cartas** de mejora. El jugador elige **una**, se aplica sola y se queda para
 toda la partida. Las mejoras **se acumulan** y ninguna se pierde. Al morir se
 pierden todas y se empieza de cero con las estadísticas estándar.
 
-**Y se hace en dos tiempos, porque Gus todavía está armando las mejoras.**
+**Y se hace en dos tiempos, para que el control exista antes que las cartas.**
 
 | Cuándo | Qué hay |
 |---|---|
 | **Ahora** (Fase 19A) | El control **marca la llegada** y nada más: se guarda el progreso, se avisa en pantalla y se sigue. Es lo que pidió Gus explícitamente |
-| **Cuando lleguen las mejoras** (Fase 19B) | Las tres cartas, la acumulación y el reinicio a cero |
+| **Fase 19B** | Las tres cartas, la acumulación de D-44 y el reinicio a cero |
 
-La 19A se puede hacer ya y no bloquea nada. La 19B **espera la lista de
-power-ups de Gus**: el sistema no se diseña bien sin saber qué tiene que
-aplicar. El pool que figura más abajo es mi propuesta mientras tanto, para
-que Gus tenga de dónde partir o qué contradecir.
+La 19A se puede hacer ya y no bloquea nada. La 19B ya tiene la **lista
+completa de power-ups de Gus**, con los números exactos y las tres familias:
+está transcripta en la Fase 19B y el original vive en
+`documentacion/habilidades/`. Lo que la 19B espera no es información: es que
+el disparo de la Fase 17 exista.
 
 **Qué reemplaza.** Esto deja sin efecto **D-20** (los objetos se levantan
 caminándolos) y **D-21** (curarse lleva tiempo y hay que estar quieto): ya no
@@ -708,7 +854,9 @@ jugándolo, no sirve nada de lo que viene después.
 - [ ] **17.2 Definir "quieto".** El umbral y la demora. Gus frena en 0,18 s por inercia: hay que decidir si eso cuenta. Propuesta a probar: quieto cuando el joystick está en cero por 0,15 s o más
 - [ ] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36): lo único que impide el tiro es una barrera física, y vale para los dos lados
 - [ ] **17.3 bis Sacar la dispersión** (D-36). `spreadDegrees` a 0 y el apuntado asistido afuera: el tiro no falla por azar
-- [ ] **17.3 ter ¿Rayo o proyectil?** ⚠️ **Se decide acá, no en la 19B.** Hoy el disparo es un rayo instantáneo, y cinco de las quince cartas de Gus —tiro doble, diagonales, rebote, rebote en pared y Muerte Nova— necesitan que la bala sea **un objeto que viaja**. Si la 17 se escribe sobre el rayo, la 19B rehace el disparo entero. Mi propuesta: **el tiro apuntado sigue siendo instantáneo y no falla (D-36), y los proyectiles extra vuelan y sí pueden errar** — que es justo lo que los hace una decisión y no un número. Pero se decide mirando la especificación, no de memoria
+- [ ] **17.3 ter Rayo y proyectil, las dos cosas.** ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
+  **Mi propuesta:** el **primer** proyectil de cada ráfaga va al blanco elegido y **no falla** (D-36); los demás —el segundo carril, las diagonales, los rebotes— **vuelan y sí pueden errar**. Eso conserva las dos cosas: la promesa de que quedarse quieto sirve, y que el caos de proyectiles del final de la partida sea caos de verdad.
+  **Y hay que escribirlo con la fórmula de D-44 adentro desde el primer día**, aunque en la 17 todos los multiplicadores valgan 1: `proyectiles = carriles × repeticiones` con carriles = 1 y repeticiones = 1. Si la 17 escribe "un tiro" en vez de "una ráfaga de uno", la 19B rehace el disparo entero
 - [ ] **17.4 El blanco se mantiene.** No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista
 - [ ] **17.5 Girar y disparar.** El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco. `rumboForzado` ya existe en `playerController`: se reusa
 - [ ] **17.6 Al moverse, suelta.** Deja de disparar y suelta el blanco, sin arrastre
@@ -722,6 +870,7 @@ jugándolo, no sirve nada de lo que viene después.
 | Pregunta | Propuesta |
 |---|---|
 | ¿Dispara a través de otros zombis? | No: el primero del rayo se come la bala. Ya funciona así |
+| ¿Un tiro o una ráfaga de uno? | **Una ráfaga de uno** (D-44). Cuesta nada ahora y es la diferencia entre que la 19B enchufe cartas o rehaga el disparo |
 | ¿Dispara mientras gira hacia el blanco, o espera? | Espera a estar encarado. Si no, el primer tiro de cada blanco sale para cualquier lado |
 | ¿Qué pasa si el más cercano está detrás de un auto? | No es blanco válido: busca al siguiente. Cerrado por D-36 |
 | ¿Se puede frenar a propósito para disparar desde cobertura? | Sí, y es el juego. Es lo que reemplaza a las decisiones de botón |
@@ -917,31 +1066,90 @@ explosión— y lo que la 19B necesita es otra cosa: muchos, con rebote y
 atenuación. Rehacerlo es más barato que haberlo arrastrado, pero el archivo
 viejo está en Git por si sirve de punto de partida.
 
-#### 🔢 Un problema de números que ya se puede ver
+#### 📇 Las veintitrés cartas, con los números exactos
 
-Con los 100 de vida del zombi y los 25 de daño de Gus (D-31), **los aumentos
-de daño sólo se notan cuando cruzan un umbral entero de tiros**:
+Están acá y no sólo en el `.txt` **a propósito**: son el contenido del juego, y
+el contenido del juego vive en el plan. El archivo
+[`documentacion/habilidades/Descripcion de las habilidades.txt`](habilidades/Descripcion%20de%20las%20habilidades.txt)
+es el original de Gus y manda si hay diferencia.
 
-| Lo que llevás | Daño | Tiros para matar |
+**GUERRERO** — 6 cartas. Sólo para personajes de proyectil físico. **Se acumulan.**
+
+| Carta | Qué hace | Costo | Texto de la carta |
+|---|---|---|---|
+| **Disparo múltiple** | +1 **repetición**: un proyectil más justo después del anterior | −10 % daño base, −15 % velocidad de ataque | *"Dispara una proyectil más cada vez"* |
+| **Tiro doble** | +1 **carril** hacia adelante | −25 % daño base | *"Proyectil hacia adelante +1"* |
+| **Disparos diagonales** | +2 **carriles**: uno en diagonal a cada lado | — | *"Proyectiles diagonales +1"* |
+| **Ataque crítico (Premium)** | +10 % probabilidad de crítico, +40 % daño crítico | — | *"¡Aumentó la posibilidad de critar y el daño de los crít"* |
+| **Ataque crítico** | +5 % probabilidad, +20 % daño crítico | — | *"Aumenta la probabilidad de crit y el daño de los críticos"* |
+| **Sed de sangre** | Recupera **1,5 % de la vida base del enemigo** al matarlo | — | *"Absorves HP cuando matas al enemigo"* |
+
+**MAGO** — 8 cartas. **Los cuatro elementos son excluyentes entre sí**: elegir
+otro reemplaza al anterior, no se suman. **Los cuatro orbes sí se acumulan** y
+funcionan con cualquier elemento o sin ninguno.
+
+| Carta | Qué hace | Texto de la carta |
 |---|---|---|
-| nada | 25,00 | 4 |
-| 1 Mejora de Ataque (+15 %) | 28,75 | 4 |
-| 2 Mejoras | 32,50 | 4 |
-| **1 Mejora Premium (+30 %)** | **32,50** | **4** ← no cambia nada |
-| Premium + normal | 36,25 | **3** |
-| 3 normales | 36,25 | **3** |
+| **Disparo Rayo** | +25 % daño por impacto. El enemigo brilla **amarillo** | *"Tus ataques causan efecto Rayo"* |
+| **Disparo Hielo** | Congela hasta que lo ataquen o **2 s**. +10 % daño. Capa **celeste**. No acumula: reimpactar reinicia el contador | *"Ralentiza a los enemigos"* |
+| **Disparo Veneno** | **35 % de daño por segundo durante 8 s**. Capa **violeta**. No acumula: reimpactar reinicia | *"Tus ataques causan efecto veneno"* |
+| **Disparo Fuego** | **18 % cada 0,25 s durante 2 s**. Capa **roja**. No acumula: reimpactar reinicia | *"Tus ataques provocan un efecto fuego"* |
+| **Círculo de Fuego** | 2 bolas orbitando, **75 % del daño actual** + efecto Fuego. Aplica siempre | *"Dos orbes de llama rodean a tu alrededor"* |
+| **Círculo de Hielo** | 2 bolas orbitando, 75 % + congelación. Aplica siempre | *"Dos orbes de hielo rodean a tu alrededor"* |
+| **Círculo de Veneno** | 2 bolas orbitando, 75 % + veneno. Aplica siempre | *"Dos orbes venenosos rodean a tu alrededor"* |
+| **Círculo de Rayo** | 2 bolas orbitando, 75 % + efecto. Aplica siempre | *"Dos orbes de rayos circulan a tu alrededor"* |
 
-**Una carta Premium de daño, sola, no cambia absolutamente nada**: hacen
-falta tres cartas normales, o una Premium más una normal, para bajar de 4
-tiros a 3. Con 6 controles por partida, eso es medio build para un escalón.
+**PROPIEDADES GENERALES** — 9 cartas. Las ven **las dos clases**. **Se acumulan.**
 
-No está roto, y hay dos cosas que lo compensan solas: **los críticos** son
-probabilísticos, así que se sienten siempre, y la **velocidad de ataque** es
-continua. Pero conviene saberlo antes de jugarlo, porque el síntoma —*"elegí
-la carta de daño y no pasó nada"*— es el peor que puede tener un sistema de
-mejoras. Se resuelve en la 19B.9, y las salidas son tres: subir los
-porcentajes, bajar la vida del zombi, o que las de daño siempre vengan
-acompañadas de crítico.
+| Carta | Qué hace | Texto de la carta |
+|---|---|---|
+| **Rebote** | Los proyectiles rebotan hasta **3 veces** entre enemigos cercanos, **−30 % de daño por rebote** | *"Tus ataques rebotan entre los zombies"* |
+| **Rebote pared** | Rebotan en las paredes **una sola vez**, **−50 % después del rebote**. Al segundo impacto de pared desaparecen | *"Los proyectiles rebotan contra las paredes"* |
+| **Muerte Nova** | Los muertos disparan **8 proyectiles equidistantes** al **30 % de daño** | *"Los enemigos explotan en rayos tras la muerte"* |
+| **Mejora de Ataque (Premium)** | **+30 %** del daño base, aditivo | *"¡Ahora puedes hacer un daño más alto!"* |
+| **Mejora de Ataque** | **+15 %** del daño base, aditivo | *"Aumenta ligeramente tu ataque"* |
+| **Velocidad de Ataque (Premium)** | **+25 %** de la velocidad base, aditivo | *"¡Ahora puedes atacar más rápido!"* |
+| **Velocidad de Ataque** | **+12,5 %** de la velocidad base, aditivo | *"Aumenta ligeramente la velocidad de ataque"* |
+| **HP Boost** | **+20 %** de la vida máxima base | *"¡Máx. HP aumentado!"* |
+| **Sanar** | Restaura el **40 %** de la salud | *"Restaura parcialmente HP"* |
+
+**Las reglas del sorteo, textuales:** tres cartas por control, se elige una;
+sólo aparecen las de la clase del personaje más las generales; **una carta ya
+tomada no vuelve a salir en la partida**.
+
+**Dos cosas de esta lista que la demo tiene que mirar.**
+
+*"Sanar" es la curación que D-29 borró.* El botón de curarse se fue en la
+16.1 y `Pose.CURARSE` se borró en la 16.3. Esta carta la trae de vuelta, pero
+cambiada y mejor: no es un recurso que se administra, es **un premio de una
+sola vez**. No contradice a D-31 —el daño sigue sin regenerarse solo— y no
+devuelve ningún botón. Lo que sí necesita es que el daño de Gus se pueda
+reducir desde afuera del combate, que hoy no está conectado. Tarea 19B.12.
+
+*"HP Boost" y "Sanar" son distintas y no hay que mezclarlas.* Una sube el
+techo, la otra llena lo que falta. Con 120 de vida base, HP Boost lleva el
+máximo a 144 **sin curar nada**: tomarla con 30 de vida deja al jugador con 30
+de 144, que se va a sentir como una carta que no hizo nada. Es el mismo
+síntoma de D-44 y la misma solución: el texto de la carta (19B.5).
+
+#### 🔢 El balance: lo que cambió al entender para qué sirven las cartas
+
+Esta sección decía que había un problema de números y proponía subir los
+porcentajes. **La explicación de Gus del 8/11 la corrigió entera, y el
+razonamiento quedó escrito en D-44.** Resumido:
+
+- El eje del **conteo** (tiro doble, disparo múltiple, diagonales)
+  **multiplica**; el eje del **daño** suma sobre la base.
+- Una carta de daño vale `proyectiles ×` su porcentaje. Con un proyectil, el
+  Premium regala 7,5 de daño por ráfaga; con ocho, regala 60.
+- Por eso una carta Premium sola no se nota, **y está bien que no se note**:
+  las cartas de daño son el multiplicador del final de la partida, no del
+  principio.
+- Lo que hay que arreglar no son los porcentajes: es **el sorteo**, para que
+  una carta de daño no salga cuando todavía no hay proyectiles que multiplicar.
+
+Y el techo está puesto por la regla de no repetir: **8 proyectiles por ráfaga
+como máximo absoluto** (D-45). Ese número es el presupuesto de toda la fase.
 
 #### Las tareas
 
@@ -953,13 +1161,21 @@ acompañadas de crítico.
 - [ ] **19B.6 Los iconos, dibujados de cero.** ⚠️ Las imágenes de `documentacion/habilidades/` **salieron de otro juego**: son **referencia de diseño y no entran a `public/`**. Modificarlas no las vuelve usables — una versión alterada de una imagen ajena sigue siendo obra derivada. Hay que dibujar 23 iconos **originales en SVG** con el mismo lenguaje: cuadrado, marco verde, fondo claro, una o dos formas planas
 - [ ] **19B.7 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
 - [ ] **19B.8 Al morir se pierde todo**, con una prueba que lo verifique
-- [ ] **19B.9 El balance de las seis**, empezando por el problema de los umbrales de arriba
+- [ ] **19B.9 El sorteo pesado, no los porcentajes** (D-44). Que una carta de daño o de velocidad no salga mientras el jugador tenga un solo proyectil, porque ahí no se nota. La forma más simple que se me ocurre: las tres cartas del **primer** control salen del eje del conteo, y de ahí en adelante el sorteo es libre. Es una línea de código y arregla la única primera impresión que el jugador va a tener
+- [ ] **19B.10 El presupuesto de proyectiles** (D-45). Ocho por ráfaga, hasta 32 impactos con rebote, más 8 por muerte con Muerte Nova, a 2,5 ráfagas por segundo: del orden de **20 proyectiles nuevos por segundo**. Hace falta una reserva de objetos como la de los zombis —que no crece— y un tope duro de proyectiles vivos. **Medido con `tools/medir-memoria.mjs` en el peor caso**, no estimado
+- [ ] **19B.11 ¿Las cartas se repiten o suben de nivel?** ⚠️ **Se decide antes de la 19B.1**, porque el sistema de modificadores se escribe distinto. Con 6 controles no hace falta; con los 16 que Gus está pensando, sí. Ver D-45: la regla de no repetir es la que sostiene el techo de 8 proyectiles
+- [ ] **19B.12 Conectar la curación** para la carta "Sanar", que es la única que la pide. Hoy el daño de Gus sólo sube. No devuelve ningún botón y no contradice D-31
+- [ ] **19B.13 Robo de vida** para "Sed de sangre": 1,5 % de la vida base del enemigo al matarlo. Con zombis de 100 son 1,5 por muerte, así que el número hay que mirarlo jugando — una cuadra de ocho zombis devuelve 12 de 120
 
 **Criterio de salida de la 19B**
 
 - [ ] Al llegar a un control aparecen tres cartas y el juego espera
 - [ ] Elegir una la aplica al instante y sin que el jugador toque nada más
-- [ ] Las seis mejoras conviven y se notan todas
+- [ ] Las quince cartas de Guerrero conviven en cualquier orden, y el resultado no depende del orden en que se tomaron (D-44)
+- [ ] Tomar tres cartas del eje del conteo da **exactamente 4 proyectiles por ráfaga**, verificado con una prueba de la fórmula de D-44
+- [ ] El peor caso —8 proyectiles, rebote y Muerte Nova sobre una cuadra llena— se mide y entra en el presupuesto de la Fase 13
+- [ ] Ninguna carta se repite en la misma partida, verificado con una prueba
+- [ ] Una carta elegida se nota **jugando**, sin mirar números
 - [ ] Morir devuelve las estadísticas estándar, verificado con una prueba
 - [ ] Se ve en todo momento qué mejoras se llevan puestas
 - [ ] Las tres cartas se leen y se eligen con un pulgar en el teléfono
@@ -1398,6 +1614,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 |---|---|---|
 | ~~La lista de power-ups~~ | 19B.1 | ✅ **Entregada el 8/11**, completa y con números: 23 cartas en `documentacion/habilidades/`. Y trajo algo que no pedí: **clases de personaje** |
 | **Cuál es el arma de Gus** | 20.8 | Nada todavía: yo le muestro las once renderizadas y elige |
+| **¿Un control por cuadra sobre los 1.624 m reales?** | 18.3 y 19B.11 | Gus lo está pensando y dijo que por ahora se queda como está. **Hoy ya hay un control por cuadra**, sólo que sobre 700 m: son 7 cuadras y 6 controles, no 8 cuadras cada 2. Pasar a 16 controles no es más controles: es **16 cuadras de ciudad** (Fase 18 y 13) y **romper la regla de no repetir** (D-45) |
 
 **Las que cierro yo midiendo:**
 
@@ -1405,7 +1622,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 |---|---|---|
 | ~~Qué cuenta como "quieto"~~ | 17.2 | ✅ **Decidido:** joystick en cero, con 0,15 s de retardo. Está escrito en la Fase 17 y se revisa jugando |
 | Si espera a estar encarado antes del primer tiro | 17.3 | Mirándolo: si el primer tiro de cada blanco sale torcido, espera |
-| **Si el disparo es un rayo o un proyectil que viaja** | 17.3 ter | Contra la especificación de power-ups: cinco cartas necesitan proyectil. Es la decisión más cara de la 17 |
+| ~~Si el disparo es un rayo o un proyectil que viaja~~ | 17.3 ter | ✅ **Resuelto por D-44:** las dos cosas. El tiro apuntado es rayo y no falla; los proyectiles extra vuelan. La ráfaga se escribe en la 17 con los multiplicadores en 1 |
 | La cadencia de la pistola | 17.9 | Jugando. Hoy son 1,6 s por zombi |
 | Si el mapa de 700 m necesita carga por tramos | 18.12 | Midiendo las llamadas de dibujo del peor caso |
 | Cómo se marca la ruta en el piso | 18.6 | Probando la franja pintada contra las flechas, desde la cámara a 48° |
@@ -1416,7 +1633,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 | ~~Si Gus y los zombis llegan a ser `.glb` riggeado (D-22)~~ | 20.4 y 20.7 | ✅ **Resuelto a favor:** el banco los trae, y el zombi trae sus seis animaciones |
 
 Las decisiones **ya cerradas** —D-01 a D-21 en el documento 02, D-22 a D-25
-en la bitácora y D-26 a D-43 acá arriba— no se vuelven a discutir salvo que
+en la bitácora y D-26 a D-45 acá arriba— no se vuelven a discutir salvo que
 aparezca un dato nuevo. **D-04 es el ejemplo de qué es un dato nuevo:** se
 reabrió porque la distancia que la justificaba estaba mal medida.
 **D-20 y D-21 quedan superadas por D-32.**
