@@ -815,7 +815,7 @@ de tres cajas tiradas en el piso.
 
 - [ ] **19A.3 Los seis controles** como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el séptimo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
 - [ ] **19A.4 Cerrada: el cartel.** Al tocar la puerta con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
-- [ ] **19A.5 El contador.** Cuántos quedan vivos en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas
+- [ ] **19A.5 El contador.** Cuántos quedan **vivos** en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas. ⚠️ **Cuenta vivos, no matados por un disparo:** los power-ups de veneno y fuego pueden matar a un zombi lejos y sin que el jugador lo vea, y si el contador no se entera la puerta no abre nunca
 - [ ] **19A.6 La brújula cambia de blanco** (D-38). Mientras la puerta frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
 - [ ] **19A.7 Abre.** Tramo limpio → la puerta se desliza y deja pasar. **Y la colisión se abre con ella**, o el paso queda abierto a la vista y cerrado al caminar. Es una animación de posición, no un efecto: barata y sin partículas
 - [ ] **19A.8 Y se cierra a los 20 m** (D-37). El número sale de la cámara: se sienta 7 m detrás de Gus y hasta 14,4 m si el jugador la aleja al máximo. Pasados esos 20 m, la cuadra de atrás ya no se ve y **se dispara el evento que la libera** (D-42)
@@ -857,46 +857,67 @@ de tres cajas tiradas en el piso.
 
 ### Lo que Gus ya empezó a armar
 
-En `documentacion/habilidades/` aparecieron los cinco primeros, con icono y
-todo. Quedan registrados acá para que no se pierdan:
+En `documentacion/habilidades/` van doce iconos. Quedan registrados acá para
+que no se pierdan, y porque leídos juntos **contestan solos tres de las
+preguntas que yo había dejado abiertas**.
 
-| Carta | Icono | Qué entiendo que hace | Cuesta |
-|---|---|---|---|
-| **Tiro doble** | `Tiro doble.webp` | Dos balas paralelas por disparo | **El más barato**: es el mismo disparo dos veces |
-| **Disparo múltiple** | `Disparo multiple.webp` | Dos balas abiertas en ángulo | Bajo |
-| **Disparos diagonales** | `Disparos diagonales.webp` | Tres balas: una al frente y dos en diagonal | Bajo |
-| **Rebote** | `Rebote.webp` | La bala salta de un zombi a otro cercano | **Caro**: hay que elegir el segundo blanco y dibujar el salto |
-| **Rebote pared** | `Rebote pared.webp` | La bala rebota en una pared y sigue con otro ángulo | **El más caro**: necesita la normal de la superficie y un segundo rayo |
+| Carta | Qué entiendo que hace | Cuesta |
+|---|---|---|
+| **Tiro doble** | Dos balas paralelas | Bajo |
+| **Disparo múltiple** | Dos balas abiertas en ángulo | Bajo |
+| **Disparos diagonales** | Tres balas: una al frente y dos en diagonal | Bajo |
+| **Rebote** | La bala salta de un zombi a otro | Caro |
+| **Rebote pared** | La bala rebota en una pared | El más caro |
+| **Mejora de Ataque** | Más daño. Una flecha | **El más barato de todos** |
+| **Mejora de Ataque (Premium)** | Más daño todavía. Dos flechas | Igual |
+| **Velocidad de Ataque (Premium)** | Dispara más seguido | Bajo |
+| **Disparo Fuego** | Daño de fuego | Medio: pide estados |
+| **Disparo Hielo** | Daño de hielo, y seguro ralentiza | Medio: pide estados |
+| **Disparo Veneno** | Daño que sigue después del impacto | Medio: pide estados |
+| **Muerte Nova** | Al morir, el zombi estalla y daña alrededor | Medio |
 
-**Las cinco cambian cómo se dispara, no un número**, que es justo la familia
-que avisé que costaba más. Así que el sistema de la 19B.1 tiene que nacer
-sabiendo que una mejora puede reemplazar **el disparo entero**, y no sólo
-multiplicar un valor. Bien que hayan aparecido éstas primero: si el pool
-hubiera arrancado con "+10 de daño", me habría quedado corto en la
-arquitectura y lo habría descubierto tarde.
+### Las tres respuestas que traen los iconos
 
-> ⚠️ **Las tres primeras son la misma familia, y hay que decidir cómo se
-> acumulan.** Tiro doble son dos balas, disparo múltiple son dos abiertas y
-> disparos diagonales son tres. Si las tres salen en la misma partida, ¿son
-> **siete balas por disparo**? ¿O cada una reemplaza a la anterior? Con seis
-> controles es perfectamente posible juntar las tres, y la diferencia entre
-> "suman" y "se reemplazan" es la diferencia entre una partida divertida y una
-> en la que el último tramo se barre sin mirar. **No hace falta decidirlo
-> ahora**, pero sí antes de la 19B.1, porque cambia la arquitectura: sumar
-> pide una lista de cañones, reemplazar pide un solo patrón de disparo que se
-> sustituye.
+**1. Sí hay rarezas, y son el mismo icono con una flecha más.** "Mejora de
+Ataque" lleva una flecha y "Mejora de Ataque (Premium)" lleva dos. Eso no es
+una carta distinta: es **la misma carta en otro nivel**. Así que en la 19B.1
+una mejora no es un id, es **un id más un nivel**, y eso simplifica el pool en
+vez de complicarlo: una familia con dos escalones en lugar de dos entradas
+sueltas. Mi pregunta de *"¿hay rarezas?"* queda contestada: **sí, y de la
+forma barata**.
 
-> ⚠️ **"Rebote pared" choca con D-36 y hay que resolverlo.** D-36 dice que una
-> barrera —árbol, auto, pared— **detiene** la bala, y que eso es lo que hace
-> que valga la pena moverse. Esta carta dice que la pared la **devuelve**. Las
-> dos reglas no pueden convivir sin aclarar cuál gana: lo más probable es que
-> el rebote sea la excepción que la carta compra, o sea *"ahora las paredes
-> dejan de frenarte y pasan a servirte"*. Eso es una carta muy buena, pero hay
-> que escribirlo antes de programarlo. Lo cierra la 19B.4.
+**2. Hay cartas que son sólo un número, y me equivoqué al decir que no.**
+Escribí dos veces que *"ninguna multiplica un número, todas cambian el
+disparo entero"*. Mejora de Ataque y Velocidad de Ataque son exactamente lo
+primero, y son **las más baratas de todo el pool**. Mejor así: un pool donde
+todo cambia el disparo entero sería carísimo y además agotador de jugar. Hace
+falta la mezcla.
 
-**Y fijan el estilo del icono:** cuadrado con marco verde, fondo claro,
-dibujo plano de una o dos formas, legible a tamaño chico. La 19B.6 se hace
-contra eso, no inventando otro.
+**3. Los elementales piden un sistema que todavía no existe.** Fuego, hielo y
+veneno no son daño: son **estados sobre el zombi** —quemarse, ralentizarse,
+envenenarse— que duran en el tiempo. El zombi hoy no tiene dónde guardar eso.
+Es una capa nueva en `zombie.js`, y tiene **una consecuencia que hay que
+atender en la 19A**:
+
+> Un zombi envenenado puede **morirse solo, lejos y sin que el jugador lo
+> vea**. El contador de la esclusa tiene que enterarse igual, porque si no, la
+> puerta no abre y el jugador busca un zombi que ya está muerto. El contador
+> cuenta **vivos**, no **matados por un disparo**, y eso hay que escribirlo
+> ahora que se sabe.
+
+### Y la explosión, por tercera vez
+
+**Muerte Nova** es un estallido al morir: daño en un radio alrededor del
+zombi. Eso es, exactamente, `alcanzadosPorExplosion()` de
+`src/combat/explosion.js` — el archivo que hoy la Fase 16.3 borra entero.
+
+Escribí hace unas horas que *"si la próxima vuelta agranda la lista de cosas
+que hay que salvar, conviene desconfiar de la mecánica"*. Esta vez la agranda
+una carta, no una mecánica, y la regla igual aplica a medias: **no se rescata
+ahora**. La 16.3 borra la explosión como está planeado, y si Muerte Nova
+sobrevive al pool definitivo, la 19B la escribe de nuevo contra el combate
+nuevo, que no se parece en nada al de la bazooka. Reconstruir veinte líneas
+es más barato que arrastrar un archivo muerto cuatro fases.
 
 ### Lo que necesito de Gus para la 19B
 
@@ -911,7 +932,7 @@ tener que modificar**:
 | **Si alguna cambia *cómo* se juega**, no sólo un número | Perforante, abanico o rebote cuestan mucho más que "+10 de daño", y conviene saberlo antes |
 | **Si alguna puede salir dos veces** y acumularse con ella misma | Decide si el pool se agota o no |
 | **Si las tres de disparo múltiple suman o se reemplazan** | Es la que más urge: cambia la arquitectura del sistema, no un número |
-| **Si alguna es "rara"** y tiene que aparecer poco | Si no hay rarezas, el sistema es más simple y se hace antes |
+| ~~Si alguna es "rara"~~ | ✅ **contestado por los iconos**: hay nivel normal y Premium, que es la misma carta con una flecha más |
 
 Lo que **no** necesito: números exactos, iconos, ni textos finales. Los
 números los termino yo midiendo contra los 100 de vida del zombi, que es lo
