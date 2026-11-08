@@ -3479,6 +3479,167 @@ en la Fase 19; el pool propuesto queda como punto de partida o como algo que
 contradecir.
 
 ---
+## Tercera pasada: la barricada, y un error que estaba escondido
+
+Gus agregó cinco cosas, y una de ellas no es un agregado: es el juego.
+
+### La barricada cambia qué es Explorar BA
+
+Hasta acá el control era una luz en el piso que guardaba el progreso. Ahora es
+una **barricada de autos que corta la calle y no abre hasta que no quede un
+zombi vivo en el tramo**; cuando se limpia, los dos autos del medio explotan y
+dejan el paso. Es **D-37**.
+
+**Esto no es una mecánica más: es la que faltaba.** El juego tenía un problema
+de diseño que yo no había nombrado, y es que con el combate automático se
+podía terminar la misión **sin disparar una sola vez**: corrés los 700 m, los
+zombis te muerden en el camino, y si llegás con vida ganaste. El combate
+quedaba de adorno, y la única decisión del jugador —cuándo frenar— no tenía
+por qué tomarse nunca.
+
+La barricada lo arregla de raíz. Para matar hay que frenar, y para pasar hay
+que matar. La decisión única pasa a ser **obligatoria** siete veces, una por
+cuadra. Y recién ahora los power-ups de los controles tienen sentido: cada
+cuadra limpia es un premio ganado, no un peaje pagado.
+
+**Lo que cuesta, y conviene tenerlo escrito antes de empezar.**
+
+**1. La misión se alarga mucho.** Hoy el mapa tiene unos 24 zombis —la suma de
+los pesos de las zonas por cinco—, que son unos 3 por tramo. Con la barricada,
+la población por tramo deja de ser ambiente y pasa a ser **la perilla que
+decide cuánto dura cada cuadra**. Y "más frenético", que es lo que pidió Gus,
+quiere más zombis. La misión puede irse de dos minutos a diez o quince. No es
+un problema, es una decisión, pero hay que tomarla midiendo.
+
+**2. El último zombi escondido.** Es la frustración clásica de cualquier
+puerta de este tipo: limpiaste la cuadra, la barricada no abre, y hay uno
+trabado detrás de un árbol a cuarenta metros. **No se puede dejar sin
+resolver**, así que van dos cosas: un contador en pantalla de cuántos quedan,
+y —esto es lo que de verdad lo arregla— que mientras la barricada te frene, la
+brújula **deje de apuntar al control y apunte al zombi vivo más cercano**. La
+brújula que Gus pidió agrandar termina teniendo dos trabajos, y el segundo es
+el que salva la mecánica.
+
+**3. Un zombi inalcanzable traba la partida para siempre.** Con las bocacalles
+tapadas (D-34), un puesto de aparición que caiga en un hueco cerrado es un
+zombi que no se puede matar y una barricada que no abre nunca. Los puestos
+tienen que estar sobre la ruta caminable, y eso lo verifica una prueba contra
+el mapa construido. A ojo no se ve: el hueco puede estar a dos cuadras de
+donde uno mira.
+
+### El error que estaba escondido, y que la barricada vuelve fatal
+
+Fui a ver si "matar a todos" era siquiera posible con el `SpawnManager` que
+hay, y la respuesta es que **casi**.
+
+Lo bueno: la población **es finita y determinista**. `#calcularPuestos` arma
+una lista fija de puestos a partir de las zonas de la misión —`peso * 5` cada
+una— y `puestosUsados` hace que cada puesto se encienda una sola vez. No hay
+reaparición infinita. O sea que contar tiene sentido.
+
+Lo malo está en [`src/enemies/spawnManager.js:184`](src/enemies/spawnManager.js#L184).
+Cuando el jugador se aleja más de 55 × 1,4 m de un zombi que no lo está
+persiguiendo, el zombi se apaga y se saca de `enJuego` — **pero su puesto
+sigue marcado en `puestosUsados`**, y `puestosUsados` sólo se limpia al
+reiniciar la partida.
+
+**La consecuencia: un zombi del que te alejaste se va del juego sin morir, y
+no vuelve nunca.**
+
+Hoy eso es invisible. Nada en el juego depende de cuántos zombis mataste, así
+que un zombi que se evapora a tus espaldas no se nota; si acaso, se siente
+como que el mapa "se calma" cuando avanzás, que hasta parece intencional.
+
+Con D-37 es fatal. El juego le va a decir al jugador *matá a todos los
+zombis*, el contador va a decir que faltan dos, y esos dos **ya no existen**.
+La barricada no abre jamás y la partida es imposible de terminar. Por eso la
+tarea 19A.0 es condición previa de todo lo demás de la fase: hay que liberar
+el puesto cuando se apaga un zombi **vivo**, y dejar marcados sólo los puestos
+de los que de verdad murieron.
+
+**Lo que me deja pensando.** Este error estuvo todo el tiempo y pasó por
+cuatro fases y 459 pruebas sin que nada se quejara, porque **ningún sistema le
+preguntaba al juego cuántos zombis quedaban**. No lo encontró una revisión de
+código: lo encontró una regla nueva que necesitaba un número que nadie pedía.
+Es la mejor razón que conozco para escribir la mecánica antes de programarla:
+leer D-37 obligó a preguntar "¿se puede contar?", y ahí apareció.
+
+### Lo que la barricada rescata de la basura
+
+En el plan de la mañana, la tarea 16.3 borraba la bazooka entera: el contador,
+la barra, el cohete, el daño por área y **`src/combat/explosion.js` con sus
+efectos**. Ya había advertido que `objetivoAutomatico()` vivía ahí y que había
+que salvarlo antes.
+
+**Resulta que había que salvar tres cosas, no una.** La barricada explota, así
+que la explosión y el empujón de la onda —que es lo que manda los dos autos a
+los costados— pasan a ser requisitos, no restos. Lo mismo con el pack
+`ExplosionFXFree`, que en el plan de la mañana figuraba como "sin uso: la
+bazooka se fue".
+
+Casi me pasa dos veces con el mismo archivo, y el patrón es claro: **en un
+borrado grande, lo que se pierde no es el código que uno recuerda, es el que
+estaba guardado en el lugar equivocado.** `objetivoAutomatico()` y la
+explosión no tenían por qué vivir dentro de la bazooka; vivían ahí porque fue
+quien los necesitó primero.
+
+### Gus se queda como está, y es la medida de todo lo demás
+
+Gus dijo que el formato de Gus está bien y le gusta, que la cámara no se mueva
+más de lo que se mueve hoy, y que todo lo demás tenga su misma escala y su
+mismo acabado. Es **D-39**.
+
+Dos cosas que esto cambia de lo que tenía pensado.
+
+**La 20.7 se acota.** No es "traer un modelo de Gus": es traerle un modelo
+riggeado que, puesto al lado del de hoy, se reconozca como el mismo personaje
+—misma escala, mismas proporciones, mismo acabado mate— más la campera de
+cuero de D-24. Si no se parece, no entra. Y la 20.0 pasa a ser medir a Gus,
+porque sin la regla no se puede comparar nada.
+
+**La cámara no sigue al blanco, y esto hay que escribirlo porque es
+contraintuitivo.** Con apuntado automático, lo primero que uno quiere hacer es
+girar la cámara hacia el zombi al que Gus le dispara: se siente "más vivo".
+Queda prohibido. La cámara acompaña al jugador, no al blanco. La 12R.1 la
+dejó en 48°, 15 m y la mira 3 m adelante después de medir cuánta calle se ve
+por delante, y una cámara que gira sola rompe esa medición cada vez que
+aparece un zombi. Además, con siete tramos que hay que limpiar, el blanco
+cambia todo el tiempo: una cámara que lo siguiera no pararía nunca de girar.
+
+### Los nombres de calle dejaron de ser un problema
+
+Gus dijo que los nombres intermedios no importan, que alcanza con nombrar la
+calle una vez —en un cartel, en el piso o en la brújula— y que si el dato sale
+del mapa se usa, y si no, no se busca. Es **D-40**.
+
+Esto **desbloquea la 18.10**, que estaba esperando que alguien dijera cómo se
+llaman los dos controles nuevos. Yo me había puesto un freno correcto —el
+documento 02 advierte que un cartel que contradice al barrio lo nota cualquier
+porteño— pero lo había convertido en una dependencia donde no hacía falta:
+alcanzaba con no poner cartel. **No todo dato faltante es un bloqueo; a veces
+es un dato que no hace falta.**
+
+### Y por fin se sabe de qué va el juego
+
+Billinghurst 250 es **la casa de Sergio**, el amigo al que Gus va a buscar. Y
+la idea que ordena todo lo que viene: **el juego es ir juntando a los amigos**
+para salvarlos de la invasión. Al rescatar a Sergio hay dos personajes y se
+puede elegir con cuál seguir; la misión siguiente va a buscar al próximo. Es
+**D-41**.
+
+Vale la pena notar lo que esto arregla hacia atrás. D-04 había reemplazado el
+destino por "una comisaría sobre Carlos Calvo" con el argumento de que
+Billinghurst no quedaba en Boedo. Era correcto como observación geográfica y
+**equivocado como decisión de diseño**, porque convirtió un destino que
+significaba algo en un edificio genérico. La pregunta que había que hacer no
+era "¿este cartel es correcto?" sino "¿por qué Gus camina hasta ahí?". Nadie
+la hizo durante nueve fases, y el juego se construyó entero sin saber por qué
+el protagonista cruzaba el barrio.
+
+La elección de personaje y las misiones siguientes van a la Fase 15, que deja
+de ser una lista de deseos y pasa a ser una campaña.
+
+---
 ## Lo que el cambio se lleva puesto, y hay que decirlo
 
 El documento 01 pone **"decisiones rápidas"** como pilar del juego, y las
@@ -3518,7 +3679,10 @@ tenerla explícita para no abrirlas sin motivo:
 | `enemies/zombieAI.js` | La detección por vista y ruido y la evasión por rayos (D-10) son lo mejor que tiene el juego. La 17 les cambia los números, no la lógica |
 | `core/rng.js` | La aleatoriedad con semilla (D-12) es lo que hace que un mapa roto se pueda reproducir |
 | `visual/paleta.js` | Los 58 colores medidos. Todo asset nuevo pasa por acá (D-33) |
-| Todo lo de la 12R.0 a la 12R.7 | Ocho tareas terminadas y medidas. La 18.2 retoca las ochavas y nada más |
+| La cámara de la 12R.1 | 48°, 15 m y la mira 3 m adelante, medidos. **No sigue al blanco del disparo automático** (D-39): una cámara que gira sola rompe la medición de cuánta calle se ve por delante |
+| El formato de Gus | Está bien y gusta (D-39). Es la regla de escala y de acabado de todo lo que entre |
+| `combat/explosion.js` | Iba a morir con la bazooka. **La barricada lo necesita** (D-37): cambia de dueño, no se borra |
+| Todo lo de la 12R.0 a la 12R.7 | Ocho tareas terminadas y medidas. Con D-35 ya no hace falta ni retocar las ochavas |
 
 ---
 ## Apéndice A — Decisiones que se cierran en cada fase
@@ -3540,7 +3704,11 @@ tenerla explícita para no abrirlas sin motivo:
 | 18 | Qué hay en Billinghurst 250 (D-26) | Decidiendo qué es el refugio, ahora que la comisaría inventada de D-04 no va |
 | 18 | Cómo se marca la ruta en el piso (D-34) | Probando la franja pintada contra las flechas, desde la cámara a 48° |
 | 18 | Si el mapa de 650 m necesita carga por tramos | Midiendo las llamadas de dibujo del peor caso |
-| 19 | El pool definitivo de power-ups y su rareza (D-32) | Jugando las cuatro mejoras seguidas, de un control al siguiente |
+| 19A | Cuántos zombis por tramo, y cuánto dura una cuadra (D-37) | Jugando en el teléfono. Es la perilla principal del juego nuevo |
+| 19A | Cómo se ve el cartel de "no podés pasar" (D-37) | Que se entienda sin leer el texto dos veces |
+| 19A | Cómo salen despedidos los dos autos al explotar (D-37) | Con la explosión rescatada de la bazooka y los efectos del banco |
+| 19B | El pool definitivo de power-ups y su rareza (D-32) | Jugando las seis mejoras seguidas, de un control al siguiente |
+| 20 | Si el Gus nuevo se reconoce como el de hoy (D-39) | Puestos uno al lado del otro. Si no se parece, no entra |
 | 20 | Universal Animation Library o KayKit para las animaciones | Poniendo las dos en pantalla al lado de una puerta de 2,10 m y un auto |
 | 20 | Cuál es el revólver o la pistola de Gus (D-29) | Renderizando los candidatos del Ultimate Gun Pack, y elige Gus |
 
