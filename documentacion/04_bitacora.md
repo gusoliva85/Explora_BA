@@ -3640,6 +3640,136 @@ La elección de personaje y las misiones siguientes van a la Fase 15, que deja
 de ser una lista de deseos y pasa a ser una campaña.
 
 ---
+## Cuarta pasada: construir por tramos. Gus tenía razón, y apuntó al lado equivocado
+
+Gus propuso construir sólo el tramo en el que está el jugador y liberar el
+anterior al pasar el control, en vez de tener todo el mapa vivo. Y preguntó si
+se equivocaba.
+
+La respuesta honesta son dos mitades, y conviene separarlas porque la primera
+es más importante que la segunda.
+
+### Tenía razón en el principio, y más de lo que creía
+
+Construir por tramos no es una optimización: con los 700 m de D-35 **es la
+única forma de que el mapa entre**. Eso quedó medido y está más abajo.
+
+Pero lo bueno de verdad es otra cosa, y es algo que Gus consiguió sin
+proponérselo. **El streaming de mundo es difícil porque el jugador puede
+volver**: hay que cargar y descargar en las dos direcciones, con histéresis
+para que no parpadee cuando uno camina sobre el borde, y con la complicación
+de que el estado de lo que se descargó tiene que recordarse para cuando se
+vuelva.
+
+**Con la barricada de D-37 el recorrido es de ida.** Una vez que el control se
+abrió y se pasó, a esa cuadra no se vuelve nunca. O sea: se carga sólo hacia
+adelante y se libera sólo hacia atrás. Sin histéresis, sin estado que
+recordar, sin casos raros en el borde.
+
+La mecánica que eligió por razones de juego —una puerta que se abre matando—
+**vuelve trivial el problema técnico más caro que tenía el proyecto.** Eso no
+se planifica. Se aprovecha, y se deja escrito para no romperlo después: si
+alguna vez se permite volver a una cuadra ya limpiada, se vuelve a pagar todo
+el costo que esta decisión ahorró.
+
+### Y apuntó al lado equivocado, que es el barato
+
+Escribí `tools/medir-memoria.mjs` —abre el juego con Playwright y cuenta las
+entidades de cada rama del árbol de la escena— y medí el mapa de hoy, de tres
+cuadras:
+
+| Rama | Entidades | Mallas | % de las mallas |
+|---|---|---|---|
+| **`World` — la ciudad** | **2.026** | **1.954** | **86 %** |
+| `Zombi` ×18 | 486 | 234 | 10 % |
+| `Gus` | 60 | 37 | 2 % |
+| Efectos y objetos | 43 | 36 | 2 % |
+| **Total** | **2.621** | **2.262** | |
+
+Y el resto: **238 llamadas de dibujo** (53 de sombra), 167.924 triángulos, 133
+materiales, 16,52 MB de texturas en memoria de video, 98 MB de heap.
+
+Las 238 coinciden **exactamente** con el número que el plan ya tenía anotado
+para el punto de aparición. Es la mejor señal de que la herramienta mide lo que
+dice medir: llegó al mismo resultado que el panel de F1 por un camino
+distinto.
+
+**Los zombis ya están hechos como Gus propone, y mejor.** El `SpawnManager`
+tiene una reserva de 18 entidades que se recicla, y los 25 puntos de aparición
+del mapa son **sólo coordenadas**: tres números cada uno, unos dos kilobytes.
+Pero lo decisivo es esta línea:
+
+```js
+const necesarios = Math.min(this.puestos.length, PERF.maxActiveZombies + 6);
+```
+
+**La reserva no crece con el mapa.** Con 3 cuadras son 18 entidades y con 7
+cuadras son 18 entidades. Liberar los zombis de atrás no ahorra el 10 % que
+ocupan: ahorra **cero**, porque esas mismas entidades se van a reutilizar
+adelante. Es trabajo ya hecho, y hecho bien.
+
+**La ciudad, en cambio, es el 86 % y es lo único que crece con los metros.** A
+unas 6,3 entidades por metro, los 700 m proyectan ~4.400 entidades, ~4.300
+mallas y del orden de **480 llamadas de dibujo** contra un presupuesto de 150.
+Eso es la Fase 13 fallando antes de empezar.
+
+Con una ventana de tres cuadras —la anterior, la actual y la siguiente— el
+mapa de 700 m cuesta **lo mismo que hoy cuesta el de 350**, porque en todo
+momento hay tres cuadras en memoria, que es lo que hay ahora. Y bajar de 238 a
+150 pasa a ser un problema de tamaño normal, porque hay que optimizar tres
+cuadras y no siete.
+
+### Lo que sí vale de su idea para los zombis, y no es memoria
+
+Gus dijo también que al entrar a un tramo se declare **qué tipo de zombis hay
+y cuántos**, y que de ahí se suelten con posición más o menos aleatoria. Eso
+se queda, pero no como optimización: **como la perilla de diseño del juego.**
+
+La barricada ya obliga a declarar la población por tramo para poder contarla
+(19A.1). Una vez que está declarada, decidir que la primera cuadra tiene cuatro
+zombis estándar y la quinta tiene ocho más un esqueleto de mini-jefe es lo que
+hace que las siete cuadras no se sientan como la misma cuadra siete veces. Es
+la perilla principal del juego nuevo, y el único lugar donde "más frenético" se
+convierte en un número.
+
+### Las cuatro trampas de construir por tramos
+
+Ninguna es opcional, y la segunda es la que no es obvia.
+
+**1. La colisión se libera con la geometría.** Si se destruye una fachada y su
+caja de colisión queda, el jugador choca contra una pared que no existe. Es el
+peor error posible porque **no se ve**: la pantalla está bien y el personaje
+no pasa.
+
+**2. No se libera en el control: se libera dos cuadras atrás.** La cámara ve
+59 m por delante —lo midió la 12R.1— así que parado en el control se ve la
+cuadra siguiente **y** la anterior. Liberar lo que todavía se ve deja un
+agujero en pantalla. De ahí que la ventana sea de tres y no de una.
+
+**3. No se construye en un solo frame.** Armar una cuadra de golpe congela el
+juego **justo cuando explota la barricada**, que es el momento más visible de
+toda la partida. La cuadra siguiente se construye mientras se juega la actual,
+repartida en varios frames.
+
+**4. Destruir de verdad, no soltar la referencia.** Hay que destruir
+entidades, materiales y mallas, o la memoria sube con cada cuadra y el juego
+se muere en el tramo cinco. La 13.11 ya mide eso con diez reinicios seguidos,
+y ahora además hay con qué: `tools/medir-memoria.mjs` antes y después de cada
+cuadra.
+
+### La lección
+
+Es la cuarta vez en un día que una medición contradice a una intuición, y
+conviene anotar el patrón porque ya no es casualidad: **el sol a 17° creyendo
+que estaba a 73; 1.624 m creyendo que eran "varios kilómetros"; 2,75 MB de
+textura creyendo que el problema era el formato; y ahora el 86 % de la escena
+en la ciudad, mientras los dos —Gus y yo— mirábamos los zombis.**
+
+Las cuatro veces la intuición apuntaba a lo visible y el costo estaba en otro
+lado. Y las cuatro veces alcanzó con una herramienta de treinta líneas para
+saberlo. Vale más escribir la herramienta que discutir la intuición.
+
+---
 ## Lo que el cambio se lleva puesto, y hay que decirlo
 
 El documento 01 pone **"decisiones rápidas"** como pilar del juego, y las
@@ -3678,6 +3808,7 @@ tenerla explícita para no abrirlas sin motivo:
 | `physics/collisionWorld.js` | La colisión 2D (D-09) sirve igual con ángulos arbitrarios |
 | `enemies/zombieAI.js` | La detección por vista y ruido y la evasión por rayos (D-10) son lo mejor que tiene el juego. La 17 les cambia los números, no la lógica |
 | `core/rng.js` | La aleatoriedad con semilla (D-12) es lo que hace que un mapa roto se pueda reproducir |
+| La reserva de 18 zombis del `SpawnManager` | **Ya hace lo que Gus pidió, y mejor**: se recicla y no crece con el mapa (D-42). Lo que hay que arreglar ahí es el puesto que no se libera (19A.0), no la reserva |
 | `visual/paleta.js` | Los 58 colores medidos. Todo asset nuevo pasa por acá (D-33) |
 | La cámara de la 12R.1 | 48°, 15 m y la mira 3 m adelante, medidos. **No sigue al blanco del disparo automático** (D-39): una cámara que gira sola rompe la medición de cuánta calle se ve por delante |
 | El formato de Gus | Está bien y gusta (D-39). Es la regla de escala y de acabado de todo lo que entre |
@@ -3709,6 +3840,8 @@ tenerla explícita para no abrirlas sin motivo:
 | 19A | Cómo salen despedidos los dos autos al explotar (D-37) | Con la explosión rescatada de la bazooka y los efectos del banco |
 | 19B | El pool definitivo de power-ups y su rareza (D-32) | Jugando las seis mejoras seguidas, de un control al siguiente |
 | 20 | Si el Gus nuevo se reconoce como el de hoy (D-39) | Puestos uno al lado del otro. Si no se parece, no entra |
+| 18 | Cuántas cuadras tiene que haber vivas a la vez (D-42) | Midiendo con `tools/medir-memoria.mjs`. La ventana de tres es la hipótesis: la anterior, la actual y la siguiente |
+| 18 | Cómo se reparte en varios frames el armado de una cuadra (D-42) | Que no se note un tirón al abrirse la barricada, que es el momento más visible de la partida |
 | 20 | Universal Animation Library o KayKit para las animaciones | Poniendo las dos en pantalla al lado de una puerta de 2,10 m y un auto |
 | 20 | Cuál es el revólver o la pistola de Gus (D-29) | Renderizando los candidatos del Ultimate Gun Pack, y elige Gus |
 

@@ -108,9 +108,9 @@ frenar, porque moverse y disparar no se pueden a la vez. La única decisión del
 jugador es *dónde pararse y cuánto tiempo*. Y la razón para hacerlo es ir a
 buscar a Sergio.
 
-### Las dieciséis decisiones nuevas
+### Las diecisiete decisiones nuevas
 
-Numeradas **D-26 a D-41**, porque D-01 a D-21 son del documento 02 y D-22 a
+Numeradas **D-26 a D-42**, porque D-01 a D-21 son del documento 02 y D-22 a
 D-25 son de la 12R.
 
 #### 🔴 D-26 — El recorrido es el real, comprimido a siete cuadras
@@ -333,6 +333,76 @@ ahí para que no se pierdan.
 
 **Esto cierra la decisión abierta 18.11**, que era qué hay en Billinghurst
 250. Ya no hay comisaría inventada, ni hace falta inventar nada.
+
+#### 🔴 D-42 — El mundo se construye por tramos, y la barricada es lo que lo hace fácil
+
+**Gus propuso** construir sólo el tramo en el que está el jugador y liberar el
+anterior al pasar el control, en vez de tener el mapa entero vivo todo el
+tiempo. **Tiene razón en el principio, y es más importante de lo que parece —
+pero el blanco al que lo apuntó es el barato.** Lo medí con
+`tools/medir-memoria.mjs`, escrito para esto, sobre el mapa de hoy (3 cuadras,
+~350 m):
+
+| Rama | Entidades | Mallas | % de las mallas |
+|---|---|---|---|
+| **`World` — la ciudad** | **2.026** | **1.954** | **86 %** |
+| `Zombi` ×18 | 486 | 234 | 10 % |
+| `Gus` | 60 | 37 | 2 % |
+| Efectos y objetos | 43 | 36 | 2 % |
+| **Total** | **2.621** | **2.262** | |
+
+Y el resto de la medición: **238 llamadas de dibujo** (53 de sombra), 167.924
+triángulos, 133 materiales, 16,52 MB de texturas y 4,5 MB de vértices en
+memoria de video, 98 MB de heap de JavaScript. Las 238 coinciden exactamente
+con el número que el plan ya tenía anotado para el punto de aparición, que es
+una buena señal de que la herramienta mide lo que dice medir.
+
+**Por qué los zombis no son el problema.** Ya están hechos como Gus propone, y
+mejor: el `SpawnManager` tiene una **reserva de 18 entidades** que se recicla,
+y los 25 puntos de aparición del mapa **son sólo coordenadas** — tres números
+cada uno, unos dos kilobytes en total. Y lo decisivo:
+
+> `const necesarios = Math.min(this.puestos.length, PERF.maxActiveZombies + 6);`
+
+**La reserva no crece con el mapa.** Con 3 cuadras son 18 entidades y con 7
+cuadras son 18 entidades. Liberar los zombis de atrás no ahorra el 10 %:
+ahorra **cero**, porque esas entidades se van a volver a usar adelante. Es el
+trabajo ya hecho.
+
+**Por qué la ciudad sí es el problema.** Es el 86 % de las mallas y es **lo
+único que crece con los metros**. A unas 6,3 entidades por metro, los 700 m de
+D-35 proyectan ~4.400 entidades, ~4.300 mallas y del orden de **480 llamadas
+de dibujo**, contra un presupuesto de 150. Eso es la Fase 13 fallando antes de
+empezar.
+
+**Qué dice la decisión, entonces.** Se construye por tramos, pero el que se
+construye y se libera es **el tramo entero de ciudad** —calzada, veredas,
+fachadas, carteles, árboles, autos y sus cajas de colisión—, no los zombis.
+Con una **ventana de tres cuadras** —la anterior, la actual y la siguiente—
+viva a la vez:
+
+> **Un mapa de 700 m costaría lo mismo que hoy cuesta el de 350**, porque en
+> todo momento habría tres cuadras en memoria, que es lo que hay ahora. Y el
+> presupuesto de 150 llamadas de dibujo de la Fase 13 pasa a ser alcanzable,
+> porque hay que optimizar tres cuadras y no siete.
+
+**Y acá está el regalo que hizo Gus sin darse cuenta.** Normalmente el
+streaming es difícil porque el jugador puede volver: hay que cargar y
+descargar en las dos direcciones, con histéresis para que no parpadee en el
+borde. **Con la barricada de D-37 el recorrido es de ida.** Una vez que el
+control se abrió y se pasó, a esa cuadra no se vuelve nunca. O sea que se
+carga sólo hacia adelante y se libera sólo hacia atrás, sin histéresis y sin
+casos raros. **La mecánica que eligió por razones de juego vuelve trivial la
+optimización.** Eso no se planifica, se aprovecha.
+
+**Las cuatro cosas que hay que cuidar, y ninguna es opcional:**
+
+| | |
+|---|---|
+| **La colisión se libera con la geometría** | Si se destruye una fachada y su caja queda, el jugador choca contra una pared que no existe. Es el peor error posible porque no se ve |
+| **No se libera en el control, se libera dos cuadras atrás** | La cámara ve 59 m por delante, así que parado en el control se ve la cuadra siguiente **y** la anterior. Liberar lo que todavía se ve deja un agujero en pantalla |
+| **No se construye en un solo frame** | Armar una cuadra de golpe congela el juego justo cuando explota la barricada. La cuadra siguiente se construye **mientras se juega la actual**, repartida en varios frames |
+| **Destruir de verdad, no soltar la referencia** | Hay que destruir entidades, materiales y mallas, o la memoria sube con cada cuadra. Lo verifica la 13.11, que mide diez reinicios seguidos |
 
 #### 🔴 D-27 — El joystick a la derecha
 
@@ -609,7 +679,8 @@ reemplaza por modelos.
 - [ ] **18.9 Las zonas de zombis, una por tramo.** Siete zonas, con dificultad creciente y el primero flojo: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la barricada cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.10)
 - [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, los seis controles y la casa de Sergio. Los nombres intermedios aparecen una vez y nada más — en un cartel, en el piso o en la brújula. Los dos controles nuevos pueden quedarse sin dirección
 - [ ] **18.11 La casa de Sergio** ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
-- [ ] **18.12 Medir el costo del mapa.** 700 m contra 350: llamadas de dibujo y descarte de lo lejano. Es probable que haga falta cargar por tramos
+- [ ] **18.12 La construcción por tramos** (D-42). **Ya no es "es probable que haga falta": está medido y hace falta.** La ciudad es el 86 % de las mallas y lo único que crece con los metros; los 700 m proyectan ~4.400 entidades y ~480 llamadas de dibujo contra un presupuesto de 150. Ventana de tres cuadras —anterior, actual y siguiente—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la barricada el recorrido es de ida, así que no hace falta histéresis
+- [ ] **18.12 bis Liberar de verdad.** Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
 - [ ] **18.14 La brújula, más grande y protagonista** (D-38). Hoy existe —una pastilla con flecha que rota y los metros al objetivo— y ya se muestra siempre que haya objetivo, así que lo de "siempre" está. Lo que falta: **tamaño**, porque el glifo mide 15 px y es más chico que el texto de al lado; **presencia**, que se vea de reojo mientras se corre; y **el nombre de la calle** por la que se va, que es donde D-40 dice que puede vivir. Y tiene que seguir funcionando cuando la 19A.6 le cambie el blanco al zombi más cercano
 
@@ -646,7 +717,7 @@ de tres cajas tiradas en el piso.
 **La parte obligatoria, antes de la barricada:**
 
 - [ ] **19A.0 El zombi que desaparece sin morir.** 🐛 **Es un error, no una mejora.** En [src/enemies/spawnManager.js:184](src/enemies/spawnManager.js#L184), cuando el jugador se aleja más de 55 × 1,4 m, el zombi se apaga y se saca de `enJuego` — **pero su puesto queda marcado en `puestosUsados` para siempre**. O sea que un zombi del que te alejaste **se va del juego sin morir y no vuelve nunca**. Hoy es invisible porque nada depende de las muertes. Con D-37, el jugador va a recibir la orden de matar a todos y algunos **ya no existen**: la barricada no abre jamás. Hay que liberar el puesto al apagar un zombi vivo, y dejar marcados sólo los puestos de los muertos
-- [ ] **19A.1 Zonas con dueño.** Hoy cada puesto de aparición lleva `zona.nota`, que es un texto. Para contar "los zombis de este tramo" hace falta que cada zona de `mission001.js` declare **a qué tramo pertenece**, y que el `SpawnManager` sepa cuántos hay vivos por tramo
+- [ ] **19A.1 Zonas con dueño, y el reparto por tramo.** Hoy cada puesto de aparición lleva `zona.nota`, que es un texto. Para contar "los zombis de este tramo" hace falta que cada zona de `mission001.js` declare **a qué tramo pertenece**, y que el `SpawnManager` sepa cuántos hay vivos por tramo. **Y es acá donde entra la otra mitad de lo que pidió Gus:** cada tramo declara **cuántos zombis y de qué tipo** — el estándar de 100/10, el agresivo de 120/20, los esqueletos como mini-jefes — y de ahí se sueltan con posición aleatoria dentro de la zona. No es ahorro de memoria (ver D-42): es la perilla de diseño que hace que cada cuadra se sienta distinta de la anterior
 - [ ] **19A.2 Puestos alcanzables, verificado por una prueba.** Ningún puesto puede caer en un hueco que las bocacalles tapadas (D-34) dejen aislado. Un zombi ahí adentro traba la partida para siempre. Lo verifica una prueba contra el mapa construido, no el ojo
 
 **La barricada:**
@@ -687,6 +758,25 @@ de tres cajas tiradas en el piso.
 - [ ] **19B.6 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
 - [ ] **19B.7 Al morir se pierde todo**, con una prueba que lo verifique
 - [ ] **19B.8 El balance de las seis.** Con 6 controles se termina con 6 mejoras: que la última cuadra se sienta frenética sin que el juego se rompa
+
+### Lo que Gus ya empezó a armar
+
+En `documentacion/habilidades/` aparecieron los dos primeros, con icono y
+todo. Quedan registrados acá para que no se pierdan:
+
+| Carta | Icono | Qué entiendo que hace | Cuesta |
+|---|---|---|---|
+| **Rebote** | `Rebote.webp` | La bala salta del zombi al que le pegó a otro cercano | Caro: hay que buscar el segundo blanco y dibujar el salto |
+| **Disparo múltiple** | `Disparo multiple.webp` | Varias balas por disparo | Medio: es la carta "Abanico" o "Doble tiro" de mi propuesta |
+
+**Las dos cambian cómo se juega, no un número**, que es justo la familia que
+avisé que costaba más. Así que el sistema de la 19B.1 tiene que nacer sabiendo
+que una mejora puede tocar *el disparo entero* y no sólo multiplicar un valor.
+Bien que hayan aparecido estas dos primero: si el pool hubiera arrancado con
+"+10 de daño" me habría quedado corto en la arquitectura.
+
+**Y fijan el estilo del icono:** marco verde, dibujo plano, lectura a tamaño
+chico. La 19B.5 se hace contra eso, no inventando otro.
 
 ### Lo que necesito de Gus para la 19B
 
@@ -1005,7 +1095,7 @@ cuchillo que se está borrando.
 **Objetivo:** que ande bien en el teléfono de referencia. **Nada se optimiza sin
 una medición previa que lo justifique.**
 
-- [ ] 13.1 Medir el estado actual y anotar los números de partida
+- [x] 13.1 Medir el estado actual y anotar los números de partida ✅ *hecho el 7/11 con `tools/medir-memoria.mjs`*, y están en la tabla de abajo
 - [ ] 13.2 Identificar el cuello de botella real: ¿CPU, GPU, memoria o descarga?
 - [ ] 13.3 Reducir llamadas de dibujo agrupando geometría estática
 - [ ] 13.4 Instanciado para lo que se repite (postes, autos, ventanas)
@@ -1019,18 +1109,34 @@ una medición previa que lo justifique.**
 - [ ] 13.12 Sesión de 20 minutos: temperatura, batería, degradación
 - [ ] 13.13 Probar en dos teléfonos distintos y dos navegadores
 - [ ] 13.14 Probar con 4G real, no sólo con WiFi
-- [ ] 13.15 **Nueva:** carga del mapa por tramos. 700 m de calle con fachadas a los dos lados no entran de una sola vez. Puede adelantarse a la 18.12 si la medición lo exige
+- [x] 13.15 ~~carga del mapa por tramos~~ — **se adelantó a la 18.12** (D-42). La medición lo exigió: no es optimización, es la única forma de que el mapa de 700 m entre
 
 **Los presupuestos que hay que cumplir**
 
-| Métrica | Objetivo | Medido |
-|---|---|---|
-| FPS sostenidos | ≥ 30 | |
-| Peor frame | < 50 ms | |
-| Llamadas de dibujo | < 150 | 231 al aparecer, 277 en la bocacalle |
-| Descarga total | < 25 MB | |
-| De eso, modelos | < 12 MB | |
-| Tiempo hasta jugar en 4G | < 8 s | |
+**Lo medido el 7 de noviembre**, con `node tools/medir-memoria.mjs` sobre el
+mapa de 3 cuadras. Es el punto de partida que pedía la 13.1:
+
+| Métrica | Objetivo | Medido (3 cuadras) | Proyectado a 7 cuadras |
+|---|---|---|---|
+| Llamadas de dibujo | **< 150** | **238** (53 de sombra) | **~480** ❌ |
+| Entidades en la escena | — | 2.621 | ~5.000 |
+| Mallas dibujables | — | 2.262 | ~4.300 |
+| Triángulos por frame | — | 167.924 | ~330.000 |
+| Materiales | — | 133 | |
+| Texturas en VRAM | — | 16,52 MB | |
+| Vértices en VRAM | — | 4,5 MB | |
+| Heap de JavaScript | — | 98 MB | |
+| FPS sostenidos | ≥ 30 | | |
+| Peor frame | < 50 ms | | |
+| Descarga total | < 25 MB | | |
+| De eso, modelos | < 12 MB | | |
+| Tiempo hasta jugar en 4G | < 8 s | | |
+
+**Y el reparto, que es lo que dice dónde trabajar:** la ciudad es el **86 %**
+de las mallas, los 18 zombis el 10 % y Gus el 2 %. Con la construcción por
+tramos de D-42 —ventana de tres cuadras— la columna de la derecha vuelve a
+ser la del medio, y recién entonces bajar de 238 a 150 es un problema de
+tamaño normal.
 
 ---
 
@@ -1169,7 +1275,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 | ~~Si Gus y los zombis llegan a ser `.glb` riggeado (D-22)~~ | 20.4 y 20.7 | ✅ **Resuelto a favor:** el banco los trae, y el zombi trae sus seis animaciones |
 
 Las decisiones **ya cerradas** —D-01 a D-21 en el documento 02, D-22 a D-25
-en la bitácora y D-26 a D-41 acá arriba— no se vuelven a discutir salvo que
+en la bitácora y D-26 a D-42 acá arriba— no se vuelven a discutir salvo que
 aparezca un dato nuevo. **D-04 es el ejemplo de qué es un dato nuevo:** se
 reabrió porque la distancia que la justificaba estaba mal medida.
 **D-20 y D-21 quedan superadas por D-32.**
@@ -1190,6 +1296,7 @@ node tools/captura.mjs [nombre]   # captura del juego corriendo
 node tools/recorrido-real.mjs                  # el recorrido real y el trazado ortogonal
 node tools/recorrido-real.mjs --json           # el trazado, para pegar en mission001.js
 node tools/inspeccionar-glb.mjs <archivo.glb>  # en que se le va el peso a un modelo
+node tools/medir-memoria.mjs                   # en que se gasta la escena (con npm run dev abierto)
 ```
 
 | Página | Para qué |
