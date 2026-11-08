@@ -19,8 +19,6 @@ import { WeaponController } from './combat/weaponController.js';
 import { CombatFx } from './combat/combatFx.js';
 import { Gus, Pose } from './characters/gus.js';
 import { ArmasEnMano } from './characters/armas.js';
-import { GestorProyectiles } from './combat/projectile.js';
-import { alcanzadosPorExplosion } from './combat/explosion.js';
 import { dibujarDiagnosticoZombis } from './enemies/zombieDebug.js';
 import { montarEscena } from './visual/escena.js';
 import { precargar as precargarModelos } from './visual/modelos.js';
@@ -44,7 +42,6 @@ import {
   CAMERA,
   PLAYER,
   ZOMBIE_STANDARD,
-  WEAPONS,
   WORLD_SEED
 } from './config/balance.js';
 
@@ -238,8 +235,6 @@ const gus = new Gus(playerEntity, builder.mats);
  * personaje no sabe nada del arma.
  */
 const armasEnMano = new ArmasEnMano(gus.anclaArma, builder.mats);
-/** Temporizador que devuelve el arma normal a la mano tras un bazookazo. */
-let bazookaEnMano = null;
 
 /*
  * El azar del combate: su propio generador, con su propia semilla.
@@ -261,59 +256,6 @@ const progreso = new Progreso();
 
 /** Color del anillo de ruido en el diagnostico: el mismo ambar del HUD. */
 const COLOR_RUIDO = new pc.Color(1, 0.72, 0.15);
-
-/*
- * Los cohetes de la bazooka.
- *
- * El gestor es logica pura —posiciones y choques— y lo unico que hace este
- * cableado es llevar la entidad visible a donde dice el gestor, y resolver
- * la explosion cuando avisa que detono.
- */
-let proximoCohete = 0;
-const cohetes = new GestorProyectiles({
-  rayo: (ax, az, bx, bz, altura) => collision.raycast(ax, az, bx, bz, altura),
-
-  alDetonar: ({ x, z, proyectil }) => {
-    const arma = WEAPONS.bazooka;
-    efectos.quitarCohete(proyectil.id);
-    efectos.mostrarExplosion(x, z, arma.blastRadius);
-
-    const alcanzados = alcanzadosPorExplosion({ x, z }, zombis.enJuego, {
-      radio: arma.blastRadius,
-      centro: arma.damage,
-      borde: arma.damageEdge
-    });
-
-    for (const a of alcanzados) {
-      const vivoAntes = a.objetivo.vivo;
-      a.objetivo.recibirDaño(a.daño, {
-        dirX: a.dirX,
-        dirZ: a.dirZ,
-        fuerza: arma.blastPush,
-        fuente: 'explosion'
-      });
-      if (vivoAntes && !a.objetivo.vivo) stats.zombisEliminados++;
-    }
-
-    /*
-     * El sacudon escala con la CERCANIA, no con el daño.
-     *
-     * Una explosion a treinta metros tiene que sentirse lejana aunque haya
-     * matado a seis zombis. Lo que sacude la camara es la onda, y la onda
-     * depende de donde estaba el jugador.
-     */
-    const p = player.position;
-    const d = Math.hypot(x - p.x, z - p.z);
-    const cercania = Math.max(0, 1 - d / 30);
-    camera.sacudir(0.25 + cercania * 0.9, 0.35 + cercania * 0.3);
-
-    // La explosion hace su propio ruido, aparte del disparo.
-    const radioRuido = arma.noiseRadius;
-    const alertados = zombis.propagarRuido(x, z, radioRuido);
-    efectos.marcarRuido(x, z, radioRuido);
-    if (alertados > 0) hud.flash(`${alertados} TE ESCUCHARON`, 1600);
-  }
-});
 
 /*
  * El arma. Resuelve el arco y el daño; los efectos y el ruido se enganchan
@@ -407,42 +349,6 @@ const arma = new WeaponController({
 
   alCambiarArma: () => actualizarHudArma(),
 
-  lanzarProyectil: (opt) => {
-    const p = cohetes.lanzar(opt);
-    p.id = ++proximoCohete;
-    efectos.moverCohete(p.id, p.x, p.z, p.altura, p.rumbo);
-  },
-
-  alDispararEspecial: () => {
-    stats.bazookasUsadas++;
-    gus.gesto(Pose.DISPARAR);
-    /*
-     * La bazooka aparece en la mano solo mientras dura el disparo.
-     *
-     * No se "equipa": es un boton aparte (ver Fase 7). Pero disparar un
-     * cohete sin que se vea de donde sale es de las cosas que hacen que un
-     * juego se sienta hecho de piezas sueltas. Un segundo y medio alcanza
-     * para que se vea el tubo al hombro.
-     */
-    armasEnMano.equipar('bazooka');
-    clearTimeout(bazookaEnMano);
-    bazookaEnMano = setTimeout(() => armasEnMano.equipar(arma.equipada), 1500);
-    hud.flash('BAZOOKA', 1000);
-    camera.sacudir(0.3, 0.18);
-  },
-
-  alEspecialSinBlanco: () => {
-    /*
-     * No se gasta la carga, pero hay que DECIRLO. Un boton que no hace
-     * nada se lee como un boton roto; uno que explica por que no hizo nada
-     * enseña cuando sirve.
-     */
-    hud.flash('SIN BLANCO A LA VISTA', 1200);
-  },
-
-  alCargarEspecial: () => {
-    hud.flash('BAZOOKA LISTA', 1400);
-  }
 });
 
 /**
@@ -495,13 +401,7 @@ function startMission({ fromCheckpoint = false } = {}) {
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
   zombis.reiniciar();
   arma.reiniciar('knife');
-  clearTimeout(bazookaEnMano);
   actualizarHudArma();
-  hud.setEspecial(0, false);
-  // Los cohetes en vuelo no sobreviven a un reinicio: explotarian en un
-  // mapa que ya se reinicio, sobre zombis que ya no son los mismos.
-  for (const c of cohetes.vivos) efectos.quitarCohete(c.id);
-  cohetes.limpiar();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -696,7 +596,6 @@ input.bindHudButton(byId('btn-run'), 'run');
 input.bindAimButton(byId('btn-attack'), 'attack');
 input.bindHudButton(byId('btn-interact'), 'interact');
 input.bindHudButton(byId('btn-swap'), 'swap');
-input.bindHudButton(byId('btn-special'), 'special');
 
 /*
  * Ajustes del menu de pausa.
@@ -788,7 +687,6 @@ app.on('update', (rawDt) => {
       hud.flash(arma.arma.name.toUpperCase(), 900);
     }
 
-    if (input.wasPressed('special')) arma.dispararEspecial(pos2d, zombis.enJuego);
 
     /*
      * Disparar.
@@ -817,15 +715,6 @@ app.on('update', (rawDt) => {
       efectos.mostrarMira(pos2d, rumboApuntado, arma.arma.range);
     } else {
       efectos.ocultarMira();
-    }
-
-    hud.setEspecial(arma.progresoEspecial, arma.especialLista);
-
-    // Los cohetes se mueven DESPUES del arma, para que uno lanzado en este
-    // mismo cuadro ya avance y no se quede un cuadro clavado en el caño.
-    cohetes.update(dt, zombis.enJuego);
-    for (const c of cohetes.vivos) {
-      efectos.moverCohete(c.id, c.x, c.z, c.altura, c.rumbo);
     }
 
     efectos.update(dt);
@@ -870,11 +759,6 @@ app.on('update', (rawDt) => {
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
-  debug.set(
-    'bazooka',
-    `${(arma.progresoEspecial * 100).toFixed(0)}%${arma.especialLista ? ' LISTA' : ''} ` +
-      `${cohetes.vivos.length} en vuelo`
-  );
   debug.set(
     'arma',
     `${arma.equipada} ${arma.estado}`
@@ -923,7 +807,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis, arma, efectos, cohetes, gus,
+  postProceso, calidad, zombis, arma, efectos, gus,
   stats, progreso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.

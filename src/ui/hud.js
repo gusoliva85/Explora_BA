@@ -15,9 +15,6 @@ export class Hud {
    * @param {import('../core/events.js').EventBus} bus
    * @param {import('../core/gameState.js').GameStateMachine} state
    */
-  /** Ultimo texto escrito en la barra especial, para no tocar el DOM de mas. */
-  #textoEspecial = null;
-  #listaEspecial = null;
 
   constructor(bus, state) {
     this.bus = bus;
@@ -51,11 +48,7 @@ export class Hud {
       dano: document.getElementById('dano'),
       armaCaja: document.getElementById('arma-caja'),
       armaNombre: document.getElementById('arma-nombre'),
-      btnAttack: document.getElementById('btn-attack'),
-      filaEspecial: document.querySelector('.fila-especial'),
-      especialFill: document.getElementById('especial-fill'),
-      especialEstado: document.getElementById('especial-estado'),
-      btnSpecial: document.getElementById('btn-special')
+      btnAttack: document.getElementById('btn-attack')
     };
 
     // Si el dispositivo cambia de modo (girar, conectar un mouse, forzarlo
@@ -133,36 +126,6 @@ export class Hud {
     if (this.el.btnAttack) {
       this.el.btnAttack.textContent = info.gastaMunicion ? 'DISPARAR' : 'ATACAR';
       this.el.btnAttack.classList.toggle('btn-disparar', info.gastaMunicion);
-    }
-  }
-
-  /**
-   * La barra de la bazooka.
-   *
-   * Es lo unico del HUD que se actualiza en CADA cuadro, y se justifica:
-   * es un reloj de treinta segundos, y un reloj que avanza a saltos se lee
-   * peor que uno que no esta. Aun asi se escribe en el DOM solo cuando el
-   * texto cambia de verdad, que es una vez por segundo y no sesenta.
-   *
-   * @param {number} progreso 0..1
-   * @param {boolean} lista
-   */
-  setEspecial(progreso, lista) {
-    if (!this.el.especialFill) return;
-    const pct = Math.max(0, Math.min(100, progreso * 100));
-    this.el.especialFill.style.width = `${pct}%`;
-
-    const texto = lista ? 'LISTA' : `${Math.ceil((1 - progreso) * 30)}s`;
-    if (this.#textoEspecial !== texto) {
-      this.#textoEspecial = texto;
-      this.el.especialEstado.textContent = texto;
-    }
-
-    if (this.#listaEspecial !== lista) {
-      this.#listaEspecial = lista;
-      this.el.filaEspecial?.classList.toggle('lista', lista);
-      // El boton no existe hasta que sirve. Ver el comentario del CSS.
-      this.el.btnSpecial?.classList.toggle('hidden', !lista);
     }
   }
 

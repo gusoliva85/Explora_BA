@@ -39,9 +39,7 @@ export const Pose = {
   CORRER: 'correr',
   ATACAR: 'atacar',
   DISPARAR: 'disparar',
-  RECARGAR: 'recargar',
   GOLPEADO: 'golpeado',
-  CURARSE: 'curarse',
   MUERTO: 'muerto'
 };
 
@@ -244,37 +242,6 @@ export function poseDe(estado, fase) {
       return p;
     }
 
-    case Pose.RECARGAR: {
-      /*
-       * Dos tiempos: la mano izquierda baja a buscar el cargador y sube a
-       * encastrarlo. Se nota aunque el cargador no exista como objeto,
-       * porque lo que se lee es el recorrido de la mano.
-       */
-      const p = poseNeutral();
-      const baja = f < 0.5 ? f / 0.5 : 1 - (f - 0.5) / 0.5;
-      p.brazoD = 70;
-      p.codoD = 40;
-      p.brazoI = 20 + baja * 50;
-      p.codoI = 30 + baja * 70;
-      p.cabeza = -baja * 14;
-      p.torso = baja * 8;
-      return p;
-    }
-
-    case Pose.CURARSE: {
-      // Encorvado sobre sí mismo, quieto. Tiene que verse vulnerable.
-      const p = poseNeutral();
-      const respirar = Math.sin(f * Math.PI * 2) * 0.5 + 0.5;
-      p.torso = 22 + respirar * 4;
-      p.cabeza = -18;
-      p.brazoI = 52;
-      p.brazoD = 46;
-      p.codoI = 85;
-      p.codoD = 80;
-      p.cadera = -0.06;
-      return p;
-    }
-
     case Pose.GOLPEADO: {
       // Un latigazo hacia atrás que se recupera solo.
       const p = poseNeutral();
@@ -343,8 +310,6 @@ export function velocidadDeCiclo(estado, velocidad = 0) {
       return Math.max(0.3, velocidad / 1.7);
     case Pose.QUIETO:
       return 0.35;
-    case Pose.CURARSE:
-      return 0.5;
     default:
       return 1;
   }
@@ -359,7 +324,6 @@ export function velocidadDeCiclo(estado, velocidad = 0) {
 export const GESTOS = {
   [Pose.ATACAR]: 0.45,
   [Pose.DISPARAR]: 0.3,
-  [Pose.RECARGAR]: 1.6,
   [Pose.GOLPEADO]: 0.5
 };
 

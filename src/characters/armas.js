@@ -5,8 +5,10 @@ import { ACABADO } from '../world/palette.js';
  * ===========================================================================
  * ARMAS Y OBJETOS — FASE 12.D
  * ===========================================================================
- * El cuchillo, la pistola y la bazooka en la mano de Gus; el botiquín y la
- * caja de munición en el piso.
+ * El cuchillo y la pistola en la mano de Gus.
+ *
+ * Tenia tambien la bazooka, el botiquin y la caja de municion. Los tres se
+ * fueron en la Fase 16 (D-29, D-32).
  *
  * ---------------------------------------------------------------------------
  * LA SILUETA ES TODO
@@ -20,7 +22,6 @@ import { ACABADO } from '../world/palette.js';
  * |---|---|
  * | Cuchillo | Corto y fino. Casi no sobresale de la mano |
  * | Pistola | Corta pero con guardamonte: una L |
- * | Bazooka | **Larga**. Pasa el ancho del cuerpo y se apoya en el hombro |
  *
  * El largo es lo que hace el trabajo. Dos armas del mismo largo con formas
  * distintas son la misma mancha; una corta y una larga se distinguen aunque
@@ -59,8 +60,7 @@ export const COLOR_ARMA = {
  */
 export const LARGO = {
   cuchillo: 0.26,
-  pistola: 0.26,
-  bazooka: 1.15
+  pistola: 0.26
 };
 
 function pieza(mats, padre, nombre, color, escala, pos, rot = null, acabado = ACABADO.metal) {
@@ -111,31 +111,12 @@ export function construirPistola(mats) {
 }
 
 /**
- * La bazooka: un tubo largo.
+ * Cuelga las armas del anclaje y deja visible sólo la equipada.
  *
- * Es el arma que más cambia la silueta, y por eso es la más fácil de
- * reconocer. Se apoya sobre el hombro, así que el tubo sigue hacia ATRAS
- * además de hacia adelante: esa cola es la mitad de lo que la identifica.
- */
-export function construirBazooka(mats) {
-  const raiz = new pc.Entity('Bazooka');
-  pieza(mats, raiz, 'Tubo', COLOR_ARMA.tubo, [0.085, 0.085, LARGO.bazooka], [0, 0, -0.25], null, ACABADO.chapa);
-  // Boca ancha adelante y cola ancha atrás: las dos puntas marcadas.
-  pieza(mats, raiz, 'Boca', COLOR_ARMA.boca, [0.115, 0.115, 0.1], [0, 0, -0.8]);
-  pieza(mats, raiz, 'Cola', COLOR_ARMA.boca, [0.1, 0.1, 0.09], [0, 0, 0.3]);
-  // Mira y empuñadura, que rompen la línea recta del tubo.
-  pieza(mats, raiz, 'Mira', COLOR_ARMA.metalOscuro, [0.03, 0.06, 0.1], [0.05, 0.07, -0.3]);
-  pieza(mats, raiz, 'Empuñadura', COLOR_ARMA.metalOscuro, [0.03, 0.1, 0.05], [0, -0.08, -0.12], [10, 0, 0]);
-  return raiz;
-}
-
-/**
- * Cuelga las tres armas del anclaje y deja visible sólo la equipada.
- *
- * Se construyen las tres una vez y se encienden y apagan, igual que todo
- * lo demás en el juego: crear y destruir mallas en pleno combate produce
- * tirones por recolección de basura, y cambiar de arma es justo algo que
- * se hace con zombis encima.
+ * Se construyen una vez y se encienden y apagan, igual que todo lo demás
+ * en el juego: crear y destruir mallas en pleno combate produce tirones
+ * por recolección de basura, y cambiar de arma es justo algo que se hace
+ * con zombis encima.
  */
 export class ArmasEnMano {
   /**
@@ -145,24 +126,17 @@ export class ArmasEnMano {
   constructor(ancla, mats) {
     this.modelos = {
       knife: construirCuchillo(mats),
-      pistol: construirPistola(mats),
-      bazooka: construirBazooka(mats)
+      pistol: construirPistola(mats)
     };
 
-    for (const [clave, modelo] of Object.entries(this.modelos)) {
+    for (const modelo of Object.values(this.modelos)) {
       /*
        * Cada arma se agarra distinto, y eso se ajusta acá y no dentro del
        * modelo: el modelo describe el arma, el anclaje describe cómo la
        * sostiene esta mano en particular.
        */
-      if (clave === 'bazooka') {
-        // Al hombro: más atrás y más arriba que las otras dos.
-        modelo.setLocalPosition(0.04, 0.12, -0.1);
-        modelo.setLocalEulerAngles(-6, 0, 0);
-      } else {
-        modelo.setLocalPosition(0, -0.02, -0.06);
-        modelo.setLocalEulerAngles(-8, 0, 0);
-      }
+      modelo.setLocalPosition(0, -0.02, -0.06);
+      modelo.setLocalEulerAngles(-8, 0, 0);
       modelo.enabled = false;
       ancla.addChild(modelo);
     }

@@ -51,8 +51,7 @@ export class InputManager {
       run: false,
       attack: false,
       interact: false,
-      swap: false,
-      special: false
+      swap: false
     };
     /** Botones que se activaron en este frame (flanco de subida). */
     this.pressed = new Set();
@@ -125,10 +124,8 @@ export class InputManager {
       ShiftRight: 'run',
       KeyE: 'interact',
       KeyQ: 'swap',
-      // F de la bazooka: cerca de WASD y no se aprieta sin querer.
-      // R (recargar) y H (curarse) se fueron en la Fase 16 con la municion
-      // y los botiquines.
-      KeyF: 'special',
+      // R (recargar), H (curarse) y F (bazooka) se fueron en la Fase 16
+      // con la municion, los botiquines y el sistema de bomba.
       Space: 'attack'
     };
 

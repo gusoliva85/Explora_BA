@@ -16,21 +16,15 @@ import { WEAPONS } from '../src/config/balance.js';
  */
 
 describe('el largo es lo que separa las siluetas', () => {
-  it('la bazooka es MUCHO mas larga que las otras dos', () => {
-    /*
-     * Dos armas del mismo largo con formas distintas son la misma mancha;
-     * una corta y una larga se distinguen aunque sean dos palos.
-     */
-    expect(LARGO.bazooka).toBeGreaterThan(LARGO.pistola * 3);
-    expect(LARGO.bazooka).toBeGreaterThan(LARGO.cuchillo * 3);
-  });
-
-  it('la bazooka pasa el ancho del cuerpo', () => {
-    // Es lo que la hace reconocible de un vistazo: sobresale del
-    // personaje por los dos lados.
-    const ANCHO_HOMBROS_GUS = 0.52;
-    expect(LARGO.bazooka).toBeGreaterThan(ANCHO_HOMBROS_GUS * 2);
-  });
+  /*
+   * Habia dos pruebas mas, y las dos eran sobre la bazooka: que fuera
+   * MUCHO mas larga que las otras, y que pasara el ancho del cuerpo. Se
+   * fueron con el arma en la Fase 16.3 (D-29).
+   *
+   * Lo que dejan es una advertencia para la 16.4, que borra el cuchillo:
+   * **con una sola arma, este archivo entero deja de tener sentido**. Una
+   * silueta no se puede confundir con nada si es la unica que hay.
+   */
 
   it('el cuchillo y la pistola son cortos, casi no sobresalen', () => {
     for (const arma of ['cuchillo', 'pistola']) {
@@ -67,11 +61,6 @@ describe('los colores de las armas', () => {
     expect(separacion(COLOR_ARMA.filo, COLORS.asphalt)).toBeGreaterThan(0.15);
   });
 
-  it('la bazooka no es del mismo verde que la vegetacion', () => {
-    for (const hoja of COLORS.leaves) {
-      expect(separacion(COLOR_ARMA.tubo, hoja), `contra ${hoja}`).toBeGreaterThan(0.03);
-    }
-  });
 });
 
 describe('el presupuesto de detalle', () => {
@@ -79,7 +68,7 @@ describe('el presupuesto de detalle', () => {
    * Las piezas son cajas: doce triángulos cada una. Los números salen de
    * contar las piezas en `armas.js`.
    */
-  const PIEZAS = { cuchillo: 3, pistola: 4, bazooka: 5 };
+  const PIEZAS = { cuchillo: 3, pistola: 4 };
 
   it.each(Object.entries(PIEZAS))('%s entra en su presupuesto', (arma, piezas) => {
     expect(piezas * 12, `${arma}: ${piezas * 12} triangulos`).toBeLessThanOrEqual(
@@ -87,11 +76,6 @@ describe('el presupuesto de detalle', () => {
     );
   });
 
-  it('la bazooka puede gastar mas, porque aparece menos', () => {
-    // Es el criterio del presupuesto: lo que más se repite es lo que menos
-    // gasta. La bazooka se ve dos veces por partida.
-    expect(PIEZAS.bazooka).toBeGreaterThanOrEqual(PIEZAS.cuchillo);
-  });
 });
 
 describe('las armas del modelo son las del balance', () => {
@@ -102,13 +86,12 @@ describe('las armas del modelo son las del balance', () => {
      * No tira ningún error.
      */
     const delBalance = Object.keys(WEAPONS).sort();
-    const conModelo = ['bazooka', 'knife', 'pistol'];
+    const conModelo = ['knife', 'pistol'];
     expect(conModelo).toEqual(delBalance);
   });
 
-  it('el largo del modelo de la bazooka acompaña su alcance', () => {
-    // Coherencia básica: el arma que llega más lejos es la que más ocupa.
-    expect(WEAPONS.bazooka.range).toBeGreaterThan(WEAPONS.pistol.range);
-    expect(LARGO.bazooka).toBeGreaterThan(LARGO.pistola);
+  it('el alcance de la pistola es mayor que el del cuchillo', () => {
+    // Coherencia basica entre el balance y lo que se ve en la mano.
+    expect(WEAPONS.pistol.range).toBeGreaterThan(WEAPONS.knife.range);
   });
 });

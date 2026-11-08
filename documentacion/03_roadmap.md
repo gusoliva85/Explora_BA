@@ -24,44 +24,38 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.3 — Sacar el sistema de bomba** · tercera de la poda
+### **16.4 — Sacar el cuchillo** · cuarta de la poda
 
-**Qué se saca.** La bazooka entera (**D-29**): el arma, el botón, la barra de
-30 s, el cohete que viaja y la explosión.
+**Qué se saca.** El cuchillo y, con él, todo el cuerpo a cuerpo y el cambio
+de arma: queda **una sola arma** (**D-29**).
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/combat/projectile.js` | muere |
-| `src/combat/explosion.js` | muere — **pero primero se rescata `objetivoAutomatico()`** a su propio archivo |
-| `src/config/balance.js` | se va `WEAPONS.bazooka` |
-| `src/combat/weaponController.js` | mueren `#cargarEspecial()`, `dispararEspecial()`, `blancoEspecial()` y `cargaEspecial` |
-| `src/combat/combatFx.js` | se van el cohete y el efecto de explosión |
-| `index.html` | se van `fila-especial`, `especial-fill`, `especial-estado` y `btn-special` |
-| `src/styles/hud.css` | se va el CSS de los cuatro |
-| `src/ui/hud.js` | se va `setEspecial()` y sus referencias |
-| `src/input/inputManager.js` | se va el botón `special` y la tecla `F` |
-| `src/main.js` | se van `cohetes`, `bazookaEnMano` y el manejo del especial |
-| pruebas | mueren `tests/bazooka.test.js` y `tests/bazooka.spec.js` |
+| `src/config/balance.js` | se va `WEAPONS.knife`. **`WEAPONS` pasa a tener una sola entrada** |
+| `src/combat/weaponController.js` | mueren `#resolverGolpe()`, `#resolverArco()`, `equipar()`, `cambiarA()`, `yaGolpeados` y `swing` |
+| `src/combat/combatFx.js` | se va el arco del cuchillo |
+| `src/characters/armas.js` | se va `construirCuchillo()`; `ArmasEnMano` queda con un modelo |
+| `src/characters/pose.js` | se va `Pose.ATACAR`, que es el cuchillazo |
+| `index.html` y `hud.css` | se van `btn-swap` y `arma-caja` entera: con un arma, el nombre no informa nada |
+| `src/input/inputManager.js` | se va el botón `swap` y la tecla `Q` |
+| `src/ui/hud.js` | se va `setArma()` completo |
+| pruebas | `tests/armas.test.js` **muere entero** (una silueta no se confunde con nada si es la única), y `tests/pistola.test.js` pierde lo que compara contra el cuchillo |
 
-**Lo único que se rescata, y hay que hacerlo PRIMERO.**
-`objetivoAutomatico()` vive en `explosion.js` porque era el apuntado de la
-bazooka, y es **exactamente** lo que necesita el combate automático (17.3).
-Se mueve a su propio archivo con sus pruebas **antes** de borrar nada.
+**La tarea deja el HUD casi vacío**, y eso es correcto: después de la 16.4
+arriba quedan vida, objetivo y brújula, y abajo el joystick y la pausa. Es
+lo que la 16.8 va a terminar de ordenar.
 
-**La explosión se va, y es la tercera vuelta sobre el tema.** Iba a morir,
-después la rescaté para la barricada que explotaba, y con la puerta
-corrediza de D-37 vuelve a morir. Si **Muerte Nova** sobrevive al pool de
-power-ups, la 19B la escribe de nuevo contra el combate nuevo.
+**Lo que hay que mirar con cuidado, que ya pasó dos veces.** La 16.2 me
+enseñó que un aviso puede viajar colgado de otro, y la 16.3 que una pose
+puede quedarse viva después de que muera quien la pedía. Acá hay tres cosas
+del mismo tipo: `alCambiarArma` deja de tener sentido con un arma sola,
+`actualizarHudArma()` queda sin nada que actualizar, y `armasEnMano.equipar()`
+queda eligiendo entre un solo elemento. **Hay que seguir cada una hasta el
+final en vez de dejarlas apuntando a la nada.**
 
-**Lo que hay que mirar con cuidado.** La 16.2 dejó una lección: al sacar la
-munición desapareció también el aviso que, *de rebote*, refrescaba el HUD al
-cambiar de arma. Acá pasa lo mismo con `cargaEspecial`, que hoy se actualiza
-en cada cuadro desde `update()`. **Antes de borrar, buscar qué más viaja
-colgado de eso.**
-
-**Cómo se sabe que está lista:** no hay barra de bazooka ni botón, no se
-puede disparar nada especial, `objetivoAutomatico()` sigue vivo y con
-pruebas, la consola está limpia y todo en verde.
+**Cómo se sabe que está lista:** no hay botón de cambiar arma, no hay caja de
+arma en el HUD, no queda nada de cuerpo a cuerpo en el código, la consola
+está limpia y todo en verde.
 
 ---
 
@@ -657,8 +651,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 
 - [x] **16.1 Los ítems.** Munición y botiquines, de la vista y del sistema entero ✅ *8/11/2026 — 2.223 líneas menos, 25 archivos*
 - [x] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga ✅ *8/11/2026*
-- [ ] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma, el cohete y la explosión ⬅️ *la que sigue*
-- [ ] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola
+- [x] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma, el cohete y la explosión ✅ *8/11/2026 — y `objetivoAutomatico()` rescatado a `combat/objetivo.js`*
+- [ ] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola ⬅️ *la que sigue*
 - [ ] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30)
 - [ ] **16.6 Interactuar.** Ya no hay nada con lo que interactuar
 - [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27)

@@ -374,8 +374,7 @@ test.describe('reinicio limpio', () => {
      *
      * Lo que SI detecta una duplicacion es `zombisTotal` —los puestos del
      * mapa— y, sobre todo, el total de entidades de la escena: si algo se
-     * acumula al reiniciar (zombis, cohetes), ese numero crece y no vuelve
-     * a bajar.
+     * acumula al reiniciar, ese numero crece y no vuelve a bajar.
      *
      * Los objetos, el inventario y la curacion salieron de la foto en la
      * Fase 16, con el sistema entero. El total de entidades los cubria
@@ -394,8 +393,6 @@ test.describe('reinicio limpio', () => {
         return {
           entidadesEnEscena: entidades,
           zombisTotal: g.zombis.stats.total,
-          cohetes: g.cohetes.vivos.length,
-          bazooka: Math.round(g.arma.progresoEspecial * 10),
           controles: g.mission.nextCheckpoint
         };
       });
@@ -403,11 +400,11 @@ test.describe('reinicio limpio', () => {
     const primera = await foto();
 
     for (let i = 0; i < 5; i++) {
-      // Ensuciar el estado antes de reiniciar: cargar la bazooka y avanzar
+      // Ensuciar el estado antes de reiniciar: cambiar de arma y avanzar
       // controles.
       await page.evaluate(async () => {
         const g = globalThis.game;
-        g.arma.cargaEspecial = 0.7;
+        g.arma.cambiarA('pistol');
         await globalThis.__ir(
           g.mission.mission.route[g.mission.mission.checkpoints[0].atRouteIndex]
         );

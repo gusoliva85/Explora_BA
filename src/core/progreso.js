@@ -35,7 +35,6 @@ export class Estadisticas {
     this.dañoRecibido = 0;
     this.muertes = 0;
     this.controles = 0;
-    this.bazookasUsadas = 0;
   }
 
   /**

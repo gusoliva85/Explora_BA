@@ -4136,6 +4136,83 @@ que sobran.
 
 ---
 
+## 16.3 — La bazooka, y el rescate que salió bien
+
+**8 de noviembre de 2026.**
+
+**Lo primero fue el rescate, y recién después el borrado.** `objetivoAutomatico()`
+—el apuntado automático— salió de `combat/explosion.js` a su propio archivo,
+`combat/objetivo.js`, con once pruebas propias en `tests/objetivo.test.js`,
+**antes** de que se borrara nada. Las pruebas vinieron de `bazooka.test.js`,
+que murió media hora después.
+
+Vale la pena mirar lo que esa función es ahora. Nació como el apuntado de un
+arma que se usaba dos veces por partida. Hoy es **la única forma que tiene
+Gus de elegir a quién dispararle** (D-28): la regla central del juego nuevo
+ya estaba escrita, guardada en el archivo equivocado.
+
+**Lo que se fue.** `projectile.js` y `explosion.js` enteros, `WEAPONS.bazooka`,
+cuatro métodos del controlador, el cohete y la explosión de `combatFx.js`, el
+modelo del tubo, la barra y el botón del HUD con su CSS, la tecla `F`, y dos
+archivos de prueba.
+
+| | Antes | Después |
+|---|---|---|
+| Pruebas unitarias | 409 | **373 en verde** |
+| Pruebas de punta a punta | 56 | **48 en verde** |
+| Entidades en la escena | 2.593 | 2.586 |
+| Rama `EfectosCombate` | 20 entidades | 14 |
+
+### Dos poses que seguían vivas sin que nadie las pidiera
+
+Buscando restos aparecieron `Pose.RECARGAR` y `Pose.CURARSE`. Las dos
+completas: su animación, su duración, su velocidad de ciclo y sus pruebas.
+Y las dos **muertas desde hacía dos tareas**.
+
+`CURARSE` murió en la 16.1, cuando `gus.update()` dejó de recibir
+`curandose`. La rama del `if` quedó ahí, evaluando una variable que siempre
+era `undefined`. `RECARGAR` murió en la 16.2 con el aviso de recarga.
+
+Ninguna de las dos rompía nada. Por eso sobrevivieron: **el código muerto no
+falla, y por eso no se encuentra solo.** Las unitarias seguían verdes porque
+probaban la pose directamente —`poseDe(Pose.CURARSE, 0.5)` funciona
+perfectamente aunque nadie la llame nunca—. Una prueba que verifica una
+función aislada no puede decirte que ya nadie la usa.
+
+Lo que las encontró fue buscar la palabra en todo el proyecto, a mano, al
+terminar. Queda como parte del procedimiento de la fase: **después de cada
+borrado, grep de los nombres que deberían haber desaparecido.** No sólo del
+que se borró: también del que lo pedía.
+
+**Y de la pose de curarse quedó anotada una deuda.** Era encorvado, cabeza
+baja, las dos manos ocupadas: la pose que hacía que curarse se *leyera* como
+peligroso y no como apretar un botón. Si la curación vuelve como carta de
+power-up, la pose tiene que volver con ella. La regla que la justificaba no
+cambió.
+
+### Un comentario que sobrevivió a su código
+
+En `hud.css` había un comentario largo sobre por qué esconder un botón se
+hace con la clase `.hidden` de `game.css` y no con una clase nueva: una clase
+nueva con la misma especificidad pierde por orden, y el botón se ve siempre.
+Era el segundo error de especificidad del proyecto.
+
+El botón que lo provocó era el de la bazooka. **El comentario se queda, el
+botón no.** Está reescrito para decir eso explícitamente, porque la regla
+—*si hay una clase que ya resuelve esto, se usa esa*— no tenía nada que ver
+con la bazooka. Un error aprendido no se borra junto con el código que lo
+cometió.
+
+### Lo que la 16.3 deja planteado para la 16.4
+
+`tests/armas.test.js` empezó el día probando que tres siluetas no se
+confundieran entre sí. Con la bazooka afuera quedan dos, y la 16.4 borra el
+cuchillo. **Un archivo entero de pruebas que deja de tener sentido**, no
+porque esté mal, sino porque su premisa —que hay varias armas que distinguir—
+deja de ser cierta. Queda anotado en la tarea.
+
+---
+
 ## Apéndice A — Decisiones que se cierran en cada fase
 
 | Fase | Decisión pendiente | Cómo se cierra |

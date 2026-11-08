@@ -215,27 +215,17 @@ describe('disparar tiene retroceso', () => {
     expect(apuntaAdelante(p.brazoD), `brazoD en ${p.brazoD}`).toBe(true);
   });
 
-  it('curarse lleva las manos adelante, contra el cuerpo', () => {
-    const p = poseDe(Pose.CURARSE, 0.5);
-    expect(apuntaAdelante(p.brazoI)).toBe(true);
-    expect(apuntaAdelante(p.brazoD)).toBe(true);
-  });
 });
 
-describe('curarse se ve vulnerable', () => {
-  it('encorvado y con la cabeza baja', () => {
-    // Tiene que LEERSE que no está mirando lo que pasa alrededor.
-    const p = poseDe(Pose.CURARSE, 0.5);
-    expect(p.torso).toBeGreaterThan(15);
-    expect(p.cabeza).toBeLessThan(-10);
-  });
-
-  it('las dos manos ocupadas', () => {
-    const p = poseDe(Pose.CURARSE, 0.5);
-    expect(Math.abs(p.codoI)).toBeGreaterThan(50);
-    expect(Math.abs(p.codoD)).toBeGreaterThan(50);
-  });
-});
+/*
+ * Aca habia un bloque entero, "curarse se ve vulnerable": encorvado, con la
+ * cabeza baja y las dos manos ocupadas. Era la pose que hacia que curarse se
+ * LEYERA como una decision peligrosa, no como apretar un boton.
+ *
+ * Se fue con la curacion en la Fase 16 (D-32). Si la curacion vuelve como
+ * carta de power-up, la pose tiene que volver con ella: la regla que la
+ * justificaba —que curarse se vea costoso— no cambio.
+ */
 
 describe('morirse pasa una sola vez', () => {
   it('el desplome avanza y se queda', () => {
