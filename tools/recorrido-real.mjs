@@ -102,27 +102,70 @@ export function recorridoReal() {
 export const CUADRA = 100;
 
 /**
- * La escalera, como lista de movimientos de una cuadra cada uno.
+ * Cuantas cuadras hay entre dos puertas. Lo pidio Gus el 8/11: siete
+ * controles repartidos parejo sobre el recorrido entero.
+ */
+export const CUADRAS_POR_TRAMO = 2;
+
+/**
+ * ===========================================================================
+ * LA ESCALERA — el recorrido real, caminado sobre la cuadricula real
+ * ===========================================================================
+ * Cada entrada es UNA cuadra. No es una traza inventada que copia la
+ * proporcion del recorrido: es el recorrido de Gus **caminado por las calles
+ * que existen**, con los nombres que existen.
  *
- * Por que esta forma y no otra. El recorrido real se desplaza 437 m al
- * oeste y 1.413 m al norte: la proporcion es de 1 a 3,2, o sea "mucho mas
- * norte que oeste". Esta escalera se desplaza 100 al oeste y 400 al norte,
- * que es 1 a 4: conserva el caracter del recorrido —se va al norte
- * bordeando hacia el oeste— con siete cuadras en lugar de dieciocho.
+ * DE DONDE SALEN LOS NOMBRES. De OpenStreetMap, consultado el 8/11/2026 con
+ * la API de Overpass sobre el corredor completo. Para cada calle con nombre
+ * de la zona se pidio el centro de sus tramos, y la orientacion sale de
+ * mirar como se reparten: si los centros comparten longitud y cambian de
+ * latitud, la calle corre norte-sur. Es el metodo mas tonto que funciona, y
+ * funciona porque un tramo de calle va de esquina a esquina.
  *
- * Los siete tramos miden lo mismo, que es lo que pidio Gus: un control cada
- * cuadra, a distancia pareja. Seis de los siete giros son de 90 grados; el
- * septimo es derecho, cruzando la avenida, y eso tambien es porteño: una
- * avenida se cruza, no se dobla en ella.
+ * DOS COSAS QUE APARECIERON MIRANDO LOS DATOS, Y NO ESTABAN EN NINGUN LADO:
+ *
+ *   1. **Maza y Billinghurst son la misma calle.** Al norte de Av.
+ *      Rivadavia, Maza pasa a llamarse Billinghurst: los tramos de las dos
+ *      caen sobre la misma longitud, Maza siempre al sur de Rivadavia y
+ *      Billinghurst siempre al norte. O sea que "Maza 379" y "Billinghurst
+ *      250" estan sobre la misma linea.
+ *
+ *   2. **Av. Boedo y Mario Bravo tambien.** Mismo caso y misma avenida de
+ *      por medio. Y Mario Bravo, que yo tenia anotada como calle este-oeste
+ *      porque el numero 90 suena a eso, **corre norte-sur**: sus tramos
+ *      estan todos sobre la longitud -58,4174.
+ *
+ * Eso explica la unica parte del recorrido real que no se entendia: por que
+ * las dos ultimas patas vuelven un poco al **este** en lugar de seguir al
+ * noroeste. No vuelven: el recorrido sube por la linea Boedo/Mario Bravo y
+ * al final cruza una cuadra al este para caer en la linea Maza/Billinghurst,
+ * que es donde vive Sergio.
+ *
+ * EL LARGO SALE SOLO. Caminado por las calles reales, el recorrido de Gus
+ * son 4 cuadras al oeste + 1 al este + 11 al norte = **16 cuadras**. A 100 m
+ * la cuadra, **1.600 m**, que es exactamente el numero que dijo Gus. No se
+ * ajusto nada para que diera: se contaron las esquinas.
+ *
+ * `hasta` es la calle que se cruza al final de esa cuadra, o sea donde cae
+ * la esquina. `punto` marca las ubicaciones que dio Gus.
  */
 export const ESCALERA = [
-  { dir: 'N', punto: 'cp-nuevo-1', dirección: 'Control 1 — por asignar' },
-  { dir: 'O', punto: 'agrelo', dirección: 'Agrelo 3400' },
-  { dir: 'N', punto: 'cp-nuevo-2', dirección: 'Control 3 — por asignar' },
-  { dir: 'O', punto: 'maza', dirección: 'Maza 379' },
-  { dir: 'N', punto: 'boedo', dirección: 'Av. Boedo 120' },
-  { dir: 'N', punto: 'mariobravo', dirección: 'Mario Bravo 90' },
-  { dir: 'E', punto: 'fin', dirección: 'Billinghurst 250' }
+  { dir: 'O', calle: 'Av. Independencia', hasta: 'Sánchez de Loria' },
+  { dir: 'O', calle: 'Av. Independencia', hasta: 'Virrey Liniers' },
+  { dir: 'N', calle: 'Virrey Liniers', hasta: 'México' },
+  { dir: 'N', calle: 'Virrey Liniers', hasta: 'Agrelo', punto: 'agrelo' },
+  { dir: 'O', calle: 'Agrelo', hasta: 'Maza' },
+  { dir: 'N', calle: 'Maza', hasta: 'Venezuela' },
+  { dir: 'N', calle: 'Maza', hasta: 'Av. Belgrano', punto: 'maza' },
+  { dir: 'N', calle: 'Maza', hasta: 'Moreno' },
+  { dir: 'N', calle: 'Maza', hasta: 'Av. Hipólito Yrigoyen' },
+  { dir: 'N', calle: 'Maza', hasta: 'Don Bosco' },
+  { dir: 'O', calle: 'Don Bosco', hasta: 'Av. Boedo', punto: 'boedo' },
+  { dir: 'N', calle: 'Av. Boedo', hasta: 'Av. Rivadavia' },
+  { dir: 'N', calle: 'Mario Bravo', hasta: 'Bartolomé Mitre', punto: 'mariobravo' },
+  { dir: 'N', calle: 'Mario Bravo', hasta: 'Av. Díaz Vélez' },
+  { dir: 'E', calle: 'Av. Díaz Vélez', hasta: 'Billinghurst' },
+  { dir: 'N', calle: 'Billinghurst', hasta: 'Billinghurst 250', punto: 'fin' }
 ];
 
 /** Cuanto mueve cada letra, en cuadras. */
@@ -137,29 +180,35 @@ const PASO = {
 const RUMBO = { N: 0, E: 90, S: 180, O: 270 };
 
 /**
- * El trazado que se construye: ocho vertices, siete tramos de una cuadra.
- * Cada vertice lleva el giro que hay que hacer ahi, para que la tarea 18.6
- * sepa donde poner una flecha y la 18.7 sepa que bocacalles tapar.
+ * El trazado que se construye: una esquina por cuadra, diecisiete vertices.
+ *
+ * Cada vertice lleva el giro que hay que hacer ahi —para que la 18.6 sepa
+ * donde poner una flecha y la 18.7 sepa que bocacalle tapar— y si ahi va una
+ * **puerta** de la esclusa (D-37), que es cada `CUADRAS_POR_TRAMO` cuadras.
  */
 export function trazadoOrtogonal(cuadra = CUADRA) {
+  const inicio = UBICACIONES[0];
   const puntos = [
     {
       clave: 'inicio',
-      dir: UBICACIONES[0].dir,
-      calle: UBICACIONES[0].calle,
+      dir: inicio.dir,
+      calle: inicio.calle,
       x: 0,
       z: 0,
+      cuadra: 0,
       tramo: 0,
       rumbo: RUMBO[ESCALERA[0].dir],
-      giro: 0
+      giro: 0,
+      puerta: 0
     }
   ];
 
   let x = 0;
   let z = 0;
   let rumboAnterior = RUMBO[ESCALERA[0].dir];
+  let puertas = 0;
 
-  for (const paso of ESCALERA) {
+  for (const [i, paso] of ESCALERA.entries()) {
     x += PASO[paso.dir].x * cuadra;
     z += PASO[paso.dir].z * cuadra;
     const rumbo = RUMBO[paso.dir];
@@ -172,23 +221,36 @@ export function trazadoOrtogonal(cuadra = CUADRA) {
     while (giro > 180) giro -= 360;
     while (giro <= -180) giro += 360;
 
-    const original = UBICACIONES.find((u) => u.clave === paso.punto);
+    const nCuadra = i + 1;
+    const esFinal = nCuadra === ESCALERA.length;
+    const hayPuerta = !esFinal && nCuadra % CUADRAS_POR_TRAMO === 0;
+    if (hayPuerta) puertas += 1;
+
+    const original = paso.punto ? UBICACIONES.find((u) => u.clave === paso.punto) : null;
     puntos.push({
-      clave: paso.punto,
-      dir: original?.dir ?? paso.dirección,
-      calle: original?.calle ?? null,
+      clave: paso.punto ?? `esquina-${nCuadra}`,
+      dir: original?.dir ?? `${paso.calle} y ${paso.hasta}`,
+      calle: paso.calle,
+      hasta: paso.hasta,
       real: Boolean(original),
       x,
       z,
+      cuadra: nCuadra,
       tramo: cuadra,
       rumbo,
-      giro
+      giro,
+      // 0 = no hay puerta aca; 1..7 = el numero de control
+      puerta: hayPuerta ? puertas : 0,
+      fin: esFinal
     });
     rumboAnterior = rumbo;
   }
 
   return puntos;
 }
+
+/** Solo los vertices donde hay una puerta de la esclusa. */
+export const puertas = (cuadra = CUADRA) => trazadoOrtogonal(cuadra).filter((p) => p.puerta > 0);
 
 /** Largo total caminado, en metros. */
 export const largoOrtogonal = (cuadra = CUADRA) => ESCALERA.length * cuadra;
@@ -251,28 +313,29 @@ if (esPrincipal) {
       console.log('\n' + '='.repeat(76));
       console.log('2. EL TRAZADO ORTOGONAL — lo que se construye (D-26, D-35)');
       console.log('='.repeat(76) + '\n');
-      console.log('   #  punto / cartel                   x         z     tramo   rumbo   giro');
+      console.log('   #   esquina                                   x       z   rumbo   giro      puerta');
       console.log('   ' + '-'.repeat(70));
       for (const [i, p] of t.entries()) {
         console.log(
           '   ' +
-            String(i).padEnd(3) +
-            (p.dir + (p.real === false ? ' *' : '')).padEnd(30) +
-            String(p.x).padStart(7) +
-            String(p.z).padStart(10) +
-            (i ? String(p.tramo).padStart(7) + ' m' : '        —') +
+            String(i).padEnd(4) +
+            (p.dir + (p.real ? ' ◆' : '')).padEnd(42) +
+            String(p.x).padStart(6) +
+            String(p.z).padStart(8) +
             String(p.rumbo).padStart(7) + '°' +
-            (i ? '  ' + nombreGiro(p.giro) : '')
+            (i ? '  ' + nombreGiro(p.giro).padEnd(9) : ''.padEnd(11)) +
+            (p.fin ? '  LA CASA DE SERGIO' : p.puerta ? '  PUERTA ' + p.puerta : '')
         );
       }
       console.log('   ' + '-'.repeat(70));
-      console.log(`   TOTAL ${total} m en ${ESCALERA.length} tramos de ${CUADRA} m   —   a 6 m/s, ${Math.round(total / 6)} s`);
+      console.log(`   TOTAL ${total} m en ${ESCALERA.length} cuadras de ${CUADRA} m   —   a 6 m/s, ${Math.round(total / 6)} s`);
+      console.log(`   ${puertas().length} puertas, una cada ${CUADRAS_POR_TRAMO} cuadras (${CUADRAS_POR_TRAMO * CUADRA} m): tramos parejos de punta a punta`);
       const neto = t.at(-1);
       console.log(`   Desplazamiento neto: ${Math.abs(neto.x)} m al oeste, ${Math.abs(neto.z)} m al norte  (1 a ${(Math.abs(neto.z) / Math.abs(neto.x)).toFixed(1)})`);
       const r = recorridoReal().at(-1);
       console.log(`   El real:             ${Math.abs(r.x).toFixed(0)} m al oeste, ${Math.abs(r.z).toFixed(0)} m al norte  (1 a ${(Math.abs(r.z) / Math.abs(r.x)).toFixed(1)})`);
       console.log(`\n   Todos los giros son de 90° o derecho: ${girosValidos() ? 'SI ✓' : 'NO ✗'}`);
-      console.log('   (*) control sin direccion real asignada todavia — ver tarea 18.10\n');
+      console.log('   (◆) una de las ubicaciones que dio Gus. El resto sale de OpenStreetMap.\n');
     } else {
       console.log();
     }

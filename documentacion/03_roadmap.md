@@ -102,18 +102,23 @@ comisaría, gana o pierde, y el récord sobrevive a cerrar la pestaña.
 ### En una frase
 
 El juego deja de ser *un shooter con inventario y botones que corre hasta la
-meta* y pasa a ser **limpiar siete cuadras, una por una**: en cada una hay una
+meta* y pasa a ser **limpiar dieciséis cuadras, de a dos**: cada dos cuadras hay una
 puerta que no abre hasta que no quede un zombi vivo, y para matar hay que
 frenar, porque moverse y disparar no se pueden a la vez. La única decisión del
 jugador es *dónde pararse y cuánto tiempo*. Y la razón para hacerlo es ir a
 buscar a Sergio.
 
-### Las veinte decisiones nuevas
+### Las veinticuatro decisiones nuevas
 
-Numeradas **D-26 a D-45**, porque D-01 a D-21 son del documento 02 y D-22 a
+Numeradas **D-26 a D-49**, porque D-01 a D-21 son del documento 02 y D-22 a
 D-25 son de la 12R.
 
 #### 🔴 D-26 — El recorrido es el real, comprimido a siete cuadras
+
+> ⚠️ **Superada en parte por D-46 el 8/11.** Lo que sigue valiendo: las seis
+> ubicaciones, la medición de los 1.623,9 m y el motivo por el que D-04 se
+> reabrió. Lo que NO vale más: la compresión a 700 m. El recorrido se camina
+> entero, por las calles reales, y son 16 cuadras.
 
 **Qué dice.** Las seis ubicaciones que pidió Gus se conservan, con sus
 direcciones y su orden. Lo que **no** se conserva es la geometría: el
@@ -162,6 +167,12 @@ a escala 1:1 generada desde OSM queda para la Fase 15**, cuando haya varias
 misiones y deje de caber en una tabla. Si se usa, exige atribución (ODbL).
 
 #### 🔴 D-35 — Todos los giros son de 90°, y las manzanas son cuadradas
+
+> ⚠️ **Superada en su geometría por D-46 el 8/11.** Lo que sigue valiendo, y
+> es lo importante: **los giros de 90° y las manzanas cuadradas**, con las dos
+> tareas que eso canceló (18.1 y 18.2). Lo que NO vale más: la escalera de
+> siete cuadras y la tabla de abajo. El trazado bueno está en D-46, y es el
+> recorrido real caminado sobre las calles reales.
 
 **Qué dice.** El recorrido se construye como una **escalera de cuadras de
 100 m sobre una cuadrícula**. Cada tramo corre sobre un eje y cada giro es de
@@ -287,7 +298,7 @@ ve para atrás y liberar lo que todavía se ve deja un agujero en pantalla"*.
 problema técnico en vez de agregarle uno.
 
 **En qué convierte al juego.** Dejaba de ser *"llegá a Billinghurst"* y pasa a
-ser **"limpiá siete cuadras, una por una"**. El recorrido deja de ser una
+ser **"limpiá dieciséis cuadras, de a dos"**. El recorrido deja de ser una
 carrera y se vuelve una serie de siete peleas con una puerta al final de cada
 una. Y eso encaja con el combate automático mejor que lo que había: para
 matar hay que **frenar**, y frenar es la única decisión del jugador. Un
@@ -420,21 +431,27 @@ ahorra **cero**, porque esas entidades se van a volver a usar adelante. Es el
 trabajo ya hecho.
 
 **Por qué la ciudad sí es el problema.** Es el 86 % de las mallas y es **lo
-único que crece con los metros**. A unas 6,3 entidades por metro, los 700 m de
-D-35 proyectan ~4.400 entidades, ~4.300 mallas y del orden de **480 llamadas
+único que crece con los metros**. A unas 6,3 entidades por metro, los 1.600 m de
+D-46 proyectan ~12.700 entidades, ~11.000 mallas y del orden de **1.100 llamadas
 de dibujo**, contra un presupuesto de 150. Eso es la Fase 13 fallando antes de
 empezar.
 
 **Qué dice la decisión, entonces.** Se construye por tramos, pero el que se
 construye y se libera es **el tramo entero de ciudad** —calzada, veredas,
 fachadas, carteles, árboles, autos y sus cajas de colisión—, no los zombis.
-Con una **ventana de tres cuadras** —la anterior, la actual y la siguiente—
-viva a la vez:
+Con una **ventana de cuatro cuadras** —la última del tramo anterior, las dos
+del tramo actual y la primera del siguiente— viva a la vez:
 
-> **Un mapa de 700 m costaría lo mismo que hoy cuesta el de 350**, porque en
-> todo momento habría tres cuadras en memoria, que es lo que hay ahora. Y el
+> **El mapa de 1.600 m cuesta poco más de lo que hoy cuesta el de 300**, porque
+> en todo momento hay cuatro cuadras en memoria y hoy hay tres. Y el
 > presupuesto de 150 llamadas de dibujo de la Fase 13 pasa a ser alcanzable,
-> porque hay que optimizar tres cuadras y no siete.
+> porque hay que optimizar cuatro cuadras y no dieciséis.
+
+**Por qué cuatro y no tres.** Con los tramos de dos cuadras de D-46, el
+jugador tiene **dos cuadras por delante dentro de su propio tramo**: una
+ventana de tres lo dejaría viendo cómo se construye la segunda mitad del
+tramo que ya está jugando. Cuatro es el mínimo, y es un 33 % más que hoy, no
+el doble.
 
 **Y acá está el regalo que hizo Gus sin darse cuenta.** Normalmente el
 streaming es difícil porque el jugador puede volver: hay que cargar y
@@ -613,7 +630,7 @@ cartas para Gus y 3 por control, el sorteo se queda sin con qué:
 | Control | Cartas usadas | Quedan en el pool | ¿Hay elección? |
 |---|---|---|---|
 | 1 | 0 | 15 | Sí |
-| 6 (hoy) | 5 | **10** | Sí, cómodo |
+| **7 (hoy, D-46)** | 6 | **9** | Sí, de sobra |
 | 13 | 12 | **3** | Las tres últimas: no hay elección |
 | 14 | 13 | 2 | **No se pueden repartir tres cartas** |
 
@@ -637,10 +654,252 @@ de daño y velocidad, que son las que no agregan proyectiles; o cartas de nivel
 antes de la 19B.1**, porque el sistema de modificadores se escribe distinto si
 las cartas tienen nivel.
 
-**Y una cosa que ya se puede decir: con 6 controles el pool alcanza de sobra.**
-Diez cartas sin usar al terminar la partida significa que dos partidas seguidas
-no se parecen, que es lo que uno quiere de un juego así. El problema de los 16
-controles es un problema de la versión larga, no de la demo.
+**Con los 7 controles de D-46 el pool alcanza de sobra, y la pregunta quedó
+cerrada.** Gus eligió el recorrido entero con un control cada dos cuadras, no
+un control por cuadra: son 7 y no 16. Nueve cartas sin usar al terminar la
+partida significa que dos partidas seguidas no se parecen, que es lo que uno
+quiere de un juego así. **La regla de no repetir no se toca, y con ella queda
+en pie el techo de 8 proyectiles**, que es lo que hace que esto entre en un
+teléfono.
+
+**La única excepción que vale la pena discutir es "Sanar"** —ver D-48 bis—, y
+no toca el techo, porque curar no agrega proyectiles.
+
+#### 🔴 D-46 — El recorrido es el real entero: 16 cuadras, 1.600 m, 7 puertas
+
+> **Reemplaza a D-35 y a la parte de D-26 que comprimía a 700 m.** Lo pidió
+> Gus el 8/11: *"el recorrido, que son 1.600 metros, tenés que hacer 7
+> checkpoints en total dentro de todo ese recorrido. Distribuirlo como
+> quieras. Cada 2 cuadras. Tienen que ser todos iguales."*
+
+**Qué dice.** Se deja de comprimir. El recorrido se camina **por las calles
+que existen, con los nombres que existen**, y eso da **16 cuadras = 1.600 m**.
+Hay una **puerta cada 2 cuadras**: siete puertas de 200 m, todas iguales, y la
+casa de Sergio al final del tramo ocho.
+
+**El número no se eligió: se contó.** Este es el punto. Yo venía inventando
+una escalera que *imitara la proporción* del recorrido —100 m al oeste y 400
+al norte, porque la proporción real es 1 a 3,2—, y eso es dibujar una traza
+que se parece. Caminar el recorrido de Gus sobre la cuadrícula real da 4
+cuadras al oeste, 1 al este y 11 al norte: **16**. A 100 m la cuadra, 1.600 m,
+que es exactamente el número que dijo Gus sin haber hecho la cuenta. No se
+ajustó nada para que diera.
+
+**De dónde salen los nombres.** De **OpenStreetMap**, consultado el 8/11/2026
+con la API de Overpass sobre todo el corredor. Para cada calle con nombre se
+pidieron los centros de sus tramos, y la orientación sale de ver cómo se
+reparten: si comparten longitud y cambian de latitud, la calle corre
+norte-sur. Es el método más tonto que funciona, y funciona porque un tramo de
+calle va de esquina a esquina. Está en `tools/recorrido-real.mjs` y lo fija
+`tests/trazado.test.js`. **Esto es por fin la NOTA-02 del documento 02 usada
+para lo que servía**: OSM como guía de forma, no como fuente de geometría.
+
+**El trazado completo.** Ejes del juego: X = este/oeste, Z = norte/sur (−Z es
+al norte), 1 unidad = 1 metro. ◆ marca las ubicaciones que dio Gus.
+
+| # | Esquina | x | z | Giro | |
+|---|---|---|---|---|---|
+| 0 | **Av. Independencia 3250** ◆ | 0 | 0 | — | *el arranque* |
+| 1 | Av. Independencia y Sánchez de Loria | −100 | 0 | derecho | |
+| 2 | Av. Independencia y Virrey Liniers | −200 | 0 | derecho | **PUERTA 1** |
+| 3 | Virrey Liniers y México | −200 | −100 | 90° der | |
+| 4 | **Agrelo 3400** ◆ | −200 | −200 | derecho | **PUERTA 2** |
+| 5 | Agrelo y Maza | −300 | −200 | 90° izq | |
+| 6 | Maza y Venezuela | −300 | −300 | 90° der | **PUERTA 3** |
+| 7 | **Maza 379** ◆ | −300 | −400 | derecho | |
+| 8 | Maza y Moreno | −300 | −500 | derecho | **PUERTA 4** |
+| 9 | Maza y Av. Hipólito Yrigoyen | −300 | −600 | derecho | |
+| 10 | Maza y Don Bosco | −300 | −700 | derecho | **PUERTA 5** |
+| 11 | **Av. Boedo 120** ◆ | −400 | −700 | 90° izq | |
+| 12 | Av. Boedo y Av. Rivadavia | −400 | −800 | 90° der | **PUERTA 6** |
+| 13 | **Mario Bravo 90** ◆ | −400 | −900 | derecho | |
+| 14 | Mario Bravo y Av. Díaz Vélez | −400 | −1000 | derecho | **PUERTA 7** |
+| 15 | Av. Díaz Vélez y Billinghurst | −300 | −1000 | 90° der | |
+| 16 | **Billinghurst 250** ◆ | −300 | −1100 | 90° izq | **LA CASA DE SERGIO** |
+
+**1.600 m, 267 segundos de carrera pura**, desplazamiento neto 300 m al oeste
+y 1.100 al norte — 1 a 3,7 contra el 1 a 3,2 del real, mejor que el 1 a 4 que
+daba la escalera inventada. **Todos los giros son de 90° o derecho**, que es
+lo que el generador necesita (lo que D-35 ya había conseguido, y se conserva).
+
+**Las cinco ubicaciones de Gus siguen todas en el recorrido**, y ninguna se
+perdió al pasar de 7 cuadras a 16. Cuatro caen en el medio de un tramo: ahí
+son **un cartel, no un control**. Lo que Gus dio es el recorrido; los controles
+los reparte la cuadrícula, que es lo que él pidió cuando dijo *"distribuirlo
+como quieras"*.
+
+#### 🔵 D-46 bis — Dos cosas que aparecieron en los datos de OSM, y no estaban en ningún lado
+
+**Maza y Billinghurst son la misma calle.** Al norte de Av. Rivadavia, Maza
+pasa a llamarse Billinghurst: los tramos de las dos caen sobre la misma
+longitud, Maza siempre al sur de la avenida y Billinghurst siempre al norte.
+O sea que **"Maza 379" y "Billinghurst 250" están sobre la misma línea**, y la
+casa de Sergio queda sobre la calle por la que el jugador ya subió media
+misión.
+
+**Av. Boedo y Mario Bravo también**, con la misma avenida de por medio. Y
+**Mario Bravo corre norte-sur**, no este-oeste: yo la había anotado como
+este-oeste porque "Mario Bravo 90" suena a numeración de calle transversal.
+Todos sus tramos están sobre la longitud −58,4174.
+
+**Y eso explica la única parte del recorrido real que no se entendía:** por
+qué las dos últimas patas vuelven un poco al **este** en lugar de seguir al
+noroeste, que es lo que venían haciendo. No vuelven: el recorrido sube por la
+línea Boedo/Mario Bravo y al final **cruza una cuadra al este** para caer en la
+línea Maza/Billinghurst. Un dato que estaba en el recorrido de Gus desde el
+primer día y que yo había tomado por ruido de la medición.
+
+**Lo que esto le hace al final de la misión, y es gratis:** el último tramo es
+un cruce de una cuadra y después una cuadra para arriba. Eso es un **doblez
+final**, no una recta — el jugador no ve la casa de Sergio hasta que gira. Es
+el mejor remate posible y no hubo que diseñarlo.
+
+#### 🔴 D-47 — Lo que cuesta el recorrido entero, dicho antes de empezar
+
+El mapa pasa de 7 cuadras a 16: **más del doble**. Es la decisión de alcance
+más cara que se tomó, y conviene tener los números a la vista.
+
+| | 3 cuadras (medido) | 7 cuadras (proyectado) | **16 cuadras** |
+|---|---|---|---|
+| Entidades | 2.621 | ~5.000 | **~12.700** |
+| Mallas | 2.262 | ~4.300 | **~11.000** |
+| Llamadas de dibujo | **238** | ~480 | **~1.100** |
+| Presupuesto | **< 150** | | |
+
+**Tres consecuencias, y ninguna es opcional.**
+
+**1. La construcción por tramos (D-42) deja de ser una tarea y pasa a ser un
+cimiento.** Con 16 cuadras vivas el juego no abre en un teléfono: no es que
+ande lento, es que no entra. Con la ventana, 16 cuadras cuestan lo mismo que
+las 3 de hoy. La tarea 18.12 sube a ser la primera de la Fase 18, no una de
+las últimas.
+
+**2. La ventana se mide en tramos, no en cuadras.** Hoy dice "tres cuadras:
+anterior, actual y siguiente". Con tramos de 2 cuadras eso ya no alcanza: el
+jugador tiene 2 cuadras por delante dentro de su propio tramo. La ventana pasa
+a ser **la última cuadra del tramo anterior, las 2 del actual y la primera del
+siguiente: 4 cuadras**. Un 33 % más que hoy, no el doble.
+
+**3. La misión dura el doble.** Con 7 puertas y zombis por tramo, de 2 minutos
+puede irse a 15 o 20. Eso es lo que Gus quiere —*"así se aprovecha un poquito
+más el viaje y no está frenético desde el principio"*— pero cambia dos cosas
+que ya están escritas: la sesión de prueba de la 13.12 deja de ser
+representativa, y **el daño permanente de D-31 se vuelve mucho más duro**. 120
+de vida sin regeneración a lo largo de 1.600 m es un presupuesto distinto al
+de 700. Ver la nota sobre "Sanar" en D-48.
+
+**Lo que NO cambia, y es la mitad buena.** La reserva de zombis son 18
+entidades y no crece con el mapa; el generador ya exige tramos alineados a un
+eje y los 16 lo están; las cuatro ochavas de la 12R.3 están hechas para 90° y
+siguen sirviendo. **El doble de ciudad no es el doble de trabajo: es el mismo
+trabajo repetido ocho veces más**, y repetir es lo que hace un generador.
+
+#### 🔴 D-48 — Son tres cartas y se elige una: el personaje lo arma el jugador
+
+**Qué dice Gus, y es la mitad del juego que faltaba escribir:**
+
+> *"De esas 3 cartas vos podés seleccionar solo una, no es que elegís las 3.
+> El personaje al final va a ser en base a los power-ups que vos elegiste.
+> Por ahí elegiste todo lo que sea defensa, conservador; por ahí elegiste solo
+> que ataque para todos lados; por ahí elegiste el camino por vampirismo, más
+> HP. Cada partida, ninguna va a ser igual a la otra."*
+
+**Una aclaración que me corresponde hacer.** Las cuentas de D-45 ya suponían
+una carta por control —en el control 7 hay 6 cartas tomadas, no 18—, así que
+los techos de ahí siguen valiendo tal como están. Lo que yo no había escrito
+es **para qué sirve que sean tres**, y eso no es un detalle de interfaz: es el
+único momento del juego en que el jugador decide algo que no es dónde pararse.
+
+**Lo que agrega, en números.** Con 7 controles y 15 cartas, el jugador ve **21
+cartas ofrecidas y se lleva 7**. Eso son **6.435 personajes distintos
+posibles** — y, más importante que el número, son 7 momentos en que descartar
+dos cosas buenas es la jugada.
+
+**La consecuencia de diseño, que sí es nueva y es una tarea.** Para que haya
+decisión, **las tres cartas no pueden salir del mismo eje**. Si salen tres de
+daño, no hay elección: hay una carta mejor y dos peores, y el jugador aprieta
+la de arriba. El ejemplo que dio Gus —*"si te queda poca vida vas a tener que
+sacrificar más ataque por una carta de curación"*— sólo puede pasar si en esa
+mano **hay** una de ataque y **hay** una de curación.
+
+Así que el sorteo deja de ser "tres al azar del pool" y pasa a tener forma.
+Los cinco ejes:
+
+| Eje | Cartas de Gus (Guerrero) |
+|---|---|
+| **Conteo** | Disparo múltiple, Tiro doble, Disparos diagonales |
+| **Daño** | Mejora de Ataque y su Premium, Ataque crítico y su Premium |
+| **Ritmo** | Velocidad de Ataque y su Premium |
+| **Aguante** | Aumentar HP, Sanar, Sed de sangre |
+| **Caos** | Rebote, Rebote pared, Muerte Nova |
+
+**La regla: las tres cartas de una mano salen de tres ejes distintos.** Es
+barato y hace que todas las manos sean una decisión. Es la 19B.9, que con
+esto queda definida y deja de ser "pesar el sorteo" a ojo.
+
+**Y una segunda, que sale del mismo ejemplo de Gus:** la probabilidad de que
+el eje "aguante" entre en la mano **sube cuando a Gus le falta vida**. No para
+regalarle la curación —sigue costándole las otras dos cartas— sino para que la
+decisión que Gus describió **ocurra** en vez de depender del azar. Un juego
+donde el momento más dramático aparece una de cada cinco partidas no lo tiene.
+
+#### 🟡 D-48 bis — "Sanar" es la única cura de toda la partida, y eso hay que mirarlo
+
+Con **D-31** el daño es permanente, con **D-46** el recorrido pasa a 1.600 m, y
+con la regla de no repetir **"Sanar" es una sola carta**. Juntando las tres:
+
+> En una partida de 16 cuadras, Gus tiene **exactamente una** oportunidad de
+> recuperar vida, y sólo si esa carta aparece en una de las 7 manos y la
+> elige por encima de las otras dos.
+
+**No digo que esté mal: digo que nadie lo decidió.** Salió de tres decisiones
+separadas que cada una tenía sentido sola. Las salidas, para mirar jugando:
+
+1. **Dejarlo así.** La vida es un recurso que se gasta y no vuelve, y el juego
+   es de aguantar. Es coherente y es duro.
+2. **"Sanar" exenta de la regla de no repetir.** La única carta que puede
+   volver a salir. Es la excepción más chica posible y no toca el techo de
+   proyectiles de D-45, porque Sanar no agrega ninguno.
+3. **Que "Aumentar HP" cure lo que agranda.** De 120 a 144 sumando 24 de vida
+   actual. Resuelve de paso el otro problema de abajo.
+
+Mi voto es la **2**, y queda como tarea 19B.14, para decidir jugando.
+
+**Y el cambio de nombre que pidió Gus: "HP Boost" pasa a llamarse "Aumentar
+HP".** Tiene razón y no es cosmético: el problema era que las dos cartas se
+confunden, y "Boost" no dice qué sube. **Aumentar HP** sube el techo,
+**Sanar** llena lo que falta. Con 120 de vida base, Aumentar HP lleva el
+máximo a 144 **sin curar nada**: tomarla con 30 de vida deja al jugador con 30
+de 144.
+
+#### 🔵 D-49 — Los proyectiles diagonales le pegan al que pasaba por ahí
+
+Gus explicó para qué sirven, y confirma exactamente la separación que la
+17.3 ter propone:
+
+> *"Tenés 5 zombies delante tuyo. El tiro principal va al zombie más cercano.
+> ¿Qué pasa con los otros 2 proyectiles? Se mueven de forma automática en
+> diagonal, para adelante. Puede ser que le peguen a alguno de los otros
+> zombies. Los otros 2 proyectiles pueden pegar por casualidad. Si lo hacen,
+> perfecto, porque ya le está sacando vida adicional."*
+
+**O sea que el tiro apuntado y los proyectiles extra son dos cosas distintas,
+y está bien que lo sean:**
+
+| | Apunta | ¿Puede fallar? |
+|---|---|---|
+| **El tiro principal** | Al zombi más cercano con línea de vista | **No** (D-36) |
+| **Los diagonales** | A 45° fijos, adelante | **Sí, y esa es la gracia** |
+
+Lo que yo había anotado como un problema —*"contra un solo zombi las
+diagonales no hacen nada"*— deja de serlo cuando la carta se lee como **daño
+de regalo contra un grupo** y no como un aumento de daño. Contra un zombi solo
+no aportan, y es correcto: es una carta para cuando la cuadra está llena, que
+es cuando hace falta.
+
+**Lo que sí queda en pie es que hay que decirlo en la carta.** El texto de
+Gus —*"Proyectiles diagonales +1"*— no alcanza para que alguien entienda eso
+antes de gastarle un control. Es trabajo de la 19B.5.
 
 #### 🔴 D-27 — El joystick a la derecha
 
@@ -907,7 +1166,7 @@ Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
 
 ## ⬜ FASE 18 — El recorrido real
 
-**Objetivo:** el trazado ortogonal de D-35, con la ruta marcada y todo lo
+**Objetivo:** el trazado de **D-46** —las 16 cuadras reales—, con la ruta marcada y todo lo
 demás bloqueado. Usa los props provisionales que ya existen; la Fase 20 los
 reemplaza por modelos.
 
@@ -919,16 +1178,16 @@ reemplaza por modelos.
 
 - [x] ~~18.1 El generador, abierto a ángulos arbitrarios~~ — **cancelada por D-35**
 - [x] ~~18.2 Las esquinas que no son esquinas~~ — **cancelada por D-35**
-- [ ] **18.3 El trazado nuevo en `mission001.js`.** Las ocho esquinas de D-35, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad
+- [ ] **18.3 El trazado nuevo en `mission001.js`.** Las **diecisiete esquinas de D-46**, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad. Las siete puertas salen de `puertas()`, no se escriben a mano
 - [ ] **18.4 Seis controles** en vez de dos, y la meta en Billinghurst 250
 - [ ] **18.5 Los siete textos de objetivo**, en voseo, uno por tramo
 - [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más una flecha en cada uno de los cinco giros. Con la cuadrícula esto es más fácil: la flecha siempre apunta a 90°
-- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en siete cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
+- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en dieciséis cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
 - [ ] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js`
-- [ ] **18.9 Las zonas de zombis, una por tramo.** Siete zonas, con dificultad creciente y el primero flojo: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
-- [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, los seis controles y la casa de Sergio. Los nombres intermedios aparecen una vez y nada más — en un cartel, en el piso o en la brújula. Los dos controles nuevos pueden quedarse sin dirección
+- [ ] **18.9 Las zonas de zombis, una por tramo.** **Ocho zonas de dos cuadras** (D-46), con dificultad creciente y la primera floja: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
+- [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, las siete puertas y la casa de Sergio. **Y ya no falta ninguna dirección** (D-46): las diecisiete esquinas tienen nombre real de OpenStreetMap, y las cuatro ubicaciones de Gus que caen en medio de un tramo —Maza 379, Av. Boedo 120, Mario Bravo 90— son carteles de paso
 - [ ] **18.11 La casa de Sergio** ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
-- [ ] **18.12 La construcción por tramos** (D-42). **Ya no es "es probable que haga falta": está medido y hace falta.** La ciudad es el 86 % de las mallas y lo único que crece con los metros; los 700 m proyectan ~4.400 entidades y ~480 llamadas de dibujo contra un presupuesto de 150. Ventana de tres cuadras —anterior, actual y siguiente—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
+- [ ] **18.12 La construcción por tramos** (D-42, D-47). ⚠️ **Primera de la fase, no última.** Ya no es "es probable que haga falta" ni siquiera "está medido y hace falta": con las 16 cuadras de D-46 el juego **no abre** en un teléfono sin esto. La ciudad es el 86 % de las mallas y lo único que crece con los metros; 16 cuadras proyectan ~12.700 entidades y ~1.100 llamadas de dibujo contra un presupuesto de 150. **Ventana de cuatro cuadras** —la última del tramo anterior, las dos del actual y la primera del siguiente, porque con tramos de 2 cuadras la ventana de tres ya no alcanza—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
 - [ ] **18.12 bis Liberar de verdad.** Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
 - [ ] **18.14 La brújula, más grande y protagonista** (D-38). Hoy existe —una pastilla con flecha que rota y los metros al objetivo— y ya se muestra siempre que haya objetivo, así que lo de "siempre" está. Lo que falta: **tamaño**, porque el glifo mide 15 px y es más chico que el texto de al lado; **presencia**, que se vea de reojo mientras se corre; y **el nombre de la calle** por la que se va, que es donde D-40 dice que puede vivir. Y tiene que seguir funcionando cuando la 19A.6 le cambie el blanco al zombi más cercano
@@ -939,7 +1198,7 @@ reemplaza por modelos.
 - [ ] Los siete tramos miden lo mismo, y los controles quedan a distancia pareja
 - [ ] Las seis direcciones de Gus están en orden y coinciden con los carteles
 - [ ] Billinghurst 250 se lee como una casa, y se distingue de sus vecinas
-- [ ] No se puede salir de la ruta por ningún lado: probado intentándolo en las ocho esquinas
+- [ ] No se puede salir de la ruta por ningún lado: probado intentándolo en las diecisiete esquinas
 - [ ] Un jugador que nunca lo vio entiende para dónde ir sin que nadie le diga
 - [ ] Ningún obstáculo bloquea la ruta que debería dejar pasar
 - [ ] Se puede llegar de Independencia 3250 a Billinghurst 250 sin trabarse
@@ -971,7 +1230,7 @@ de tres cajas tiradas en el piso.
 
 **La esclusa:**
 
-- [ ] **19A.3 Los seis controles** como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el séptimo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
+- [ ] **19A.3 Las siete puertas** (D-46) como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el octavo tramo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
 - [ ] **19A.4 Cerrada: el cartel.** Al tocar la puerta con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
 - [ ] **19A.5 El contador.** Cuántos quedan **vivos** en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas. ⚠️ **Cuenta vivos, no matados por un disparo:** los power-ups de veneno y fuego pueden matar a un zombi lejos y sin que el jugador lo vea, y si el contador no se entera la puerta no abre nunca
 - [ ] **19A.6 La brújula cambia de blanco** (D-38). Mientras la puerta frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
@@ -1110,7 +1369,7 @@ funcionan con cualquier elemento o sin ninguno.
 | **Mejora de Ataque** | **+15 %** del daño base, aditivo | *"Aumenta ligeramente tu ataque"* |
 | **Velocidad de Ataque (Premium)** | **+25 %** de la velocidad base, aditivo | *"¡Ahora puedes atacar más rápido!"* |
 | **Velocidad de Ataque** | **+12,5 %** de la velocidad base, aditivo | *"Aumenta ligeramente la velocidad de ataque"* |
-| **HP Boost** | **+20 %** de la vida máxima base | *"¡Máx. HP aumentado!"* |
+| **Aumentar HP** | **+20 %** de la vida máxima base. **No cura nada**: sube el techo | *"¡Máx. HP aumentado!"* |
 | **Sanar** | Restaura el **40 %** de la salud | *"Restaura parcialmente HP"* |
 
 **Las reglas del sorteo, textuales:** tres cartas por control, se elige una;
@@ -1126,8 +1385,10 @@ sola vez**. No contradice a D-31 —el daño sigue sin regenerarse solo— y no
 devuelve ningún botón. Lo que sí necesita es que el daño de Gus se pueda
 reducir desde afuera del combate, que hoy no está conectado. Tarea 19B.12.
 
-*"HP Boost" y "Sanar" son distintas y no hay que mezclarlas.* Una sube el
-techo, la otra llena lo que falta. Con 120 de vida base, HP Boost lleva el
+*"Aumentar HP" y "Sanar" son distintas y no hay que mezclarlas.* Gus pidió el
+8/11 que la carta deje de llamarse "HP Boost", y tiene razón: el problema era
+justamente que las dos se confunden, y "Boost" no dice qué sube. Una sube el
+techo, la otra llena lo que falta. Con 120 de vida base, Aumentar HP lleva el
 máximo a 144 **sin curar nada**: tomarla con 30 de vida deja al jugador con 30
 de 144, que se va a sentir como una carta que no hizo nada. Es el mismo
 síntoma de D-44 y la misma solución: el texto de la carta (19B.5).
@@ -1161,9 +1422,10 @@ como máximo absoluto** (D-45). Ese número es el presupuesto de toda la fase.
 - [ ] **19B.6 Los iconos, dibujados de cero.** ⚠️ Las imágenes de `documentacion/habilidades/` **salieron de otro juego**: son **referencia de diseño y no entran a `public/`**. Modificarlas no las vuelve usables — una versión alterada de una imagen ajena sigue siendo obra derivada. Hay que dibujar 23 iconos **originales en SVG** con el mismo lenguaje: cuadrado, marco verde, fondo claro, una o dos formas planas
 - [ ] **19B.7 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
 - [ ] **19B.8 Al morir se pierde todo**, con una prueba que lo verifique
-- [ ] **19B.9 El sorteo pesado, no los porcentajes** (D-44). Que una carta de daño o de velocidad no salga mientras el jugador tenga un solo proyectil, porque ahí no se nota. La forma más simple que se me ocurre: las tres cartas del **primer** control salen del eje del conteo, y de ahí en adelante el sorteo es libre. Es una línea de código y arregla la única primera impresión que el jugador va a tener
+- [ ] **19B.9 El sorteo con forma** (D-44, D-48). Dos reglas, y las dos son baratas: **(a)** las tres cartas de una mano salen de **tres ejes distintos** —conteo, daño, ritmo, aguante, caos— porque tres cartas del mismo eje no son una decisión; **(b)** las tres del **primer** control salen del eje del conteo, porque una carta de daño con un solo proyectil no se nota (D-44). Y una tercera a probar: que el eje "aguante" entre más seguido cuando a Gus le falta vida, para que la decisión que describió Gus —sacrificar ataque por curación— ocurra en vez de depender del azar
+- [ ] **19B.14 ¿"Sanar" se puede repetir?** (D-48 bis). Con el daño permanente de D-31 y los 1.600 m de D-46, hoy hay **una sola cura en toda la partida**, y nadie lo decidió: salió de tres decisiones separadas. Mi voto es que sea la única carta exenta de la regla de no repetir, porque no agrega proyectiles y no toca el techo de D-45. Se decide jugando
 - [ ] **19B.10 El presupuesto de proyectiles** (D-45). Ocho por ráfaga, hasta 32 impactos con rebote, más 8 por muerte con Muerte Nova, a 2,5 ráfagas por segundo: del orden de **20 proyectiles nuevos por segundo**. Hace falta una reserva de objetos como la de los zombis —que no crece— y un tope duro de proyectiles vivos. **Medido con `tools/medir-memoria.mjs` en el peor caso**, no estimado
-- [ ] **19B.11 ¿Las cartas se repiten o suben de nivel?** ⚠️ **Se decide antes de la 19B.1**, porque el sistema de modificadores se escribe distinto. Con 6 controles no hace falta; con los 16 que Gus está pensando, sí. Ver D-45: la regla de no repetir es la que sostiene el techo de 8 proyectiles
+- [x] ~~**19B.11 ¿Las cartas se repiten o suben de nivel?**~~ — **cancelada por D-46.** Hacía falta sólo si los controles pasaban a 16. Son 7, y 7 cartas de un pool de 15 no agotan nada. La regla de no repetir queda intacta y con ella el techo de 8 proyectiles de D-45
 - [ ] **19B.12 Conectar la curación** para la carta "Sanar", que es la única que la pide. Hoy el daño de Gus sólo sube. No devuelve ningún botón y no contradice D-31
 - [ ] **19B.13 Robo de vida** para "Sed de sangre": 1,5 % de la vida base del enemigo al matarlo. Con zombis de 100 son 1,5 por muerte, así que el número hay que mirarlo jugando — una cuadra de ocho zombis devuelve 12 de 120
 
@@ -1345,7 +1607,7 @@ cuchillo que se está borrando.
 | ➡️ | 12R.A — Barrido de assets | **Se la lleva la 20.3** |
 | ➡️ | 12R.8 — Vehículos | **Se la lleva la 20.9** (Realistic Car Pack) |
 | ⬜ | 12R.9 — Abandono: vallas, escombros, bolsas, grafiti | Queda. Y crece: ahora bloquea bocacalles (18.7), con el vocabulario de la contención (D-43) |
-| ⬜ | 12R.10 — Composición de la cuadra | Queda. Y crece: siete cuadras en vez de tres |
+| ⬜ | 12R.10 — Composición de la cuadra | Queda. Y crece: dieciséis cuadras en vez de tres. Con la ventana de D-42 se construyen cuatro por vez, así que el trabajo es hacer **una cuadra tipo que se repita bien**, no dieciséis a mano |
 | ➡️ | 12R.11 — Gus | **Se la lleva la 20.7** |
 | ➡️ | 12R.12 — Zombis | **Se la llevan la 20.4 a la 20.6** |
 | ➡️ | 12R.13 — Armas en la mano | **Se la lleva la 20.8**, y es sólo una arma |
@@ -1464,19 +1726,19 @@ una medición previa que lo justifique.**
 - [ ] 13.12 Sesión de 20 minutos: temperatura, batería, degradación
 - [ ] 13.13 Probar en dos teléfonos distintos y dos navegadores
 - [ ] 13.14 Probar con 4G real, no sólo con WiFi
-- [x] 13.15 ~~carga del mapa por tramos~~ — **se adelantó a la 18.12** (D-42). La medición lo exigió: no es optimización, es la única forma de que el mapa de 700 m entre
+- [x] 13.15 ~~carga del mapa por tramos~~ — **se adelantó a la 18.12** (D-42, D-47). La medición lo exigió: no es optimización, es la única forma de que el mapa de 1.600 m entre
 
 **Los presupuestos que hay que cumplir**
 
 **Lo medido el 7 de noviembre**, con `node tools/medir-memoria.mjs` sobre el
 mapa de 3 cuadras. Es el punto de partida que pedía la 13.1:
 
-| Métrica | Objetivo | Medido (3 cuadras) | Proyectado a 7 cuadras |
+| Métrica | Objetivo | Medido (3 cuadras) | Proyectado a **16 cuadras** (D-46) |
 |---|---|---|---|
-| Llamadas de dibujo | **< 150** | **238** (53 de sombra) | **~480** ❌ |
-| Entidades en la escena | — | 2.621 | ~5.000 |
-| Mallas dibujables | — | 2.262 | ~4.300 |
-| Triángulos por frame | — | 167.924 | ~330.000 |
+| Llamadas de dibujo | **< 150** | **238** (53 de sombra) | **~1.100** ❌ |
+| Entidades en la escena | — | 2.621 | ~12.700 |
+| Mallas dibujables | — | 2.262 | ~11.000 |
+| Triángulos por frame | — | 167.924 | ~895.000 |
 | Materiales | — | 133 | |
 | Texturas en VRAM | — | 16,52 MB | |
 | Vértices en VRAM | — | 4,5 MB | |
@@ -1489,8 +1751,8 @@ mapa de 3 cuadras. Es el punto de partida que pedía la 13.1:
 
 **Y el reparto, que es lo que dice dónde trabajar:** la ciudad es el **86 %**
 de las mallas, los 18 zombis el 10 % y Gus el 2 %. Con la construcción por
-tramos de D-42 —ventana de tres cuadras— la columna de la derecha vuelve a
-ser la del medio, y recién entonces bajar de 238 a 150 es un problema de
+tramos de D-42 —ventana de cuatro cuadras— la columna de la derecha vuelve a
+ser poco más que la del medio, y recién entonces bajar de 238 a 150 es un problema de
 tamaño normal.
 
 ---
@@ -1614,7 +1876,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 |---|---|---|
 | ~~La lista de power-ups~~ | 19B.1 | ✅ **Entregada el 8/11**, completa y con números: 23 cartas en `documentacion/habilidades/`. Y trajo algo que no pedí: **clases de personaje** |
 | **Cuál es el arma de Gus** | 20.8 | Nada todavía: yo le muestro las once renderizadas y elige |
-| **¿Un control por cuadra sobre los 1.624 m reales?** | 18.3 y 19B.11 | Gus lo está pensando y dijo que por ahora se queda como está. **Hoy ya hay un control por cuadra**, sólo que sobre 700 m: son 7 cuadras y 6 controles, no 8 cuadras cada 2. Pasar a 16 controles no es más controles: es **16 cuadras de ciudad** (Fase 18 y 13) y **romper la regla de no repetir** (D-45) |
+| ~~¿Un control por cuadra sobre los 1.624 m reales?~~ | 18.3 | ✅ **Cerrada por Gus el 8/11 con D-46:** el recorrido entero, 16 cuadras, y **7 controles cada 2 cuadras**. No son 16 controles, así que la regla de no repetir (D-45) no se toca: 7 cartas de un pool de 15 sobra |
 
 **Las que cierro yo midiendo:**
 
@@ -1624,7 +1886,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 | Si espera a estar encarado antes del primer tiro | 17.3 | Mirándolo: si el primer tiro de cada blanco sale torcido, espera |
 | ~~Si el disparo es un rayo o un proyectil que viaja~~ | 17.3 ter | ✅ **Resuelto por D-44:** las dos cosas. El tiro apuntado es rayo y no falla; los proyectiles extra vuelan. La ráfaga se escribe en la 17 con los multiplicadores en 1 |
 | La cadencia de la pistola | 17.9 | Jugando. Hoy son 1,6 s por zombi |
-| Si el mapa de 700 m necesita carga por tramos | 18.12 | Midiendo las llamadas de dibujo del peor caso |
+| ~~Si el mapa necesita carga por tramos~~ | 18.12 | ✅ **Cerrada por D-47:** con 16 cuadras no es optimización, es la única forma de que abra en un teléfono |
 | Cómo se marca la ruta en el piso | 18.6 | Probando la franja pintada contra las flechas, desde la cámara a 48° |
 | Cuántos zombis por tramo, y cuánto dura una cuadra | 19A.10 | Jugando en el teléfono. Es la perilla principal del juego |
 | Cómo se ve el cartel de prohibido | 19A.4 | Que se entienda sin leer el texto dos veces |
@@ -1633,7 +1895,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 | ~~Si Gus y los zombis llegan a ser `.glb` riggeado (D-22)~~ | 20.4 y 20.7 | ✅ **Resuelto a favor:** el banco los trae, y el zombi trae sus seis animaciones |
 
 Las decisiones **ya cerradas** —D-01 a D-21 en el documento 02, D-22 a D-25
-en la bitácora y D-26 a D-45 acá arriba— no se vuelven a discutir salvo que
+en la bitácora y D-26 a D-49 acá arriba— no se vuelven a discutir salvo que
 aparezca un dato nuevo. **D-04 es el ejemplo de qué es un dato nuevo:** se
 reabrió porque la distancia que la justificaba estaba mal medida.
 **D-20 y D-21 quedan superadas por D-32.**

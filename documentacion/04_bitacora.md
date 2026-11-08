@@ -4362,6 +4362,178 @@ todos.
 
 ---
 
+## 8/11, segunda vuelta — El recorrido entero. Y dejar de dibujar una traza que se parece
+
+Gus pidió tres cosas en un mensaje: que aclarara lo de las cartas, que sacara
+el recorrido real con sus indicaciones reales, y que explicara para qué sirven
+los proyectiles diagonales. La segunda terminó siendo el cambio más grande del
+proyecto desde el 7 de noviembre.
+
+### Lo que yo estaba haciendo mal con el recorrido, y no era un número
+
+D-35 construía una **escalera que imitaba la proporción** del recorrido real:
+el real se corre 437 m al oeste y 1.413 al norte, o sea 1 a 3,2, así que yo
+dibujé siete cuadras que dieran 1 a 4 y las llamé "orientativas". Las calles
+intermedias quedaban *"por asignar"* y había una tarea —la 18.10— para
+inventarles nombre más adelante.
+
+**Eso es dibujar una traza que se parece al recorrido, en vez de caminar el
+recorrido.** Y lo peor es que la diferencia no se nota en el documento: las
+dos cosas se escriben igual, con una tabla de esquinas y coordenadas.
+
+Lo que hice esta vez fue preguntarle a OpenStreetMap. La API de Overpass, un
+`curl` y cuatro consultas sobre el corredor: para cada calle con nombre de la
+zona, los centros de sus tramos. La orientación sale sola de ver cómo se
+reparten —si comparten longitud y cambian de latitud, la calle corre
+norte-sur— y funciona porque un tramo de calle va de esquina a esquina. Es el
+método más tonto que podía servir y sirvió a la primera.
+
+**Y el recorrido de Gus, caminado sobre las calles que existen, da 4 cuadras
+al oeste, 1 al este y 11 al norte: dieciséis. A 100 m la cuadra, 1.600 m.**
+
+Gus había dicho *"el recorrido, que son 1.600 metros"* sin haber hecho la
+cuenta. No ajusté nada para que diera: conté esquinas. **Las dos veces que
+este proyecto discutió una distancia, el que tenía razón sin haber medido era
+Gus** —primero con "el recorrido real no es tan largo", que destapó el error de
+D-04, y ahora con los 1.600— y las dos veces yo había puesto un número
+inventado con cara de medido. Vale anotarlo como patrón y no como anécdota.
+
+### Dos cosas que estaban en los datos y nadie había visto
+
+**Maza y Billinghurst son la misma calle.** Al norte de Av. Rivadavia, Maza
+pasa a llamarse Billinghurst. Los tramos de las dos caen sobre la misma
+longitud, Maza siempre al sur de la avenida y Billinghurst siempre al norte.
+O sea que **"Maza 379" y "Billinghurst 250" —dos de las seis ubicaciones que
+dio Gus— están sobre la misma línea**, y Sergio vive en la calle por la que el
+jugador ya subió media misión.
+
+**Av. Boedo y Mario Bravo, lo mismo**, con la misma avenida de por medio. Y
+**Mario Bravo corre norte-sur**: yo la tenía anotada como este-oeste porque
+"Mario Bravo 90" suena a numeración de calle transversal. Todos sus tramos
+están sobre la longitud −58,4174.
+
+**Y eso explica lo único del recorrido real que no cerraba.** Las dos últimas
+patas tienen rumbo +6,4° y +25,6°: vuelven un poco **al este** después de que
+las tres primeras venían al noroeste. Yo lo había tomado por ruido de la
+medición y lo había tirado al hacer la escalera. No era ruido: el recorrido
+sube por la línea Boedo/Mario Bravo y **al final cruza una cuadra al este**
+para caer en la línea Maza/Billinghurst.
+
+Y de regalo hace algo que yo no hubiera diseñado: el último tramo es un cruce
+de una cuadra y después una cuadra para arriba, o sea **un doblez final**. El
+jugador no ve la casa de Sergio hasta que gira. Es el mejor remate posible de
+la misión y salió de los datos.
+
+**La lección es la misma de la cuarta pasada pero al revés.** Aquella vez una
+medición contradijo una intuición. Esta vez **un dato que ya estaba en la
+mesa desde el primer día** —las cinco direcciones de Gus— contenía información
+que yo había descartado por no encajar con el modelo que había armado. No hizo
+falta medir nada nuevo: hizo falta dejar de redondear.
+
+### Los siete controles salieron de una división y quedaron exactos
+
+Gus pidió 7 controles repartidos parejo, cada 2 cuadras. Con 16 cuadras eso es
+exacto: puertas en las cuadras 2, 4, 6, 8, 10, 12 y 14, y la casa de Sergio al
+final de la 16. **Ocho tramos de 200 m, todos iguales.** No hubo que elegir
+nada.
+
+Que sean parejos no es prolijidad: la esclusa de la 19A declara su población
+de zombis por tramo, y un tramo más largo que otro **es una dificultad
+distinta sin que nadie la haya decidido**. Eso quedó escrito como prueba.
+
+Las cuatro ubicaciones de Gus que no caen en una puerta —Maza 379, Av. Boedo
+120, Mario Bravo 90— caen en medio de un tramo y ahí son **un cartel**. Es lo
+correcto: lo que Gus dio es el recorrido, y los controles los reparte la
+cuadrícula, que es lo que él mismo dijo cuando escribió *"distribuilo como
+quieras"*.
+
+### Lo que esto cuesta, dicho antes y no después
+
+El mapa pasa de 7 cuadras a 16. Proyectado desde lo medido: **~12.700
+entidades y ~1.100 llamadas de dibujo** contra un presupuesto de 150.
+
+Con eso, la construcción por tramos (D-42) **deja de ser una tarea y pasa a
+ser un cimiento**: no es que el juego ande lento con 16 cuadras vivas, es que
+no abre. La 18.12 sube a ser la primera de la Fase 18.
+
+Y hay un número que cambió y era fácil no ver: **la ventana pasa de tres
+cuadras a cuatro.** Con tramos de dos cuadras, el jugador tiene dos cuadras
+por delante *dentro de su propio tramo*; una ventana de tres lo dejaría
+mirando cómo se construye la segunda mitad del tramo que ya está jugando. Es
+un 33 % más que hoy, no el doble, y es la diferencia entre que esto funcione y
+que el jugador vea aparecer su propia cuadra.
+
+Lo que no cambia es la mitad buena: la reserva de zombis son 18 entidades y no
+crece con el mapa, el generador ya exige tramos alineados a un eje y los 16 lo
+están, y las ochavas de la 12R.3 están hechas para 90°. **El doble de ciudad
+no es el doble de trabajo: es el mismo trabajo repetido ocho veces más**, que
+es lo que hace un generador.
+
+### Las cartas: Gus frenó algo, y tenía razón en frenarlo aunque la cuenta estuviera bien
+
+Gus dijo que el concepto de las tres cartas no estaba claro: *"de esas 3
+cartas vos podés seleccionar solo una, no es que elegís las 3"*.
+
+Las cuentas de D-45 ya suponían una carta por control —en el control 7 hay 6
+tomadas, no 18— así que los techos siguen valiendo. **Pero tenía razón en
+frenar**, porque lo que yo no había escrito en ninguna parte es *para qué
+sirve que sean tres*, y eso no es interfaz: es el único momento del juego en
+que el jugador decide algo que no es dónde pararse.
+
+> *"El personaje al final va a ser en base a los power-ups que vos elegiste.
+> Por ahí elegiste todo lo que sea defensa; por ahí elegiste que ataque para
+> todos lados; por ahí el camino por vampirismo. Cada partida, ninguna va a
+> ser igual a la otra."*
+
+Con 7 controles y 15 cartas, el jugador ve 21 cartas y se lleva 7: **6.435
+personajes distintos**.
+
+**Y eso impone una regla que no estaba, y es una tarea.** Para que haya
+decisión, las tres cartas **no pueden salir del mismo eje**. Si salen tres de
+daño, no hay elección: hay una buena y dos peores, y el jugador aprieta la de
+arriba. El ejemplo que dio Gus —*"si te queda poca vida vas a tener que
+sacrificar más ataque por una carta de curación"*— sólo puede pasar si en esa
+mano hay una de ataque **y** hay una de curación. Así que el sorteo saca tres
+cartas de tres ejes distintos: conteo, daño, ritmo, aguante, caos. La 19B.9
+dejó de ser "pesar el sorteo" y pasó a tener forma.
+
+### Y un problema que apareció al juntar tres decisiones viejas
+
+El daño es permanente (D-31), el recorrido pasa a 1.600 m (D-46) y las cartas
+no se repiten. Las tres juntas dan algo que nadie decidió:
+
+> En una partida de 16 cuadras, Gus tiene **exactamente una** oportunidad de
+> recuperar vida, y sólo si "Sanar" aparece en una de las siete manos y la
+> elige por encima de las otras dos.
+
+Las tres decisiones tenían sentido solas. **El problema no está en ninguna de
+las tres: está en que se tomaron en días distintos y nadie las puso en la
+misma frase.** Es el tercer caso del mismo tipo en dos días —el aviso que
+viajaba colgado de otro, las poses que nadie pedía— y los tres se encontraron
+igual: mirando qué más toca lo que acabo de cambiar, en vez de mirar sólo lo
+que cambié.
+
+Mi voto es que "Sanar" sea la única carta exenta de no repetir: no agrega
+proyectiles, así que no toca el techo de 8 de D-45. Queda como 19B.14, para
+decidir jugando.
+
+### Lo chico: dos cosas que Gus cerró de paso
+
+**"HP Boost" pasa a llamarse "Aumentar HP"**, y tiene razón en que no es
+cosmético: el problema era que se confundía con "Sanar", y "Boost" no dice qué
+sube.
+
+**Y los proyectiles diagonales quedaron explicados**, confirmando la
+separación que la 17.3 ter ya proponía: el tiro principal va al más cercano y
+no falla, los dos diagonales salen a 45° y *pueden* pegarle a otro zombi por
+casualidad. Lo que yo había anotado como un defecto —*"contra un solo zombi no
+hacen nada"*— deja de serlo cuando la carta se lee como **daño de regalo
+contra un grupo**. Lo que sí queda en pie es que hay que decirlo en la carta:
+*"Proyectiles diagonales +1"* no alcanza para que alguien entienda eso antes
+de gastarle un control.
+
+---
+
 ## Apéndice A — Decisiones que se cierran en cada fase
 
 | Fase | Decisión pendiente | Cómo se cierra |
