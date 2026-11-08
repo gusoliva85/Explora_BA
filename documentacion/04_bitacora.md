@@ -4061,6 +4061,81 @@ manejador de `CHECKPOINT_REACHED`, que es donde lo va a leer el que venga.
 
 ---
 
+## 16.2 — La munición, y un aviso que viajaba colgado de otro
+
+**8 de noviembre de 2026.**
+
+**Lo que se fue.** Cargador, reserva, recarga y el gatillo en vacío. De
+`balance.js` salieron `ammoType`, `magazineSize`, `reloadTime` y
+`startingReserve`; de `weaponController.js`, el estado `RECARGANDO`, seis
+métodos y tres avisos; del HUD, el contador de balas con sus tres niveles, la
+barra de recarga y el botón `R`; del teclado, la tecla `R`. Y catorce pruebas.
+
+| | Antes | Después |
+|---|---|---|
+| Pruebas unitarias | 423 | **409 en verde** |
+| Pruebas de punta a punta | 57 | **56 en verde** |
+| Llamadas de dibujo | 237 | 237 |
+
+### El error que cometí, que es el más interesante del día
+
+Al borrar la munición, **el nombre del arma dejó de actualizarse en el HUD**.
+No lo vi: lo encontraron las pruebas de punta a punta, con un `#arma-nombre`
+que seguía diciendo CUCHILLO después de pasar a la pistola.
+
+La causa es fina y conviene entenderla porque va a volver a pasar. El método
+`equipar()` terminaba llamando a `#avisarMunicion()`, que avisaba al HUD la
+munición del arma nueva. Pero ese aviso, **de rebote**, hacía que `main.js`
+corriera `actualizarHudArma()` entero: nombre, modelo en la mano, pistola al
+cinto, texto del botón. O sea que el HUD del arma se refrescaba **colgado del
+aviso de munición**, y nadie lo había escrito así a propósito: quedó así
+porque la munición llegó después y se enganchó donde había lugar.
+
+Al sacar la munición se fue el aviso, y con él se llevó cuatro cosas que no
+tenían nada que ver.
+
+**Cómo se arregló, que importa más que el síntoma.** No poniendo la llamada
+donde faltaba, sino dándole al arma su propio aviso: `alCambiarArma`, que sale
+de `equipar()`. Es el mismo criterio que este archivo ya tenía escrito para
+`alIniciarAtaque`:
+
+> *El arma es la única que sabe que atacó, así que es la que tiene que
+> avisarlo.*
+
+Ahora también es la única que sabe que cambió. **Un aviso que viaja colgado de
+otro desaparece cuando el otro se borra**, y en una fase que es toda borrar,
+eso no es una anécdota: es el modo de falla principal.
+
+**Y hay una consecuencia para la 16.3.** La bazooka tiene `cargaEspecial`, que
+se actualiza en cada cuadro desde `update()`. Antes de borrarla hay que buscar
+qué más viaja colgado de eso. Quedó escrito en la tarea.
+
+### Lo que se perdió, y vale nombrarlo
+
+La munición era una decisión de verdad, y de las buenas. El HUD tenía **tres**
+niveles y no dos —lleno, poca, vacío— porque el momento interesante no era
+quedarse sin balas: era **"me quedan tres"**, cuando todavía se podía elegir
+entre tirar o guardar y pasar al cuchillo. Y la recarga costaba 1,6 segundos
+de estar indefenso, que era la mitad del precio de usar la pistola.
+
+Todo eso se va. Lo reemplaza una decisión distinta y más chica: **para
+disparar hay que frenar**. No es mejor ni peor en abstracto; es la que cabe en
+un juego sin botones.
+
+### Dos pruebas que cambiaron en vez de morir
+
+`esperarCiclo()` sumaba `cooldown + reloadTime` para dejar el arma lista. Sin
+recarga, sumar un tiempo que ya no existe daba `NaN` y el arma nunca volvía a
+estar lista. Se arregló sacando el término, no la prueba.
+
+Y la de punta a punta "el HUD muestra el arma y la munición" perdió la
+munición pero **conservó lo que seguía siendo cierto**: que el botón grande
+diga DISPARAR con la pistola y ATACAR con el cuchillo. Quedó renombrada. Una
+prueba que verifica tres cosas y pierde una no se borra: se le sacan las dos
+que sobran.
+
+---
+
 ## Apéndice A — Decisiones que se cierran en cada fase
 
 | Fase | Decisión pendiente | Cómo se cierra |

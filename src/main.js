@@ -405,16 +405,7 @@ const arma = new WeaponController({
     camera.sacudir(0.1, 0.08);
   },
 
-  alClicVacio: () => {
-    hud.avisarSinMunicion();
-  },
-
-  alRecargar: () => {
-    gus.gesto(Pose.RECARGAR);
-    hud.flash('RECARGANDO', 900);
-  },
-
-  alCambiarMunicion: () => actualizarHudArma(),
+  alCambiarArma: () => actualizarHudArma(),
 
   lanzarProyectil: (opt) => {
     const p = cohetes.lanzar(opt);
@@ -457,11 +448,9 @@ const arma = new WeaponController({
 /**
  * Pasa el estado del arma al HUD.
  *
- * Se llama desde los avisos del arma y al cambiar de arma, no en cada
- * cuadro: escribir en el DOM sesenta veces por segundo para un numero que
- * cambia una vez por disparo es tirar cuadros a la basura en un telefono.
- * Lo unico que SI se actualiza por cuadro es la barra de recarga, porque es
- * una animacion.
+ * Se llama al cambiar de arma, no en cada cuadro: escribir en el DOM
+ * sesenta veces por segundo para algo que cambia una vez cada tanto es
+ * tirar cuadros a la basura en un telefono.
  */
 function actualizarHudArma() {
   // Lo que esta en la mano no puede estar tambien en el cinto.
@@ -469,10 +458,7 @@ function actualizarHudArma() {
   armasEnMano.equipar(arma.equipada);
   hud.setArma({
     nombre: arma.arma.name,
-    cargador: arma.enCargador,
-    reserva: arma.enReserva,
-    capacidad: arma.arma.magazineSize ?? 0,
-    gastaMunicion: !!arma.tipoMunicion
+    gastaMunicion: arma.arma.type !== 'melee'
   });
 }
 
@@ -511,7 +497,6 @@ function startMission({ fromCheckpoint = false } = {}) {
   arma.reiniciar('knife');
   clearTimeout(bazookaEnMano);
   actualizarHudArma();
-  hud.setRecarga(false);
   hud.setEspecial(0, false);
   // Los cohetes en vuelo no sobreviven a un reinicio: explotarian en un
   // mapa que ya se reinicio, sobre zombis que ya no son los mismos.
@@ -711,7 +696,6 @@ input.bindHudButton(byId('btn-run'), 'run');
 input.bindAimButton(byId('btn-attack'), 'attack');
 input.bindHudButton(byId('btn-interact'), 'interact');
 input.bindHudButton(byId('btn-swap'), 'swap');
-input.bindHudButton(byId('btn-reload'), 'reload');
 input.bindHudButton(byId('btn-special'), 'special');
 
 /*
@@ -803,7 +787,6 @@ app.on('update', (rawDt) => {
       actualizarHudArma();
       hud.flash(arma.arma.name.toUpperCase(), 900);
     }
-    if (input.wasPressed('reload')) arma.recargar();
 
     if (input.wasPressed('special')) arma.dispararEspecial(pos2d, zombis.enJuego);
 
@@ -836,7 +819,6 @@ app.on('update', (rawDt) => {
       efectos.ocultarMira();
     }
 
-    hud.setRecarga(arma.recargando, arma.progresoRecarga);
     hud.setEspecial(arma.progresoEspecial, arma.especialLista);
 
     // Los cohetes se mueven DESPUES del arma, para que uno lanzado en este
@@ -895,7 +877,7 @@ app.on('update', (rawDt) => {
   );
   debug.set(
     'arma',
-    `${arma.equipada} ${arma.estado} ${arma.tipoMunicion ? `${arma.enCargador}/${arma.enReserva}` : ''}`
+    `${arma.equipada} ${arma.estado}`
   );
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
 

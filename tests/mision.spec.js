@@ -395,8 +395,6 @@ test.describe('reinicio limpio', () => {
           entidadesEnEscena: entidades,
           zombisTotal: g.zombis.stats.total,
           cohetes: g.cohetes.vivos.length,
-          cargador: g.arma.enCargador,
-          reserva: g.arma.enReserva,
           bazooka: Math.round(g.arma.progresoEspecial * 10),
           controles: g.mission.nextCheckpoint
         };
@@ -405,11 +403,11 @@ test.describe('reinicio limpio', () => {
     const primera = await foto();
 
     for (let i = 0; i < 5; i++) {
-      // Ensuciar el estado antes de reiniciar: gastar balas y avanzar
+      // Ensuciar el estado antes de reiniciar: cargar la bazooka y avanzar
       // controles.
       await page.evaluate(async () => {
         const g = globalThis.game;
-        g.arma.cargador.pistol = 2;
+        g.arma.cargaEspecial = 0.7;
         await globalThis.__ir(
           g.mission.mission.route[g.mission.mission.checkpoints[0].atRouteIndex]
         );

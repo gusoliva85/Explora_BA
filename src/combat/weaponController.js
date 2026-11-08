@@ -43,30 +43,26 @@ export const EstadoArma = {
   /** Se apreto, el golpe todavia no salio. */
   PREPARANDO: 'PREPARANDO',
   /** Golpe aplicado, esperando para poder volver a atacar. */
-  ESPERANDO: 'ESPERANDO',
-  /**
-   * Cambiando el cargador.
-   *
-   * Es un estado propio y no un "esperando mas largo" porque el jugador
-   * tiene que poder VERLO: durante la recarga esta indefenso, y esa es la
-   * mitad del costo de usar la pistola. Si no se distingue de la espera
-   * normal, el jugador no entiende por que no dispara.
+  ESPERANDO: 'ESPERANDO'
+  /*
+   * Hubo un cuarto estado, RECARGANDO, y se fue en la Fase 16.2 con la
+   * municion (D-29). Era un estado propio y no una espera mas larga porque
+   * el jugador tenia que poder VERLO: durante la recarga estaba indefenso,
+   * y esa era la mitad del costo de usar la pistola. Ahora no hay costo que
+   * mostrar: el arma dispara siempre.
    */
-  RECARGANDO: 'RECARGANDO'
 };
 
 export class WeaponController {
   /**
    * @param {object} [opt]
    * @param {string} [opt.armaInicial] clave de WEAPONS
+   * @param {(info:object) => void} [opt.alCambiarArma] el arma equipada cambio
    * @param {(info:object) => void} [opt.alIniciarAtaque] al arrancar el swing
    * @param {(info:object) => void} [opt.alGolpear] se llama cuando el golpe conecta
    * @param {(info:object) => void} [opt.alFallar] se llama cuando el golpe no alcanza a nadie
    * @param {(info:object) => void} [opt.alHacerRuido] para el sistema de ruido (D-05)
    * @param {(info:object) => void} [opt.alDisparar] trazado y fogonazo
-   * @param {(info:object) => void} [opt.alClicVacio] gatillo sin municion
-   * @param {(info:object) => void} [opt.alRecargar] arranca el cambio de cargador
-   * @param {(info:object) => void} [opt.alCambiarMunicion] para el HUD
    * @param {Function} [opt.rayo] prueba del escenario, firma de CollisionWorld.raycast
    * @param {() => number} [opt.azar] generador con semilla (D-12)
    * @param {() => boolean} [opt.asistirApuntado] si corresponde ayudar a apuntar
@@ -81,22 +77,6 @@ export class WeaponController {
     this.yaGolpeados = new Set();
     /** Datos del swing en curso: desde donde y hacia donde. */
     this.swing = null;
-
-    /*
-     * Municion.
-     *
-     * Se lleva por TIPO de municion, no por arma. Hoy da lo mismo porque
-     * solo la pistola gasta balas, pero el dia que haya dos armas de 9 mm
-     * tienen que compartir la reserva: si cada arma tuviera su propia
-     * cuenta, cambiar de arma seria una forma gratis de recargar.
-     */
-    this.cargador = {};
-    this.reserva = {};
-    for (const arma of Object.values(this.armas)) {
-      if (!arma.ammoType) continue;
-      this.cargador[arma.ammoType] = arma.magazineSize ?? 0;
-      this.reserva[arma.ammoType] = arma.startingReserve ?? 0;
-    }
 
     /*
      * El azar por omision NO es aleatorio.
@@ -128,14 +108,12 @@ export class WeaponController {
     this.rayo = opt.rayo;
     this.asistirApuntado = opt.asistirApuntado ?? (() => false);
 
+    this.alCambiarArma = opt.alCambiarArma;
     this.alIniciarAtaque = opt.alIniciarAtaque;
     this.alGolpear = opt.alGolpear;
     this.alFallar = opt.alFallar;
     this.alHacerRuido = opt.alHacerRuido;
     this.alDisparar = opt.alDisparar;
-    this.alClicVacio = opt.alClicVacio;
-    this.alRecargar = opt.alRecargar;
-    this.alCambiarMunicion = opt.alCambiarMunicion;
   }
 
   get arma() {
@@ -152,27 +130,6 @@ export class WeaponController {
     return 1 - this.restante / this.arma.cooldown;
   }
 
-  /** Tipo de municion del arma equipada, o null si no gasta. */
-  get tipoMunicion() {
-    return this.arma.ammoType;
-  }
-
-  /** Balas en el cargador. `Infinity` si el arma no gasta municion. */
-  get enCargador() {
-    const t = this.tipoMunicion;
-    return t ? this.cargador[t] : Infinity;
-  }
-
-  /** Balas de reserva. */
-  get enReserva() {
-    const t = this.tipoMunicion;
-    return t ? this.reserva[t] : 0;
-  }
-
-  get recargando() {
-    return this.estado === EstadoArma.RECARGANDO;
-  }
-
   /** Fraccion de 0 a 1 de la barra de la bazooka. */
   get progresoEspecial() {
     return this.cargaEspecial;
@@ -182,27 +139,26 @@ export class WeaponController {
     return this.cargaEspecial >= 1;
   }
 
-  /** Fraccion de 0 a 1 de la recarga. Para la barra del HUD. */
-  get progresoRecarga() {
-    if (!this.recargando) return 1;
-    return 1 - this.restante / this.arma.reloadTime;
-  }
-
   equipar(clave) {
     if (!this.armas[clave]) return false;
     this.equipada = clave;
-    /*
-     * Cambiar de arma CANCELA la recarga en curso.
-     *
-     * Es lo correcto y ademas cierra un agujero: si la recarga siguiera
-     * corriendo, se podria empezar a recargar, pasar al cuchillo, pelear
-     * con el cuchillo y volver a la pistola ya cargada. La recarga dejaria
-     * de costar nada, y su costo es justamente el punto.
-     */
     this.estado = EstadoArma.LISTA;
     this.restante = 0;
     this.swing = null;
-    this.#avisarMunicion();
+    /*
+     * El arma avisa que cambio, y el aviso sale de ACA.
+     *
+     * Hasta la Fase 16.2 esto lo hacia de rebote `#avisarMunicion()`, que
+     * se llamaba al equipar y de paso refrescaba el HUD entero. Al sacar la
+     * municion se fue el aviso con ella, y el nombre del arma dejo de
+     * actualizarse cuando el cambio no venia del boton. Lo agarraron las
+     * pruebas de punta a punta.
+     *
+     * Es el mismo criterio que ya seguia `alIniciarAtaque`: el arma es la
+     * unica que sabe que cambio, asi que es la que tiene que avisarlo. Un
+     * aviso que viaja colgado de otro desaparece cuando el otro se borra.
+     */
+    this.alCambiarArma?.({ arma: this.arma.id, nombre: this.arma.name });
     return true;
   }
 
@@ -211,42 +167,8 @@ export class WeaponController {
     return this.equipar(clave);
   }
 
-  /**
-   * Empieza a cambiar el cargador.
-   *
-   * @returns {boolean} true si arranco de verdad
-   */
-  recargar() {
-    const t = this.tipoMunicion;
-    if (!t) return false;
-    if (this.recargando) return false;
-    // Un cargador lleno no se recarga: seria tirar balas de la reserva.
-    if (this.cargador[t] >= this.arma.magazineSize) return false;
-    if (this.reserva[t] <= 0) return false;
-    // En medio de un disparo no, pero desde la espera entre tiros si: es
-    // lo que deja recargar sin tener que esperar el ciclo completo.
-    if (this.estado === EstadoArma.PREPARANDO) return false;
-
-    this.estado = EstadoArma.RECARGANDO;
-    this.restante = this.arma.reloadTime;
-    this.alRecargar?.({ arma: this.arma.id, duracion: this.arma.reloadTime });
-    return true;
-  }
-
-  /**
-   * Vuelve al estado de arranque de mision.
-   *
-   * Hace falta porque la municion es la primera cosa del juego que
-   * PERSISTE entre intentos. Sin esto, morir y reaparecer en el ultimo
-   * control dejaria al jugador con el cargador como lo tenia al morir —o
-   * sea, probablemente vacio, justo donde lo mataron.
-   */
+  /** Vuelve al estado de arranque de mision. */
   reiniciar(armaInicial = 'knife') {
-    for (const arma of Object.values(this.armas)) {
-      if (!arma.ammoType) continue;
-      this.cargador[arma.ammoType] = arma.magazineSize ?? 0;
-      this.reserva[arma.ammoType] = arma.startingReserve ?? 0;
-    }
     this.yaGolpeados.clear();
     /*
      * La bazooka arranca DESCARGADA, no cargada.
@@ -258,34 +180,6 @@ export class WeaponController {
      */
     this.cargaEspecial = 0;
     this.equipar(armaInicial);
-  }
-
-  /** Suma municion a la reserva. Lo usaran los objetos de la Fase 8. */
-  sumarMunicion(tipo, cantidad) {
-    if (this.reserva[tipo] === undefined) return false;
-    this.reserva[tipo] += cantidad;
-    this.#avisarMunicion();
-    return true;
-  }
-
-  #avisarMunicion() {
-    this.alCambiarMunicion?.({
-      arma: this.arma.id,
-      tipo: this.tipoMunicion,
-      cargador: this.enCargador,
-      reserva: this.enReserva,
-      capacidad: this.arma.magazineSize ?? 0
-    });
-  }
-
-  /** Termina la recarga: pasa balas de la reserva al cargador. */
-  #completarRecarga() {
-    const t = this.tipoMunicion;
-    const falta = this.arma.magazineSize - this.cargador[t];
-    const pasan = Math.min(falta, this.reserva[t]);
-    this.cargador[t] += pasan;
-    this.reserva[t] -= pasan;
-    this.#avisarMunicion();
   }
 
   /**
@@ -308,29 +202,6 @@ export class WeaponController {
    */
   atacar(pos, rumboGrados, objetivos = []) {
     if (!this.puedeAtacar) return false;
-
-    /*
-     * Gatillo en vacio.
-     *
-     * Tiene que ser un aviso, no un silencio. El jugador que aprieta y no
-     * pasa nada cree que se trabo el boton; el que aprieta y escucha el
-     * clic entiende que se quedo sin balas, que es una informacion que
-     * necesita YA, con tres zombis encima.
-     *
-     * Y despues se recarga solo. No es comodidad: nadie que se queda sin
-     * municion en una pelea decide NO recargar, asi que obligar a un
-     * segundo botón solo agrega un paso que siempre se quiere dar.
-     */
-    if (this.tipoMunicion && this.enCargador <= 0) {
-      this.alClicVacio?.({
-        arma: this.arma.id,
-        reserva: this.enReserva,
-        x: pos.x,
-        z: pos.z
-      });
-      this.recargar();
-      return false;
-    }
 
     this.estado = EstadoArma.PREPARANDO;
     this.restante = this.arma.windup;
@@ -370,13 +241,6 @@ export class WeaponController {
       this.#resolverGolpe(pos, rumboGrados, objetivos);
       this.estado = EstadoArma.ESPERANDO;
       this.restante = this.arma.cooldown;
-      return;
-    }
-
-    if (this.estado === EstadoArma.RECARGANDO && this.restante <= 0) {
-      this.#completarRecarga();
-      this.estado = EstadoArma.LISTA;
-      this.swing = null;
       return;
     }
 
@@ -493,14 +357,6 @@ export class WeaponController {
    */
   #resolverDisparo(pos, rumboGrados, objetivos) {
     const arma = this.arma;
-
-    // La bala se descuenta al SALIR, no al apretar: un disparo que se
-    // interrumpe —porque cambiaste de arma a mitad del windup— no la gasta.
-    const t = arma.ammoType;
-    if (t) {
-      this.cargador[t] = Math.max(0, this.cargador[t] - 1);
-      this.#avisarMunicion();
-    }
 
     let rumbo = rumboGrados;
     if (this.asistirApuntado()) {

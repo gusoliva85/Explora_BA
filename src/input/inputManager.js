@@ -51,9 +51,7 @@ export class InputManager {
       run: false,
       attack: false,
       interact: false,
-      heal: false,
       swap: false,
-      reload: false,
       special: false
     };
     /** Botones que se activaron en este frame (flanco de subida). */
@@ -127,13 +125,9 @@ export class InputManager {
       ShiftRight: 'run',
       KeyE: 'interact',
       KeyQ: 'swap',
-      // R es recargar, que es lo que espera cualquiera que haya jugado a
-      // algo con armas. Curarse se movio a H: todavia no existe (Fase 8) y
-      // si llegara a quedarse con la R, recargar seria la tecla rara.
-      KeyR: 'reload',
-      KeyH: 'heal',
-      // F de la bazooka: cerca de WASD, no se aprieta sin querer, y no
-      // pisa nada. Q y R ya estan tomadas por cambiar de arma y recargar.
+      // F de la bazooka: cerca de WASD y no se aprieta sin querer.
+      // R (recargar) y H (curarse) se fueron en la Fase 16 con la municion
+      // y los botiquines.
       KeyF: 'special',
       Space: 'attack'
     };

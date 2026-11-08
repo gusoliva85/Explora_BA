@@ -24,30 +24,44 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.2 — Sacar la munición de la pistola** · segunda de la poda
+### **16.3 — Sacar el sistema de bomba** · tercera de la poda
 
-**Qué se saca.** Cargador, reserva y recarga. La pistola pasa a disparar
-siempre, sin contar balas (**D-29**).
+**Qué se saca.** La bazooka entera (**D-29**): el arma, el botón, la barra de
+30 s, el cohete que viaja y la explosión.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/config/balance.js` | de `WEAPONS.pistol` se van `magazineSize`, `reloadTime`, `startingReserve` y `ammoType` |
-| `src/combat/weaponController.js` | mueren `recargar()`, `#completarRecarga()`, `sumarMunicion()`, `#avisarMunicion()` y el estado `RECARGANDO` |
-| `index.html` | se van `arma-municion`, `recarga`, `recarga-texto`, `recarga-fill` y `btn-reload` |
-| `src/styles/hud.css` | se va el CSS de la barra de recarga y del botón |
-| `src/ui/hud.js` | se van `setRecarga()`, `avisarSinMunicion()` y las referencias |
-| `src/input/inputManager.js` | se va el botón `reload` y la tecla `R` |
-| pruebas | `tests/pistola.spec.js` pierde el bloque `municion`; `tests/pistola.test.js` pierde lo de cargador y recarga |
+| `src/combat/projectile.js` | muere |
+| `src/combat/explosion.js` | muere — **pero primero se rescata `objetivoAutomatico()`** a su propio archivo |
+| `src/config/balance.js` | se va `WEAPONS.bazooka` |
+| `src/combat/weaponController.js` | mueren `#cargarEspecial()`, `dispararEspecial()`, `blancoEspecial()` y `cargaEspecial` |
+| `src/combat/combatFx.js` | se van el cohete y el efecto de explosión |
+| `index.html` | se van `fila-especial`, `especial-fill`, `especial-estado` y `btn-special` |
+| `src/styles/hud.css` | se va el CSS de los cuatro |
+| `src/ui/hud.js` | se va `setEspecial()` y sus referencias |
+| `src/input/inputManager.js` | se va el botón `special` y la tecla `F` |
+| `src/main.js` | se van `cohetes`, `bazookaEnMano` y el manejo del especial |
+| pruebas | mueren `tests/bazooka.test.js` y `tests/bazooka.spec.js` |
 
-**Lo que hay que mirar con cuidado.** El cuchillo todavía existe hasta la
-16.4, y `ammoType: null` es lo que hoy distingue un arma que gasta balas de
-una que no. Al sacar la munición de la pistola, las dos quedan iguales y la
-rama que las separa en `actualizarHudArma()` deja de tener sentido: hay que
-sacarla en el mismo movimiento, no dejarla muerta.
+**Lo único que se rescata, y hay que hacerlo PRIMERO.**
+`objetivoAutomatico()` vive en `explosion.js` porque era el apuntado de la
+bazooka, y es **exactamente** lo que necesita el combate automático (17.3).
+Se mueve a su propio archivo con sus pruebas **antes** de borrar nada.
 
-**Cómo se sabe que está lista:** no hay contador de balas en pantalla, no hay
-barra de recarga, no hay botón `R`, la pistola dispara indefinidamente, la
-consola está limpia y las pruebas en verde.
+**La explosión se va, y es la tercera vuelta sobre el tema.** Iba a morir,
+después la rescaté para la barricada que explotaba, y con la puerta
+corrediza de D-37 vuelve a morir. Si **Muerte Nova** sobrevive al pool de
+power-ups, la 19B la escribe de nuevo contra el combate nuevo.
+
+**Lo que hay que mirar con cuidado.** La 16.2 dejó una lección: al sacar la
+munición desapareció también el aviso que, *de rebote*, refrescaba el HUD al
+cambiar de arma. Acá pasa lo mismo con `cargaEspecial`, que hoy se actualiza
+en cada cuadro desde `update()`. **Antes de borrar, buscar qué más viaja
+colgado de eso.**
+
+**Cómo se sabe que está lista:** no hay barra de bazooka ni botón, no se
+puede disparar nada especial, `objetivoAutomatico()` sigue vivo y con
+pruebas, la consola está limpia y todo en verde.
 
 ---
 
@@ -642,8 +656,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 "desactivado": borrado. Lo que queda apagado vuelve solo tres meses después.
 
 - [x] **16.1 Los ítems.** Munición y botiquines, de la vista y del sistema entero ✅ *8/11/2026 — 2.223 líneas menos, 25 archivos*
-- [ ] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga ⬅️ *la que sigue*
-- [ ] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma y el cohete. ⚠️ **Pero la explosión NO se borra** — ver abajo
+- [x] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga ✅ *8/11/2026*
+- [ ] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma, el cohete y la explosión ⬅️ *la que sigue*
 - [ ] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola
 - [ ] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30)
 - [ ] **16.6 Interactuar.** Ya no hay nada con lo que interactuar

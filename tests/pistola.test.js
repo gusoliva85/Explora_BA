@@ -38,15 +38,13 @@ const blanco = (d, rumbo = FRENTE) => {
 
 /** Pistola lista para disparar, con los callbacks capturados. */
 const armar = (opt = {}) => {
-  const ev = { disparos: [], golpes: [], fallos: [], ruidos: [], vacios: [], recargas: [] };
+  const ev = { disparos: [], golpes: [], fallos: [], ruidos: [] };
   const w = new WeaponController({
     armaInicial: 'pistol',
     alDisparar: (i) => ev.disparos.push(i),
     alGolpear: (i) => ev.golpes.push(i),
     alFallar: (i) => ev.fallos.push(i),
     alHacerRuido: (i) => ev.ruidos.push(i),
-    alClicVacio: (i) => ev.vacios.push(i),
-    alRecargar: (i) => ev.recargas.push(i),
     ...opt
   });
   return { w, ev };
@@ -61,7 +59,7 @@ const disparar = (w, objetivos = [], pos = ORIGEN, rumbo = FRENTE) => {
 
 /** Deja pasar el tiempo suficiente para volver a estar listo. */
 const esperarCiclo = (w, pos = ORIGEN, rumbo = FRENTE) => {
-  w.update(P.cooldown + P.reloadTime + 0.01, pos, rumbo, []);
+  w.update(P.cooldown + 0.01, pos, rumbo, []);
 };
 
 /* =========================================================================
@@ -292,145 +290,6 @@ describe('apuntado asistido', () => {
    CARGADOR Y RECARGA
    ========================================================================= */
 
-describe('cargador y recarga', () => {
-  it('arranca con el cargador lleno y la reserva declarada', () => {
-    const { w } = armar();
-    expect(w.enCargador).toBe(P.magazineSize);
-    expect(w.enReserva).toBe(P.startingReserve);
-  });
-
-  it('cada disparo gasta una bala, no dos', () => {
-    const { w } = armar();
-    disparar(w, [blanco(8)]);
-    expect(w.enCargador).toBe(P.magazineSize - 1);
-  });
-
-  it('un tiro que falla gasta bala igual', () => {
-    const { w, ev } = armar();
-    disparar(w, []);
-    expect(ev.fallos).toHaveLength(1);
-    expect(w.enCargador).toBe(P.magazineSize - 1);
-  });
-
-  it('vaciar el cargador y seguir apretando da clic en vacio', () => {
-    const { w, ev } = armar();
-    for (let i = 0; i < P.magazineSize; i++) {
-      disparar(w);
-      w.update(P.cooldown + 0.01, ORIGEN, FRENTE, []);
-    }
-    expect(w.enCargador).toBe(0);
-
-    expect(disparar(w)).toBe(false);
-    expect(ev.vacios).toHaveLength(1);
-    expect(ev.disparos).toHaveLength(P.magazineSize);
-  });
-
-  it('el clic en vacio arranca la recarga solo', () => {
-    const { w, ev } = armar();
-    for (let i = 0; i < P.magazineSize; i++) {
-      disparar(w);
-      w.update(P.cooldown + 0.01, ORIGEN, FRENTE, []);
-    }
-    w.atacar(ORIGEN, FRENTE, []);
-    expect(w.estado).toBe(EstadoArma.RECARGANDO);
-    expect(ev.recargas).toHaveLength(1);
-  });
-
-  it('durante la recarga no se puede disparar', () => {
-    const { w, ev } = armar();
-    disparar(w);
-    w.update(P.cooldown + 0.01, ORIGEN, FRENTE, []);
-    expect(w.recargar()).toBe(true);
-
-    // A mitad de la recarga, el gatillo no hace nada.
-    w.update(P.reloadTime / 2, ORIGEN, FRENTE, []);
-    expect(w.atacar(ORIGEN, FRENTE, [])).toBe(false);
-    expect(ev.disparos).toHaveLength(1);
-
-    // Terminada, si.
-    w.update(P.reloadTime, ORIGEN, FRENTE, []);
-    expect(w.estado).toBe(EstadoArma.LISTA);
-    expect(disparar(w)).toBe(true);
-  });
-
-  it('la recarga llena el cargador y descuenta de la reserva', () => {
-    const { w } = armar();
-    disparar(w);
-    disparar(w); // no sale: esta en espera
-    w.update(P.cooldown + 0.01, ORIGEN, FRENTE, []);
-
-    const gastadas = P.magazineSize - w.enCargador;
-    const reservaAntes = w.enReserva;
-    w.recargar();
-    w.update(P.reloadTime + 0.01, ORIGEN, FRENTE, []);
-
-    expect(w.enCargador).toBe(P.magazineSize);
-    expect(w.enReserva).toBe(reservaAntes - gastadas);
-  });
-
-  it('un cargador lleno no se recarga: seria tirar balas', () => {
-    const { w } = armar();
-    expect(w.recargar()).toBe(false);
-    expect(w.enReserva).toBe(P.startingReserve);
-  });
-
-  it('sin reserva no hay recarga, y el clic queda en vacio', () => {
-    const { w, ev } = armar();
-    w.reserva.pistol = 0;
-    w.cargador.pistol = 0;
-
-    expect(w.recargar()).toBe(false);
-    expect(w.atacar(ORIGEN, FRENTE, [])).toBe(false);
-    expect(ev.vacios).toHaveLength(1);
-    expect(w.estado).toBe(EstadoArma.LISTA);
-  });
-
-  it('la recarga parcial pasa solo lo que hay', () => {
-    const { w } = armar();
-    w.cargador.pistol = 2;
-    w.reserva.pistol = 3;
-    w.recargar();
-    w.update(P.reloadTime + 0.01, ORIGEN, FRENTE, []);
-    expect(w.enCargador).toBe(5);
-    expect(w.enReserva).toBe(0);
-  });
-
-  it('cambiar de arma cancela la recarga', () => {
-    /*
-     * Si no la cancelara, se podria empezar a recargar, pasar al cuchillo,
-     * pelear, y volver a la pistola ya cargada: la recarga dejaria de
-     * costar nada, y su costo es justamente el punto.
-     */
-    const { w } = armar();
-    w.cargador.pistol = 1;
-    w.recargar();
-    expect(w.recargando).toBe(true);
-
-    w.cambiarA('knife');
-    w.update(P.reloadTime + 0.01, ORIGEN, FRENTE, []);
-    w.cambiarA('pistol');
-    expect(w.enCargador).toBe(1);
-  });
-
-  it('el cuchillo no gasta municion ni se recarga', () => {
-    const { w } = armar({ armaInicial: 'knife' });
-    expect(w.enCargador).toBe(Infinity);
-    expect(w.recargar()).toBe(false);
-    expect(w.atacar(ORIGEN, FRENTE, [])).toBe(true);
-  });
-
-  it('la municion se comparte por tipo, no por arma', () => {
-    const { w } = armar();
-    const antes = w.enReserva;
-    w.sumarMunicion('pistol', 12);
-    expect(w.enReserva).toBe(antes + 12);
-  });
-});
-
-/* =========================================================================
-   RUIDO: EL CORAZON DE LA FASE
-   ========================================================================= */
-
 describe('ruido', () => {
   it('el disparo hace mucho mas ruido que el cuchillo', () => {
     expect(P.noiseRadius).toBeGreaterThan(WEAPONS.knife.noiseRadius * 5);
@@ -463,13 +322,11 @@ describe('ruido', () => {
     expect(ev.ruidos[0].z).toBeCloseTo(pos.z, 6);
   });
 
-  it('el clic en vacio no hace ruido de disparo', () => {
-    const { w, ev } = armar();
-    w.cargador.pistol = 0;
-    w.reserva.pistol = 0;
-    w.atacar(ORIGEN, FRENTE, []);
-    expect(ev.ruidos).toHaveLength(0);
-  });
+  /*
+   * Habia una prueba mas: "el clic en vacio no hace ruido de disparo".
+   * Se fue con la municion en la Fase 16.2 (D-29): ya no hay clic en
+   * vacio porque la pistola no se queda sin balas.
+   */
 });
 
 /* =========================================================================

@@ -67,7 +67,6 @@ async function tirar(page) {
     const { parado, rumbo, victima } = globalThis.__tiro;
 
     const antes = victima.health.actual;
-    const balasAntes = g.arma.enCargador;
     g.arma.atacar(parado, rumbo, g.zombis.enJuego);
 
     // Mantener la pose: el zombi empuja y la IA mueve al jugador.
@@ -80,8 +79,6 @@ async function tirar(page) {
     return {
       vidaAntes: antes,
       vidaDespues: victima.health.actual,
-      balasAntes,
-      balasDespues: g.arma.enCargador,
       distancia: Math.hypot(victima.posicion.x - parado.x, victima.posicion.z - parado.z)
     };
   }, CUADROS);
@@ -100,7 +97,6 @@ test.describe('disparar', () => {
     expect(prep.sinZombis, 'no habia ningun zombi').toBeFalsy();
 
     const uno = await tirar(page);
-    expect(uno.balasDespues).toBe(uno.balasAntes - 1);
     expect(uno.vidaDespues, 'el primer tiro no hizo daño').toBeLessThan(uno.vidaAntes);
 
     // El segundo lo tiene que matar: es el balance declarado.
@@ -115,7 +111,7 @@ test.describe('disparar', () => {
         if (g.arma.puedeAtacar) g.arma.atacar(parado, rumbo, g.zombis.enJuego);
         await esperar(1);
       }
-      return { vivo: victima.health.vivo, gastadas: 12 - g.arma.enCargador };
+      return { vivo: victima.health.vivo };
     }, CUADROS);
 
     expect(muerto.vivo).toBe(false);
@@ -131,8 +127,6 @@ test.describe('disparar', () => {
     const r = await tirar(page);
     expect(r.distancia).toBeGreaterThan(28);
     expect(r.vidaDespues, 'le pego a algo que estaba fuera de alcance').toBe(r.vidaAntes);
-    // Pero la bala se gasta igual: errar cuesta.
-    expect(r.balasDespues).toBe(r.balasAntes - 1);
   });
 
   test('una pared para la bala', async ({ page }) => {
@@ -180,70 +174,32 @@ test.describe('disparar', () => {
         g.player.yaw = rumbo;
         await esperar(1);
       }
-      return { antes, despues: victima.health.actual, balas: g.arma.enCargador };
+      return { antes, despues: victima.health.actual };
     }, CUADROS);
 
     test.skip(!!r.sinZombis || !!r.sinPared, 'no se encontro un tiro tapado por el escenario');
     expect(r.despues, 'la bala atraveso una pared').toBe(r.antes);
-    expect(r.balas).toBe(11);
   });
 });
 
-test.describe('municion', () => {
-  test('vaciar el cargador recarga sola, y durante la recarga no dispara', async ({ page }) => {
-    await entrar(page);
-    await prepararTiro(page, 10);
-
-    const r = await page.evaluate(async (cuadrosSrc) => {
-      const esperar = eval(cuadrosSrc);
-      const g = globalThis.game;
-      const { parado, rumbo } = globalThis.__tiro;
-
-      // Vaciar sin pasar por doce ciclos completos.
-      g.arma.cargador.pistol = 1;
-      g.arma.atacar(parado, rumbo, g.zombis.enJuego);
-      for (let i = 0; i < 20 && g.arma.enCargador > 0; i++) await esperar(1);
-
-      // Ahora el gatillo en vacio tiene que arrancar la recarga sola.
-      let intentos = 0;
-      while (g.arma.estado !== 'RECARGANDO' && intentos++ < 60) {
-        g.arma.atacar(parado, rumbo, g.zombis.enJuego);
-        await esperar(1);
-      }
-      const recargando = g.arma.estado === 'RECARGANDO';
-      const barraVisible = !document.getElementById('recarga').classList.contains('hidden');
-      const disparoDurante = g.arma.atacar(parado, rumbo, g.zombis.enJuego);
-
-      // Esperar a que termine.
-      for (let i = 0; i < 400 && g.arma.recargando; i++) await esperar(1);
-
-      return {
-        recargando,
-        barraVisible,
-        disparoDurante,
-        cargadorFinal: g.arma.enCargador,
-        reservaFinal: g.arma.enReserva
-      };
-    }, CUADROS);
-
-    expect(r.recargando, 'nunca arranco la recarga').toBe(true);
-    expect(r.barraVisible, 'la recarga no se ve en el HUD').toBe(true);
-    expect(r.disparoDurante, 'disparo durante la recarga').toBe(false);
-    expect(r.cargadorFinal).toBe(12);
-    expect(r.reservaFinal).toBeLessThan(24);
-  });
-
-  test('el HUD muestra el arma y la municion', async ({ page }) => {
+/*
+ * Aca habia dos pruebas de municion: que vaciar el cargador arrancara la
+ * recarga sola, y que el HUD mostrara el contador de balas. Las dos se
+ * fueron en la Fase 16.2 con la municion (D-29).
+ *
+ * Lo que sobrevive de la segunda es que el boton grande diga lo que hace,
+ * y eso se prueba abajo.
+ */
+test.describe('el arma se lee en el HUD', () => {
+  test('el nombre del arma y el boton dicen cual es cual', async ({ page }) => {
     await entrar(page);
 
-    // Con el cuchillo no hay numeros de balas: no gasta.
     await expect(page.locator('#arma-nombre')).toHaveText('CUCHILLO');
-    await expect(page.locator('#arma-municion')).toHaveText('—');
+    await expect(page.locator('#btn-attack')).toHaveText('ATACAR');
 
     await page.evaluate(() => globalThis.game.arma.cambiarA('pistol'));
     await expect(page.locator('#arma-nombre')).toHaveText('PISTOLA');
-    await expect(page.locator('#arma-municion')).toContainText('12');
-    // Y el boton grande dice lo que hace.
+    // El boton grande dice lo que hace AHORA: con la pistola, disparar.
     await expect(page.locator('#btn-attack')).toHaveText('DISPARAR');
 
     await page.evaluate(() => globalThis.game.arma.cambiarA('knife'));

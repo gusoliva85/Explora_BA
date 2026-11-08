@@ -190,8 +190,7 @@ export const WEAPONS = {
     cooldown: 0.55,
     /** Demora entre apretar y aplicar el daño: sincroniza con la animacion. */
     windup: 0.12,
-    noiseRadius: 2,
-    ammoType: null
+    noiseRadius: 2
   },
   pistol: {
     id: 'pistol',
@@ -204,11 +203,14 @@ export const WEAPONS = {
     /** Dispersion en grados. Pequeña, pero castiga el tiro a maxima distancia. */
     spreadDegrees: 2.5,
     noiseRadius: 22,
-    ammoType: 'pistol',
-    magazineSize: 12,
-    reloadTime: 1.6,
-    /** Municion de reserva al empezar la mision: dos cargadores. */
-    startingReserve: 24,
+    /*
+     * Sin municion, sin cargador y sin recarga (D-29, Fase 16.2).
+     *
+     * Habia `ammoType`, `magazineSize: 12`, `reloadTime: 1.6` y
+     * `startingReserve: 24`. El costo de la pistola era quedarse sin balas
+     * en el peor momento; ahora el costo es otro y es espacial: para
+     * disparar hay que frenar, y frenar con zombis encima es la decision.
+     */
 
     /**
      * Altura a la que vuela la bala, en metros.
@@ -267,7 +269,6 @@ export const WEAPONS = {
     windup: 0.35,
     projectileSpeed: 24,
     noiseRadius: 45,
-    ammoType: null,
     /** Altura a la que vuela el cohete. Misma idea que la de la pistola. */
     shotHeight: 1.2,
     /**
