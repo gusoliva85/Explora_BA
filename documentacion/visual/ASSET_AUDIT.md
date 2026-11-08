@@ -111,28 +111,63 @@ error, porque no se ve hasta que ya está arriba.
 
 ### Los tres hallazgos que cambian el plan
 
-**1. Casi nada viene en `.glb`.** El pack de autos, el de armas y el
-CryptZombie vienen **sólo** en `.fbx` o en formato de Godot, y PlayCanvas
-carga `.glb`. Hace falta un convertidor por Blender en línea de comandos.
-Es la tarea **20.1**, y es bloqueante: sin eso, más de la mitad del banco
-no entra.
+**1. El formato NO es el problema.** Primero escribí que faltaba un
+convertidor por Blender y que era bloqueante. Lo medí y el diagnóstico estaba
+mal. Dos datos:
 
-**2. Los pesos no entran como vienen.** El presupuesto de descarga de todo el
-juego son 25 MB, de los cuales 12 para modelos:
+- **Los 355 archivos `.fbx` del banco son los 355 `Kaydara FBX Binary`**, que
+  es el formato que todo convertidor soporta, y pesan kilobytes: el taxi
+  0,08 MB, un banco de plaza 0,02 MB.
+- El banco tiene **170 archivos `.glb`/`.gltf`**, que ya cubren el zombi, los
+  esqueletos, Gus, las animaciones y todo KayKit. Sin `.glb` quedan sólo los
+  autos, las armas y el CryptZombie.
+
+Tres salidas para esos tres, y se prueban en orden de costo:
+
+| | Camino | Costo |
+|---|---|---|
+| 1 | **Poly Pizza.** Autos y armas son de Quaternius, CC0, y Poly Pizza los redistribuye en `.glb` por URL directa. **Ya funcionó acá**: los árboles de la 12R.6 | Cero |
+| 2 | **FBX2glTF**, binario suelto | Una descarga |
+| 3 | **Blender** por línea de comandos | ~400 MB |
+
+**2. El problema es el peso, y es casi todo textura.** Medido con
+`tools/inspeccionar-glb.mjs`, sobre el zombi estándar:
+
+| | |
+|---|---|
+| Peso | 3,97 MB |
+| **Texturas** | **2,75 MB — el 69 %** · tres PNG de 1024 × 1024: base-color, normal y metallic-roughness |
+| Geometría | 1,05 MB · 14.572 triángulos, 21 huesos |
+| Animación | 0,11 MB · **6 animaciones ya nombradas**: Walk, Run, Swipe, Bite, Stumble, Die |
+
+Y eso se arregla sin instalar nada:
+
+- **Gus se ve a 43 píxeles de alto** en el teléfono (medido en la 12R.1). Una
+  textura de 1024 × 1024 es veinticuatro veces más de lo que hace falta: a
+  256 × 256, esos 2,75 MB son 0,17.
+- El estilo es **low-poly mate** (D-33), así que **el mapa de normales y el de
+  metallic-roughness no se usan**. Tirarlos no es optimizar con pérdida: es
+  sacar algo que nunca se iba a dibujar.
+
+**3,97 MB → ~1,2 MB**, con un script propio (tarea 20.1), porque quitar
+imágenes de un `.glb` es cirugía de JSON y de buffers, no procesamiento de
+imagen.
+
+**El resto de los pesos.** El presupuesto son 25 MB de descarga, de los cuales
+12 para modelos:
 
 | Archivo | Peso | Veredicto |
 |---|---|---|
-| `skeleton-zombie.glb` | 10,05 MB | ❌ ni cerca |
-| `skeleton-zombie-mobile.glb` | 3,97 MB | ⚠️ entra, pero se come un tercio del presupuesto |
-| `Bestiary/Imp.glb` | 8,98 MB | ❌ Fase 15, y recortado |
-| `Bestiary/Puglin.glb` | 7,49 MB | ❌ Fase 15, y recortado |
-| `Universal Base Characters` (`.gltf`) | 7,27 MB | ⚠️ hay que recortar |
+| `skeleton-zombie.glb` | 10,05 MB | ❌ se usa el `-mobile` |
+| `skeleton-zombie-mobile.glb` | 3,97 MB | ✅ pasado por la 20.1 |
+| `Bestiary/Imp.glb` | 8,98 MB | ❌ Fase 15, y adelgazado |
+| `Bestiary/Puglin.glb` | 7,49 MB | ❌ Fase 15, y adelgazado |
+| `Universal Base Characters` (`.gltf`) | 7,27 MB | ⚠️ pasa por la 20.1 |
 | KayKit, personajes | 0,25 a 0,46 MB | ✅ sin problema |
 | KayKit, animaciones | 0,55 a 1,39 MB | ✅ sin problema |
 
-Todo lo que entre pasa por Draco y compresión de texturas. Los KayKit son la
-referencia de lo que pesa un modelo bien exportado: **veinte veces menos** que
-el zombi.
+Los KayKit son la referencia de lo que pesa un modelo bien exportado:
+**veinte veces menos** que el zombi sin adelgazar.
 
 **3. Dos licencias prohíben redistribuir.** `skeleton-zombie` y `CryptZombie`
 permiten uso comercial embebido en el juego —que es lo que vamos a hacer— pero

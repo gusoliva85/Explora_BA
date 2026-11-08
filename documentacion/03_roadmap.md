@@ -64,7 +64,8 @@ verde con las cuatro pruebas de arriba borradas y ninguna otra rota.
 | 🔄 | **16 — La poda** | ⬅️ **lo que estamos haciendo** |
 | ⬜ | 17 — Combate automático | Depende de la 16 |
 | ⬜ | 18 — El recorrido real | Depende de la 16 |
-| ⬜ | 19 — Power-ups de checkpoint | Depende de la 17 y la 18 |
+| ⬜ | 19A — El control marca la llegada | Va con la 18 |
+| ⏸️ | 19B — Las cartas de power-up | **Espera la lista de mejoras de Gus** |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
 | ⬜ | 11 — Audio | Pendiente |
@@ -77,8 +78,9 @@ lo demás se vuelve más barato. La 17 después, porque las reglas nuevas de
 combate son el corazón del cambio y hay que poder jugarlas antes de construir
 mapa para ellas. La 18 y la 20 pueden ir en paralelo si hiciera falta: la 18
 usa los props provisionales que ya existen y la 20 los reemplaza después. La
-19 al final del bloque, porque modifica estadísticas que la 17 todavía no
-fijó. La 12R se retoma recién cuando el juego nuevo se pueda jugar.
+19A va con la 18, porque un control que marca la llegada es parte del
+recorrido; la 19B espera la lista de power-ups de Gus. La 12R se retoma
+recién cuando el juego nuevo se pueda jugar.
 
 **Lo que hay hoy:** Gus camina tres cuadras de Boedo, los zombis lo detectan
 por vista y por ruido y lo persiguen esquivando obstáculos, pelea con cuchillo,
@@ -98,18 +100,19 @@ El juego deja de ser *un shooter con inventario y botones* y pasa a ser **un
 juego de posicionamiento**: moverse o disparar, nunca las dos cosas a la vez,
 y la única decisión del jugador es *dónde pararse y cuánto tiempo*.
 
-### Las nueve decisiones nuevas
+### Las once decisiones nuevas
 
-Numeradas desde **D-26**, porque D-01 a D-21 son del documento 02 y D-22 a
+Numeradas **D-26 a D-36**, porque D-01 a D-21 son del documento 02 y D-22 a
 D-25 son de la 12R.
 
-#### 🔴 D-26 — El recorrido es el real, comprimido al 40 %
+#### 🔴 D-26 — El recorrido es el real, comprimido a siete cuadras
 
 **Qué dice.** Las seis ubicaciones que pidió Gus se conservan, con sus
-direcciones, su orden, sus giros y sus rumbos reales. La geometría se
-comprime a un 40 %: **649,5 m jugables** en lugar de los 1.623,9 m reales.
-Los anchos de calle, de vereda y de cordón **no** se comprimen, porque son
-lo que hace que un cuerpo de 1,80 m quepa en la escena.
+direcciones y su orden. Lo que **no** se conserva es la geometría: el
+recorrido se construye como una cuadrícula de giros de 90° (**D-35**), con
+**700 m caminados** en lugar de los 1.623,9 m reales. Los anchos de calle, de
+vereda y de cordón no se comprimen, porque son lo que hace que un cuerpo de
+1,80 m quepa en la escena.
 
 **Por qué corrige D-04.** D-04 comprimió el recorrido a 350 m con el
 argumento de que el real medía *"varios kilómetros, atravesando varios
@@ -119,38 +122,104 @@ El motivo del descarte no existía. Y D-04 además reemplazaba el destino por
 una comisaría inventada sobre Carlos Calvo; ahora el destino vuelve a ser
 Billinghurst 250.
 
-**El trazado.** Ejes del juego: X = este/oeste, Z = norte/sur (−Z es al
-norte), 1 unidad = 1 metro. El cero es el punto de aparición.
+**La medición, que es el dato de referencia.** Ejes del juego: X = este/oeste,
+Z = norte/sur (−Z es al norte), 1 unidad = 1 metro.
 
-| | Dirección | Latitud | Longitud | x | z | Tramo | Rumbo |
-|---|---|---|---|---|---|---|---|
-| Inicio | Av. Independencia 3250 | −34,620511 | −58,411406 | 0,0 | 0,0 | — | — |
-| Control 1 | Agrelo 3400 | −34,618206 | −58,413928 | −92,5 | −102,3 | 137,9 m | −42,1° |
-| Control 2 | Maza 379 | −34,615399 | −58,415827 | −162,2 | −226,8 | 142,7 m | −29,2° |
-| Control 3 | Av. Boedo 120 | −34,612672 | −58,417772 | −233,5 | −347,8 | 140,5 m | −30,5° |
-| Control 4 | Mario Bravo 90 | −34,609881 | −58,417396 | −219,7 | −471,7 | 124,6 m | +6,4° |
-| **Fin** | **Billinghurst 250** | −34,607771 | −58,416173 | −174,9 | −565,3 | 103,8 m | +25,6° |
+| | Dirección | Latitud | Longitud | Tramo | Rumbo |
+|---|---|---|---|---|---|
+| Inicio | Av. Independencia 3250 | −34,620511 | −58,411406 | — | — |
+| | Agrelo 3400 | −34,618206 | −58,413928 | 344,8 m | −42,1° |
+| | Maza 379 | −34,615399 | −58,415827 | 356,8 m | −29,2° |
+| | Av. Boedo 120 | −34,612672 | −58,417772 | 351,2 m | −30,5° |
+| | Mario Bravo 90 | −34,609881 | −58,417396 | 311,5 m | +6,4° |
+| **Fin** | **Billinghurst 250** | −34,607771 | −58,416173 | 259,6 m | +25,6° |
+| | | | **Total** | **1.623,9 m** | |
 
-Las coordenadas de juego salen de la proyección plana local sobre el punto de
-inicio (1° de latitud = 110.933,6 m; 1° de longitud = 91.707,7 m a esa
-latitud) multiplicada por 0,40. **El cálculo va en el código, no a mano**,
-para que cambiar el factor de compresión sea cambiar un número.
+Sale de la proyección plana local sobre el punto de inicio (1° de latitud =
+110.933,6 m; 1° de longitud = 91.707,7 m a esa latitud). **El cálculo está en
+`tools/recorrido-real.mjs`, no escrito a mano**, y lo fija
+`tests/trazado.test.js`: si alguien toca una coordenada, avisa.
 
-A 6 m/s, los 649,5 m son **108 segundos de carrera pura**. Con zombis en el
-camino, la misión completa debería quedar entre tres y cinco minutos, que es
-lo que pide una demo.
-
-**Lo que esto cuesta, y hay que decirlo:** el mapa pasa de ~350 m a 650 m y
-**ninguno de los cinco tramos está alineado a un eje**. El generador de hoy
-exige que lo estén. Eso es la tarea 18.1 y es la más técnica de todo el
-bloque.
+**Esto NO es lo que se construye.** Lo que se construye es el trazado
+ortogonal de **D-35**, que conserva el orden de las seis direcciones, la
+proporción del desplazamiento y el largo caminado, pero corre sobre una
+cuadrícula.
 
 **Sobre OpenStreetMap.** La NOTA-02 del documento 02 decía que la escala real
-se trae de OSM y se generan las manzanas por código. Con el 40 % elegido, la
-traza se escribe a mano en `mission001.js` desde la tabla de arriba: seis
-vértices no justifican una tubería de datos. **OSM queda disponible y
-justificado para la Fase 15**, cuando haya varias misiones y la traza deje de
-caber en una tabla. Si se usa, exige atribución (licencia ODbL).
+se trae de OSM y se generan las manzanas por código. Con el trazado ortogonal
+elegido, OSM entra como **guía de forma, no como fuente de geometría**: sirve
+para decidir qué calle corre norte-sur y qué calle corre este-oeste, y para
+ponerle nombre y altura a los dos controles nuevos (tarea 18.10). **La traza
+a escala 1:1 generada desde OSM queda para la Fase 15**, cuando haya varias
+misiones y deje de caber en una tabla. Si se usa, exige atribución (ODbL).
+
+#### 🔴 D-35 — Todos los giros son de 90°, y las manzanas son cuadradas
+
+**Qué dice.** El recorrido se construye como una **escalera de cuadras de
+100 m sobre una cuadrícula**. Cada tramo corre sobre un eje y cada giro es de
+90 grados, o derecho cruzando una avenida. Nunca en diagonal. Las manzanas
+son cuadradas.
+
+**El trazado, entonces.** Siete tramos de una cuadra, con un control en cada
+esquina. Son **700 m caminados, 117 segundos a 6 m/s**:
+
+| # | Punto | Cartel | x | z | Tramo | Giro |
+|---|---|---|---|---|---|---|
+| 0 | Inicio | Av. Independencia 3250 | 0 | 0 | — | — |
+| 1 | Control 1 | *por asignar* | 0 | −100 | 100 m | derecho |
+| 2 | Control 2 | **Agrelo 3400** | −100 | −100 | 100 m | 90° izq |
+| 3 | Control 3 | *por asignar* | −100 | −200 | 100 m | 90° der |
+| 4 | Control 4 | **Maza 379** | −200 | −200 | 100 m | 90° izq |
+| 5 | Control 5 | **Av. Boedo 120** | −200 | −300 | 100 m | 90° der |
+| 6 | Control 6 | **Mario Bravo 90** | −200 | −400 | 100 m | derecho |
+| 7 | **Fin** | **Billinghurst 250** | −100 | −400 | 100 m | 90° der |
+
+**Por qué esta forma y no otra.** El recorrido real se desplaza 437 m al
+oeste y 1.413 m al norte: la proporción es **1 a 3,2**, o sea "mucho más
+norte que oeste". Esta escalera se desplaza 100 al oeste y 400 al norte,
+**1 a 4**: conserva el carácter —se va al norte bordeando hacia el oeste— con
+siete cuadras en lugar de dieciocho. Los dos tramos "derecho" son el cruce de
+una avenida, que es lo que se hace con una avenida: se cruza, no se dobla en
+ella.
+
+**Lo que esta decisión regala, y es mucho.** D-26 me había dejado dos tareas
+que eran las más técnicas de todo el bloque, y las dos **se cancelan**:
+
+| Tarea | Era | Ahora |
+|---|---|---|
+| 18.1 — abrir el generador a ángulos arbitrarios | La más técnica del bloque | ❌ **No hace falta.** El generador ya exige tramos alineados a un eje, y ahora lo están todos |
+| 18.2 — recalcular las ochavas para ángulos raros | Rehacer parte de la 12R.3 | ❌ **No hace falta.** Las cuatro ochavas de la 12R.3 están hechas para 90°, que es exactamente lo que hay |
+
+O sea que pedir giros cuadrados no simplificó el aspecto: **borró las dos
+tareas más riesgosas de la fase** y dejó intacta una tarea de la 12R que ya
+estaba terminada y medida.
+
+**Los dos controles nuevos.** Gus pidió pasar de 4 controles a 6, con la
+distancia total mantenida y los tramos parejos. Los cuatro originales
+—Agrelo, Maza, Boedo, Mario Bravo— se conservan en su orden; los dos nuevos
+caen en los tramos 1 y 3. **Les falta dirección**, y no la invento: el
+documento 02 ya advierte que si el cartel no coincide con el barrio, cualquier
+porteño lo nota. Lo cierra la tarea 18.10, con el mapa a la vista o con el
+dato de Gus.
+
+#### 🟡 D-36 — El tiro no falla nunca, salvo que haya algo en el medio
+
+**Qué dice.** El disparo automático **siempre pega** en el blanco. Lo único
+que lo detiene es una barrera física en la línea de tiro: un árbol, un auto,
+un contenedor, una pared. No hay dispersión, no hay fallo por azar.
+
+**Qué cambia en el código.** `WEAPONS.pistol.spreadDegrees` pasa de 2,5 a **0**,
+y el apuntado asistido (`aimAssist`) desaparece: existía para perdonarle el
+temblor del pulgar a un jugador que apuntaba a mano, y ya no hay nadie
+apuntando a mano. El rayo de `ballistics.js` se queda, pero sólo para
+preguntar **qué hay en el camino**, que es la única pregunta que queda.
+
+**Por qué está bien.** Con dispersión, el jugador que se paró en el lugar
+correcto igual podía perder por azar, y eso rompe lo único que este juego le
+pide: elegir dónde pararse. Si el tiro falla, tiene que ser porque hay un
+auto en el medio — y eso el jugador lo ve y lo puede resolver moviéndose.
+**La cobertura vale para los dos lados** (tarea 17.3): si un árbol te tapa al
+zombi, el mismo árbol te tapa a vos.
 
 #### 🔴 D-27 — El joystick a la derecha
 
@@ -225,6 +294,18 @@ agresivo salen del pack CryptZombie y entran en la Fase 20.
 cartas** de mejora. El jugador elige **una**, se aplica sola y se queda para
 toda la partida. Las mejoras **se acumulan** y ninguna se pierde. Al morir se
 pierden todas y se empieza de cero con las estadísticas estándar.
+
+**Y se hace en dos tiempos, porque Gus todavía está armando las mejoras.**
+
+| Cuándo | Qué hay |
+|---|---|
+| **Ahora** (Fase 19A) | El control **marca la llegada** y nada más: se guarda el progreso, se avisa en pantalla y se sigue. Es lo que pidió Gus explícitamente |
+| **Cuando lleguen las mejoras** (Fase 19B) | Las tres cartas, la acumulación y el reinicio a cero |
+
+La 19A se puede hacer ya y no bloquea nada. La 19B **espera la lista de
+power-ups de Gus**: el sistema no se diseña bien sin saber qué tiene que
+aplicar. El pool que figura más abajo es mi propuesta mientras tanto, para
+que Gus tenga de dónde partir o qué contradecir.
 
 **Qué reemplaza.** Esto deja sin efecto **D-20** (los objetos se levantan
 caminándolos) y **D-21** (curarse lleva tiempo y hay que estar quieto): ya no
@@ -319,7 +400,8 @@ jugándolo, no sirve nada de lo que viene después.
 
 - [ ] **17.1 Las estadísticas nuevas.** Gus 120/25, zombi normal 100/10. Con una prueba que fije las cuentas: 4 tiros y 12 golpes, en números, no a ojo
 - [ ] **17.2 Definir "quieto".** El umbral y la demora. Gus frena en 0,18 s por inercia: hay que decidir si eso cuenta. Propuesta a probar: quieto cuando el joystick está en cero por 0,15 s o más
-- [ ] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista**, para que no dispare a través de una pared
+- [ ] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36): lo único que impide el tiro es una barrera física, y vale para los dos lados
+- [ ] **17.3 bis Sacar la dispersión** (D-36). `spreadDegrees` a 0 y el apuntado asistido afuera: el tiro no falla por azar
 - [ ] **17.4 El blanco se mantiene.** No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista
 - [ ] **17.5 Girar y disparar.** El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco. `rumboForzado` ya existe en `playerController`: se reusa
 - [ ] **17.6 Al moverse, suelta.** Deja de disparar y suelta el blanco, sin arrastre
@@ -334,8 +416,25 @@ jugándolo, no sirve nada de lo que viene después.
 |---|---|
 | ¿Dispara a través de otros zombis? | No: el primero del rayo se come la bala. Ya funciona así |
 | ¿Dispara mientras gira hacia el blanco, o espera? | Espera a estar encarado. Si no, el primer tiro de cada blanco sale para cualquier lado |
-| ¿Qué pasa si el más cercano está detrás de un auto? | No es blanco válido. La cobertura tiene que valer para los dos lados |
+| ¿Qué pasa si el más cercano está detrás de un auto? | No es blanco válido: busca al siguiente. Cerrado por D-36 |
 | ¿Se puede frenar a propósito para disparar desde cobertura? | Sí, y es el juego. Es lo que reemplaza a las decisiones de botón |
+
+**Lo de "quieto" lo decido yo, y así lo voy a hacer.** Gus lo dejó a mi
+criterio, así que queda escrito antes de escribirlo en código, para poder
+discutirlo mirando el resultado y no la intención:
+
+> **Gus está quieto cuando el joystick está en cero.** No cuando la velocidad
+> llega a cero. Los 0,18 s que tarda en frenar por inercia cuentan como
+> quieto: el jugador ya soltó, ya decidió. Si esperáramos la velocidad, el
+> primer tiro saldría dos décimas tarde y en un juego donde doce golpes te
+> matan, dos décimas por parada se sienten como que el personaje duda.
+>
+> **Y hay un retardo de 0,15 s antes del primer tiro.** No para castigar:
+> para que un roce del pulgar no dispare, y para que el jugador vea a Gus
+> frenar y encarar antes de que salga la bala. Soltar y volver a tocar dentro
+> de esos 0,15 s no cuenta como haber estado quieto.
+
+Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
 
 **Criterio de salida**
 
@@ -352,28 +451,37 @@ jugándolo, no sirve nada de lo que viene después.
 
 ## ⬜ FASE 18 — El recorrido real
 
-**Objetivo:** el trazado de D-26, con la ruta marcada y todo lo demás
-bloqueado. Usa los props provisionales que ya existen; la Fase 20 los
+**Objetivo:** el trazado ortogonal de D-35, con la ruta marcada y todo lo
+demás bloqueado. Usa los props provisionales que ya existen; la Fase 20 los
 reemplaza por modelos.
 
-- [ ] **18.1 El generador, abierto a ángulos arbitrarios.** Hoy `worldBuilder` exige tramos alineados a un eje, y los cinco rumbos nuevos son −42,1°, −29,2°, −30,5°, +6,4° y +25,6°. Es la tarea más técnica del bloque
-- [ ] **18.2 Las esquinas que no son esquinas.** Con las ochavas de la 12R.3 hechas para 90°, un giro de 13° (de −42° a −29°) no es una esquina: es una curva. Hay que recalcular empalmes de vereda, cordón y ochava
-- [ ] **18.3 El trazado nuevo en `mission001.js`**, con las coordenadas GPS al lado de las de juego y el factor de compresión como constante
-- [ ] **18.4 Cuatro controles** en vez de dos, y la meta en Billinghurst 250
-- [ ] **18.5 Los cinco textos de objetivo**, en voseo
-- [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más flechas en los giros
-- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, barricadas, escombros y bolsas. **Con colisión**, no decorado
+> ✅ **Las dos tareas más técnicas de esta fase se cancelaron antes de
+> empezar.** Eran abrir el generador a ángulos arbitrarios y recalcular las
+> ochavas. Al pedir Gus giros de 90° (D-35), el generador ya sirve como está
+> y las ochavas de la 12R.3 ya están hechas para 90°. **La fase pasó de 13
+> tareas a 11, y de riesgosa a mecánica.**
+
+- [x] ~~18.1 El generador, abierto a ángulos arbitrarios~~ — **cancelada por D-35**
+- [x] ~~18.2 Las esquinas que no son esquinas~~ — **cancelada por D-35**
+- [ ] **18.3 El trazado nuevo en `mission001.js`.** Las ocho esquinas de D-35, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad
+- [ ] **18.4 Seis controles** en vez de dos, y la meta en Billinghurst 250
+- [ ] **18.5 Los siete textos de objetivo**, en voseo, uno por tramo
+- [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más una flecha en cada uno de los cinco giros. Con la cuadrícula esto es más fácil: la flecha siempre apunta a 90°
+- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, barricadas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en siete cuadras hay un número fijo y se tapa cada una
 - [ ] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js`
-- [ ] **18.9 Rehacer las zonas de zombis** para cinco tramos, con dificultad creciente. El primero flojo: hay que dejar aprender a moverse
-- [ ] **18.10 Los carteles de esquina** con los nombres nuevos, reusando la 12R.5: INDEPENDENCIA, AGRELO, MAZA, BOEDO, MARIO BRAVO, BILLINGHURST
+- [ ] **18.9 Rehacer las zonas de zombis** para siete tramos, con dificultad creciente. El primero flojo: hay que dejar aprender a moverse
+- [ ] **18.10 Los carteles de esquina, y los dos controles sin nombre.** Reusando la 12R.5. Las seis direcciones de Gus están; **faltan las de los controles 1 y 3**, y hay que mirar el mapa real (o que las dé Gus) para no poner un cartel que contradiga al barrio. También hay que confirmar qué calle corre norte-sur y qué calle este-oeste, para que los tramos no queden sobre una calle imposible
 - [ ] **18.11 Qué hay en Billinghurst 250.** Hoy la meta es una comisaría inventada sobre Carlos Calvo, que D-26 deja sin sentido. Hay que decidir qué es el refugio y modelarlo
-- [ ] **18.12 Medir el costo del mapa grande.** 650 m contra 350: llamadas de dibujo y descarte de lo lejano. Es probable que haga falta cargar por tramos
+- [ ] **18.12 Medir el costo del mapa.** 700 m contra 350: llamadas de dibujo y descarte de lo lejano. Es probable que haga falta cargar por tramos
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
 
 **Criterio de salida**
 
-- [ ] Las seis ubicaciones están en la proporción correcta entre sí, y las direcciones coinciden con los carteles
-- [ ] No se puede salir de la ruta por ningún lado: probado intentándolo en las seis esquinas
+- [ ] Todos los giros del mapa construido son de 90°, verificado por `tests/trazado.test.js`
+- [ ] Los siete tramos miden lo mismo, y los controles quedan a distancia pareja
+- [ ] Las seis direcciones de Gus están en orden y coinciden con los carteles
+- [ ] Los dos controles nuevos tienen una dirección que existe de verdad
+- [ ] No se puede salir de la ruta por ningún lado: probado intentándolo en las ocho esquinas
 - [ ] Un jugador que nunca lo vio entiende para dónde ir sin que nadie le diga
 - [ ] Ningún obstáculo bloquea la ruta que debería dejar pasar
 - [ ] Se puede llegar de Independencia 3250 a Billinghurst 250 sin trabarse
@@ -382,24 +490,59 @@ reemplaza por modelos.
 
 ---
 
-## ⬜ FASE 19 — Power-ups de checkpoint
+## ⬜ FASE 19 — Los controles, y después los power-ups
 
 **Objetivo:** que llegar a un control sea el momento en que la partida cambia.
 Reemplaza lo que hacía `CHECKPOINT_DROP` y lo hace mejor: una decisión en vez
 de tres cajas tiradas en el piso.
 
-- [ ] **19.1 El sistema.** Una lista de mejoras con id, nombre, texto, familia y cómo se aplica. **Se aplican sobre una capa de modificadores, nunca sobre `balance.js`:** los números base no se tocan, así reiniciar es tirar la capa
-- [ ] **19.2 Las tres cartas.** Al tocar un control el juego se detiene y saca tres del pool, sin repetir las ya tomadas. Elegir una la aplica y sigue
-- [ ] **19.3 La acumulación.** Todo suma, nada se pierde durante la partida. Al morir, la capa entera a cero
-- [ ] **19.4 El pool.** La lista de abajo es la propuesta; se ajusta jugando
-- [ ] **19.5 La pantalla.** Tres cartas, en vertical, alcanzables con un pulgar
-- [ ] **19.6 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
-- [ ] **19.7 Al morir se pierde todo**, con una prueba que lo verifique
-- [ ] **19.8 El balance de las cuatro.** Con 4 controles se termina con 4 mejoras: que la última cuadra se sienta distinta de la primera sin que el juego se rompa
+**Va en dos tiempos** (D-32), porque Gus todavía está armando las mejoras.
 
-**El pool propuesto.** Las de daño están medidas contra los 100 de vida del
-zombi normal, porque lo que importa no es el número sino **cuántos tiros
-hacen falta**:
+### 19A — El control marca la llegada · se puede hacer ya
+
+- [ ] **19A.1 Seis controles** funcionando: guardan el progreso y se reaparece ahí al reintentar
+- [ ] **19A.2 El aviso en pantalla** al llegar, que se lea en el teléfono y no tape el juego
+- [ ] **19A.3 Qué pasa con `CHECKPOINT_DROP`.** Se fue en la 16.1 y acá no vuelve: el control, por ahora, es sólo un punto de guardado
+- [ ] **19A.4 El gancho para la 19B.** Un evento `controlAlcanzado` con el índice del control, para que el sistema de cartas se enchufe sin tocar nada de esto
+
+### 19B — Las cartas · **espera la lista de power-ups de Gus**
+
+> ⏸️ **Esta mitad no se empieza sin la lista.** El sistema no se diseña bien
+> sin saber qué tiene que aplicar: una mejora que suma daño y una que cambia
+> el tipo de disparo se implementan distinto, y descubrirlo a mitad de camino
+> significa rehacerlo. **Lo que necesito de Gus está más abajo.**
+
+- [ ] **19B.1 El sistema.** Una lista de mejoras con id, nombre, texto, familia y cómo se aplica. **Se aplican sobre una capa de modificadores, nunca sobre `balance.js`:** los números base no se tocan, así reiniciar es tirar la capa
+- [ ] **19B.2 Las tres cartas.** Al tocar un control el juego se detiene y saca tres del pool, sin repetir las ya tomadas. Elegir una la aplica y sigue
+- [ ] **19B.3 La acumulación.** Todo suma, nada se pierde durante la partida. Al morir, la capa entera a cero
+- [ ] **19B.4 El pool definitivo**, con el de Gus
+- [ ] **19B.5 La pantalla.** Tres cartas, en vertical, alcanzables con un pulgar
+- [ ] **19B.6 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
+- [ ] **19B.7 Al morir se pierde todo**, con una prueba que lo verifique
+- [ ] **19B.8 El balance de las seis.** Con 6 controles se termina con 6 mejoras: que la última cuadra se sienta frenética sin que el juego se rompa
+
+### Lo que necesito de Gus para la 19B
+
+No hace falta que esté completo ni prolijo. Con esto alcanza para empezar, y
+**cuanto antes llegue, mejor, porque la 17 se puede diseñar sabiendo qué va a
+tener que modificar**:
+
+| Lo que sirve | Por qué |
+|---|---|
+| **El nombre y qué hace**, en una línea cada uno | Es lo único imprescindible |
+| **Cuántas quiere en total** | Con 6 controles, menos de 12 se repite rápido; más de 25 no se alcanza a ver en una partida |
+| **Si alguna cambia *cómo* se juega**, no sólo un número | Perforante, abanico o rebote cuestan mucho más que "+10 de daño", y conviene saberlo antes |
+| **Si alguna puede salir dos veces** y acumularse con ella misma | Decide si el pool se agota o no |
+| **Si alguna es "rara"** y tiene que aparecer poco | Si no hay rarezas, el sistema es más simple y se hace antes |
+
+Lo que **no** necesito: números exactos, iconos, ni textos finales. Los
+números los termino yo midiendo contra los 100 de vida del zombi, que es lo
+que decide si una mejora se nota o no.
+
+**El pool propuesto, mientras tanto.** Es para que Gus tenga de dónde partir
+o qué contradecir, no una decisión tomada. Las de daño están medidas contra
+los 100 de vida del zombi normal, porque lo que importa no es el número sino
+**cuántos tiros hacen falta**:
 
 | Familia | Carta | Efecto | Por qué ese número |
 |---|---|---|---|
@@ -415,11 +558,18 @@ hacen falta**:
 | Utilidad | Segundo aire | +1 de vida por segundo estando quieto | Devuelve la curación, pero atada a quedarse quieto |
 | Utilidad | Carnicero | Cada muerte cura 5 | Premia aguantar en vez de correr |
 
-**Criterio de salida**
+**Criterio de salida de la 19A**
+
+- [ ] Los seis controles se tocan en orden y guardan el progreso
+- [ ] Al morir se reaparece en el último control alcanzado
+- [ ] El aviso de llegada se lee en el teléfono y no tapa el juego
+- [ ] El evento `controlAlcanzado` existe y está probado
+
+**Criterio de salida de la 19B**
 
 - [ ] Al llegar a un control aparecen tres cartas y el juego espera
 - [ ] Elegir una la aplica al instante y sin que el jugador toque nada más
-- [ ] Las cuatro mejoras conviven y se notan todas
+- [ ] Las seis mejoras conviven y se notan todas
 - [ ] Morir devuelve las estadísticas estándar, verificado con una prueba
 - [ ] Se ve en todo momento qué mejoras se llevan puestas
 - [ ] Las tres cartas se leen y se eligen con un pulgar en el teléfono
@@ -434,14 +584,60 @@ la regla de D-33. **Absorbe seis tareas de la 12R:** 12R.8 (vehículos),
 12R.11 (Gus), 12R.12 (zombis), 12R.13 (armas en la mano), 12R.14 (objetos del
 piso, que muere con los ítems) y 12R.A (el barrido de assets).
 
-- [ ] **20.1 El convertidor.** Blender por línea de comandos: `.fbx`/`.blend` → `.glb` con Draco y texturas comprimidas, en `tools/convertir-asset.mjs`. **Sin esto no entra más de la mitad del banco:** los autos, las armas y el CryptZombie vienen sólo en `.fbx`/`.blend`, y PlayCanvas carga `.glb`
-- [ ] **20.2 La regla de la carpeta.** `_assets/` en `.gitignore` ✅ *hecho el 7/11*. Falta una prueba que falle si alguna ruta del código la menciona
-- [ ] **20.3 Medir antes de elegir.** Peso, triángulos, mallas, materiales y licencia de cada candidato, en `ASSET_AUDIT.md`. Hereda la tabla de la 12R.A
-- [ ] **20.4 El zombi estándar.** `skeleton-zombie-mobile.glb`, 100/10. **3,97 MB: hay que bajarlo mucho** antes de que entre
-- [ ] **20.5 El zombi agresivo.** CryptZombie, 120/20. Viene en formato Godot sin un solo `.glb`: conversión obligatoria
+### Primero: el convertidor NO es un bloqueante. Lo medí
+
+Dije que faltaba un convertidor por Blender y que era bloqueante. **Lo medí y
+me equivoqué en el diagnóstico.** Blender no está instalado, es verdad, pero
+el problema no es el formato: es el peso, y el peso tiene otra cura.
+
+**Lo que mide `tools/inspeccionar-glb.mjs`**, que escribí para esto, sobre el
+zombi estándar:
+
+| | |
+|---|---|
+| Peso | 3,97 MB |
+| **Texturas** | **2,75 MB — el 69 %** · tres PNG de 1024×1024 (base, normal, metallic-roughness) |
+| Geometría | 1,05 MB · 14.572 triángulos, 21 huesos |
+| Animación | 0,11 MB · **6 animaciones ya nombradas**: Walk, Run, Swipe, Bite, Stumble, Die |
+
+**Tres cosas que esto cambia.** Primero: **Gus se ve a 43 píxeles de alto en
+el teléfono**, y para 43 píxeles una textura de 1024×1024 es veinticuatro
+veces más de lo que hace falta; a 256×256 esos 2,75 MB se vuelven ~0,17 MB.
+Segundo: el estilo es **low-poly mate** (D-33), así que el mapa de normales y
+el de metallic-roughness **no se usan**; tirarlos es gratis y es ganancia
+directa. Tercero: el zombi **ya trae las seis animaciones que la Fase 17
+necesita**, con los nombres puestos. No hay que animar nada.
+
+Resultado: **3,97 MB → ~1,2 MB sin instalar nada y sin tocar la geometría.**
+Y eso lo hace un script propio, porque quitar imágenes de un `.glb` es
+cirugía de JSON y buffers, no procesamiento de imagen.
+
+**Y los `.fbx` tampoco son un problema.** Los 355 archivos `.fbx` del banco
+son **Kaydara FBX Binary** —el formato que todos los convertidores soportan—
+y pesan kilobytes: el taxi, 0,08 MB; un banco de plaza, 0,02 MB. Tres salidas,
+de más barata a más cara, y se prueban en ese orden:
+
+| | Camino | Costo | Nota |
+|---|---|---|---|
+| 1 | **Poly Pizza.** Los autos y las armas son de **Quaternius, CC0**, y Poly Pizza los redistribuye en `.glb` por URL directa | **Cero.** No se instala nada | **Ya funcionó en este proyecto**: los dos árboles de la 12R.6 salieron de ahí |
+| 2 | **FBX2glTF**, binario suelto | Una descarga | Si Poly Pizza no tiene el modelo exacto |
+| 3 | **Blender** por línea de comandos | ~400 MB de instalación | Último recurso, y sirve igual para otras cosas |
+
+**Lo que de verdad no hace falta convertir:** el banco tiene **170 archivos
+`.glb`/`.gltf`**. Eso ya cubre el zombi, los esqueletos, Gus, las animaciones
+y todo KayKit. Lo único sin `.glb` son los autos, las armas y el CryptZombie.
+
+### Las tareas
+
+- [ ] **20.1 El adelgazador.** `tools/adelgazar-glb.mjs`: tira las texturas que el estilo mate no usa, baja la que queda y reescribe el `.glb`. Código propio, sin dependencias. **Es la tarea que desbloquea el peso**, y reemplaza al convertidor que creía necesitar
+- [ ] **20.1 bis Los `.fbx`, por el camino 1.** Buscar autos y armas de Quaternius en Poly Pizza como `.glb`. Si falta alguno, recién ahí se evalúa el camino 2
+- [ ] **20.2 La regla de la carpeta.** `_assets/` en `.gitignore` ✅ *hecho el 7/11*. Falta una prueba que falle si alguna ruta del **juego** la menciona (las herramientas de medición sí pueden leerla)
+- [ ] **20.3 Medir antes de elegir.** Con `tools/inspeccionar-glb.mjs` ✅ *hecho el 7/11*, que dice en qué se le va el peso a cada candidato. Las filas van a `ASSET_AUDIT.md`. Hereda la tabla de la 12R.A
+- [ ] **20.4 El zombi estándar.** `skeleton-zombie-mobile.glb`, 100/10. Pasado por la 20.1 tiene que quedar en ~1,2 MB. **Trae sus seis animaciones**: Walk, Run, Swipe, Bite, Stumble, Die
+- [ ] **20.5 El zombi agresivo.** CryptZombie, 120/20. Viene en formato Godot sin un solo `.glb`: es el único que no tiene salida por Poly Pizza, así que decide si hace falta el camino 2 o el 3
 - [ ] **20.6 Los esqueletos.** KayKit_Skeletons, 0,25 a 0,35 MB, CC0. Mini-jefes
 - [ ] **20.7 Gus.** Universal Base Characters + Universal Animation Library, las dos CC0. Buscar el cuerpo y la cara que más se acerquen a `Gus.jpeg` (D-24, cuero negro)
-- [ ] **20.8 El arma de Gus.** Ultimate Gun Pack: revólver o pistola grande. **Entregable: una lámina con los candidatos renderizados, para que Gus elija.** Sólo vienen en `.fbx`, así que depende de la 20.1
+- [ ] **20.8 El arma de Gus.** Ultimate Gun Pack: hay **6 pistolas y 5 revólveres**. **Entregable: una lámina con los once renderizados, para que Gus elija.** Depende de la 20.1 bis
 - [ ] **20.9 Los autos.** Realistic Car Pack, CC0, 7 modelos con taxi, sólo `.fbx`. Son los bloqueadores de la 18.7 y la cobertura de la 17
 - [ ] **20.10 Los efectos.** pvfx-foundry y ExplosionFXFree, en hojas de sprites 2D: fogonazo, impacto, sangre. **Nada de explosiones: la bazooka se fue**
 - [ ] **20.11 Las animaciones.** Zombi: quieto, caminar, correr, atacar, morir. Gus: quieto apuntando, disparar, correr
@@ -517,7 +713,7 @@ cuchillo que se está borrando.
 | ➡️ | 12R.A — Barrido de assets | **Se la lleva la 20.3** |
 | ➡️ | 12R.8 — Vehículos | **Se la lleva la 20.9** (Realistic Car Pack) |
 | ⬜ | 12R.9 — Abandono: barricadas, escombros, bolsas, grafiti | Queda. Y crece: ahora bloquea bocacalles (18.7) |
-| ⬜ | 12R.10 — Composición de la cuadra | Queda. Y crece: cinco tramos en vez de tres |
+| ⬜ | 12R.10 — Composición de la cuadra | Queda. Y crece: siete cuadras en vez de tres |
 | ➡️ | 12R.11 — Gus | **Se la lleva la 20.7** |
 | ➡️ | 12R.12 — Zombis | **Se la llevan la 20.4 a la 20.6** |
 | ➡️ | 12R.13 — Armas en la mano | **Se la lleva la 20.8**, y es sólo una arma |
@@ -634,7 +830,7 @@ una medición previa que lo justifique.**
 - [ ] 13.12 Sesión de 20 minutos: temperatura, batería, degradación
 - [ ] 13.13 Probar en dos teléfonos distintos y dos navegadores
 - [ ] 13.14 Probar con 4G real, no sólo con WiFi
-- [ ] 13.15 **Nueva:** carga del mapa por tramos. 650 m de calle con fachadas a los dos lados no entran de una sola vez. Puede adelantarse a la 18.12 si la medición lo exige
+- [ ] 13.15 **Nueva:** carga del mapa por tramos. 700 m de calle con fachadas a los dos lados no entran de una sola vez. Puede adelantarse a la 18.12 si la medición lo exige
 
 **Los presupuestos que hay que cumplir**
 
@@ -752,21 +948,31 @@ correctas aunque las respuestas no sirvan.
 
 Las que todavía no están cerradas, y la tarea que las va a cerrar.
 
+**Las que dependen de Gus** — no las puedo cerrar yo:
+
+| Decisión | La necesito para | Qué hace falta |
+|---|---|---|
+| **La lista de power-ups** | 19B.1 | Nombre y qué hace, una línea cada uno. Cuanto antes llegue, mejor: la 17 se diseña mejor sabiendo qué va a tener que modificar |
+| **Las direcciones de los controles 1 y 3** | 18.10 | Dos alturas de calle que existan de verdad. Si no, las saco del mapa |
+| **Qué hay en Billinghurst 250** | 18.11 | Qué es el refugio, ahora que la comisaría inventada de D-04 no va |
+| **Cuál es el arma de Gus** | 20.8 | Nada todavía: yo le muestro las once renderizadas y elige |
+
+**Las que cierro yo midiendo:**
+
 | Decisión | Se cierra en | Cómo |
 |---|---|---|
-| Qué cuenta como "quieto", y con cuánta demora | 17.2 | Probándolo en el teléfono: los 0,18 s de frenado por inercia no deberían contar |
+| ~~Qué cuenta como "quieto"~~ | 17.2 | ✅ **Decidido:** joystick en cero, con 0,15 s de retardo. Está escrito en la Fase 17 y se revisa jugando |
 | Si espera a estar encarado antes del primer tiro | 17.3 | Mirándolo: si el primer tiro de cada blanco sale torcido, espera |
 | La cadencia de la pistola | 17.9 | Jugando. Hoy son 1,6 s por zombi |
-| Qué hay en Billinghurst 250 | 18.11 | Decidiendo qué es el refugio, ahora que la comisaría inventada no va |
-| Si el mapa de 650 m necesita carga por tramos | 18.12 | Midiendo las llamadas de dibujo del peor caso |
+| Si el mapa de 700 m necesita carga por tramos | 18.12 | Midiendo las llamadas de dibujo del peor caso |
 | Cómo se marca la ruta en el piso | 18.6 | Probando la franja pintada contra las flechas, desde la cámara a 48° |
-| El pool definitivo de power-ups y su rareza | 19.4 y 19.8 | Jugando las cuatro mejoras seguidas |
+| Qué calle corre norte-sur y qué calle este-oeste | 18.10 | Contra el mapa real, para que ningún tramo quede sobre una calle imposible |
 | Universal Animation Library o KayKit para las animaciones | 20.7 | Poniendo las dos en pantalla al lado de una puerta y un auto |
-| Cuál es el revólver o la pistola de Gus | 20.8 | Renderizando los candidatos, y elige Gus |
-| Si Gus y los zombis llegan a ser `.glb` riggeado (D-22) | 20.4 y 20.7 | Ya está resuelto a favor: el banco los trae |
+| Si hace falta FBX2glTF o Blender | 20.1 bis | Buscando primero los autos y las armas en Poly Pizza, que es gratis |
+| ~~Si Gus y los zombis llegan a ser `.glb` riggeado (D-22)~~ | 20.4 y 20.7 | ✅ **Resuelto a favor:** el banco los trae, y el zombi trae sus seis animaciones |
 
 Las decisiones **ya cerradas** —D-01 a D-21 en el documento 02, D-22 a D-25
-en la bitácora y D-26 a D-34 acá arriba— no se vuelven a discutir salvo que
+en la bitácora y D-26 a D-36 acá arriba— no se vuelven a discutir salvo que
 aparezca un dato nuevo. **D-04 es el ejemplo de qué es un dato nuevo:** se
 reabrió porque la distancia que la justificaba estaba mal medida.
 **D-20 y D-21 quedan superadas por D-32.**
@@ -783,6 +989,10 @@ npm test             # pruebas unitarias
 npm run test:e2e     # pruebas de punta a punta
 npm run build        # compilar
 node tools/captura.mjs [nombre]   # captura del juego corriendo
+
+node tools/recorrido-real.mjs                  # el recorrido real y el trazado ortogonal
+node tools/recorrido-real.mjs --json           # el trazado, para pegar en mission001.js
+node tools/inspeccionar-glb.mjs <archivo.glb>  # en que se le va el peso a un modelo
 ```
 
 | Página | Para qué |

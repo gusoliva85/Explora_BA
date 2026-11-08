@@ -3348,6 +3348,137 @@ las licencias está en
 
 ---
 
+## Segunda pasada, el mismo día: dos cosas que corregí
+
+Gus leyó lo de arriba y respondió tres cosas que cambian el plan. Dos de
+ellas me obligan a corregirme, así que van acá y no en el plan.
+
+### Pedir giros cuadrados no simplificó el aspecto: borró las dos tareas más riesgosas
+
+Gus pidió que los giros sean siempre de 90°, las manzanas cuadradas, y que la
+cuadrícula se guíe por el mapa real sin copiarlo. Es **D-35**.
+
+Yo había escrito que abrir el generador a ángulos arbitrarios (18.1) y
+recalcular las ochavas (18.2) eran *"la tarea más técnica de todo el bloque"*.
+**Las dos se cancelan.** El generador ya exige tramos alineados a un eje —era
+una limitación— y ahora resulta que la limitación era la especificación. Las
+cuatro ochavas de la 12R.3 están hechas para 90°, que es exactamente lo que
+va a haber.
+
+**La lección, y es incómoda:** yo venía tratando la restricción del generador
+como deuda a pagar. Era una decisión de diseño que nadie había tomado
+explícitamente, y cuando se tomó —cuadrícula— resultó que estaba bien. Antes
+de abrir un sistema para que soporte un caso nuevo, conviene preguntar si el
+caso nuevo hace falta.
+
+**Cómo quedó el trazado.** Siete tramos de una cuadra de 100 m, con un control
+en cada esquina: 700 m caminados, 117 s a 6 m/s. El recorrido real se desplaza
+437 m al oeste y 1.413 m al norte, proporción 1 a 3,2; la escalera se desplaza
+100 al oeste y 400 al norte, 1 a 4. Conserva el carácter —se va al norte
+bordeando hacia el oeste— con siete cuadras en vez de dieciocho. Lo calcula
+`tools/recorrido-real.mjs` y lo fijan quince pruebas en `tests/trazado.test.js`,
+entre ellas la que importa: **todos los giros son de 90° o derecho**. Si
+alguien mete un tramo en diagonal, la prueba se pone roja antes de que el
+mundo se arme mal.
+
+Los dos controles nuevos que pidió Gus caen en los tramos 1 y 3, y **les falta
+dirección**. No la invento: el documento 02 advierte que si el cartel no
+coincide con el barrio, cualquier porteño lo nota, y Gus es porteño. Lo cierra
+la tarea 18.10, con el mapa a la vista.
+
+### El convertidor no era un bloqueante, y el diagnóstico estaba mal
+
+Había escrito que faltaba un convertidor por Blender y que era bloqueante
+porque *"más de la mitad del banco no carga"*. Gus pidió buscarle la vuelta.
+Se la busqué midiendo, y la conclusión es que **el problema que describí no
+era el problema que hay**.
+
+Escribí `tools/inspeccionar-glb.mjs` —lee el contenedor GLB y el JSON de
+glTF, sin dependencias— y lo corrí sobre el zombi estándar:
+
+| | |
+|---|---|
+| Peso | 3,97 MB |
+| **Texturas** | **2,75 MB, el 69 %**: tres PNG de 1024 × 1024 |
+| Geometría | 1,05 MB, 14.572 triángulos, 21 huesos |
+| Animación | 0,11 MB, y **seis animaciones ya nombradas** |
+
+**Tres cosas que esto cambia.**
+
+Primero: el peso es un problema de texturas, no de formato ni de geometría. Y
+**Gus se ve a 43 píxeles de alto en el teléfono** —lo midió la 12R.1—, así que
+una textura de 1024 × 1024 es veinticuatro veces más de lo que hace falta. A
+256 × 256, esos 2,75 MB son 0,17.
+
+Segundo: de las tres texturas, dos son un mapa de normales y uno de
+metallic-roughness. **El estilo es low-poly mate** (D-33): no se usan. Tirarlas
+no es una optimización con pérdida, es sacar algo que nunca se iba a dibujar.
+
+Tercero, y es lo mejor: el zombi **ya trae las seis animaciones que la Fase 17
+necesita** —Walk, Run, Swipe, Bite, Stumble, Die— con los nombres puestos. La
+tarea 20.11 se achica sola.
+
+Resultado: 3,97 MB → ~1,2 MB **sin instalar nada**, con un script propio,
+porque quitar imágenes de un `.glb` es cirugía de JSON y de buffers, no
+procesamiento de imagen.
+
+**Y los `.fbx` tampoco son un problema.** Verifiqué los 355: **los 355 son
+Kaydara FBX Binary**, que es el formato que todo convertidor soporta, y pesan
+kilobytes —el taxi 0,08 MB, un banco de plaza 0,02 MB—. Hay tres salidas, y se
+prueban en orden de costo: Poly Pizza primero, que es gratis y **ya funcionó en
+este proyecto** (los dos árboles de la 12R.6 salieron de ahí) y que
+redistribuye los packs de Quaternius —que son los autos y las armas— en `.glb`
+por URL directa; FBX2glTF después; Blender al final.
+
+Y lo que no hace falta convertir: el banco tiene **170 archivos `.glb`/`.gltf`**.
+Eso ya cubre el zombi, los esqueletos, Gus, las animaciones y todo KayKit. Sin
+`.glb` quedan sólo los autos, las armas y el CryptZombie.
+
+**La lección, que es la tercera vez que aparece en este proyecto:** "pesa
+4 MB" no es una medición. Las mediciones de verdad —el sol a 17°, la distancia
+de 1.624 m, estas tres texturas— siempre dijeron algo distinto de lo que yo
+suponía, y siempre a favor.
+
+### Lo que Gus dejó a mi criterio, y cómo lo resolví
+
+**Qué cuenta como "quieto"** (D-28). Queda así, y lo escribo antes de
+escribirlo en código para poder discutirlo mirando el resultado:
+
+> Gus está quieto **cuando el joystick está en cero**, no cuando la velocidad
+> llega a cero. Los 0,18 s que tarda en frenar por inercia cuentan como
+> quieto: el jugador ya soltó, ya decidió. Si esperáramos la velocidad, el
+> primer tiro saldría dos décimas tarde, y en un juego donde doce golpes te
+> matan, dos décimas por parada se sienten como que el personaje duda.
+>
+> Y hay **0,15 s de retardo** antes del primer tiro. No para castigar: para
+> que un roce del pulgar no dispare, y para que se vea a Gus frenar y encarar
+> antes de que salga la bala. Soltar y volver a tocar dentro de esos 0,15 s no
+> cuenta como haber estado quieto.
+
+Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
+
+**El tiro no falla nunca salvo barrera** (D-36), que Gus sí decidió. Esto mata
+la dispersión de la pistola (`spreadDegrees`, hoy 2,5°) y el apuntado asistido
+entero: existía para perdonarle el temblor del pulgar a alguien que apuntaba a
+mano, y ya no hay nadie apuntando a mano. El rayo de `ballistics.js` se queda,
+pero sólo para preguntar **qué hay en el camino**, que es la única pregunta que
+sobrevive. Y está bien que sea así: con dispersión, el jugador que se paró en
+el lugar correcto podía perder igual por azar, y eso rompe lo único que el
+juego le pide. Si el tiro falla tiene que ser porque hay un auto en el medio,
+y eso se ve y se resuelve moviéndose.
+
+### Los power-ups van en dos tiempos
+
+Gus dijo que por ahora el control sólo marca la llegada, y que la lista de
+mejoras la va armando. Así que la Fase 19 se parte: **19A** —el control
+guarda, avisa y deja un gancho— se puede hacer ya y no bloquea nada. **19B**
+—las tres cartas— no se empieza sin la lista, porque una mejora que suma daño
+y una que cambia el tipo de disparo se implementan distinto, y descubrirlo a
+mitad de camino significa rehacerlo. Lo que necesito de Gus está en el plan,
+en la Fase 19; el pool propuesto queda como punto de partida o como algo que
+contradecir.
+
+---
 ## Lo que el cambio se lleva puesto, y hay que decirlo
 
 El documento 01 pone **"decisiones rápidas"** como pilar del juego, y las
