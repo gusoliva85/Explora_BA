@@ -1,0 +1,35 @@
+Te voy a pasar los diferentes power ups que van a existir, estos se dividen en
+* Guerrero: El personaje Gus es un guerrero, ya que golpea con proyectiles físicos, el tiene pistolas, pero pueden existir personajes que tiren hachas, piedras, rifles, o cualquier otra cosa que después se puede definir, estos power ups aplica a lo que usan para atacar y sus efectos
+* Mago: Esta clase de personajes usan elementos mágicos para atacar y usan ráfagas de cosas elementales que pueden ser rayos, flechas mágicas, etc, como son cosas elementales tienen otras propiedades para darle mas variedad al juego y el gameplay
+* Propiedades en general: Aca son propiedades para el personaje que impacta directamente en su uso, estos aplican por igual para la clase de guerrero y mago.
+
+GUERRERO (acumulable a los power ups que ya tiene, se suman)
+* Disparo multiple: Dispara un proyectil adicional justo después de la anterior, pero se aplica -10% de daño base y -15% de velocidad de ataque . La descripción de la habilidad es "Dispara una proyectil más cada vez".
+* Tiro doble: Dispara un proyectil adicional hacia adelante pero reduce el daño en un -25% de daño base. La descripción de la habilidad es "Proyectil hacia adelante +1".
+* Disparos diagonales: Dispara un proyectil adicional diagonalmente hacia adelante hacia la izquierda y la derecha. La descripción de la habilidad es "Proyectiles diagonales +1"
+* Ataque critico (Premium): Aumenta la probabilidad de crit en un 10% y el daño de los críticos en un 40%. La descripción de la habilidad es "¡Aumentó la posibilidad de critar y el daño de los crít"
+* Ataque critico: Aumenta la probabilidad de crit en un 5% y el daño de los crits en un 20% (la mitad de una actualización normal). La descripción de la habilidad es "Aumenta la probabilidad de crit y el daño de los críticos"
+* Sed de sangre: Ganas el 1,5% de la base HP del enemigo cuiando lo eliminas. La descripción de la habilidad es "Absorves HP cuando matas al enemigo" 
+
+MAGO (solo puede tener uno, en caso de elegir otro elemento, el mismo cambia pero no se suman)
+* Disparo Rayo: Al impactar Inflige un 25% de daño adicional por impacto de elemento a los enemigos golpeados por el proyectil, El enemigo impactado brilla de amarillo. La descripción de la habilidad es "Tus ataques causan efecto Rayo"
+* Disparo Hielo: Al impactar Congela los enemigos hasta que sean atacados o durante 2 segundos, Inflige un 10% de daño adicional, no es acumulable, si se vuelve a impactar el contador del daño por la cantidad de tiempo se vuelve a reiniciar, durante la congelacion el enemigo impactado tiene una capa de color celeste simulando el hielo, no es acumulable, si se vuelve a impactar el contador del daño por la cantidad de tiempo se vuelve a reiniciar. La descripción de la habilidad es "Ralentiza a los enemigos"
+* Disparo Veneno: Al impactar El veneno inflige un 35% de daño por segundo al enemigo efectado durante 8 segundos, no es acumulable, si se vuelve a impactar el contador del daño por la cantidad de tiempo se vuelve a reiniciar, durante el efecto el enemigo impactado tiene una capa de color violeta simulando el veneno. La descripción de la habilidad es "Tus ataques causan efecto veneno"
+* Disparo Fuego: Al impactar el fuego inflingue un 18% de daño cada 0.25 segundo al enemigo afectado durante 2 segundos, no es acumulable, si se vuelve a impactar el contador del daño por la cantidad de tiempo se vuelve a reiniciar, durante el efecto el enemigo impactado tiene una capa de color rojo simulando el fuego. La descripción de la habilidad es "Tus ataques provocan un efecto fuego"
+* Círculo de Fuego: Se suman dos bolas de fuego que flotan en circulo al rededor del personaje e infligen el 75% de los daños actuales y aplican el efecto Fuego, Aplica si o si independientemente que efecto tengas. La descripción de la habilidad es "Dos orbes de llama rodean a tu alrededor"
+* Círculo de hielo: Se suman dos bolas de hielo que flotan en circulo al rededor del personaje e infligen el 75% de los daños actuales y aplican el efecto de congelación, Aplica si o si independientemente que efecto tengas. La descripción de la habilidad es "Dos orbes de hielo rodean a tu alrededor"
+* Círculo de veneno: Se suman dos bolas de veneno que flotan en circulo al rededor del personaje e infligen el 75% de los daños actuales y aplican el efecto veneno, Aplica si o si independientemente que efecto tengas. La descripción de la habilidad es "Dos orbes venenosos rodean a tu alrededor"
+* Círculo de Rayo: Se suman dos bolas de rayo que flotan en circulo al rededor del personaje e infligen el 75% de los daños actuales y aplican efecto, Aplica si o si independientemente que efecto tengas. La descripción de la habilidad es "Dos orbes de rayos circulan a tu alrededor"
+
+PROPIEDADES EN GENERAL (acumulable a los power ups que ya tiene, se suman)
+* Rebote: Los proyectiles rebotan hasta 3 veces entre los enemigos cercanos, Pero el daño se reduce en un 30% por rebote. La descripción de la habilidad es "Tus ataques rebotan entre los zombies"
+* Rebote pared: Tus proyectiles rebotan en las paredes, solo rebota 1 sola vez, la siguiente vez que impacte en una pared o no de en el blanco desaparece (-50% de daño después del rebote). La descripción de la habilidad es "Los proyectiles rebotan contra las paredes"
+* Muerte Nova: Los enemigos muertos crean proyectiles, disparando en 8 direcciones equidistantes infligiendo un 30% de daño a cada enemigo impactado. La descripción de la habilidad es "Los enemigos explotan en rayos tras la muerte"
+* Mejora de Ataque (Premium): Aumenta el daño en un 30% del daño de la base (aditivo). La descripción de la habilidad es "¡Ahora puedes hacer un daño más alto!"
+* Mejora de Ataque: Aumenta el daño en un 15% del daño base (aditivo). La descripción de la habilidad es "Aumenta ligeramente tu ataque"
+* Velocidad de Ataque (Premium): Aumenta la velocidad de ataque en un 25% de la velocidad de ataque base (aditivo). La descripción de la habilidad es "¡Ahora puedes atacar más rápido!"
+* Velocidad de Ataque: Aumenta la velocidad de ataque en un 12,5% de la velocidad de ataque base (aditivo). La descripción de la habilidad es "Aumenta ligeramente la velocidad de ataque"
+* HP Boost: Aumenta HP en un 20% de la base máxima HP. La descripción de la habilidad es "¡Máx. HP aumentado!"
+* Sanar: Restaura el 40% de la salud. La descripción de la habilidad es "Restaura parcialmente HP"
+
+Estas tarjetas son aleatoreas, solo respetan el genero (las de guerrero solo aparecen al personaje del tipo guerrero, no a los personajes tipo Mago y viceversa), y las habilidades que son Propiedades en General la pueden visualizar ambos. Solo se puede elegir una tarjeta por cada checkpoint, y si el usuario ya obtuvo la habilidad, no se vuelve a repetir la misma tarjeta durante la partida.

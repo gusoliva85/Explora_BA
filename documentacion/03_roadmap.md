@@ -708,6 +708,7 @@ jugándolo, no sirve nada de lo que viene después.
 - [ ] **17.2 Definir "quieto".** El umbral y la demora. Gus frena en 0,18 s por inercia: hay que decidir si eso cuenta. Propuesta a probar: quieto cuando el joystick está en cero por 0,15 s o más
 - [ ] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36): lo único que impide el tiro es una barrera física, y vale para los dos lados
 - [ ] **17.3 bis Sacar la dispersión** (D-36). `spreadDegrees` a 0 y el apuntado asistido afuera: el tiro no falla por azar
+- [ ] **17.3 ter ¿Rayo o proyectil?** ⚠️ **Se decide acá, no en la 19B.** Hoy el disparo es un rayo instantáneo, y cinco de las quince cartas de Gus —tiro doble, diagonales, rebote, rebote en pared y Muerte Nova— necesitan que la bala sea **un objeto que viaja**. Si la 17 se escribe sobre el rayo, la 19B rehace el disparo entero. Mi propuesta: **el tiro apuntado sigue siendo instantáneo y no falla (D-36), y los proyectiles extra vuelan y sí pueden errar** — que es justo lo que los hace una decisión y no un número. Pero se decide mirando la especificación, no de memoria
 - [ ] **17.4 El blanco se mantiene.** No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista
 - [ ] **17.5 Girar y disparar.** El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco. `rumboForzado` ya existe en `playerController`: se reusa
 - [ ] **17.6 Al moverse, suelta.** Deja de disparar y suelta el blanco, sin arrastre
@@ -846,124 +847,113 @@ de tres cajas tiradas en el piso.
 - [ ] Se puede terminar la misión limpiando los siete tramos
 - [ ] Una cuadra no se siente larga, medido en el teléfono
 
-### 19B — Las cartas · **espera la lista de power-ups de Gus**
+### 19B — Las cartas · **la especificación ya llegó**
 
-> ⏸️ **Esta mitad no se empieza sin la lista.** El sistema no se diseña bien
-> sin saber qué tiene que aplicar: una mejora que suma daño y una que cambia
-> el tipo de disparo se implementan distinto, y descubrirlo a mitad de camino
-> significa rehacerlo. **Lo que necesito de Gus está más abajo.**
+> ✅ **El 8/11 Gus entregó la lista completa**, con números exactos, en
+> [`documentacion/habilidades/Descripcion de las habilidades.txt`](habilidades/Descripcion%20de%20las%20habilidades.txt)
+> y 23 iconos. Ya no falta nada para empezar: falta terminar la 17 y la 18.
 
-- [ ] **19B.1 El sistema.** Una lista de mejoras con id, nombre, texto, familia y cómo se aplica. **Se aplican sobre una capa de modificadores, nunca sobre `balance.js`:** los números base no se tocan, así reiniciar es tirar la capa
-- [ ] **19B.2 Las tres cartas.** Al tocar un control el juego se detiene y saca tres del pool, sin repetir las ya tomadas. Elegir una la aplica y sigue
-- [ ] **19B.3 La acumulación.** Todo suma, nada se pierde durante la partida. Al morir, la capa entera a cero
-- [ ] **19B.4 El pool definitivo**, con el de Gus
-- [ ] **19B.5 La pantalla.** Tres cartas, en vertical, alcanzables con un pulgar
-- [ ] **19B.6 Los iconos, dibujados de cero.** ⚠️ Las imágenes de `documentacion/habilidades/` **salieron de otro juego**, así que son **referencia de diseño y no entran a `public/`**. Modificarlas no las vuelve usables: una versión alterada de una imagen ajena sigue siendo obra derivada. Hay que dibujar iconos **originales en SVG** con el mismo lenguaje —cuadrado, marco verde, fondo claro, una o dos formas planas—, que además pesan nada y escalan solos. Son flechas: es media hora de trabajo, no un problema
+#### Lo que trae la especificación, y es más de lo que pedí
+
+**1. Hay clases de personaje, y eso es nuevo.** Las cartas se dividen en tres
+familias:
+
+| Familia | Para quién | Cuántas | Se acumulan |
+|---|---|---|---|
+| **Guerrero** | Personajes que tiran proyectiles físicos — **Gus** | 6 | Sí, suman |
+| **Mago** | Personajes que tiran elementos | 8 | **El elemento, NO**: elegir otro reemplaza el anterior. Los orbes sí |
+| **Propiedades generales** | Los dos | 9 | Sí, suman |
+
+**Esto encaja con D-41 y conviene verlo.** El juego es ir juntando amigos, y
+cada amigo va a ser un personaje con su clase. Gus es Guerrero; el próximo
+puede ser Mago. **Las clases no son una capa que se agrega a los power-ups:
+son la razón por la que rescatar a alguien cambia cómo se juega.** Eso estaba
+implícito en D-41 y ahora tiene mecánica.
+
+**2. Para la demo, el pool es de 15 cartas y no de 23.** Gus es Guerrero, así
+que las 8 de Mago **no aparecen**. Eso achica la 19B casi a la mitad, y las
+ocho que quedan afuera son justo las más caras: orbes que orbitan, cuatro
+estados elementales con su tinte de color.
+
+**3. Hacen falta cuatro sistemas que hoy no existen:**
+
+| Sistema | Lo piden | Cuesta |
+|---|---|---|
+| **Críticos** | Ataque crítico y su Premium | Bajo: una probabilidad y un multiplicador |
+| **Proyectiles que viajan** | Tiro doble, disparos diagonales, rebote, rebote pared, Muerte Nova | **Alto** — ver la advertencia de abajo |
+| **Estados sobre el zombi** | Los cuatro elementos: daño por segundo, congelación y un tinte de color | Medio, y sólo para Mago |
+| **Robo de vida** | Sed de sangre | Bajo |
+
+#### ⚠️ La advertencia que hay que atender ANTES de la Fase 17
+
+**La especificación dice "proyectil" en todas partes. Hoy el disparo es un
+rayo instantáneo.**
+
+No es lo mismo. Un rayo pregunta *"¿a quién le pego ahora?"* y responde al
+instante; un proyectil es un objeto que viaja, que puede errarle a algo que
+se movió, y que puede rebotar. **Cinco de las quince cartas de Gus necesitan
+que la bala sea un objeto que viaja**: tiro doble, diagonales, rebote, rebote
+en pared y Muerte Nova.
+
+Si la Fase 17 construye el combate automático sobre el rayo instantáneo que
+hay, la 19B va a tener que **rehacer el disparo entero**. Y la decisión no es
+obvia, porque choca con **D-36**:
+
+> D-36 dice que el tiro no falla nunca salvo que haya una barrera. Un
+> proyectil que viaja **sí puede errar** si el zombi se corrió.
+
+**Mi lectura, para discutir y no para dar por cerrada:** las dos cosas
+conviven si se separan *el tiro apuntado* de *los tiros extra*. El tiro
+principal va al blanco elegido y no falla (D-36); los proyectiles extra
+—diagonales, rebotes— vuelan en una dirección y sí pueden errar, que es
+exactamente lo que los hace una decisión y no un número.
+
+Eso hay que decidirlo en la **17.3**, no en la 19B, porque decide cómo se
+escribe el disparo. Está anotado ahí.
+
+**Y una cosa que hay que decir:** `src/combat/projectile.js` se borró en la
+16.3, el mismo día. Era el cohete de la bazooka —uno solo, con radio de
+explosión— y lo que la 19B necesita es otra cosa: muchos, con rebote y
+atenuación. Rehacerlo es más barato que haberlo arrastrado, pero el archivo
+viejo está en Git por si sirve de punto de partida.
+
+#### 🔢 Un problema de números que ya se puede ver
+
+Con los 100 de vida del zombi y los 25 de daño de Gus (D-31), **los aumentos
+de daño sólo se notan cuando cruzan un umbral entero de tiros**:
+
+| Lo que llevás | Daño | Tiros para matar |
+|---|---|---|
+| nada | 25,00 | 4 |
+| 1 Mejora de Ataque (+15 %) | 28,75 | 4 |
+| 2 Mejoras | 32,50 | 4 |
+| **1 Mejora Premium (+30 %)** | **32,50** | **4** ← no cambia nada |
+| Premium + normal | 36,25 | **3** |
+| 3 normales | 36,25 | **3** |
+
+**Una carta Premium de daño, sola, no cambia absolutamente nada**: hacen
+falta tres cartas normales, o una Premium más una normal, para bajar de 4
+tiros a 3. Con 6 controles por partida, eso es medio build para un escalón.
+
+No está roto, y hay dos cosas que lo compensan solas: **los críticos** son
+probabilísticos, así que se sienten siempre, y la **velocidad de ataque** es
+continua. Pero conviene saberlo antes de jugarlo, porque el síntoma —*"elegí
+la carta de daño y no pasó nada"*— es el peor que puede tener un sistema de
+mejoras. Se resuelve en la 19B.9, y las salidas son tres: subir los
+porcentajes, bajar la vida del zombi, o que las de daño siempre vengan
+acompañadas de crítico.
+
+#### Las tareas
+
+- [ ] **19B.1 El sistema.** Una capa de modificadores sobre `balance.js`, que no se toca. Tiene que soportar, desde el principio: **sumas aditivas sobre la base**, **exclusión mutua** (los elementos de Mago), **límite por clase**, y **no repetir** lo ya tomado
+- [ ] **19B.2 Las tres cartas.** Al abrirse la puerta, el juego se detiene y saca tres del pool que corresponde a la clase. Elegir una la aplica y sigue
+- [ ] **19B.3 Críticos.** Probabilidad y multiplicador. Base 0 %, y las cartas lo suben
+- [ ] **19B.4 Estados sobre el zombi** — fuego, hielo, veneno, rayo: daño en el tiempo, congelación y tinte de color. **Sólo si hay un personaje Mago**, así que puede esperar a la Fase 15
+- [ ] **19B.5 La pantalla.** Tres cartas en vertical, con icono, nombre y la descripción que ya escribió Gus
+- [ ] **19B.6 Los iconos, dibujados de cero.** ⚠️ Las imágenes de `documentacion/habilidades/` **salieron de otro juego**: son **referencia de diseño y no entran a `public/`**. Modificarlas no las vuelve usables — una versión alterada de una imagen ajena sigue siendo obra derivada. Hay que dibujar 23 iconos **originales en SVG** con el mismo lenguaje: cuadrado, marco verde, fondo claro, una o dos formas planas
 - [ ] **19B.7 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
 - [ ] **19B.8 Al morir se pierde todo**, con una prueba que lo verifique
-- [ ] **19B.9 El balance de las seis.** Con 6 controles se termina con 6 mejoras: que la última cuadra se sienta frenética sin que el juego se rompa
-
-### Lo que Gus ya empezó a armar
-
-En `documentacion/habilidades/` van doce iconos. Quedan registrados acá para
-que no se pierdan, y porque leídos juntos **contestan solos tres de las
-preguntas que yo había dejado abiertas**.
-
-| Carta | Qué entiendo que hace | Cuesta |
-|---|---|---|
-| **Tiro doble** | Dos balas paralelas | Bajo |
-| **Disparo múltiple** | Dos balas abiertas en ángulo | Bajo |
-| **Disparos diagonales** | Tres balas: una al frente y dos en diagonal | Bajo |
-| **Rebote** | La bala salta de un zombi a otro | Caro |
-| **Rebote pared** | La bala rebota en una pared | El más caro |
-| **Mejora de Ataque** | Más daño. Una flecha | **El más barato de todos** |
-| **Mejora de Ataque (Premium)** | Más daño todavía. Dos flechas | Igual |
-| **Velocidad de Ataque (Premium)** | Dispara más seguido | Bajo |
-| **Disparo Fuego** | Daño de fuego | Medio: pide estados |
-| **Disparo Hielo** | Daño de hielo, y seguro ralentiza | Medio: pide estados |
-| **Disparo Veneno** | Daño que sigue después del impacto | Medio: pide estados |
-| **Muerte Nova** | Al morir, el zombi estalla y daña alrededor | Medio |
-
-### Las tres respuestas que traen los iconos
-
-**1. Sí hay rarezas, y son el mismo icono con una flecha más.** "Mejora de
-Ataque" lleva una flecha y "Mejora de Ataque (Premium)" lleva dos. Eso no es
-una carta distinta: es **la misma carta en otro nivel**. Así que en la 19B.1
-una mejora no es un id, es **un id más un nivel**, y eso simplifica el pool en
-vez de complicarlo: una familia con dos escalones en lugar de dos entradas
-sueltas. Mi pregunta de *"¿hay rarezas?"* queda contestada: **sí, y de la
-forma barata**.
-
-**2. Hay cartas que son sólo un número, y me equivoqué al decir que no.**
-Escribí dos veces que *"ninguna multiplica un número, todas cambian el
-disparo entero"*. Mejora de Ataque y Velocidad de Ataque son exactamente lo
-primero, y son **las más baratas de todo el pool**. Mejor así: un pool donde
-todo cambia el disparo entero sería carísimo y además agotador de jugar. Hace
-falta la mezcla.
-
-**3. Los elementales piden un sistema que todavía no existe.** Fuego, hielo y
-veneno no son daño: son **estados sobre el zombi** —quemarse, ralentizarse,
-envenenarse— que duran en el tiempo. El zombi hoy no tiene dónde guardar eso.
-Es una capa nueva en `zombie.js`, y tiene **una consecuencia que hay que
-atender en la 19A**:
-
-> Un zombi envenenado puede **morirse solo, lejos y sin que el jugador lo
-> vea**. El contador de la esclusa tiene que enterarse igual, porque si no, la
-> puerta no abre y el jugador busca un zombi que ya está muerto. El contador
-> cuenta **vivos**, no **matados por un disparo**, y eso hay que escribirlo
-> ahora que se sabe.
-
-### Y la explosión, por tercera vez
-
-**Muerte Nova** es un estallido al morir: daño en un radio alrededor del
-zombi. Eso es, exactamente, `alcanzadosPorExplosion()` de
-`src/combat/explosion.js` — el archivo que hoy la Fase 16.3 borra entero.
-
-Escribí hace unas horas que *"si la próxima vuelta agranda la lista de cosas
-que hay que salvar, conviene desconfiar de la mecánica"*. Esta vez la agranda
-una carta, no una mecánica, y la regla igual aplica a medias: **no se rescata
-ahora**. La 16.3 borra la explosión como está planeado, y si Muerte Nova
-sobrevive al pool definitivo, la 19B la escribe de nuevo contra el combate
-nuevo, que no se parece en nada al de la bazooka. Reconstruir veinte líneas
-es más barato que arrastrar un archivo muerto cuatro fases.
-
-### Lo que necesito de Gus para la 19B
-
-No hace falta que esté completo ni prolijo. Con esto alcanza para empezar, y
-**cuanto antes llegue, mejor, porque la 17 se puede diseñar sabiendo qué va a
-tener que modificar**:
-
-| Lo que sirve | Por qué |
-|---|---|
-| **El nombre y qué hace**, en una línea cada uno | Es lo único imprescindible |
-| **Cuántas quiere en total** | Con 6 controles, menos de 12 se repite rápido; más de 25 no se alcanza a ver en una partida |
-| **Si alguna cambia *cómo* se juega**, no sólo un número | Perforante, abanico o rebote cuestan mucho más que "+10 de daño", y conviene saberlo antes |
-| **Si alguna puede salir dos veces** y acumularse con ella misma | Decide si el pool se agota o no |
-| **Si las tres de disparo múltiple suman o se reemplazan** | Es la que más urge: cambia la arquitectura del sistema, no un número |
-| ~~Si alguna es "rara"~~ | ✅ **contestado por los iconos**: hay nivel normal y Premium, que es la misma carta con una flecha más |
-
-Lo que **no** necesito: números exactos, iconos, ni textos finales. Los
-números los termino yo midiendo contra los 100 de vida del zombi, que es lo
-que decide si una mejora se nota o no.
-
-**El pool propuesto, mientras tanto.** Es para que Gus tenga de dónde partir
-o qué contradecir, no una decisión tomada. Las de daño están medidas contra
-los 100 de vida del zombi normal, porque lo que importa no es el número sino
-**cuántos tiros hacen falta**:
-
-| Familia | Carta | Efecto | Por qué ese número |
-|---|---|---|---|
-| Daño | Mano firme | 25 → 34 de daño | Baja de 4 tiros a **3** |
-| Daño | Calibre grueso | 25 → 50 de daño | Baja a **2** tiros. Carta fuerte: debería ser rara |
-| Cadencia | Gatillo liviano | −20 % de espera entre tiros | Mata más rápido sin matar en menos tiros |
-| Vida | Aguante | +30 de vida máxima, y cura todo | 120 → 150: de 12 golpes a 15 |
-| Defensa | Cuero grueso | −20 % de daño recibido | 10 → 8 por golpe: de 12 golpes a 15 |
-| Disparo | Perforante | La bala atraviesa y pega al de atrás | Cambia *cómo* se pelea: premia alinearlos |
-| Disparo | Doble tiro | Dos balas por disparo, más dispersión | El doble de daño de cerca, menos de lejos |
-| Disparo | Abanico | Tres balas en cono | Para los grupos. Castiga el tiro largo |
-| Alcance | Vista larga | +8 m de alcance | Permite empezar a tirar antes de que lleguen |
-| Utilidad | Segundo aire | +1 de vida por segundo estando quieto | Devuelve la curación, pero atada a quedarse quieto |
-| Utilidad | Carnicero | Cada muerte cura 5 | Premia aguantar en vez de correr |
+- [ ] **19B.9 El balance de las seis**, empezando por el problema de los umbrales de arriba
 
 **Criterio de salida de la 19B**
 
@@ -1406,7 +1396,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 
 | Decisión | La necesito para | Qué hace falta |
 |---|---|---|
-| **La lista de power-ups** | 19B.1 | Nombre y qué hace, una línea cada uno. Cuanto antes llegue, mejor: la 17 se diseña mejor sabiendo qué va a tener que modificar |
+| ~~La lista de power-ups~~ | 19B.1 | ✅ **Entregada el 8/11**, completa y con números: 23 cartas en `documentacion/habilidades/`. Y trajo algo que no pedí: **clases de personaje** |
 | **Cuál es el arma de Gus** | 20.8 | Nada todavía: yo le muestro las once renderizadas y elige |
 
 **Las que cierro yo midiendo:**
@@ -1415,6 +1405,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 |---|---|---|
 | ~~Qué cuenta como "quieto"~~ | 17.2 | ✅ **Decidido:** joystick en cero, con 0,15 s de retardo. Está escrito en la Fase 17 y se revisa jugando |
 | Si espera a estar encarado antes del primer tiro | 17.3 | Mirándolo: si el primer tiro de cada blanco sale torcido, espera |
+| **Si el disparo es un rayo o un proyectil que viaja** | 17.3 ter | Contra la especificación de power-ups: cinco cartas necesitan proyectil. Es la decisión más cara de la 17 |
 | La cadencia de la pistola | 17.9 | Jugando. Hoy son 1,6 s por zombi |
 | Si el mapa de 700 m necesita carga por tramos | 18.12 | Midiendo las llamadas de dibujo del peor caso |
 | Cómo se marca la ruta en el piso | 18.6 | Probando la franja pintada contra las flechas, desde la cámara a 48° |
