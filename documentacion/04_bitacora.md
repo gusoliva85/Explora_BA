@@ -3770,6 +3770,129 @@ lado. Y las cuatro veces alcanzó con una herramienta de treinta líneas para
 saberlo. Vale más escribir la herramienta que discutir la intuición.
 
 ---
+## Quinta pasada: la puerta. Una mecánica que se come un problema técnico
+
+Gus propuso cambiar la barricada de autos que explota por una **puerta
+corrediza** que además **se cierra a tus espaldas**, y preguntó si servía o si
+había que buscar otra cosa.
+
+Sirve, y por una razón más específica que "queda mejor".
+
+### Lo que la puerta arregla, y no es estético
+
+En la cuarta pasada quedó escrita una lista de cuatro trampas de construir el
+mundo por tramos. La segunda era la fea:
+
+> *No se libera en el control: se libera dos cuadras atrás. La cámara ve
+> para atrás, así que liberar lo que todavía se ve deja un agujero en
+> pantalla.*
+
+Con la barricada que explota, el paso quedaba **abierto para siempre** después
+de la explosión. O sea que el jugador podía volver, y liberar la cuadra de
+atrás había que **adivinarlo**: medir una distancia, elegir un umbral, y
+confiar en que nadie caminara para atrás en el momento equivocado. Un
+heurístico, con su caso raro esperando.
+
+**Con la puerta hay un evento: se cerró.** Liberar deja de ser una apuesta y
+pasa a ser una consecuencia, que se puede escribir en una prueba. Y la puerta
+cerrada **es, literalmente, la tapa del agujero**: el jugador no ve el vacío
+porque hay una puerta de acero donde estaba la cuadra.
+
+La mecánica no le agrega un problema a la parte técnica: **se come uno**. Eso
+es raro y vale la pena anotarlo, porque lo habitual es al revés.
+
+Y de yapa es más barata de dibujar: una malla con una animación de posición,
+contra dos autos, escombros y un efecto de partículas.
+
+### El número de los 20 m ya existía
+
+La puerta se cierra cuando el jugador está 20 m adentro, y el número no es a
+ojo. La cámara se sienta **7 m por detrás de Gus** con la distancia por
+defecto, y hasta **14,4 m** cuando el jugador la aleja al máximo de 26.
+Pasados esos 14,4 m la cuadra anterior queda fuera de cuadro y se puede
+liberar sin que se vea nada. Veinte da margen.
+
+Lo lindo es que el mismo número sirve para las dos cosas: **es el punto donde
+se puede liberar la memoria y el punto donde se cierra la puerta**. No hay dos
+umbrales que mantener sincronizados, hay uno.
+
+Y regala unos segundos de retirada, que es la única que el juego ofrece: una
+vez cerrada, con el combate automático —donde moverse es lo único que salva—
+no hay para dónde escapar salvo hacia adelante.
+
+### La contención, que apareció buscando una excusa y terminó ordenando el juego
+
+Una puerta corrediza motorizada en el medio de una calle de Boedo no se
+explica sola. Se eligió que sea una **barrera de contención del ejército**:
+están sellando la ciudad cuadra por cuadra para frenar la infección. Es
+**D-43**.
+
+Empezó como una excusa para la puerta y terminó haciendo algo más grande, que
+es **arreglar la parte más arbitraria del diseño**. Las bocacalles bloqueadas
+de D-34 eran lo más difícil de defender de todo el plan: autos cruzados por
+todos lados porque el juego necesita que vayas derecho. Con la contención
+**dejan de ser un truco y pasan a ser el mismo operativo visto de costado**, y
+encima explica por qué están puestos con prolijidad en vez de amontonados.
+
+Tres reglas que eran de videojuego pasan a ser una sola idea del mundo:
+
+| La regla | Era | Es |
+|---|---|---|
+| No se pasa hasta matarlos a todos | Una puerta de videojuego | El protocolo de contención |
+| No se puede volver atrás | Una limitación técnica | Lo que hace una esclusa |
+| Las bocacalles tapadas | Autos puestos a propósito | La misma operación, en los costados |
+
+Y no agrega tareas: le da criterio a dos que ya existen, la 12R.9 y la 18.7.
+Mismo tipo de valla, misma gama de pintura, algún cartel del operativo.
+
+**Lo que no entra ahora:** de dónde viene el ejército, si hay radio, si hay
+sobrevivientes. La contención se cuenta **con lo que se ve** y nada más.
+Contarla con texto es Fase 15, con el resto de la campaña.
+
+### La explosión, por segunda vez en el día
+
+A la mañana la explosión iba a morir con la bazooka. Al mediodía la rescaté,
+porque la barricada explotaba. A la tarde vuelve a morir, porque la puerta no
+explota nada. Y con ella se va otra vez el pack `ExplosionFXFree`.
+
+Dos cambios de opinión sobre el mismo archivo en un día es suficiente para
+preguntarse si el método está mal. Creo que no, y la razón está en la
+dirección: **cada vez que la mecánica se simplificó, la lista de rescate se
+achicó**. La puerta hace menos cosas que la barricada y por eso es mejor. La
+regla que me llevo: si la próxima vuelta **agranda** la lista de cosas que hay
+que salvar de la basura, conviene desconfiar de la mecánica nueva, no del
+plan.
+
+Lo que no cambió nunca es `objetivoAutomatico()`, que hay que rescatar igual,
+y por un motivo que no tiene nada que ver con la bazooka ni con la puerta: no
+tenía por qué vivir ahí. Vive ahí porque la bazooka fue quien lo necesitó
+primero. **En un borrado grande, lo que se pierde no es el código que uno
+recuerda: es el que quedó guardado en el lugar equivocado.**
+
+### Dos cosas que la puerta obliga a decidir, y quedan decididas
+
+**Al morir se reaparece del lado de adentro.** Al principio del tramo en
+curso, nunca del otro lado de la puerta, porque esa cuadra ya no existe en
+memoria. Parece obvio escrito así; no lo era antes de que las cuadras se
+destruyeran.
+
+**Y no hay retirada.** Con la puerta cerrada atrás y las bocacalles tapadas,
+el único escape es hacia adelante, dentro de los 100 m del tramo. Con el
+combate automático —frenar para disparar, moverse para huir— eso achica el
+espacio táctico de verdad. Es más tenso y es lo que Gus pidió, pero es un
+cambio real y hay que mirarlo jugando: si una cuadra se vuelve injusta, lo que
+se toca es la cantidad de zombis (19A.11), no la puerta.
+
+### Una regla que no hay que romper después
+
+La ida sin vuelta dejó de ser una decisión de juego y pasó a ser un cimiento.
+Si alguna vez se permite volver a una cuadra ya limpiada —por una misión, por
+un atajo, por lo que sea— se vuelve a pagar entero el costo que D-42 ahorra:
+histéresis en los bordes, estado que recordar, y el mapa de 700 m otra vez sin
+entrar en un teléfono. Queda anotado en D-42 con una advertencia, porque dentro
+de seis meses va a parecer una limitación caprichosa y no lo es.
+
+---
 ## Lo que el cambio se lleva puesto, y hay que decirlo
 
 El documento 01 pone **"decisiones rápidas"** como pilar del juego, y las
@@ -3812,7 +3935,7 @@ tenerla explícita para no abrirlas sin motivo:
 | `visual/paleta.js` | Los 58 colores medidos. Todo asset nuevo pasa por acá (D-33) |
 | La cámara de la 12R.1 | 48°, 15 m y la mira 3 m adelante, medidos. **No sigue al blanco del disparo automático** (D-39): una cámara que gira sola rompe la medición de cuánta calle se ve por delante |
 | El formato de Gus | Está bien y gusta (D-39). Es la regla de escala y de acabado de todo lo que entre |
-| `combat/explosion.js` | Iba a morir con la bazooka. **La barricada lo necesita** (D-37): cambia de dueño, no se borra |
+| `combat/explosion.js` | **Muere con la bazooka después de todo.** Lo rescaté cuando el control era una barricada que explotaba; con la puerta corrediza (D-37) no explota nada. Lo único que se salva de ahí es `objetivoAutomatico()` |
 | Todo lo de la 12R.0 a la 12R.7 | Ocho tareas terminadas y medidas. Con D-35 ya no hace falta ni retocar las ochavas |
 
 ---
@@ -3841,7 +3964,9 @@ tenerla explícita para no abrirlas sin motivo:
 | 19B | El pool definitivo de power-ups y su rareza (D-32) | Jugando las seis mejoras seguidas, de un control al siguiente |
 | 20 | Si el Gus nuevo se reconoce como el de hoy (D-39) | Puestos uno al lado del otro. Si no se parece, no entra |
 | 18 | Cuántas cuadras tiene que haber vivas a la vez (D-42) | Midiendo con `tools/medir-memoria.mjs`. La ventana de tres es la hipótesis: la anterior, la actual y la siguiente |
-| 18 | Cómo se reparte en varios frames el armado de una cuadra (D-42) | Que no se note un tirón al abrirse la barricada, que es el momento más visible de la partida |
+| 18 | Cómo se reparte en varios frames el armado de una cuadra (D-42) | Que no se note un tirón al abrirse la puerta, que es el momento más visible de la partida |
+| 19A | Si sin retirada una cuadra se vuelve injusta (D-37) | Jugando. Si pasa, se toca la cantidad de zombis, no la puerta |
+| 20 | Cómo es la puerta de contención (D-37, D-43) | Modelándola: cruza 16 m, se desliza, y tiene que leerse como militar y no como portón de garaje |
 | 20 | Universal Animation Library o KayKit para las animaciones | Poniendo las dos en pantalla al lado de una puerta de 2,10 m y un auto |
 | 20 | Cuál es el revólver o la pistola de Gus (D-29) | Renderizando los candidatos del Ultimate Gun Pack, y elige Gus |
 

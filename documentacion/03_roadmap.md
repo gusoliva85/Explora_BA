@@ -10,8 +10,9 @@
 > ⚠️ **El 7 de noviembre el juego cambió de forma.** Se van los ítems, la
 > bazooka, el cuchillo, la munición, caminar y **todos** los botones de
 > acción; el combate pasa a ser automático; el recorrido pasa a ser el real
-> de Buenos Aires en cuadrícula; **cada control es una barricada que no abre
-> hasta que no quede un zombi vivo en el tramo**; la progresión se mueve a
+> de Buenos Aires en cuadrícula; **cada control es una esclusa del ejército que
+> no abre hasta que no quede un zombi vivo en el tramo, y que se cierra a tus
+> espaldas**; la progresión se mueve a
 > cartas en los controles; y la meta es la casa de Sergio, el amigo al que
 > Gus va a buscar.
 > Está todo en [**el cambio del 7 de noviembre**](#-el-cambio-del-7-de-noviembre),
@@ -48,7 +49,7 @@ entero: de la vista, de la lógica, del balance, del mapa y del HUD.
 **Cuidado con esto:** `CHECKPOINT_DROP` es lo que hoy hace que llegar a un
 control sirva para algo. Si se saca y no se pone nada, los controles quedan
 siendo sólo un punto de guardado hasta que llegue la **Fase 19A**, que los
-convierte en barricadas. Es aceptable y es temporal, pero hay que saberlo
+convierte en esclusas. Es aceptable y es temporal, pero hay que saberlo
 mientras se prueba: entre la 16 y la 19A el juego va a ser más pobre que hoy,
 y va a parecer que el cambio salió mal cuando lo que pasa es que falta la
 mitad.
@@ -69,7 +70,7 @@ verde con las cuatro pruebas de arriba borradas y ninguna otra rota.
 | 🔄 | **16 — La poda** | ⬅️ **lo que estamos haciendo** |
 | ⬜ | 17 — Combate automático | Depende de la 16 |
 | ⬜ | 18 — El recorrido real | Depende de la 16 |
-| ⬜ | 19A — **La barricada** | **El corazón del juego nuevo** (D-37). Va con la 18 |
+| ⬜ | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Va con la 18 |
 | ⏸️ | 19B — Las cartas de power-up | **Espera la lista de mejoras de Gus** |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
@@ -103,14 +104,14 @@ comisaría, gana o pierde, y el récord sobrevive a cerrar la pestaña.
 
 El juego deja de ser *un shooter con inventario y botones que corre hasta la
 meta* y pasa a ser **limpiar siete cuadras, una por una**: en cada una hay una
-barricada que no abre hasta que no quede un zombi vivo, y para matar hay que
+puerta que no abre hasta que no quede un zombi vivo, y para matar hay que
 frenar, porque moverse y disparar no se pueden a la vez. La única decisión del
 jugador es *dónde pararse y cuánto tiempo*. Y la razón para hacerlo es ir a
 buscar a Sergio.
 
-### Las diecisiete decisiones nuevas
+### Las dieciocho decisiones nuevas
 
-Numeradas **D-26 a D-42**, porque D-01 a D-21 son del documento 02 y D-22 a
+Numeradas **D-26 a D-43**, porque D-01 a D-21 son del documento 02 y D-22 a
 D-25 son de la 12R.
 
 #### 🔴 D-26 — El recorrido es el real, comprimido a siete cuadras
@@ -229,22 +230,62 @@ auto en el medio — y eso el jugador lo ve y lo puede resolver moviéndose.
 **La cobertura vale para los dos lados** (tarea 17.3): si un árbol te tapa al
 zombi, el mismo árbol te tapa a vos.
 
-#### 🔴 D-37 — El control es una barricada, y se abre matando a todos los zombis del tramo
+#### 🔴 D-37 — El control es una esclusa de contención, y se abre matando a todos los zombis del tramo
 
 **Esta es la decisión más grande de todo el cambio.** Las otras ajustan cómo
 se juega; ésta define **qué es el juego**.
 
-**Qué dice.** El control deja de ser una luz en el piso y pasa a ser una
-**barricada de autos que corta la calle entera**. Al llegar:
+> 📌 **Esta decisión se escribió dos veces el mismo día.** La primera versión
+> era una barricada de autos que explotaba. La reemplaza una **puerta
+> corrediza** que además **se cierra atrás**. El porqué del cambio está más
+> abajo, en *"por qué la puerta le gana a la barricada"*, y no es estético:
+> convierte una adivinanza en un evento.
 
-1. Si **quedan zombis vivos** en el tramo, la barricada está completa y no se
+**Qué dice.** El control es una **barrera de contención del ejército**: una
+puerta corrediza que cruza los 16 m de calle —calzada y las dos veredas— y
+que forma parte de un operativo que está **sellando la ciudad cuadra por
+cuadra** para frenar la infección. Al llegar:
+
+1. Si **quedan zombis vivos** en el tramo, la puerta está cerrada y no se
    pasa. Aparece un cartel de prohibido y un texto: *no podés pasar hasta que
    mates a todos los zombis*.
 2. El jugador vuelve, los busca y los mata.
-3. Cuando **no queda ninguno vivo en el tramo**, los dos autos del medio
-   **explotan**, salen despedidos hacia los costados y dejan el paso libre.
-4. Se sigue al tramo siguiente, y la cuenta arranca de cero: el tramo 2 son
-   los zombis que hay entre el control 1 y el control 2.
+3. Cuando **no queda ninguno vivo en el tramo**, la puerta **se desliza y
+   abre**.
+4. Se cruza, y **a los 20 m la puerta se cierra sola a tus espaldas**. A esa
+   cuadra no se vuelve nunca más.
+5. La cuenta arranca de cero: el tramo 2 son los zombis que hay entre el
+   control 1 y el control 2.
+
+**Por qué 20 m, y no al instante.** Es un número que ya hacía falta por otro
+motivo, así que sale gratis. La cámara se sienta **7 m por detrás de Gus**, y
+hasta **14,4 m** cuando el jugador la aleja al máximo. Recién pasados esos
+14,4 m la cuadra anterior queda fuera de cuadro y se puede liberar sin que se
+vea el vacío (D-42). Veinte da margen. Y de paso regala unos segundos para
+volver si entraste mal parado, que es la única retirada que el juego ofrece.
+
+**Por qué es el ejército y no una puerta cualquiera.** Una puerta motorizada
+en el medio de una calle de Boedo necesita una explicación o se lee como una
+pieza del juego y no del mundo. La contención la da entera y de una sola vez:
+explica por qué hay una barrera, por qué sólo abre con la cuadra limpia —es
+el protocolo— y por qué se cierra atrás —para que no vuelva a entrar—. Y
+agrega historia gratis: **Gus cruza una ciudad que lo está encerrando mientras
+busca a Sergio** (D-41, D-43).
+
+**Por qué la puerta le gana a la barricada que explotaba.**
+
+| | Barricada que explota | Puerta que se cierra |
+|---|---|---|
+| Cuándo se libera la cuadra de atrás | **Hay que adivinarlo** con una distancia. Una vez que explotó, el paso queda abierto y el jugador *podría* volver | **Es un evento**: la puerta se cerró. Determinista y comprobable con una prueba |
+| El vacío de la cuadra liberada | El hueco de la explosión **deja ver** lo que ya no existe | **La puerta tapa el agujero.** Resuelve sola la trampa que había que resolver a mano |
+| Costo de dibujo | Dos autos, escombros y un efecto | **Una malla y una animación de posición** |
+| Credibilidad | Muy alta en una invasión | Alta, con la contención que la explica |
+
+El punto dos es el que decide. En la lista de trampas de D-42, la segunda era
+*"no se libera en el control, se libera dos cuadras atrás, porque la cámara
+ve para atrás y liberar lo que todavía se ve deja un agujero en pantalla"*.
+**La puerta cerrada ES la tapa de ese agujero.** La mecánica se come el
+problema técnico en vez de agregarle uno.
 
 **En qué convierte al juego.** Dejaba de ser *"llegá a Billinghurst"* y pasa a
 ser **"limpiá siete cuadras, una por una"**. El recorrido deja de ser una
@@ -258,18 +299,28 @@ de adorno; esta regla lo hace obligatorio.
 
 | | |
 |---|---|
-| **La misión se alarga mucho.** | Hoy hay ~24 zombis en todo el mapa, unos 3 por tramo. Con la barricada, la población por tramo pasa a ser la perilla que decide cuánto dura cada cuadra, y "más frenético" quiere más zombis. De 2 minutos puede irse a 10 o 15 |
-| **El último zombi escondido.** | Buscar al que falta es la frustración clásica de este tipo de puerta. **No se puede dejar sin resolver**: hace falta un contador en pantalla y, cuando la barricada te frena, que la brújula apunte al zombi vivo más cercano en vez de al control |
-| **Un zombi inalcanzable traba la partida para siempre.** | Con las bocacalles tapadas (D-34), un zombi que aparezca en un hueco cerrado no se puede matar y la barricada no abre nunca. Los puestos de aparición tienen que estar sobre la ruta caminable, y lo tiene que verificar una prueba, no el ojo |
+| **La misión se alarga mucho.** | Hoy hay ~24 zombis en todo el mapa, unos 3 por tramo. Con la esclusa, la población por tramo pasa a ser la perilla que decide cuánto dura cada cuadra, y "más frenético" quiere más zombis. De 2 minutos puede irse a 10 o 15 |
+| **El último zombi escondido.** | Buscar al que falta es la frustración clásica de este tipo de puerta. **No se puede dejar sin resolver**: hace falta un contador en pantalla y, cuando la puerta te frena, que la brújula apunte al zombi vivo más cercano en vez de al control |
+| **Un zombi inalcanzable traba la partida para siempre.** | Con las bocacalles tapadas (D-34), un zombi que aparezca en un hueco cerrado no se puede matar y la puerta no abre nunca. Los puestos de aparición tienen que estar sobre la ruta caminable, y lo tiene que verificar una prueba, no el ojo |
 
 **Y hay un hallazgo del código que convierte esto en condición previa.**
 Ver la Fase 19A: hoy un zombi del que te alejás **desaparece para siempre sin
-morir**. Mientras eso siga así, la barricada no puede abrir nunca.
+morir**. Mientras eso siga así, la puerta no puede abrir nunca.
 
-**Lo que esto rescata de la basura.** En el plan anterior la Fase 16.3 borraba
-la bazooka entera, incluida `src/combat/explosion.js` y los efectos de
-explosión. **La barricada necesita exactamente eso.** Se corrige: la
-explosión no se borra, cambia de dueño.
+**Y una cosa más, que cuesta dos líneas y conviene que estén escritas:** al
+morir se reaparece **del lado de adentro** de la última puerta cruzada, al
+principio del tramo en curso. No del lado de afuera, porque esa cuadra ya no
+existe en memoria.
+
+**Corrección: la explosión vuelve a morir.** Hace unas horas escribí que la
+barricada rescataba `src/combat/explosion.js` de la poda, porque los autos
+explotaban. **Con la puerta no explota nada.** Así que la lista de rescate de
+la Fase 16.3 vuelve a tener un solo elemento, `objetivoAutomatico()`, y
+`ExplosionFXFree` vuelve a quedar sin uso.
+
+Es la segunda vez en el día que cambio de opinión sobre el mismo archivo, y
+queda escrito a propósito: **la dirección correcta es la que borra más**. La
+puerta hace menos cosas que la barricada, y por eso es mejor.
 
 #### 🟡 D-38 — La brújula es permanente, y es protagonista
 
@@ -282,7 +333,7 @@ que rota y los metros al objetivo, y ya se muestra siempre que haya objetivo.
 Lo que falta es tamaño y presencia —hoy el glifo mide 15 px, que es menos que
 el texto de al lado— y el nombre de la calle.
 
-**Y gana un trabajo nuevo por D-37:** cuando la barricada frena al jugador, la
+**Y gana un trabajo nuevo por D-37:** cuando la puerta frena al jugador, la
 flecha deja de apuntar al control y **apunta al zombi vivo más cercano**. Sin
 eso, "matá a todos" es una búsqueda a ciegas.
 
@@ -334,7 +385,7 @@ ahí para que no se pierdan.
 **Esto cierra la decisión abierta 18.11**, que era qué hay en Billinghurst
 250. Ya no hay comisaría inventada, ni hace falta inventar nada.
 
-#### 🔴 D-42 — El mundo se construye por tramos, y la barricada es lo que lo hace fácil
+#### 🔴 D-42 — El mundo se construye por tramos, y la esclusa es lo que lo hace fácil
 
 **Gus propuso** construir sólo el tramo en el que está el jugador y liberar el
 anterior al pasar el control, en vez de tener el mapa entero vivo todo el
@@ -389,20 +440,63 @@ viva a la vez:
 **Y acá está el regalo que hizo Gus sin darse cuenta.** Normalmente el
 streaming es difícil porque el jugador puede volver: hay que cargar y
 descargar en las dos direcciones, con histéresis para que no parpadee en el
-borde. **Con la barricada de D-37 el recorrido es de ida.** Una vez que el
-control se abrió y se pasó, a esa cuadra no se vuelve nunca. O sea que se
-carga sólo hacia adelante y se libera sólo hacia atrás, sin histéresis y sin
-casos raros. **La mecánica que eligió por razones de juego vuelve trivial la
-optimización.** Eso no se planifica, se aprovecha.
+borde. **Con la puerta de D-37 el recorrido es de ida.** Una vez que el
+control se abrió, se cruzó y la puerta se cerró, a esa cuadra no se vuelve
+nunca. Se carga sólo hacia adelante y se libera sólo hacia atrás, sin
+histéresis y sin casos raros. **La mecánica que eligió por razones de juego
+vuelve trivial la optimización.** Eso no se planifica, se aprovecha.
+
+**Y con la puerta, además, el disparador deja de ser una heurística.** La
+primera versión de D-37 —la barricada que explotaba— dejaba el paso abierto
+para siempre, así que liberar la cuadra de atrás había que decidirlo midiendo
+distancias y esperando que el jugador no volviera. Con la puerta hay un
+evento: *se cerró*. Liberar pasa a ser una consecuencia, no una apuesta, y se
+puede verificar con una prueba en vez de con el ojo.
+
+> ⚠️ **Y esto hay que no romperlo después.** Si alguna vez se permite volver
+> a una cuadra ya limpiada —por una misión, por un atajo, por lo que sea— se
+> vuelve a pagar entero el costo que esta decisión ahorra. La ida sin vuelta
+> no es una limitación del juego: es el cimiento de que el mapa entre en un
+> teléfono.
 
 **Las cuatro cosas que hay que cuidar, y ninguna es opcional:**
 
 | | |
 |---|---|
 | **La colisión se libera con la geometría** | Si se destruye una fachada y su caja queda, el jugador choca contra una pared que no existe. Es el peor error posible porque no se ve |
-| **No se libera en el control, se libera dos cuadras atrás** | La cámara ve 59 m por delante, así que parado en el control se ve la cuadra siguiente **y** la anterior. Liberar lo que todavía se ve deja un agujero en pantalla |
-| **No se construye en un solo frame** | Armar una cuadra de golpe congela el juego justo cuando explota la barricada. La cuadra siguiente se construye **mientras se juega la actual**, repartida en varios frames |
+| ~~No se libera en el control~~ ✅ **resuelta por D-37** | Era la trampa fea: la cámara ve para atrás, y liberar lo que todavía se ve deja un agujero. **La puerta cerrada es la tapa de ese agujero**, y el momento de liberar deja de ser una distancia adivinada para ser un evento: puerta cerrada y 20 m adentro |
+| **No se construye en un solo frame** | Armar una cuadra de golpe congela el juego justo cuando se abre la puerta, que es el momento más visible de la partida. La cuadra siguiente se construye **mientras se juega la actual**, repartida en varios frames |
 | **Destruir de verdad, no soltar la referencia** | Hay que destruir entidades, materiales y mallas, o la memoria sube con cada cuadra. Lo verifica la 13.11, que mide diez reinicios seguidos |
+
+#### 🔵 D-43 — La ciudad se está sellando cuadra por cuadra
+
+**Qué dice.** El operativo que explica las puertas de D-37: el ejército está
+**cerrando la ciudad por cuadras** para contener la infección. Cada control es
+una esclusa que sólo abre con el tramo limpio y se vuelve a cerrar detrás.
+
+**Por qué es una decisión y no un adorno.** Convierte tres reglas arbitrarias
+del juego en una sola idea del mundo:
+
+| La regla | Antes era | Ahora es |
+|---|---|---|
+| No se pasa hasta matarlos a todos | Una puerta de videojuego | El protocolo de contención |
+| No se puede volver atrás | Una limitación técnica | Lo que hace una esclusa |
+| Las bocacalles están tapadas (D-34) | Autos puestos a propósito | La misma operación, en los costados |
+
+**Lo mejor es lo que le hace a D-34.** Las bocacalles bloqueadas eran la parte
+más arbitraria del diseño: autos cruzados por todos lados porque el juego
+necesita que vayas derecho. Con la contención **dejan de ser un truco y pasan
+a ser el mismo operativo visto de costado**, y encima explica por qué están
+tan prolijamente puestos.
+
+**Qué cambia en el arte, y es poco:** las puertas, y un vocabulario coherente
+para los bloqueos — vallas del mismo tipo, pintura de la misma gama, algún
+cartel de la operación. Eso es tarea de la 12R.9 y de la 18.7, que ya existen;
+no agrega tareas, les da un criterio.
+
+**Y qué NO entra ahora.** De dónde viene el ejército, si hay radio, si hay
+sobrevivientes: nada. La contención se cuenta **con lo que se ve**, y nada
+más. Contarla con texto es Fase 15, junto con el resto de la campaña de D-41.
 
 #### 🔴 D-27 — El joystick a la derecha
 
@@ -521,7 +615,7 @@ romperlo en la máquina de desarrollo, que es la peor clase de error.
 
 Los dos pasajes —Pasaje Independencia y Pasaje Boedo— se borran. Todas las
 bocacalles, veredas laterales y entradas que no sean la ruta marcada quedan
-bloqueadas con autos cruzados, contenedores, barricadas, escombros y bolsas,
+bloqueadas con autos cruzados, contenedores, vallas, escombros y bolsas,
 **con colisión de verdad**. El jugador va por la ruta marcada o no va.
 
 **Lo que se pierde:** la decisión "calle corta y peligrosa o pasaje largo y
@@ -541,13 +635,13 @@ poder esconderse detrás y buscar el ángulo, que es lo que pidió Gus.
 | Caminar | `balance.js`, `playerController.js`, `pose.js`, `inputManager.js` |
 | 7 botones de acción | `index.html`, `hud.css`, `hud.js`, `inputManager.js` |
 | Rutas alternativas | `mission001.js`, `worldBuilder.js` |
+| La explosión y su efecto | `explosion.js`, `combatFx.js`, pack `ExplosionFXFree` |
 
 **Lo que se rescata antes de borrar, y son tres cosas, no una:**
-`objetivoAutomatico()` —el apuntado de la bazooka, que es exactamente lo que
-necesita el combate automático—, **la explosión entera** —que ahora abre las
-barricadas (D-37)— y el empujón de la onda, que es lo que manda los dos autos
-a los costados. Las tres viven en los archivos que la 16.3 iba a borrar. El
-detalle está en la Fase 16.
+**una sola cosa**: `objetivoAutomatico()`, el apuntado de la bazooka, que es
+exactamente lo que necesita el combate automático. Vive dentro de
+`src/combat/explosion.js`, que la 16.3 borra entero. El detalle —y por qué esa
+lista cambió de tamaño dos veces en un día— está en la Fase 16.
 
 ---
 
@@ -565,26 +659,32 @@ detalle está en la Fase 16.
 - [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27)
 - [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick
 
-### ⚠️ Lo que se rescata antes de borrar, y es más de lo que creía
+### ⚠️ Lo que se rescata antes de borrar
 
-En el plan anterior escribí que había que salvar una sola función. **Con
-D-37 son tres cosas**, y las tres viven en los archivos que la 16.3 iba a
-borrar enteros:
+**Una sola cosa**, y vive dentro de un archivo que la 16.3 borra entero:
 
 | Qué | Vive en | Para qué |
 |---|---|---|
-| `objetivoAutomatico()` | `src/combat/explosion.js` | Es el apuntado de la bazooka, y es **exactamente** lo que necesita el combate automático (17.3) |
-| **La explosión entera** | `src/combat/explosion.js` y `src/combat/explosion`-FX | La barricada del control explota (D-37). El efecto no se reinventa: cambia de dueño |
-| El empujón de la onda | `WEAPONS.bazooka.blastPush` | Es lo que manda los dos autos a los costados |
+| `objetivoAutomatico()` | `src/combat/explosion.js` | Es el apuntado de la bazooka, y es **exactamente** lo que necesita el combate automático (17.3). Se mueve a su propio archivo *antes* de borrar nada |
 
-**Lo que sí muere:** el arma, el botón, la barra de 30 s, el cohete que viaja
-(`projectile.js`) y el daño por área a los zombis. La explosión del control
-no hace daño: es una puerta que se abre, no un ataque.
+**Muere todo lo demás** de la bazooka: el arma, el botón, la barra de 30 s, el
+cohete (`projectile.js`), el daño por área y **la explosión**.
 
-**Por qué esto importa más de lo que parece.** Si la 16.3 se hace antes de
-leer D-37, se borra el efecto de explosión y en la Fase 19A hay que
-reconstruirlo desde cero. Es el caso exacto que el plan ya advertía con
-`objetivoAutomatico()`, y casi me pasa dos veces con el mismo archivo.
+> 📌 **Sobre la explosión cambié de opinión dos veces el mismo día**, y queda
+> anotado porque el ida y vuelta enseña algo. Primero iba a morir. Después,
+> cuando el control era una barricada de autos que explotaba, la rescaté.
+> Ahora el control es una puerta corrediza (D-37) y **no explota nada**: la
+> explosión vuelve a morir, y con ella el pack `ExplosionFXFree`.
+>
+> Lo que aprendí no es que me equivoqué dos veces: es que **cada vez que la
+> mecánica se simplificó, la lista de rescate se achicó**. La puerta hace
+> menos cosas que la barricada y por eso es mejor. Si la próxima vuelta
+> agranda la lista, conviene desconfiar de la mecánica, no del plan.
+
+**Y por qué el rescate importa igual.** `objetivoAutomatico()` no tenía por
+qué vivir dentro de la bazooka: vive ahí porque la bazooka fue quien lo
+necesitó primero. En un borrado grande, lo que se pierde no es el código que
+uno recuerda — es el que quedó guardado en el lugar equivocado.
 
 **Criterio de salida**
 
@@ -674,12 +774,12 @@ reemplaza por modelos.
 - [ ] **18.4 Seis controles** en vez de dos, y la meta en Billinghurst 250
 - [ ] **18.5 Los siete textos de objetivo**, en voseo, uno por tramo
 - [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más una flecha en cada uno de los cinco giros. Con la cuadrícula esto es más fácil: la flecha siempre apunta a 90°
-- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, barricadas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en siete cuadras hay un número fijo y se tapa cada una
+- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en siete cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
 - [ ] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js`
-- [ ] **18.9 Las zonas de zombis, una por tramo.** Siete zonas, con dificultad creciente y el primero flojo: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la barricada cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.10)
+- [ ] **18.9 Las zonas de zombis, una por tramo.** Siete zonas, con dificultad creciente y el primero flojo: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
 - [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, los seis controles y la casa de Sergio. Los nombres intermedios aparecen una vez y nada más — en un cartel, en el piso o en la brújula. Los dos controles nuevos pueden quedarse sin dirección
 - [ ] **18.11 La casa de Sergio** ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
-- [ ] **18.12 La construcción por tramos** (D-42). **Ya no es "es probable que haga falta": está medido y hace falta.** La ciudad es el 86 % de las mallas y lo único que crece con los metros; los 700 m proyectan ~4.400 entidades y ~480 llamadas de dibujo contra un presupuesto de 150. Ventana de tres cuadras —anterior, actual y siguiente—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la barricada el recorrido es de ida, así que no hace falta histéresis
+- [ ] **18.12 La construcción por tramos** (D-42). **Ya no es "es probable que haga falta": está medido y hace falta.** La ciudad es el 86 % de las mallas y lo único que crece con los metros; los 700 m proyectan ~4.400 entidades y ~480 llamadas de dibujo contra un presupuesto de 150. Ventana de tres cuadras —anterior, actual y siguiente—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
 - [ ] **18.12 bis Liberar de verdad.** Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
 - [ ] **18.14 La brújula, más grande y protagonista** (D-38). Hoy existe —una pastilla con flecha que rota y los metros al objetivo— y ya se muestra siempre que haya objetivo, así que lo de "siempre" está. Lo que falta: **tamaño**, porque el glifo mide 15 px y es más chico que el texto de al lado; **presencia**, que se vea de reojo mientras se corre; y **el nombre de la calle** por la que se va, que es donde D-40 dice que puede vivir. Y tiene que seguir funcionando cuando la 19A.6 le cambie el blanco al zombi más cercano
@@ -700,7 +800,7 @@ reemplaza por modelos.
 
 ---
 
-## ⬜ FASE 19 — La barricada, y después los power-ups
+## ⬜ FASE 19 — La esclusa, y después los power-ups
 
 **Objetivo:** que llegar a un control sea el momento en que la partida cambia.
 Reemplaza lo que hacía `CHECKPOINT_DROP` y lo hace mejor: una decisión en vez
@@ -708,38 +808,42 @@ de tres cajas tiradas en el piso.
 
 **Va en dos tiempos** (D-32), porque Gus todavía está armando las mejoras.
 
-### 19A — La barricada · el corazón del juego nuevo (D-37)
+### 19A — La esclusa · el corazón del juego nuevo (D-37)
 
 > ⚠️ **Antes de todo lo demás: 19A.0.** Hay un error en el código que hoy no
-> se ve y que con la barricada vuelve la partida imposible de terminar. Está
+> se ve y que con la puerta vuelve la partida imposible de terminar. Está
 > descrito abajo y **es condición previa de todo lo demás de esta fase**.
 
-**La parte obligatoria, antes de la barricada:**
+**La parte obligatoria, antes de la esclusa:**
 
-- [ ] **19A.0 El zombi que desaparece sin morir.** 🐛 **Es un error, no una mejora.** En [src/enemies/spawnManager.js:184](src/enemies/spawnManager.js#L184), cuando el jugador se aleja más de 55 × 1,4 m, el zombi se apaga y se saca de `enJuego` — **pero su puesto queda marcado en `puestosUsados` para siempre**. O sea que un zombi del que te alejaste **se va del juego sin morir y no vuelve nunca**. Hoy es invisible porque nada depende de las muertes. Con D-37, el jugador va a recibir la orden de matar a todos y algunos **ya no existen**: la barricada no abre jamás. Hay que liberar el puesto al apagar un zombi vivo, y dejar marcados sólo los puestos de los muertos
+- [ ] **19A.0 El zombi que desaparece sin morir.** 🐛 **Es un error, no una mejora.** En [src/enemies/spawnManager.js:184](src/enemies/spawnManager.js#L184), cuando el jugador se aleja más de 55 × 1,4 m, el zombi se apaga y se saca de `enJuego` — **pero su puesto queda marcado en `puestosUsados` para siempre**. O sea que un zombi del que te alejaste **se va del juego sin morir y no vuelve nunca**. Hoy es invisible porque nada depende de las muertes. Con D-37, el jugador va a recibir la orden de matar a todos y algunos **ya no existen**: la puerta no abre jamás. Hay que liberar el puesto al apagar un zombi vivo, y dejar marcados sólo los puestos de los muertos
 - [ ] **19A.1 Zonas con dueño, y el reparto por tramo.** Hoy cada puesto de aparición lleva `zona.nota`, que es un texto. Para contar "los zombis de este tramo" hace falta que cada zona de `mission001.js` declare **a qué tramo pertenece**, y que el `SpawnManager` sepa cuántos hay vivos por tramo. **Y es acá donde entra la otra mitad de lo que pidió Gus:** cada tramo declara **cuántos zombis y de qué tipo** — el estándar de 100/10, el agresivo de 120/20, los esqueletos como mini-jefes — y de ahí se sueltan con posición aleatoria dentro de la zona. No es ahorro de memoria (ver D-42): es la perilla de diseño que hace que cada cuadra se sienta distinta de la anterior
 - [ ] **19A.2 Puestos alcanzables, verificado por una prueba.** Ningún puesto puede caer en un hueco que las bocacalles tapadas (D-34) dejen aislado. Un zombi ahí adentro traba la partida para siempre. Lo verifica una prueba contra el mapa construido, no el ojo
 
-**La barricada:**
+**La esclusa:**
 
-- [ ] **19A.3 Los seis controles** como barricada que corta la calle entera, con colisión. Dos autos en el medio, que son los que van a explotar
-- [ ] **19A.4 La puerta.** Al tocar la barricada con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
+- [ ] **19A.3 Los seis controles** como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el séptimo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
+- [ ] **19A.4 Cerrada: el cartel.** Al tocar la puerta con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
 - [ ] **19A.5 El contador.** Cuántos quedan vivos en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas
-- [ ] **19A.6 La brújula cambia de blanco** (D-38). Mientras la barricada frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
-- [ ] **19A.7 La explosión.** Tramo limpio → los dos autos del medio explotan, salen despedidos a los costados y dejan el paso. Con la explosión rescatada en la 16.3 y los efectos del banco (20.10). **Las cajas de colisión de los dos autos se tienen que ir con ellos**, o el paso queda abierto a la vista y cerrado al caminar
-- [ ] **19A.8 Guardar y reaparecer.** El control guarda el progreso, y al morir se reaparece en el último alcanzado — con su tramo ya limpio, porque ya se limpió
-- [ ] **19A.9 El gancho para la 19B.** Un evento `controlAbierto` con el índice del control, para que las cartas se enchufen sin tocar nada de esto
-- [ ] **19A.10 El ritmo.** Siete tramos por limpiar cambian la duración de la misión por completo: hoy hay ~24 zombis en total, unos 3 por tramo. Hay que medir cuánto dura una cuadra y cuántos zombis aguanta antes de aburrir. Es la perilla principal del juego, y se ajusta jugando en el teléfono
+- [ ] **19A.6 La brújula cambia de blanco** (D-38). Mientras la puerta frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
+- [ ] **19A.7 Abre.** Tramo limpio → la puerta se desliza y deja pasar. **Y la colisión se abre con ella**, o el paso queda abierto a la vista y cerrado al caminar. Es una animación de posición, no un efecto: barata y sin partículas
+- [ ] **19A.8 Y se cierra a los 20 m** (D-37). El número sale de la cámara: se sienta 7 m detrás de Gus y hasta 14,4 m si el jugador la aleja al máximo. Pasados esos 20 m, la cuadra de atrás ya no se ve y **se dispara el evento que la libera** (D-42)
+- [ ] **19A.9 Guardar y reaparecer del lado de adentro.** Al morir se reaparece al principio del tramo en curso, **nunca del lado de afuera de la puerta**: esa cuadra ya no existe en memoria
+- [ ] **19A.10 El gancho para la 19B.** Un evento `controlAbierto` con el índice del control, para que las cartas se enchufen sin tocar nada de esto
+- [ ] **19A.11 El ritmo.** Siete tramos por limpiar cambian la duración de la misión por completo: hoy hay ~24 zombis en total, unos 3 por tramo. Hay que medir cuánto dura una cuadra y cuántos zombis aguanta antes de aburrir. Es la perilla principal del juego, y se ajusta jugando en el teléfono
 
 **Criterio de salida de la 19A**
 
 - [ ] Ningún zombi desaparece sin morir, con una prueba que lo verifique
 - [ ] El contador llega a cero si y sólo si están todos muertos
 - [ ] Ningún puesto de aparición queda en un lugar inalcanzable
-- [ ] La barricada no se pasa con un zombi vivo en el tramo, probado intentándolo
+- [ ] La puerta no se pasa con un zombi vivo en el tramo, probado intentándolo
 - [ ] El cartel de prohibido se entiende sin leer el texto dos veces
-- [ ] Al limpiar el tramo, los autos explotan y el paso queda libre — también para la colisión
-- [ ] La brújula apunta al zombi que falta cuando la barricada frena
+- [ ] Al limpiar el tramo la puerta abre, y el paso queda libre **también para la colisión**
+- [ ] La puerta se cierra a los 20 m y no se puede volver, probado intentándolo
+- [ ] Al cerrarse, no se ve ni un pedazo de la cuadra liberada desde ninguna distancia de cámara, incluida la máxima
+- [ ] Al morir se reaparece del lado de adentro
+- [ ] La brújula apunta al zombi que falta cuando la puerta frena
 - [ ] Se puede terminar la misión limpiando los siete tramos
 - [ ] Una cuadra no se siente larga, medido en el teléfono
 
@@ -911,8 +1015,8 @@ lado, no entra.
 - [ ] **20.6 Los esqueletos.** KayKit_Skeletons, 0,25 a 0,35 MB, CC0. Mini-jefes
 - [ ] **20.7 Gus.** Universal Base Characters + Universal Animation Library, las dos CC0. Buscar el cuerpo y la cara que más se acerquen a `Gus.jpeg` (D-24, cuero negro)
 - [ ] **20.8 El arma de Gus.** Ultimate Gun Pack: hay **6 pistolas y 5 revólveres**. **Entregable: una lámina con los once renderizados, para que Gus elija.** Depende de la 20.1 bis
-- [ ] **20.9 Los autos.** Realistic Car Pack, CC0, 7 modelos con taxi, sólo `.fbx`. Son los bloqueadores de la 18.7 y la cobertura de la 17
-- [ ] **20.10 Los efectos.** pvfx-foundry y ExplosionFXFree, en hojas de sprites 2D: fogonazo, impacto, sangre. ⚠️ **Y la explosión, que vuelve a hacer falta:** la barricada de cada control explota (D-37), así que `ExplosionFXFree` pasa de "sin uso" a ser un requisito de la 19A.7
+- [ ] **20.9 Los autos.** Realistic Car Pack, CC0, 7 modelos con taxi, sólo `.fbx`. Son los bloqueadores de bocacalles de la 18.7 y la cobertura de la 17. **Ya no son el control**: eso lo hace la puerta (D-37)
+- [ ] **20.10 Los efectos.** pvfx-foundry, en hojas de sprites 2D: fogonazo, impacto, sangre. **`ExplosionFXFree` queda sin uso**: con la puerta corrediza de D-37 no explota nada. Vuelve a la Fase 15, por si algo lo necesita
 - [ ] **20.11 Las animaciones.** Zombi: quieto, caminar, correr, atacar, morir. Gus: quieto apuntando, disparar, correr
 - [ ] **20.12 El presupuesto.** Todos los modelos juntos, 12 MB como techo, de los 25 MB de descarga total. Se mide, no se estima
 - [ ] **20.13 La atribución completa** en `ASSET_AUDIT.md`, antes de publicar
@@ -959,7 +1063,6 @@ paleta como se hizo con los árboles.
 - [ ] Todos comparten el mismo acabado mate
 - [ ] El arma se ve en la mano y no se despega
 - [ ] La escala de Gus coincide con puertas, autos y veredas
-- [ ] La explosión de la barricada funciona con los efectos del banco
 - [ ] Los modelos juntos no pasan de 12 MB
 - [ ] Nada mezcla estilos sin haber pasado por la paleta
 
@@ -989,7 +1092,7 @@ cuchillo que se está borrando.
 |---|---|---|
 | ➡️ | 12R.A — Barrido de assets | **Se la lleva la 20.3** |
 | ➡️ | 12R.8 — Vehículos | **Se la lleva la 20.9** (Realistic Car Pack) |
-| ⬜ | 12R.9 — Abandono: barricadas, escombros, bolsas, grafiti | Queda. Y crece: ahora bloquea bocacalles (18.7) |
+| ⬜ | 12R.9 — Abandono: vallas, escombros, bolsas, grafiti | Queda. Y crece: ahora bloquea bocacalles (18.7), con el vocabulario de la contención (D-43) |
 | ⬜ | 12R.10 — Composición de la cuadra | Queda. Y crece: siete cuadras en vez de tres |
 | ➡️ | 12R.11 — Gus | **Se la lleva la 20.7** |
 | ➡️ | 12R.12 — Zombis | **Se la llevan la 20.4 a la 20.6** |
@@ -1049,8 +1152,8 @@ cuchillo que se está borrando.
 - [ ] 10.11 Revisar la legibilidad de todos los textos en una pantalla chica
 - [ ] 10.12 Unificar todos los textos en un solo archivo, en voseo rioplatense
 - [ ] 10.13 Revisar que el HUD horizontal también funcione
-- [ ] 10.14 **Nueva:** explicar las dos reglas que sin botón no se descubren jugando: que Gus dispara solo cuando se queda quieto, y que la barricada no abre hasta limpiar el tramo
-- [ ] 10.15 **Nueva:** la pantalla de "de qué va esto": Gus va a buscar a Sergio (D-41). Hoy el juego no cuenta por qué camina
+- [ ] 10.14 **Nueva:** explicar las dos reglas que sin botón no se descubren jugando: que Gus dispara solo cuando se queda quieto, y que la puerta no abre hasta limpiar el tramo
+- [ ] 10.15 **Nueva:** la pantalla de "de qué va esto": Gus va a buscar a Sergio mientras el ejército sella la ciudad cuadra por cuadra (D-41, D-43). Hoy el juego no cuenta por qué camina
 
 **Criterio de salida**
 
@@ -1079,7 +1182,7 @@ cuchillo que se está borrando.
 - [ ] 11.10 Todos los sonidos cortos en un solo archivo
 - [ ] 11.11 Anotar cada sonido en el registro de licencias
 - [ ] 11.12 **Nueva:** un sonido que marque el momento en que Gus pasa a estar quieto y empieza a disparar. Es información de juego, no adorno
-- [ ] 11.13 **Nueva:** el sonido de la barricada — el golpe de la explosión al abrirse, y el ruido seco de chocarla cuando todavía no abre. Los dos son información: uno dice "podés pasar" y el otro "falta alguien"
+- [ ] 11.13 **Nueva:** los tres sonidos de la esclusa — el chirrido de la puerta al abrirse, el golpe al cerrarse atrás, y el ruido seco de chocarla cuando todavía no abre. Los tres son información: "podés pasar", "ya no se vuelve" y "falta alguien"
 
 **Criterio de salida**
 
@@ -1180,10 +1283,11 @@ ser deseos y pasan a ser el plan.
 | Prioridad | Qué |
 |---|---|
 | **Alta** | **Elegir personaje.** Al rescatar a Sergio hay dos, y se puede jugar con cualquiera. Es lo primero que pide D-41 y no entra en la demo |
-| **Alta** | **La misión 002: el próximo amigo.** Reusando el kit modular, el trazado ortogonal y la barricada |
+| **Alta** | **La misión 002: el próximo amigo.** Reusando el kit modular, el trazado ortogonal y la esclusa |
 | **Alta** | **El roster.** Quiénes son los amigos, dónde vive cada uno y en qué se diferencian jugando |
 | Alta | Más misiones reusando el kit modular |
 | Alta | Los jefes del Bestiary (Imp y Puglin). **Pesan 9 y 7,5 MB: no entran sin recortarlos** |
+| Media | **Contar la contención con algo más que la escenografía** (D-43): radio, carteles del operativo, sobrevivientes. Ahora se cuenta sólo con lo que se ve, y alcanza |
 | Alta | Más zombis especiales, con las estadísticas que trae cada pack |
 | Media | **El recorrido a escala 1:1 desde OpenStreetMap.** Es la NOTA-02 del documento 02, y recién acá tiene sentido: con varias misiones la traza deja de caber en una tabla. Exige atribución (ODbL) |
 | Media | Caballito, Almagro y Flores |
@@ -1275,7 +1379,7 @@ Las que todavía no están cerradas, y la tarea que las va a cerrar.
 | ~~Si Gus y los zombis llegan a ser `.glb` riggeado (D-22)~~ | 20.4 y 20.7 | ✅ **Resuelto a favor:** el banco los trae, y el zombi trae sus seis animaciones |
 
 Las decisiones **ya cerradas** —D-01 a D-21 en el documento 02, D-22 a D-25
-en la bitácora y D-26 a D-42 acá arriba— no se vuelven a discutir salvo que
+en la bitácora y D-26 a D-43 acá arriba— no se vuelven a discutir salvo que
 aparezca un dato nuevo. **D-04 es el ejemplo de qué es un dato nuevo:** se
 reabrió porque la distancia que la justificaba estaba mal medida.
 **D-20 y D-21 quedan superadas por D-32.**
