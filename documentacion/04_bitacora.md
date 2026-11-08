@@ -3229,6 +3229,167 @@ Ideas en orden de valor esperado:
 
 ---
 
+# FASES 16 a 20 — El cambio del 7 de noviembre 🔄
+
+**El plan está en [`03_roadmap.md`](03_roadmap.md), en las fases 16 a 20 y en
+las decisiones D-26 a D-34.** Acá va lo que no cabe en un plan: por qué se
+cambió, qué encontré revisando, y las dos cosas en las que me había
+equivocado.
+
+---
+
+## Lo que pidió Gus, y de qué tamaño es
+
+El 7 de noviembre Gus pidió, en un solo mensaje: el recorrido real de Buenos
+Aires con seis coordenadas, sacar los ítems, sacar la bazooka, sacar caminar,
+sacar el cambio de arma, sacar todos los botones de acción, combate
+automático al estar quieto, estadísticas nuevas, power-ups en cartas al llegar
+a cada control, y usar los 461 MB de assets que acababa de bajar.
+
+**No es una lista de ajustes: es otro juego.** Y conviene decirlo sin
+adornos, porque el riesgo de un cambio así no es hacerlo mal, es hacerlo de a
+pedacitos y terminar con un híbrido que no es ninguno de los dos. De ahí que
+la primera fase sea **borrar**, no construir: con el juego más chico, todo lo
+que viene después se piensa una sola vez.
+
+---
+
+## Las dos cosas en las que me había equivocado
+
+### 1. D-04 estaba mal medida, y por eso descarté la herramienta correcta
+
+Gus preguntó por qué nunca apliqué la herramienta que, según él, servía para
+replicar Buenos Aires con fotos o diagramas 3D. La pregunta es justa y la
+respuesta tiene dos partes.
+
+**La parte en la que tenía razón.** Lo que el documento 01 proponía para eso
+eran SuperSplat, gsplat —las dos, Gaussian Splatting— y CesiumJS. El
+documento 02 las descartó, y el argumento sigue siendo correcto: **un splat es
+una nube de puntos sin superficie**. No se puede colisionar contra él, no se
+ilumina, no proyecta sombras y pesa cientos de megabytes. En un juego donde
+un zombi tiene que chocar contra una pared, un splat es una pared que no
+existe. Eso no cambió y no va a cambiar.
+
+**La parte en la que me equivoqué, y es la que importa.** El documento 02
+tenía, debajo de D-04, la NOTA-02: *"si en algún momento querés la escala
+real, el camino es traer la traza de calles desde OpenStreetMap y generar las
+manzanas por código"*. Ésa era la herramienta correcta, y quedó archivada
+porque D-04 había decidido comprimir el recorrido a 350 m.
+
+**Y D-04 decidió eso sobre un dato falso.** Dice, textual, que la distancia
+real entre los dos extremos es *"de varios kilómetros, atravesando varios
+barrios"*. Lo medí con las seis coordenadas de Gus:
+
+| Tramo | Distancia |
+|---|---|
+| Independencia 3250 → Agrelo 3400 | 344,8 m |
+| Agrelo 3400 → Maza 379 | 356,8 m |
+| Maza 379 → Av. Boedo 120 | 351,2 m |
+| Av. Boedo 120 → Mario Bravo 90 | 311,5 m |
+| Mario Bravo 90 → Billinghurst 250 | 259,6 m |
+| **Total** | **1.623,9 m** |
+
+**1,6 km en cinco tramos parejos.** Ni varios kilómetros, ni varios barrios:
+Boedo y Almagro, pegados. Y cada tramo mide entre dos y tres cuadras
+porteñas, o sea que los controles de Gus caen justo donde un nivel los
+pondría si los hubiera diseñado alguien.
+
+**La lección, que es la misma de los árboles y la misma del sol a 17°:** la
+estimación a ojo de una cantidad medible es una decisión tomada sin dato. D-04
+no se equivocó al comprimir —comprimir sigue siendo lo correcto, y Gus eligió
+el 40 %—; se equivocó al justificarlo con un número inventado, y ese número
+sirvió después para archivar la única herramienta que servía.
+
+### 2. Los assets: dar por cerrado el tema después de probar una fuente
+
+Esto ya estaba escrito en la 12R.A y vale repetirlo porque el banco de Gus lo
+confirma: había dado por cerrado el tema de los assets después de probar una
+sola biblioteca. Ahora hay 461 MB de modelos riggeados en la máquina, con
+licencias limpias, y la mitad de la Fase 12R eran tareas para modelar a mano
+lo que ya existe descargado. Seis de esas tareas se las lleva la Fase 20.
+
+---
+
+## Lo que encontré revisando, y que nadie había anotado
+
+**El generador no soporta el recorrido nuevo.** `src/world/worldBuilder.js`
+exige que cada tramo esté alineado a un eje — es un requisito que estaba
+escrito en el comentario de `mission001.js` y que nunca molestó porque los
+tres tramos de hoy son rectos y perpendiculares. Los cinco rumbos nuevos son
+−42,1°, −29,2°, −30,5°, +6,4° y +25,6°: **ninguno**. Y las ochavas de la
+12R.3 están hechas para esquinas de 90°; un giro de 13° no es una esquina,
+es una curva. Es la tarea 18.1 y la 18.2, y es la más técnica del bloque.
+
+**El apuntado automático ya está escrito, y está en el archivo que se va a
+borrar.** `objetivoAutomatico()` vive en `src/combat/explosion.js` porque era
+el apuntado de la bazooka (D-03). Es exactamente la función que necesita el
+combate automático de la Fase 17. **Hay que rescatarla antes de borrar la
+bazooka**, no reescribirla después: es el tipo de cosa que se pierde en un
+borrado grande y se vuelve a inventar peor.
+
+**"Quieto" no es una cosa obvia.** Con `deceleration = 34` y 6 m/s, Gus tarda
+0,18 s en frenar del todo después de soltar el joystick. Si "quieto" se define
+como velocidad cero, el disparo arranca dos décimas tarde y se va a sentir
+pegajoso; si se define como joystick en cero, arranca mientras Gus todavía se
+desliza. Hay que elegir y hay que probarlo en el teléfono: es la tarea 17.2.
+
+**Los checkpoints se quedan sin premio entre la Fase 16 y la 19.** Hoy lo que
+hace que llegar a un control valga la pena es `CHECKPOINT_DROP`: dos cajas de
+munición y un botiquín tirados en el piso. La 16.1 lo borra y la 19 lo
+reemplaza por las cartas. En el medio, el juego va a ser más pobre que hoy.
+Es aceptable y es temporal, pero hay que saberlo mientras se prueba, para no
+confundir "falta la Fase 19" con "el cambio salió mal".
+
+**Más de la mitad del banco no carga.** El pack de autos, el de armas y el
+CryptZombie vienen sólo en `.fbx` o en formato Godot. PlayCanvas carga `.glb`.
+Falta un convertidor, y es bloqueante: tarea 20.1. El detalle de los pesos y
+las licencias está en
+[`visual/ASSET_AUDIT.md`](visual/ASSET_AUDIT.md).
+
+---
+
+## Lo que el cambio se lleva puesto, y hay que decirlo
+
+El documento 01 pone **"decisiones rápidas"** como pilar del juego, y las
+decisiones que tenía en mente eran de botón: qué arma usar, cuándo curarse,
+cuándo gastar la bazooka, si ir por la calle o por el pasaje. **El cambio del
+7 de noviembre borra todas.** No queda un solo botón de acción, no hay
+inventario, no hay armas para elegir y no hay rutas alternativas.
+
+Eso no es un efecto colateral: es el cambio. La decisión pasa de ser *de
+botón* a ser *espacial* — cuándo frenar, dónde pararse, cuánto aguantar antes
+de volver a moverse, detrás de qué auto. Es un juego más chico y más limpio,
+y probablemente mejor para un teléfono, donde cada botón en pantalla es un
+dedo que tapa el juego.
+
+Pero conviene que quede escrito que el pilar cambió, porque en tres meses
+alguien va a abrir el documento 01, va a leer "decisiones rápidas", y va a
+pensar que el juego se desvió solo. No se desvió: lo decidimos.
+
+**Lo que se pierde concretamente**, además del pilar: la Fase 5 (cuerpo a
+cuerpo), la Fase 7 (bazooka) y la Fase 8 (objetos e inventario) quedan
+borradas enteras. Son tres fases cerradas, probadas y funcionando. No fue
+trabajo perdido —fue cómo descubrimos qué juego queríamos— pero el plan tiene
+que decir que están muertas, no que están hechas, porque un plan que dice
+"hecho" sobre algo que ya no existe miente dos veces.
+
+---
+
+## Lo que NO se toca
+
+Igual que en la 12R, hay una lista de cosas que el cambio no roza, y conviene
+tenerla explícita para no abrirlas sin motivo:
+
+| | Por qué no se toca |
+|---|---|
+| `core/rumbo.js` | El convenio de ángulos (D-17) es lo que evita que medio juego mire para el otro lado. La Fase 18 va a usarlo más que nunca |
+| `physics/collisionWorld.js` | La colisión 2D (D-09) sirve igual con ángulos arbitrarios |
+| `enemies/zombieAI.js` | La detección por vista y ruido y la evasión por rayos (D-10) son lo mejor que tiene el juego. La 17 les cambia los números, no la lógica |
+| `core/rng.js` | La aleatoriedad con semilla (D-12) es lo que hace que un mapa roto se pueda reproducir |
+| `visual/paleta.js` | Los 58 colores medidos. Todo asset nuevo pasa por acá (D-33) |
+| Todo lo de la 12R.0 a la 12R.7 | Ocho tareas terminadas y medidas. La 18.2 retoca las ochavas y nada más |
+
+---
 ## Apéndice A — Decisiones que se cierran en cada fase
 
 | Fase | Decisión pendiente | Cómo se cierra |
@@ -3242,6 +3403,15 @@ Ideas en orden de valor esperado:
 | 12R | Inclinación y distancia de cámara (D-23, corrige D-02) | Midiendo las dos cosas a la vez: alto de Gus en píxeles y metros de calle por delante, que no pueden bajar de 16 |
 | 12R | Si Gus y los zombis llegan a ser `.glb` riggeado (D-22) | Encontrando un modelo CC0 compatible, o consiguiendo el archivo |
 | 12R | Cómo se despega a Gus del asfalto yendo de negro (D-24) | Mirándolo en el celular con la cámara nueva, y de ahí si el anillo ámbar se queda o se va |
+| 17 | Qué cuenta como "quieto", y con cuánta demora (D-28) | Probándolo en el teléfono: los 0,18 s de frenado por inercia no deberían contar |
+| 17 | Si espera a estar encarado antes del primer tiro | Mirándolo: si el primer tiro de cada blanco sale torcido, espera |
+| 17 | La cadencia de la pistola | Jugando. Hoy son 1,6 s por zombi |
+| 18 | Qué hay en Billinghurst 250 (D-26) | Decidiendo qué es el refugio, ahora que la comisaría inventada de D-04 no va |
+| 18 | Cómo se marca la ruta en el piso (D-34) | Probando la franja pintada contra las flechas, desde la cámara a 48° |
+| 18 | Si el mapa de 650 m necesita carga por tramos | Midiendo las llamadas de dibujo del peor caso |
+| 19 | El pool definitivo de power-ups y su rareza (D-32) | Jugando las cuatro mejoras seguidas, de un control al siguiente |
+| 20 | Universal Animation Library o KayKit para las animaciones | Poniendo las dos en pantalla al lado de una puerta de 2,10 m y un auto |
+| 20 | Cuál es el revólver o la pistola de Gus (D-29) | Renderizando los candidatos del Ultimate Gun Pack, y elige Gus |
 
 ## Apéndice B — Comandos
 

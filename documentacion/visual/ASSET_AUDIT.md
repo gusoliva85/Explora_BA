@@ -76,3 +76,76 @@ gratuita y baje los archivos a `public/modelos/`.
 
 No se descarga ninguna textura. Las de los carteles se dibujan en el
 navegador: pesan cero en la red.
+
+---
+
+## El banco de assets: `_assets/`
+
+**Qué es.** 461 MB de paquetes que trajo Gus el 7 de noviembre de 2026. Es la
+**fuente**, no el destino, y está en `.gitignore` por peso. Decisión **D-33**.
+
+**La regla, y no es negociable.** Nada del código referencia `_assets/`. Lo
+que se usa se **copia** a `public/modelos/`, se le agrega una fila en la tabla
+de arriba y recién entonces existe para el juego. Una ruta a `_assets/`
+funciona en la máquina de Gus y rompe el juego publicado: es la peor clase de
+error, porque no se ve hasta que ya está arriba.
+
+### Inventario, medido el 7 de noviembre
+
+| Paquete | Peso | `.glb`/`.gltf` | `.fbx` | Licencia | Para qué |
+|---|---|---|---|---|---|
+| `skeleton-zombie-free-1.0.0` | 54 MB | 2 | 1 | Propia: comercial embebido, crédito opcional | **Zombi estándar** (100/10) |
+| `CryptZombie-Godot-1.0.1` | 18 MB | **0** | **0** | G4G v1.0: comercial, sin atribución | **Zombi agresivo** (120/20) |
+| `KayKit_Skeletons_1.1_FREE` | 17 MB | 19 | 32 | **CC0** | Mini-jefes |
+| `Bestiary - Dungeon Monsters Kit` | 47 MB | 2 | 2 | Quaternius QAL v1.0 | Jefes — **Fase 15** |
+| `Universal Base Characters[Standard]` | 127 MB | 18 | 26 | **CC0** | **Gus** |
+| `Universal Animation Library[Standard]` | 61 MB | 2 | 2 | **CC0** | Animaciones de Gus |
+| `KayKit_Character_Animations_1.1` | 42 MB | 16 | 16 | **CC0** | Animaciones — alternativa chibi |
+| `KayKit_Adventurers_2.0_FREE` | 23 MB | 39 | 70 | **CC0** | Sin uso asignado |
+| `Ultimate Gun Pack by Quaternius` | 35 MB | **0** | 55 | **CC0** | **El arma de Gus** |
+| `KayKit_FantasyWeaponsBits_1.0_FREE` | 6,3 MB | 31 | 62 | **CC0** | Cuerpo a cuerpo — **no se usa** (D-29) |
+| `KayKit_City_Builder_Bits_1.0_FREE` | 9,3 MB | 41 | 82 | **CC0** | Mobiliario y props, **no fachadas** |
+| `Realistic Car Pack - Nov 2018` | 7,6 MB | **0** | 7 | **CC0** | **Autos**: bloqueo y cobertura |
+| `pvfx-foundry-thirteen-spritesheets` | 16 MB | — | — | **CC0** (hojas y manifiestos) | Fogonazo, impacto, sangre |
+| `ExplosionFXFree` | 1,8 MB | — | — | ver pack | Sin uso: la bazooka se fue |
+
+### Los tres hallazgos que cambian el plan
+
+**1. Casi nada viene en `.glb`.** El pack de autos, el de armas y el
+CryptZombie vienen **sólo** en `.fbx` o en formato de Godot, y PlayCanvas
+carga `.glb`. Hace falta un convertidor por Blender en línea de comandos.
+Es la tarea **20.1**, y es bloqueante: sin eso, más de la mitad del banco
+no entra.
+
+**2. Los pesos no entran como vienen.** El presupuesto de descarga de todo el
+juego son 25 MB, de los cuales 12 para modelos:
+
+| Archivo | Peso | Veredicto |
+|---|---|---|
+| `skeleton-zombie.glb` | 10,05 MB | ❌ ni cerca |
+| `skeleton-zombie-mobile.glb` | 3,97 MB | ⚠️ entra, pero se come un tercio del presupuesto |
+| `Bestiary/Imp.glb` | 8,98 MB | ❌ Fase 15, y recortado |
+| `Bestiary/Puglin.glb` | 7,49 MB | ❌ Fase 15, y recortado |
+| `Universal Base Characters` (`.gltf`) | 7,27 MB | ⚠️ hay que recortar |
+| KayKit, personajes | 0,25 a 0,46 MB | ✅ sin problema |
+| KayKit, animaciones | 0,55 a 1,39 MB | ✅ sin problema |
+
+Todo lo que entre pasa por Draco y compresión de texturas. Los KayKit son la
+referencia de lo que pesa un modelo bien exportado: **veinte veces menos** que
+el zombi.
+
+**3. Dos licencias prohíben redistribuir.** `skeleton-zombie` y `CryptZombie`
+permiten uso comercial embebido en el juego —que es lo que vamos a hacer— pero
+**prohíben redistribuir los archivos como colección de assets**. En la
+práctica: el `.glb` convertido va a `public/modelos/` y nunca a una carpeta
+que parezca un pack para bajar. Todo el resto es CC0 y no tiene esa
+restricción.
+
+### Atribución que hay que mostrar al publicar, además de la de los árboles
+
+> Modelos de **Quaternius** (quaternius.com) y **Kay Lousberg**
+> (kaylousberg.com), bajo licencia CC0.
+> Zombi: **Blaine Ritz / Winged Relay Asset Studio**.
+> Efectos: **PVFX Foundry**, bajo licencia CC0.
+
+Ninguna de las tres exige crédito. Se pone igual: cuesta una línea.

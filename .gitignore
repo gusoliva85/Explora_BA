@@ -16,3 +16,9 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+
+# Banco de assets crudos: 461 MB de packs descargados. Es la FUENTE, no el
+# destino. Lo que se usa se copia a public/modelos/ y se anota en
+# documentacion/visual/ASSET_AUDIT.md. Prohibido referenciar _assets/ desde
+# el codigo: no existe en el repositorio ni en produccion.
+_assets/
