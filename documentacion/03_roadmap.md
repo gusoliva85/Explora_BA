@@ -865,22 +865,46 @@ de tres cajas tiradas en el piso.
 
 ### Lo que Gus ya empezó a armar
 
-En `documentacion/habilidades/` aparecieron los dos primeros, con icono y
+En `documentacion/habilidades/` aparecieron los cinco primeros, con icono y
 todo. Quedan registrados acá para que no se pierdan:
 
 | Carta | Icono | Qué entiendo que hace | Cuesta |
 |---|---|---|---|
-| **Rebote** | `Rebote.webp` | La bala salta del zombi al que le pegó a otro cercano | Caro: hay que buscar el segundo blanco y dibujar el salto |
-| **Disparo múltiple** | `Disparo multiple.webp` | Varias balas por disparo | Medio: es la carta "Abanico" o "Doble tiro" de mi propuesta |
+| **Tiro doble** | `Tiro doble.webp` | Dos balas paralelas por disparo | **El más barato**: es el mismo disparo dos veces |
+| **Disparo múltiple** | `Disparo multiple.webp` | Dos balas abiertas en ángulo | Bajo |
+| **Disparos diagonales** | `Disparos diagonales.webp` | Tres balas: una al frente y dos en diagonal | Bajo |
+| **Rebote** | `Rebote.webp` | La bala salta de un zombi a otro cercano | **Caro**: hay que elegir el segundo blanco y dibujar el salto |
+| **Rebote pared** | `Rebote pared.webp` | La bala rebota en una pared y sigue con otro ángulo | **El más caro**: necesita la normal de la superficie y un segundo rayo |
 
-**Las dos cambian cómo se juega, no un número**, que es justo la familia que
-avisé que costaba más. Así que el sistema de la 19B.1 tiene que nacer sabiendo
-que una mejora puede tocar *el disparo entero* y no sólo multiplicar un valor.
-Bien que hayan aparecido estas dos primero: si el pool hubiera arrancado con
-"+10 de daño" me habría quedado corto en la arquitectura.
+**Las cinco cambian cómo se dispara, no un número**, que es justo la familia
+que avisé que costaba más. Así que el sistema de la 19B.1 tiene que nacer
+sabiendo que una mejora puede reemplazar **el disparo entero**, y no sólo
+multiplicar un valor. Bien que hayan aparecido éstas primero: si el pool
+hubiera arrancado con "+10 de daño", me habría quedado corto en la
+arquitectura y lo habría descubierto tarde.
 
-**Y fijan el estilo del icono:** marco verde, dibujo plano, lectura a tamaño
-chico. La 19B.5 se hace contra eso, no inventando otro.
+> ⚠️ **Las tres primeras son la misma familia, y hay que decidir cómo se
+> acumulan.** Tiro doble son dos balas, disparo múltiple son dos abiertas y
+> disparos diagonales son tres. Si las tres salen en la misma partida, ¿son
+> **siete balas por disparo**? ¿O cada una reemplaza a la anterior? Con seis
+> controles es perfectamente posible juntar las tres, y la diferencia entre
+> "suman" y "se reemplazan" es la diferencia entre una partida divertida y una
+> en la que el último tramo se barre sin mirar. **No hace falta decidirlo
+> ahora**, pero sí antes de la 19B.1, porque cambia la arquitectura: sumar
+> pide una lista de cañones, reemplazar pide un solo patrón de disparo que se
+> sustituye.
+
+> ⚠️ **"Rebote pared" choca con D-36 y hay que resolverlo.** D-36 dice que una
+> barrera —árbol, auto, pared— **detiene** la bala, y que eso es lo que hace
+> que valga la pena moverse. Esta carta dice que la pared la **devuelve**. Las
+> dos reglas no pueden convivir sin aclarar cuál gana: lo más probable es que
+> el rebote sea la excepción que la carta compra, o sea *"ahora las paredes
+> dejan de frenarte y pasan a servirte"*. Eso es una carta muy buena, pero hay
+> que escribirlo antes de programarlo. Lo cierra la 19B.4.
+
+**Y fijan el estilo del icono:** cuadrado con marco verde, fondo claro,
+dibujo plano de una o dos formas, legible a tamaño chico. La 19B.5 se hace
+contra eso, no inventando otro.
 
 ### Lo que necesito de Gus para la 19B
 
@@ -894,6 +918,7 @@ tener que modificar**:
 | **Cuántas quiere en total** | Con 6 controles, menos de 12 se repite rápido; más de 25 no se alcanza a ver en una partida |
 | **Si alguna cambia *cómo* se juega**, no sólo un número | Perforante, abanico o rebote cuestan mucho más que "+10 de daño", y conviene saberlo antes |
 | **Si alguna puede salir dos veces** y acumularse con ella misma | Decide si el pool se agota o no |
+| **Si las tres de disparo múltiple suman o se reemplazan** | Es la que más urge: cambia la arquitectura del sistema, no un número |
 | **Si alguna es "rara"** y tiene que aparecer poco | Si no hay rarezas, el sistema es más simple y se hace antes |
 
 Lo que **no** necesito: números exactos, iconos, ni textos finales. Los
