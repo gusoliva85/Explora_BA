@@ -89,6 +89,14 @@ teléfono con `npm run dev:lan` desde la misma red WiFi.
 
 ### 🔴 D-02 — La cámara: "tercera persona, vista cenital"
 
+> ⚠️ **CORREGIDA el 31/10/2026 por D-23**, y confirmada el 7/11 por **D-39**.
+> El ángulo de 66° que fija esta decisión se midió en el juego y dejaba a Gus
+> en 29 píxeles de alto. Hoy son **48°, 15 m de distancia y la mira 3 m
+> adelante**. Lo que sigue valiendo de acá es la calle en diagonal y el
+> teléfono en vertical. Y D-39 agrega que **la cámara no sigue al blanco del
+> disparo automático**. Ver `03_roadmap.md`.
+
+
 **La contradicción.** La sección 1 dice *"tercera persona, vista cenital"*. Son
 dos cámaras distintas: cenital es mirar desde arriba en picada; tercera persona
 es por detrás del hombro. La sección 12 vuelve sobre el tema sin cerrarlo.
@@ -155,6 +163,13 @@ en el teléfono y elegir. Antes de tener zombis la prueba no sirve, porque el
 
 ### 🔴 D-03 — La bazooka: dos especificaciones incompatibles
 
+> ❌ **ANULADA el 7/11/2026 por D-29.** La bazooka se saca del juego entera:
+> el arma, el botón, la barra de 30 s y el cohete. Queda una sola arma sin
+> munición ni recarga. Lo único que sobrevive de lo que esta decisión trajo
+> es el **apuntado automático**, que pasa a ser el corazón del combate
+> (D-28). El texto se conserva porque explica de dónde salió esa función.
+
+
 **La contradicción.** La sección 1 dice *"dispara al zombi más cercano con un
 daño enorme en área"* (apuntado automático). La tabla de la sección 11 dice
 *"munición limitada, 1 solo disparo, espera de 30 segundos"*. Y en la sección 1
@@ -203,6 +218,22 @@ matar".
 
 ### 🟡 D-04 — La geografía: Independencia 3250 → Billinghurst 240
 
+> ❌ **REABIERTA y REEMPLAZADA el 7/11/2026 por D-26, D-35 y D-41**, y es el
+> único caso en todo el proyecto de una decisión que se reabrió. El motivo:
+> **el dato que la justificaba estaba mal medido.** Esta decisión dice que la
+> distancia real es *"de varios kilómetros, atravesando varios barrios"*. Son
+> **1.623,9 m** en cinco tramos de 260 a 357 m, entre Boedo y Almagro, y el
+> cálculo está en `tools/recorrido-real.mjs`.
+>
+> Lo que cambia: el recorrido se construye como una **cuadrícula de siete
+> cuadras de 100 m con giros de 90°** (D-35), con **seis controles**, y el
+> destino vuelve a ser **Billinghurst 250**, que es la casa de Sergio (D-41).
+> La comisaría sobre Carlos Calvo que esta decisión inventó ya no existe.
+>
+> Lo que sigue valiendo: **comprimir está bien**. Se comprime a 700 m
+> caminados. Lo que estaba mal no era la decisión, era su justificación.
+
+
 **El problema.** Las direcciones son reales y están bien elegidas
 temáticamente, pero **la distancia real entre esos dos puntos es de varios
 kilómetros**, atravesando varios barrios. Construir eso a escala es exactamente
@@ -227,6 +258,11 @@ camina los 40 minutos que tomaría el recorrido real.
 > modelarla a mano: es traer la traza de calles desde OpenStreetMap y generar
 > las manzanas por código. Eso recién tiene sentido con varias misiones
 > funcionando, y hay que revisar la licencia de OSM (ODbL, exige atribución).
+>
+> ✅ **Esta nota tenía razón, y quedó archivada por el error de D-04.** El
+> 7/11/2026 se retomó: OSM entra como **guía de forma** para decidir qué calle
+> corre norte-sur, y la traza a escala 1:1 generada por código queda para la
+> Fase 15, cuando haya varias misiones. Ver D-26.
 
 ---
 
@@ -849,29 +885,29 @@ La tabla de riesgos de la sección 16 está bien. Le faltan cuatro.
 
 ## 7. Resumen de decisiones
 
-| # | Decisión | Prioridad |
-|---|---|---|
-| D-01 | Motor PlayCanvas como biblioteca local (npm + Vite + Git), no el editor en la nube | 🔴 |
-| D-02 | Teléfono vertical, calle en diagonal, cámara a 66°; el ángulo se cierra tras la Fase 4 | 🔴 |
-| D-03 | Bazooka con barra de 30 s, apuntado automático, sin munición | 🔴 |
-| D-04 | Ruta comprimida a ~350 m; las direcciones son simbólicas, no están a escala | 🟡 |
-| D-05 | No hay escopeta; el ruido pasa a la pistola | 🟡 |
-| D-06 | El escuadrón queda fuera de la demo; la historia se mantiene | 🟡 |
-| D-07 | Se descarta la referencia "Pueblo" | 🔵 |
-| D-08 | Capa de entrada abstracta; el modo celular se detecta por capacidades, nunca por user agent | 🔴 |
-| D-09 | Sin motor de física: controlador cinemático y colisión 2D | 🔴 |
-| D-10 | Zombis con dirección + evasión por rayos, sin navmesh | 🔴 |
-| D-11 | Todo por `dt`, con techo de 1/15 s y pausa al perder foco | 🔴 |
-| D-12 | Aleatoriedad con semilla; `Math.random()` prohibido | 🟡 |
-| D-13 | Interfaz en HTML/CSS sobre el canvas | 🟡 |
-| D-14 | `localStorage` para ajustes, último control y mejor tiempo | 🟡 |
-| D-15 | **Vertical** es la orientación de diseño; horizontal se adapta y no se avisa nada | 🔴 |
-| D-16 | El juego transcurre **de día**, con estética low-poly clara y mate | 🔴 |
-| D-17 | **Un solo convenio de ángulos**, en `core/rumbo.js`: rumbo 0 mira a `-Z`. Ningún `atan2` de rumbos fuera de ahí | 🔴 |
-| D-18 | Ningún destello dura menos que el techo de `dt`, o puede no dibujarse nunca | 🟡 |
-| D-19 | `pointer-events: auto` es sólo para lo que TIENE un manejador; lo decorativo nunca | 🔴 |
-| D-20 | Los objetos se levantan caminándolos, sin botón; y lo que no sirve no se levanta | 🟡 |
-| D-21 | Curarse lleva tiempo, hay que estar quieto, y lo corta cualquier golpe. El objeto no se pierde | 🔴 |
+| # | Decisión | Prioridad | Estado al 7/11/2026 |
+|---|---|---|---|
+| D-01 | Motor PlayCanvas como biblioteca local (npm + Vite + Git), no el editor en la nube | 🔴 | ✅ vigente |
+| D-02 | Teléfono vertical, calle en diagonal, cámara a 66° | 🔴 | ⚠️ los 66° los **corrige D-23**: hoy son 48° |
+| D-03 | Bazooka con barra de 30 s, apuntado automático, sin munición | 🔴 | ❌ **anulada por D-29**; sobrevive el apuntado automático |
+| D-04 | Ruta comprimida a ~350 m; las direcciones son simbólicas | 🟡 | ❌ **reemplazada por D-26, D-35 y D-41**: la distancia estaba mal medida |
+| D-05 | No hay escopeta; el ruido pasa a la pistola | 🟡 | ✅ vigente, y **más importante que antes**: el ruido atrae al zombi que falta |
+| D-06 | El escuadrón queda fuera de la demo; la historia se mantiene | 🟡 | ✅ vigente |
+| D-07 | Se descarta la referencia "Pueblo" | 🔵 | ✅ vigente |
+| D-08 | Capa de entrada abstracta; el modo celular se detecta por capacidades, nunca por user agent | 🔴 | ✅ vigente; el joystick se muda a la derecha por **D-27** |
+| D-09 | Sin motor de física: controlador cinemático y colisión 2D | 🔴 | ✅ vigente |
+| D-10 | Zombis con dirección + evasión por rayos, sin navmesh | 🔴 | ✅ vigente |
+| D-11 | Todo por `dt`, con techo de 1/15 s y pausa al perder foco | 🔴 | ✅ vigente |
+| D-12 | Aleatoriedad con semilla; `Math.random()` prohibido | 🟡 | ✅ vigente |
+| D-13 | Interfaz en HTML/CSS sobre el canvas | 🟡 | ✅ vigente |
+| D-14 | `localStorage` para ajustes, último control y mejor tiempo | 🟡 | ✅ vigente |
+| D-15 | **Vertical** es la orientación de diseño; horizontal se adapta y no se avisa nada | 🔴 | ✅ vigente |
+| D-16 | El juego transcurre **de día**, con estética low-poly clara y mate | 🔴 | ✅ vigente |
+| D-17 | **Un solo convenio de ángulos**, en `core/rumbo.js`: rumbo 0 mira a `-Z`. Ningún `atan2` de rumbos fuera de ahí | 🔴 | ✅ vigente |
+| D-18 | Ningún destello dura menos que el techo de `dt`, o puede no dibujarse nunca | 🟡 | ✅ vigente |
+| D-19 | `pointer-events: auto` es sólo para lo que TIENE un manejador; lo decorativo nunca | 🔴 | ✅ vigente |
+| D-20 | Los objetos se levantan caminándolos, sin botón | 🟡 | ❌ **superada por D-32**: no hay objetos |
+| D-21 | Curarse lleva tiempo, hay que estar quieto, y lo corta cualquier golpe | 🔴 | ❌ **superada por D-32**: no hay curación |
 
 ---
 
@@ -971,6 +1007,12 @@ cada punto (`elementFromPoint`) o usar eventos táctiles por CDP.
 
 ### 🟡 D-20 — Los objetos se levantan caminándolos
 
+> ❌ **SUPERADA el 7/11/2026 por D-32.** Ya no hay objetos: la munición y los
+> botiquines salen del juego entero (Fase 16). La progresión se mueve a
+> **tres cartas de mejora al llegar a cada control**. No estaba equivocada:
+> era correcta para el juego que había.
+
+
 **El problema.** El documento 01 y la Fase 8 planeaban un botón contextual
 de recoger, a 1,8 m del objeto.
 
@@ -993,6 +1035,12 @@ automático sería peor que el botón.
 ---
 
 ### 🔴 D-21 — Curarse lleva tiempo, y hay que parar
+
+> ❌ **SUPERADA el 7/11/2026 por D-32.** Ya no hay curación: el botiquín sale
+> del juego (Fase 16) y el daño es permanente (D-31). Si la curación vuelve,
+> va a ser como carta de power-up. El razonamiento de acá —que curarse gratis
+> no es una decisión— sigue siendo válido y hay que respetarlo cuando vuelva.
+
 
 **El problema.** La primera versión curaba al pisar el botiquín. Un
 botiquín que cura al apretar —o al caminarlo— no es una decisión: es un
@@ -1031,7 +1079,7 @@ que haya una forma de elegir que no estorbe.
 | # | Anotación |
 |---|---|
 | NOTA-01 | Si colocar props en código se vuelve tedioso: armar la escena en Blender y exportarla como `.glb` |
-| NOTA-02 | Escala real solo con OpenStreetMap y generación por código; revisar licencia ODbL |
+| NOTA-02 | Escala real solo con OpenStreetMap y generación por código; revisar licencia ODbL — **retomada el 7/11, ver D-26** |
 | NOTA-03 | Compañeros: primero que te sigan, después que peleen, último que puedan morir. Tope de 2 |
 | NOTA-04 | Ammo.js solo para ragdolls y escombros, nunca para el movimiento del jugador |
 | NOTA-05 | Grilla de navegación con A\* solo si se ven zombis trabados en esquinas |

@@ -835,6 +835,12 @@ distinga menú, juego, pausa, victoria y derrota.
 
 # FASE 2 — Movimiento y cámara ✅
 
+> ⚠️ **Parcialmente superada el 7/11/2026.** Caminar desaparece: correr pasa a
+> ser la única velocidad (**D-30**), y con eso se van `walkSpeed`, el botón, la
+> tecla `Shift` y el estado `isRunning`. El joystick se muda a la derecha
+> (**D-27**). La cámara se queda como la dejó la 12R.1 y **no sigue al blanco
+> del disparo automático** (**D-39**).
+
 **Objetivo:** mover a Gus por el mundo, con cámara y colisiones que funcionen.
 
 ### Tareas
@@ -958,6 +964,13 @@ poco.
 ---
 
 # FASE 3 — El mapa de la Misión 001 ✅
+
+> ⚠️ **Se rehace entera el 7/11/2026.** El mapa de tres cuadras con dos rutas
+> alternativas lo reemplaza la **cuadrícula de siete cuadras con giros de 90°**
+> (**D-35**), las rutas alternativas se borran (**D-34**) y el mundo pasa a
+> construirse por tramos (**D-42**). Lo que sobrevive, y es lo importante: el
+> generador exige tramos alineados a un eje, que era lo que yo trataba como
+> deuda y resultó ser la especificación.
 
 **Objetivo:** que los tres tramos del recorrido existan completos y se sienta
 una calle de Buenos Aires, todavía en cajas de colores.
@@ -1158,6 +1171,11 @@ reabren acá: lo único que se ajusta es la inclinación.
 
 # FASE 5 — Combate cuerpo a cuerpo ✅
 
+> ❌ **BORRADA el 7/11/2026 por D-29.** El cuchillo sale del juego entero.
+> Queda una sola arma. El texto se conserva porque el razonamiento sobre el
+> arco de golpe y el empujón sigue siendo bueno, y porque fue así como se
+> descubrió qué juego queríamos.
+
 **Objetivo:** el cuchillo. Que pegarle a un zombi se sienta bien.
 
 ### Tareas
@@ -1283,6 +1301,18 @@ el arco. Eso llega con el modelo, en la Fase 12.
 ---
 
 # FASE 6 — Pistola y sistema de ruido ✅
+
+> ✅ **Sobrevive entera, y vale más que antes.** Es la única de las fases de
+> combate que no se toca: la pistola pasa a ser **el arma** (**D-29**) y el
+> sistema de ruido se vuelve más importante de lo que era. Con la esclusa de
+> **D-37** hay que matar a todos los zombis del tramo para pasar, y el peor
+> caso de esa mecánica es el último zombi escondido en una esquina. **Disparar
+> hace ruido a 22 m y el ruido los atrae**: o sea que pararse a tirar los va
+> trayendo solos. El sistema que se construyó para dar tensión resulta ser,
+> además, la mitad de la solución a un problema que todavía no existía.
+>
+> Lo único que cambia: la dispersión se va a cero (**D-36**), el tiro no falla
+> nunca salvo barrera, y con ella se va el apuntado asistido.
 
 **Objetivo:** el arma a distancia, y que disparar tenga consecuencias.
 
@@ -1417,6 +1447,13 @@ ruido son el punto de partida del documento 02. Se ajustan jugando.
 ---
 
 # FASE 7 — Bazooka ✅
+
+> ❌ **BORRADA el 7/11/2026 por D-29.** El arma, el botón, la barra de 30 s, el
+> cohete y la explosión. **Lo único que sobrevive es `objetivoAutomatico()`**,
+> el apuntado automático, que pasa a ser el corazón del combate (**D-28**). Es
+> el ejemplo del proyecto de código guardado en el lugar equivocado: no tenía
+> por qué vivir dentro de la bazooka, vive ahí porque la bazooka lo necesitó
+> primero.
 
 **Objetivo:** el arma especial con barra de espera y apuntado automático (D-03).
 
@@ -1555,6 +1592,11 @@ Con una estela se leería mejor la trayectoria; es trabajo de la Fase 12.
 ---
 
 # FASE 8 — Objetos e inventario ✅
+
+> ❌ **BORRADA el 7/11/2026 por D-32.** Munición, botiquines, inventario y
+> curación salen del juego entero. La progresión se muda a **tres cartas de
+> mejora al llegar a cada control**. D-20 y D-21 quedan superadas, no
+> equivocadas: eran correctas para el juego que había.
 
 **Objetivo:** recursos que se recogen y se usan.
 
@@ -1781,6 +1823,13 @@ el juego funcionando bien. Ahora todo lo que depende del bucle se espera
 ---
 
 # FASE 9 — La misión completa ✅ 🏁
+
+> ⚠️ **Parcialmente superada el 7/11/2026.** La estructura —se gana, se pierde,
+> se reintenta, el récord se guarda— se conserva. Lo que cambia: **seis
+> controles en vez de dos**, cada uno es una esclusa que no abre hasta limpiar
+> el tramo (**D-37**), el destino es la casa de Sergio (**D-41**), y al morir se
+> reaparece **del lado de adentro** de la última puerta, porque del otro lado la
+> cuadra ya no existe en memoria (**D-42**).
 
 **Objetivo:** que se pueda jugar de principio a fin, ganar, perder y reintentar.
 

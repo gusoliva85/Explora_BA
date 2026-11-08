@@ -8,10 +8,20 @@ En el camino elige entre avanzar por la calle, que es más corto pero pasa
 por donde están los zombis, o meterse por un pasaje, que es más largo y más
 angosto pero lo esquiva.
 
-> **Estado: en desarrollo.** Hay mapa, cámara, movimiento, controles
-> táctiles y zombis que te persiguen. **Todavía no se puede atacar.**
-> Todo el arte es provisional: formas armadas con primitivas del motor,
-> sin un solo modelo ni textura. Eso se reemplaza en la Fase 12.
+> **Estado: en desarrollo.** El juego se juega de principio a fin: hay mapa,
+> cámara, movimiento, controles táctiles, zombis que te detectan y te
+> persiguen, combate, objetos, controles intermedios y final. El arte es
+> provisional —formas armadas con primitivas del motor, sin un solo modelo ni
+> textura— y lo está reemplazando la **Fase 12R**.
+>
+> ⚠️ **Y el 7 de noviembre de 2026 el juego cambió de forma.** Se van los
+> ítems, la bazooka, el cuchillo, la munición, caminar y todos los botones de
+> acción; el combate pasa a ser automático al quedarse quieto; el recorrido
+> pasa a ser el real de Buenos Aires en cuadrícula; y cada control pasa a ser
+> una esclusa que no abre hasta que no quede un zombi vivo en el tramo.
+> **Todo lo que este archivo describe más abajo es el juego de HOY, y buena
+> parte está por desaparecer.** El plan está en
+> [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
 
 ---
 
@@ -289,7 +299,7 @@ Están todas en el documento 02. Las que más sorprenden:
 - [Vite](https://vite.dev/) como servidor de desarrollo
 - [Vitest](https://vitest.dev/) y [Playwright](https://playwright.dev/)
   para las pruebas
-- Blender, para los modelos, a partir de la Fase 12
+- Blender sólo si hace falta: los modelos salen de `.glb` que ya existen
 
 ---
 

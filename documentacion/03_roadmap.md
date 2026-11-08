@@ -859,9 +859,10 @@ de tres cajas tiradas en el piso.
 - [ ] **19B.3 La acumulación.** Todo suma, nada se pierde durante la partida. Al morir, la capa entera a cero
 - [ ] **19B.4 El pool definitivo**, con el de Gus
 - [ ] **19B.5 La pantalla.** Tres cartas, en vertical, alcanzables con un pulgar
-- [ ] **19B.6 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
-- [ ] **19B.7 Al morir se pierde todo**, con una prueba que lo verifique
-- [ ] **19B.8 El balance de las seis.** Con 6 controles se termina con 6 mejoras: que la última cuadra se sienta frenética sin que el juego se rompa
+- [ ] **19B.6 Los iconos, dibujados de cero.** ⚠️ Las imágenes de `documentacion/habilidades/` **salieron de otro juego**, así que son **referencia de diseño y no entran a `public/`**. Modificarlas no las vuelve usables: una versión alterada de una imagen ajena sigue siendo obra derivada. Hay que dibujar iconos **originales en SVG** con el mismo lenguaje —cuadrado, marco verde, fondo claro, una o dos formas planas—, que además pesan nada y escalan solos. Son flechas: es media hora de trabajo, no un problema
+- [ ] **19B.7 Qué se ve durante la partida.** Una fila de iconos chicos con lo que se lleva puesto
+- [ ] **19B.8 Al morir se pierde todo**, con una prueba que lo verifique
+- [ ] **19B.9 El balance de las seis.** Con 6 controles se termina con 6 mejoras: que la última cuadra se sienta frenética sin que el juego se rompa
 
 ### Lo que Gus ya empezó a armar
 
@@ -903,7 +904,7 @@ arquitectura y lo habría descubierto tarde.
 > que escribirlo antes de programarlo. Lo cierra la 19B.4.
 
 **Y fijan el estilo del icono:** cuadrado con marco verde, fondo claro,
-dibujo plano de una o dos formas, legible a tamaño chico. La 19B.5 se hace
+dibujo plano de una o dos formas, legible a tamaño chico. La 19B.6 se hace
 contra eso, no inventando otro.
 
 ### Lo que necesito de Gus para la 19B
