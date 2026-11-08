@@ -19,8 +19,7 @@ import {
   destaca,
   variar,
   SEPARACION_MINIMA,
-  SATURACION_DECORADO_MAX,
-  SATURACION_INFO_MIN
+  SATURACION_DECORADO_MAX
 } from '../src/visual/paleta.js';
 
 const FAMILIAS = { CALLE, FACHADA, CARTEL, VERDE, VEHICULO, ABANDONO, ZOMBI, GUS, OBJETO };
@@ -114,16 +113,6 @@ describe('lo que se tiene que leer, se lee', () => {
     expect(separacion(CALLE.raya, CALLE.asfalto)).toBeGreaterThan(0.4);
   });
 
-  it('los objetos recogibles se despegan del piso donde caen', () => {
-    // Por luminancia o por color: el botiquin esta casi a la misma
-    // luminancia que el asfalto y salta igual, porque el asfalto no tiene
-    // color y el botiquin si.
-    for (const piso of [CALLE.vereda, CALLE.asfalto]) {
-      expect(destaca(OBJETO.botiquin, piso)).toBe(true);
-      expect(destaca(OBJETO.municion, piso)).toBe(true);
-    }
-  });
-
 
   it('las tres verdes de una copa se separan entre si', () => {
     expect(lee(VERDE.claro, VERDE.medio)).toBe(true);
@@ -137,13 +126,15 @@ describe('lo que se tiene que leer, se lee', () => {
 });
 
 describe('la saturacion esta jerarquizada', () => {
-  it('el botiquin es lo mas saturado del juego', () => {
-    expect(saturacion(OBJETO.botiquin)).toBeGreaterThanOrEqual(SATURACION_INFO_MIN);
-    for (const [nombre, c] of todos) {
-      if (nombre === 'OBJETO.botiquin') continue;
-      expect(saturacion(c), nombre).toBeLessThanOrEqual(saturacion(OBJETO.botiquin));
-    }
-  });
+  /*
+   * Hasta la Fase 16 habia una prueba mas: "el botiquin es lo mas saturado
+   * del juego". Era la cuspide de la jerarquia y se fue con los objetos.
+   *
+   * Lo que queda es la regla de abajo, que es la que importaba: ningun
+   * DECORADO compite con la informacion. Cuando las cartas de power-up
+   * (D-32) traigan un color propio, va a tener que entrar por arriba de
+   * este techo y la cuspide vuelve.
+   */
 
   it('ningun decorado compite con la informacion', () => {
     const decorado = [

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { LARGO, COLOR_ARMA } from '../src/characters/armas.js';
 import { PRESUPUESTO, separacion, saturacion, SATURACION_ACENTO } from '../src/art/styleGuide.js';
 import { COLORS } from '../src/world/palette.js';
-import { WEAPONS, ITEMS } from '../src/config/balance.js';
+import { WEAPONS } from '../src/config/balance.js';
 
 /**
  * ===========================================================================
@@ -92,12 +92,6 @@ describe('el presupuesto de detalle', () => {
     // gasta. La bazooka se ve dos veces por partida.
     expect(PIEZAS.bazooka).toBeGreaterThanOrEqual(PIEZAS.cuchillo);
   });
-
-  it('los objetos del piso entran en el suyo', () => {
-    // Caja + disco + la marca de arriba (dos piezas en el botiquin).
-    const PIEZAS_BOTIQUIN = 4;
-    expect(PIEZAS_BOTIQUIN * 12).toBeLessThanOrEqual(PRESUPUESTO.objeto);
-  });
 });
 
 describe('las armas del modelo son las del balance', () => {
@@ -116,25 +110,5 @@ describe('las armas del modelo son las del balance', () => {
     // Coherencia básica: el arma que llega más lejos es la que más ocupa.
     expect(WEAPONS.bazooka.range).toBeGreaterThan(WEAPONS.pistol.range);
     expect(LARGO.bazooka).toBeGreaterThan(LARGO.pistola);
-  });
-});
-
-describe('los objetos del piso se distinguen entre si', () => {
-  it('el botiquin y la municion tienen marcas distintas', () => {
-    /*
-     * El movimiento —flotan y giran— ya dice "esto se recoge". Lo que
-     * faltaba era decir QUE. Una cruz y una tapa alargada son dos
-     * siluetas que se distinguen a veinte metros sin leer un icono.
-     *
-     * Acá se fija la decisión; la forma la valida el ojo en la escena de
-     * estilo.
-     */
-    const marcas = { botiquin: 2, municion: 1 };
-    expect(marcas.botiquin).not.toBe(marcas.municion);
-  });
-
-  it('el botiquin cura y la municion no: son cosas distintas', () => {
-    expect(ITEMS.medkit.heal).toBeGreaterThan(0);
-    expect(ITEMS.ammoPistol.amount).toBeGreaterThan(0);
   });
 });

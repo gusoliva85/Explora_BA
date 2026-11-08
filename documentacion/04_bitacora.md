@@ -3988,6 +3988,79 @@ tenerla explícita para no abrirlas sin motivo:
 | Todo lo de la 12R.0 a la 12R.7 | Ocho tareas terminadas y medidas. Con D-35 ya no hace falta ni retocar las ochavas |
 
 ---
+## 16.1 — Los ítems: 2.223 líneas menos
+
+**8 de noviembre de 2026.** Primera tarea de la poda, y la primera vez en
+todo el día que se toca `src/`.
+
+**Lo que se fue.** Munición y botiquines, del juego entero: `itemLogic.js`,
+`itemView.js` e `inventario.js` —510 líneas—, `ITEMS` y `CHECKPOINT_DROP` del
+balance, las cinco zonas de objetos de la misión, nueve funciones de
+`main.js`, cuatro elementos del HUD con su CSS, los tres colores de la paleta
+y cuatro archivos de prueba enteros. **25 archivos, 2.223 líneas menos y 45
+agregadas.**
+
+**Lo que verifica que está bien:**
+
+| | Antes | Después |
+|---|---|---|
+| Pruebas unitarias | 474 | **423 en verde** |
+| Pruebas de punta a punta | 57 | **57 en verde** |
+| Llamadas de dibujo | 238 | 237 |
+| Entidades en la escena | 2.621 | 2.593 |
+| Rama `Objetos` del árbol | 23 entidades | **no existe** |
+
+Las de punta a punta importan más que las unitarias acá: incluyen terminar la
+misión de principio a fin y el reinicio cinco veces seguidas. El juego se
+sigue jugando entero.
+
+### Tres cosas que aparecieron haciéndolo
+
+**1. Casi me llevo puesta la bazooka.** Para borrar `ITEMS` busqué hacia atrás
+el comentario que precedía al bloque, y el `/**` más cercano hacia atrás no
+era el de `ITEMS`: era el de `blastPush`, adentro de `WEAPONS.bazooka`. El
+corte se comió el final de las armas. Lo agarró el `import()` de verificación
+—`WEAPONS` seguía existiendo, pero mutilado— y se rehizo delimitando por
+`export const` en vez de por comentario.
+
+Lo anoto porque es el riesgo de toda esta fase: **en un borrado grande, el
+error no es borrar de más en el archivo equivocado, es borrar de más en el
+archivo correcto.** De acá en adelante, cada bloque que se corte se delimita
+por un ancla que no se repita, y se verifica cargando el módulo.
+
+**2. La prueba del reinicio seguía siendo buena, y había que arreglarla, no
+borrarla.** `mision.spec.js` saca una "foto" del estado y compara cinco
+reinicios contra la primera. Tres de sus campos eran de objetos. La tentación
+era borrar la prueba entera con el sistema que miraba. Pero lo que esa prueba
+mide —que nada se acumule al reiniciar— **vale más ahora que antes**, porque
+la Fase 19A va a destruir y reconstruir cuadras enteras (D-42) y ahí una fuga
+no se nota hasta el tramo cinco. Se le sacaron los tres campos y se quedó el
+que de verdad detectaba la acumulación, que era el total de entidades.
+
+**3. Una prueba de la paleta se murió con razón, y deja un hueco anotado.**
+Había una que decía *"el botiquín es lo más saturado del juego"*: era la
+cúspide de la jerarquía de saturación, el color más fuerte, reservado para lo
+único que el jugador NECESITABA encontrar. Con los objetos afuera, la cúspide
+queda vacante y el techo del decorado queda sin nada por encima.
+
+No lo arreglé inventando una cúspide nueva. Quedó escrito en el archivo de
+pruebas: cuando las cartas de power-up (D-32) traigan su color, **tiene que
+entrar por arriba de ese techo**, y ahí la regla vuelve a cerrar. Una
+jerarquía con la punta vacía no está rota, está esperando.
+
+### Lo que queda peor que antes, a propósito
+
+Los controles ahora **no dan nada**. Hasta hoy dejaban dos cajas de munición y
+un botiquín; eso se fue y lo que lo reemplaza —la esclusa de D-37 y las cartas
+de D-32— lo construye la Fase 19A. Entre hoy y esa fase el juego es más pobre
+que ayer.
+
+Está anotado en el plan y se repite acá porque es el momento en que uno duda:
+**es una etapa, no el resultado.** El comentario quedó escrito en el propio
+manejador de `CHECKPOINT_REACHED`, que es donde lo va a leer el que venga.
+
+---
+
 ## Apéndice A — Decisiones que se cierran en cada fase
 
 | Fase | Decisión pendiente | Cómo se cierra |

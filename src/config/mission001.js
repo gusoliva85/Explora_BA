@@ -138,19 +138,18 @@ export const mission001 = {
    * =========================================================================
    * ZONAS DE JUEGO
    * =========================================================================
-   * Donde van a aparecer zombis y objetos. Todavia no hay ni unos ni otros
-   * —eso es la Fase 4 y la Fase 8— pero las zonas se definen ahora, con el
-   * mapa fresco, porque son decisiones de diseño de nivel y no de
-   * implementacion.
+   * Donde van a aparecer los zombis.
+   *
+   * Hasta la Fase 16 habia tambien zonas de `municion` y `curacion`. Se
+   * fueron con los objetos. Lo que va a venir aca es el reparto por tramo
+   * de la Fase 19A: cada tramo declara cuantos zombis y de que tipo, porque
+   * la esclusa de D-37 necesita poder contarlos para saber cuando abrir.
    *
    * La logica que las ordena:
    *
    *   - Los zombis se concentran en los cuellos de botella y en la boca de
    *     los pasajes. Son los lugares donde el jugador tiene que frenar, y
    *     un zombi solo da miedo si aparece donde uno no puede correr.
-   *   - Los objetos se ponen en el camino LARGO. Asi el desvio paga: es
-   *     mas seguro y ademas rinde. Si el camino corto tuviera lo mismo,
-   *     nadie elegiria el otro.
    *   - El primer tramo arranca flojo: hay que dejar que el jugador
    *     aprenda a moverse antes de exigirle nada.
    *
@@ -174,17 +173,6 @@ export const mission001 = {
     { tipo: 'zombis', x: -90, z: -190, radio: 12, peso: 0.8,
       nota: 'Ultimo tramo. Presion sostenida hasta la comisaria.' },
 
-    // --- Objetos ------------------------------------------------------------
-    { tipo: 'municion', x: 17, z: -52, radio: 3, peso: 1,
-      nota: 'Entrada del pasaje: premia haber elegido el camino largo.' },
-    { tipo: 'curacion', x: 17, z: -74, radio: 3, peso: 1,
-      nota: 'Salida del pasaje, antes de volver a la calle.' },
-    { tipo: 'municion', x: -8, z: -104, radio: 3, peso: 1,
-      nota: 'Junto a la parada de colectivo, antes del control 1.' },
-    { tipo: 'curacion', x: -65, z: -129, radio: 3, peso: 1,
-      nota: 'Fondo del pasaje de Boedo.' },
-    { tipo: 'municion', x: -84, z: -160, radio: 3, peso: 1,
-      nota: 'Tramo final, para llegar con algo con que defenderse.' }
   ],
 
   /*

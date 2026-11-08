@@ -33,7 +33,6 @@ export class Estadisticas {
     this.disparos = 0;
     this.golpesRecibidos = 0;
     this.dañoRecibido = 0;
-    this.botiquinesUsados = 0;
     this.muertes = 0;
     this.controles = 0;
     this.bazookasUsadas = 0;

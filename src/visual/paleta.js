@@ -364,25 +364,12 @@ export const GUS = {
    ========================================================================= */
 
 export const OBJETO = {
-  /**
-   * medido #a23b2f (sat 0.71) -> subido a 0.80.
-   *
-   * Es el color mas saturado del juego, y tiene que serlo por regla: es el
-   * unico objeto que el jugador NECESITA encontrar. Medido quedaba por
-   * debajo del chaleco reflectante de un zombi, que es decorado.
+  /*
+   * Los colores del botiquin, su cruz y la caja de municion se fueron en la
+   * Fase 16, con los objetos. Eran los tres mas saturados del juego, por
+   * una regla que ya no aplica: eran lo unico que el jugador NECESITABA
+   * encontrar. Si la curacion vuelve como carta (D-32), vuelven con ella.
    */
-  botiquin: [0.66, 0.19, 0.132],
-  /** medido #ced0da. La cruz. */
-  blanco: [0.808, 0.816, 0.855],
-  /**
-   * medido #676043 (lum 0.374) -> subido a 0.45.
-   *
-   * En la referencia la caja esta en sombra, y con ese valor no se despega
-   * del asfalto: 0.039 de luminancia y 0.107 de color, las dos por debajo
-   * del minimo. Un objeto que el jugador tiene que encontrar no puede
-   * depender de que se acuerde de donde cayo. Se conserva el tono oliva.
-   */
-  municion: [0.42, 0.48, 0.23],
   /** medido #ad7d3a. Vaina de laton. */
   laton: [0.678, 0.49, 0.227],
   /** medido #7e3f25. Culote del cartucho. */

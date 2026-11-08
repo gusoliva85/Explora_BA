@@ -349,8 +349,8 @@ test.describe('perder y reintentar', () => {
 test.describe('reinicio limpio', () => {
   test('reiniciar cinco veces deja el mundo igual cada vez', async ({ page }) => {
     /*
-     * La tarea 9.7: "ni un zombi duplicado, ni un objeto recogido que
-     * vuelve a estar recogido, ni un temporizador que quedo corriendo".
+     * La tarea 9.7: "ni un zombi duplicado, ni un temporizador que quedo
+     * corriendo".
      *
      * Se compara el estado completo contra el de la primera vez. Con la
      * semilla fija, dos arranques tienen que dar EXACTAMENTE lo mismo: si
@@ -374,8 +374,12 @@ test.describe('reinicio limpio', () => {
      *
      * Lo que SI detecta una duplicacion es `zombisTotal` —los puestos del
      * mapa— y, sobre todo, el total de entidades de la escena: si algo se
-     * acumula al reiniciar (zombis, objetos, cohetes), ese numero crece y
-     * no vuelve a bajar.
+     * acumula al reiniciar (zombis, cohetes), ese numero crece y no vuelve
+     * a bajar.
+     *
+     * Los objetos, el inventario y la curacion salieron de la foto en la
+     * Fase 16, con el sistema entero. El total de entidades los cubria
+     * igual: era el numero que de verdad detectaba la acumulacion.
      */
     const foto = () =>
       page.evaluate(() => {
@@ -390,28 +394,22 @@ test.describe('reinicio limpio', () => {
         return {
           entidadesEnEscena: entidades,
           zombisTotal: g.zombis.stats.total,
-          objetos: JSON.stringify(g.objetos.contar()),
-          entidadesObjeto: g.vistaObjetos.vistas.size,
           cohetes: g.cohetes.vivos.length,
-          botiquines: g.inventario.cuantos('medkit'),
           cargador: g.arma.enCargador,
           reserva: g.arma.enReserva,
           bazooka: Math.round(g.arma.progresoEspecial * 10),
-          controles: g.mission.nextCheckpoint,
-          usando: g.uso.enCurso
+          controles: g.mission.nextCheckpoint
         };
       });
 
     const primera = await foto();
 
     for (let i = 0; i < 5; i++) {
-      // Ensuciar el estado antes de reiniciar: juntar cosas, gastar balas,
-      // avanzar controles, dejar un uso a medias.
+      // Ensuciar el estado antes de reiniciar: gastar balas y avanzar
+      // controles.
       await page.evaluate(async () => {
         const g = globalThis.game;
         g.arma.cargador.pistol = 2;
-        g.inventario.agregar('medkit', 1);
-        g.uso.iniciar('medkit', 5);
         await globalThis.__ir(
           g.mission.mission.route[g.mission.mission.checkpoints[0].atRouteIndex]
         );

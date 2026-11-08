@@ -24,39 +24,30 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.1 — Sacar los ítems** · primera de la poda
+### **16.2 — Sacar la munición de la pistola** · segunda de la poda
 
-**Por qué va primera.** Todo lo que viene después se hace más fácil con el
-juego más chico. Los ítems atraviesan nueve archivos y cuatro archivos de
-pruebas; mientras estén, cada cambio de combate hay que pensarlo dos veces.
-
-**Qué se saca, y de dónde.** Munición y botiquines desaparecen del juego
-entero: de la vista, de la lógica, del balance, del mapa y del HUD.
+**Qué se saca.** Cargador, reserva y recarga. La pistola pasa a disparar
+siempre, sin contar balas (**D-29**).
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/items/itemLogic.js` | muere |
-| `src/items/itemView.js` | muere |
-| `src/items/inventario.js` | muere |
-| `src/config/balance.js` | se va `ITEMS` y se va `CHECKPOINT_DROP` |
-| `src/config/mission001.js` | se van las zonas `municion` y `curacion` |
-| `src/main.js` | se van `BolsaDeObjetos`, `VistaObjetos`, `Inventario`, `UsoDeObjeto`, `recogerObjetos`, `soltarObjetosDelMapa`, `soltarEnControl`, `intentarCurarse`, `actualizarHudObjetos` |
-| `index.html` | se van `btn-heal`, `heal-count`, `fila-uso`, `uso-fill` |
-| `src/styles/hud.css` | se va el CSS de esos cuatro |
-| `src/ui/hud.js` | se van las referencias y los métodos que los tocan |
-| pruebas | mueren `inventario.test.js`, `objetos.test.js`, `objetos.spec.js`, `curacion.spec.js` |
+| `src/config/balance.js` | de `WEAPONS.pistol` se van `magazineSize`, `reloadTime`, `startingReserve` y `ammoType` |
+| `src/combat/weaponController.js` | mueren `recargar()`, `#completarRecarga()`, `sumarMunicion()`, `#avisarMunicion()` y el estado `RECARGANDO` |
+| `index.html` | se van `arma-municion`, `recarga`, `recarga-texto`, `recarga-fill` y `btn-reload` |
+| `src/styles/hud.css` | se va el CSS de la barra de recarga y del botón |
+| `src/ui/hud.js` | se van `setRecarga()`, `avisarSinMunicion()` y las referencias |
+| `src/input/inputManager.js` | se va el botón `reload` y la tecla `R` |
+| pruebas | `tests/pistola.spec.js` pierde el bloque `municion`; `tests/pistola.test.js` pierde lo de cargador y recarga |
 
-**Cuidado con esto:** `CHECKPOINT_DROP` es lo que hoy hace que llegar a un
-control sirva para algo. Si se saca y no se pone nada, los controles quedan
-siendo sólo un punto de guardado hasta que llegue la **Fase 19A**, que los
-convierte en esclusas. Es aceptable y es temporal, pero hay que saberlo
-mientras se prueba: entre la 16 y la 19A el juego va a ser más pobre que hoy,
-y va a parecer que el cambio salió mal cuando lo que pasa es que falta la
-mitad.
+**Lo que hay que mirar con cuidado.** El cuchillo todavía existe hasta la
+16.4, y `ammoType: null` es lo que hoy distingue un arma que gasta balas de
+una que no. Al sacar la munición de la pistola, las dos quedan iguales y la
+rama que las separa en `actualizarHudArma()` deja de tener sentido: hay que
+sacarla en el mismo movimiento, no dejarla muerta.
 
-**Cómo se sabe que está lista:** el juego arranca, se juega de punta a punta,
-la consola no tiene un solo error, y `npm test` / `npm run test:e2e` están en
-verde con las cuatro pruebas de arriba borradas y ninguna otra rota.
+**Cómo se sabe que está lista:** no hay contador de balas en pantalla, no hay
+barra de recarga, no hay botón `R`, la pistola dispara indefinidamente, la
+consola está limpia y las pruebas en verde.
 
 ---
 
@@ -650,8 +641,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 **Objetivo:** que no quede en el juego nada de lo que se va. No
 "desactivado": borrado. Lo que queda apagado vuelve solo tres meses después.
 
-- [ ] **16.1 Los ítems.** Munición y botiquines, de la vista y del sistema entero ⬅️ *la que sigue*
-- [ ] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga
+- [x] **16.1 Los ítems.** Munición y botiquines, de la vista y del sistema entero ✅ *8/11/2026 — 2.223 líneas menos, 25 archivos*
+- [ ] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga ⬅️ *la que sigue*
 - [ ] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma y el cohete. ⚠️ **Pero la explosión NO se borra** — ver abajo
 - [ ] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola
 - [ ] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30)
