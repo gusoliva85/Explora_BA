@@ -7,7 +7,8 @@ import {
   materialDeCartel,
   materialDeCalle,
   limpiarCache,
-  ALTO_CARTEL
+  ALTO_CARTEL,
+  CHAPA_CALLE
 } from '../visual/carteles.js';
 import { UNITS } from '../config/balance.js';
 
@@ -523,10 +524,33 @@ export class WorldBuilder {
      * primer segundo, que es justo lo que la ventana vino a evitar.
      */
     for (const item of this.#propsDeCuadra(mission, i)) {
+      /*
+       * Un prop que declara `texto` lleva letras, y las letras no se pueden
+       * describir con un color: se pintan en una textura (12R.5).
+       *
+       * La traduccion vive ACA y no en la mision, por el mismo motivo que
+       * todo lo demas: la mision es datos, y para hacer una textura hace
+       * falta la aplicacion. El dato es el texto; el material es como se
+       * dibuja ese texto.
+       */
+      const args = item.args?.texto
+        ? {
+            ...item.args,
+            material: materialDeCartel(this.app, {
+              texto: item.args.texto,
+              fondo: CHAPA_CALLE.fondo,
+              tinta: CHAPA_CALLE.tinta,
+              // La chapa mide 3,4 x 0,62: la textura tiene que tener la
+              // misma proporcion o las letras salen estiradas.
+              relacion: (item.args.ancho ?? 3.2) / 0.62
+            })
+          }
+        : item.args;
+
       this.addProp(item.tipo, item, item.rot ?? 0, rng, {
         collide: item.collide,
         tag: item.tag,
-        args: item.args
+        args
       });
     }
 

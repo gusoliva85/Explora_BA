@@ -279,6 +279,115 @@ const cortes = TRAZADO.flatMap((esquina, i) =>
   })
 );
 
+/**
+ * ===========================================================================
+ * LOS CARTELES DE DIRECCION (18.10, D-40)
+ * ===========================================================================
+ * **No orientan: dan lugar.** De orientar se encarga la brújula (D-38), que
+ * es lo único que se mira de reojo mientras se corre.
+ *
+ * Lo que estos hacen es convertir una cuadra genérica en *Maza 379*. Son
+ * trece en 1.600 metros —uno cada 120, y nunca dos seguidos— así que el que
+ * aparece vale algo.
+ *
+ * ---------------------------------------------------------------------------
+ * CUÁLES, Y POR QUÉ ESOS
+ * ---------------------------------------------------------------------------
+ * | Dónde | Qué dice | Por qué |
+ * |---|---|---|
+ * | El arranque | `Av. Independencia 3250` | De dónde sale Gus. Es la primera cosa que el jugador lee |
+ * | Las cuatro de Gus | `Agrelo 3400`, `Maza 379`… | Las dio él, y caen en medio de un tramo: son carteles de paso |
+ * | Las siete puertas | el nombre de la esquina | Ahí el jugador se para a pelear; es cuando tiene tiempo de leer |
+ * | El final | `Billinghurst 250` | La casa de Sergio (D-41) |
+ *
+ * ---------------------------------------------------------------------------
+ * DE QUÉ LADO DE LA CALLE
+ * ---------------------------------------------------------------------------
+ * Siempre a la **derecha según el sentido de avance**. No es indistinto: un
+ * cartel que a veces está a un lado y a veces al otro obliga a barrer la
+ * pantalla con la mirada, y lo que se busca es exactamente lo contrario —
+ * que el ojo ya sepa dónde mirar.
+ */
+const carteles = TRAZADO.filter((p, i) => p.real || p.puerta > 0 || i === 0).map((p, i) => {
+  const idx = TRAZADO.indexOf(p);
+  // El sentido de avance en ese punto: el tramo que sale de él, o el que
+  // llega si es el final.
+  /*
+   * ⚠️ Ojo con el `||` acá: **un tramo recto tiene una componente en cero**.
+   *
+   * La primera versión decía `(sig.x - p.x) || (p.x - ant.x)`, que para un
+   * tramo que corre en Z da `0 || algo` y se queda con `algo`: mezclaba la
+   * dirección del tramo de salida con la del de entrada y el cartel salía
+   * **en diagonal**, a veinte metros de la vereda. Se vio midiendo, no
+   * mirando: en la captura parecía que simplemente no estaba.
+   *
+   * En una cuadrícula ortogonal, cero no es "falta el dato": es el dato.
+   */
+  const sig = TRAZADO[idx + 1];
+  const ant = TRAZADO[idx - 1];
+  const dx = sig ? sig.x - p.x : p.x - (ant ?? p).x;
+  const dz = sig ? sig.z - p.z : p.z - (ant ?? p).z;
+
+  /*
+   * Corrido hacia adelante media cuadra cuando es una puerta: en la esquina
+   * misma ya hay semáforo, chapa de calle y el control. Un cartel más ahí
+   * es ruido; cincuenta metros antes se lee solo.
+   */
+  /*
+   * Todos se retiran de la bocacalle, y los de las puertas más.
+   *
+   * El mínimo de diez metros no es estética: en una esquina las dos calles
+   * **comparten el cruce**, así que la vereda de la calle por la que venís
+   * es, a dos metros del cordón, la calzada de la que sigue. El cartel de
+   * "Av. Boedo 120" caía exactamente ahí —a cero metros del eje de la
+   * calle siguiente— y lo encontró la prueba, no el ojo.
+   *
+   * Los de las puertas se van treinta y cinco metros porque además compiten:
+   * en la esquina ya hay semáforo, chapa de calle y el control.
+   */
+  const adelanto = p.puerta > 0 ? CUADRA * 0.35 : (ant ? 10 : 0);
+  const RETIRO_CARTEL = 7.2;
+
+  /*
+   * El retroceso va por la calle **por la que se viene**, no por la que
+   * sigue.
+   *
+   * En una esquina con giro son calles distintas, y usar la de salida
+   * ponía el cartel treinta y cinco metros adentro de la cuadra siguiente
+   * —o sea, del otro lado de la puerta que anuncia—. Se vio midiendo: el
+   * cartel de "Virrey Liniers" estaba en (-193, 35), que no es ninguna
+   * vereda.
+   */
+  const ex = ant ? p.x - ant.x : dx;
+  const ez = ant ? p.z - ant.z : dz;
+  const lEnt = Math.hypot(ex, ez) || 1;
+  const entrada = { x: ex / lEnt, z: ez / lEnt };
+
+  /*
+   * Y la vereda también se mide sobre la calle por la que se viene.
+   *
+   * Es la misma trampa y la encontré igual: sacando la derecha del tramo
+   * de SALIDA, en una esquina con giro el cartel quedaba **en el medio de
+   * la calzada** de la calle anterior. La derecha de una calle sólo
+   * significa algo respecto de esa calle.
+   */
+  const der = { x: -entrada.z, z: entrada.x };
+
+  return {
+    tipo: 'carteDireccion',
+    x: p.x + der.x * RETIRO_CARTEL - entrada.x * adelanto,
+    z: p.z + der.z * RETIRO_CARTEL - entrada.z * adelanto,
+    // La chapa mira a la calle: perpendicular a la vereda donde está.
+    rot: Math.abs(der.x) > Math.abs(der.z) ? 90 : 0,
+    tag: 'cartel',
+    args: {
+      ancho: 3.4,
+      texto: p.real || idx === 0 || idx === TRAZADO.length - 1 ? p.dir : p.hasta
+    },
+    collide: { w: 0.5, d: 0.5, h: 2.3 }
+  };
+});
+
 export const mission001 = {
   id: 'mission001',
   title: 'Ir a buscar a Sergio',
@@ -350,5 +459,5 @@ export const mission001 = {
    * decide dónde conviene cubrirse. Los autos abandonados que el generador
    * reparte sirven de cobertura y por ahora alcanzan.
    */
-  props: cortes
+  props: [...cortes, ...carteles]
 };

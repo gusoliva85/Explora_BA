@@ -224,6 +224,44 @@ export function carteCalle(mats, rng, args = {}) {
   return a.fin();
 }
 
+/**
+ * Cartel de direccion: una chapa sobre dos caños, de cara a la calle.
+ *
+ * ---------------------------------------------------------------------------
+ * NO ES EL CARTEL DE ESQUINA, Y LA DIFERENCIA ES D-40
+ * ---------------------------------------------------------------------------
+ * El de esquina —`carteCalle`— es **decorado**: esta para que el barrio se
+ * vea como un barrio. Nadie frena a leer una chapa a veinte metros de camara
+ * mientras lo persiguen, y por eso el nombre informativo se mudo a la
+ * brujula (D-38, 18.14).
+ *
+ * Este es otra cosa: marca **los seis lugares del recorrido real**, los que
+ * Gus dio por su nombre, mas las siete puertas. No orienta —de eso se
+ * encarga la brujula— sino que **da lugar**: convierte una cuadra generica
+ * en "Maza 379".
+ *
+ * Por eso es grande y va a la altura de la vista, no en un poste de tres
+ * metros: tiene que poder leerse de pasada aunque uno no lo este buscando.
+ */
+export function carteDireccion(mats, rng, args = {}) {
+  const a = new Armador('CartelDireccion', mats);
+  const ancho = args.ancho ?? 3.2;
+
+  // Dos caños, uno a cada punta.
+  for (const dx of [-ancho / 2 + 0.25, ancho / 2 - 0.25]) {
+    a.add('cylinder', [dx, 0, 0], [0.09, 2.3, 0.09], COLORS.metalDark, {
+      acabado: ACABADO.metal
+    });
+  }
+  // La chapa. El `material` viene de afuera porque lleva texto (12R.5).
+  const chapa = a.add('box', [0, 1.75, 0], [ancho, 0.62, 0.08], COLORS.metal, {
+    acabado: ACABADO.chapa,
+    sombra: true
+  });
+  if (args.material) chapa.render.meshInstances[0].material = args.material;
+  return a.fin();
+}
+
 /** Farol de vereda. De dia es mobiliario, no una luz. */
 export function farol(mats) {
   const a = new Armador('Farol', mats);
@@ -446,6 +484,7 @@ export const PROPS = {
   banco,
   semaforo,
   carteCalle,
+  carteDireccion,
   barricada,
   escombros,
   valla,

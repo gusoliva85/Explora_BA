@@ -6405,6 +6405,93 @@ joystick de la derecha (16.7). Va a la lista.
 
 ---
 
+## 18.10 — Doce carteles, y dos errores que no se veían mirando
+
+**21 de noviembre de 2026.**
+
+Doce carteles de dirección en 1.600 metros: el arranque, las cuatro
+direcciones que dio Gus, las siete puertas y Billinghurst 250. Uno cada 120
+m, nunca dos seguidos.
+
+### No orientan: dan lugar
+
+La diferencia con el cartel de esquina es D-40. Aquél es **decorado** —está
+para que el barrio se vea como un barrio— y por eso el nombre informativo se
+mudó a la brújula en la 18.14.
+
+Éstos hacen otra cosa: **convierten una cuadra genérica en "Maza 379"**. No
+contestan *¿para dónde voy?* —de eso se encarga la brújula— sino *¿dónde
+estoy?*.
+
+Y por eso son grandes y van a la altura de la vista, no en un poste de tres
+metros: tienen que poder leerse de pasada aunque uno no los esté buscando.
+
+### Siempre a la derecha, y no es indistinto
+
+Un cartel que a veces está a un lado y a veces al otro **obliga a barrer la
+pantalla con la mirada**, que es exactamente lo contrario de lo que se
+busca: que el ojo ya sepa dónde mirar.
+
+### Y acá están los dos errores, que son el motivo de la entrada
+
+Ninguno de los dos se veía en una captura. En la pantalla el cartel
+**simplemente no aparecía**, y tardé en entender que estaba en otro lado.
+
+**El primero: un `||` que trata el cero como "falta el dato".**
+
+```js
+const dx = (sig.x - p.x) || (p.x - ant.x);   // ❌
+```
+
+En un tramo que corre en Z, `sig.x - p.x` da **cero** — y cero es falsy, así
+que tomaba la componente del tramo *anterior*. El resultado: mezclaba la
+dirección de entrada con la de salida y el cartel salía **en diagonal**, a
+veinte metros de la vereda.
+
+> **En una cuadrícula ortogonal, cero no es "falta el dato": es el dato.**
+> Y un recorrido de dieciséis cuadras con cinco giros de 90° tiene una
+> componente en cero en *todos* los tramos.
+
+**El segundo: la derecha de una calle sólo significa algo respecto de esa
+calle.** Sacando la vereda de la dirección de *salida*, en una esquina con
+giro el cartel quedaba en el medio de la calzada de la calle anterior.
+
+**Y el tercero, que encontró la prueba después de arreglar los dos
+primeros:** en una esquina las dos calles **comparten el cruce**, así que la
+vereda de la calle por la que venís es, a dos metros del cordón, la calzada
+de la que sigue. "Av. Boedo 120" caía exactamente ahí: **a cero metros del
+eje de la calle siguiente**. Ahora todos se retiran diez metros de la
+bocacalle, y los de las puertas treinta y cinco, porque además compiten con
+el semáforo y el control.
+
+### Por qué esto terminó en una prueba y no en un comentario
+
+Los tres eran de geometría y los tres eran **invisibles**: un cartel mal
+puesto no rompe nada, no sale en consola, y en una pantalla de cuarenta
+píxeles por personaje la ausencia de un objeto se confunde con "no está en
+cuadro".
+
+`carteles.test.js` mide lo que la vista no puede: que **todos** estén entre
+el cordón y la línea municipal, que ninguno quede flotando lejos de la ruta,
+que los de las puertas se adelanten entre veinte y cuarenta y cinco metros,
+y que ninguno repita texto —doce carteles iguales no dicen nada—.
+
+> Van tres tareas seguidas donde **lo que encontró el error fue medir, no
+> mirar**: el diagnóstico de la 17.2, las zonas circulares de la 18.3 y esto.
+> El patrón es claro: cuando el síntoma es *"no aparece"*, la captura no
+> alcanza, porque una captura no distingue entre **no existe** y **está en
+> otro lado**.
+
+### Y el texto se traduce a material en el generador, no en la misión
+
+Un prop que declara `texto` lleva letras, y las letras no se pueden
+describir con un color: se pintan en una textura (12R.5). La traducción vive
+en el generador porque **la misión es datos** y para hacer una textura hace
+falta la aplicación. El dato es el texto; el material es cómo se dibuja ese
+texto.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo
