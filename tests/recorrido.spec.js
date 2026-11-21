@@ -323,6 +323,94 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
   expect(errores).toEqual([]);
 });
 
+/**
+ * ===========================================================================
+ * NINGUN ZOMBI NACE EN UN LUGAR DEL QUE NO SE PUEDE SALIR (19A.2)
+ * ===========================================================================
+ * Con la esclusa (D-37) la puerta no abre hasta que no quede un zombi vivo
+ * en el tramo. **Un zombi encerrado traba la partida para siempre**, y no
+ * hay nada en pantalla que lo explique: el contador dice "queda 1" y el
+ * jugador no lo encuentra.
+ *
+ * Y es un riesgo nuevo, creado por la 18.7: antes las bocacalles estaban
+ * abiertas y cualquier rincon comunicaba con la calle. Ahora hay treinta y
+ * seis cortes, y un puesto del otro lado de uno es una celda.
+ */
+test('ningun puesto de aparicion queda encerrado ni adentro de una pared', async ({
+  page
+}) => {
+  await page.goto('/');
+  await page.locator('#btn-start').click();
+  await expect(page.locator('#screen-hud')).toBeVisible();
+
+  const informe = await page.evaluate(() => {
+    const { collision, mission, zombis, builder, ventana } = globalThis.game;
+    const m = mission.mission;
+
+    // El mapa entero: los puestos de los ocho tramos tienen que valer.
+    builder.construirTodo(m);
+    for (let i = 0; i < m.route.length - 1; i++) ventana.enPie.add(i);
+
+    const radio = globalThis.game.balance.ZOMBIE_STANDARD.collisionRadius;
+
+    /** Distancia del punto al eje de la ruta. */
+    const aLaRuta = (x, z) => {
+      let min = Infinity;
+      for (let i = 0; i < m.route.length - 1; i++) {
+        const a = m.route[i];
+        const b = m.route[i + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const l2 = dx * dx + dz * dz || 1;
+        let t = ((x - a.x) * dx + (z - a.z) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        min = Math.min(min, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
+      }
+      return min;
+    };
+
+    const dentroDeAlgo = [];
+    const fueraDeLaRuta = [];
+    const media = globalThis.game.balance.UNITS.streetWidth / 2;
+
+    for (const p of zombis.puestos) {
+      // 1. Nadie adentro de una caja solida.
+      for (const b of collision.query(p.x, p.z, radio)) {
+        const nx = Math.max(b.minX, Math.min(p.x, b.maxX));
+        const nz = Math.max(b.minZ, Math.min(p.z, b.maxZ));
+        if (Math.hypot(p.x - nx, p.z - nz) < radio) {
+          dentroDeAlgo.push({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), tag: b.tag });
+          break;
+        }
+      }
+
+      /*
+       * 2. Y nadie fuera de la calzada de la ruta.
+       *
+       * Es la forma barata y correcta de comprobar que no esta encerrado:
+       * la ruta es el unico corredor abierto (D-34), asi que estar sobre
+       * ella ES ser alcanzable. Buscar caminos seria mas caro y no diria
+       * nada que esto no diga.
+       */
+      const d = aLaRuta(p.x, p.z);
+      if (d > media) fueraDeLaRuta.push({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), d: +d.toFixed(1) });
+    }
+
+    return { total: zombis.puestos.length, dentroDeAlgo, fueraDeLaRuta };
+  });
+
+  console.log(`[puestos] ${informe.total} puestos de aparicion`);
+  expect(informe.total).toBeGreaterThan(0);
+  expect(
+    informe.dentroDeAlgo,
+    `hay zombis naciendo adentro de una pared: ${JSON.stringify(informe.dentroDeAlgo)}`
+  ).toEqual([]);
+  expect(
+    informe.fueraDeLaRuta,
+    `hay zombis fuera del corredor de la ruta: ${JSON.stringify(informe.fueraDeLaRuta)}`
+  ).toEqual([]);
+});
+
 /*
  * ===========================================================================
  * ACA HABIA UNA PRUEBA DE LOS PASAJES, Y SE FUE CON ELLOS (D-34, 18.8)

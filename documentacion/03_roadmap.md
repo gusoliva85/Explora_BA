@@ -24,30 +24,37 @@
 
 ## ▶️ La tarea que sigue
 
-### ⛔ **Lo que sigue necesita un pulgar, y después viene la 19A**
+### **19A.3 — Las siete puertas** · la esclusa, por fin
 
-**Las fases 16, 17 y 18 están hechas en código.** El juego va de
-Av. Independencia 3250 a Billinghurst 250 —dieciséis cuadras, 1.600 m— por
-una ruta cerrada a los costados, con siete controles, carteles de dirección,
-la casa de Sergio al final, y **pelea solo**.
+> ✅ **Lo obligatorio ya está.** El zombi que desaparecía sin morir está
+> arreglado, cada zona declara su tramo, el gestor sabe cuántos quedan vivos
+> en cada uno, y **ningún puesto queda encerrado ni adentro de una pared**
+> — lo verifica una prueba sobre el mapa construido.
 
-**Lo que no se puede hacer desde acá**, por orden de importancia:
+**Qué se hace.** La puerta corrediza del ejército en cada uno de los siete
+controles (D-46): cruza los **16 m** de calle —calzada y las dos veredas—
+con colisión.
 
-| Qué | De qué fase | La pregunta concreta |
-|---|---|---|
-| **La cadencia** | 17.9 | *¿Dudás antes de pararte?* Si nunca dudás, es muy rápida; si nunca te parás, muy lenta |
-| **Borrar el botón DISPARAR** | 17 | Quedó redundante en la 17.5. Se dejó a propósito para comparar las dos formas jugando |
-| **El joystick a la derecha** | 16.7 | ¿Cae bajo el pulgar sin recolocar la mano? |
-| **La brújula de reojo** | 18.14 | ¿Se lee **sin mirarla**, corriendo? |
-| **La marca del blanco** | 17.8 | Con cuatro zombis encima, ¿se distingue a cuál le dispara? |
-| **La misión entera** | 18 | 1.600 m sin tocar nada más que el joystick |
-| **Cuántos zombis por tramo** | 19A.11 | Hoy de 3 a 10. Es la perilla principal |
+| Archivo | Qué pasa |
+|---|---|
+| `src/world/props.js` | la puerta: dos hojas que corren, con su marco |
+| `src/config/mission001.js` | una por control, generada de `puertas()` |
+| `src/missions/` o nuevo | el estado: cerrada / abierta, por control |
 
-**Y lo que sí se puede hacer sin teléfono es la 19A: la esclusa.** Es el
-corazón del juego nuevo (D-37) y no depende de ningún ajuste: la puerta no
-abre hasta que no quede un zombi vivo en el tramo, y se cierra a tus
-espaldas. Todo lo que necesita ya está —los siete controles, las zonas con
-su tramo declarado y su cantidad— salvo la puerta.
+**Y el octavo tramo no lleva puerta.** La casa de Sergio no necesita una,
+pero sí que el último tramo esté limpio: llegar con cinco zombis atrás no es
+llegar.
+
+**Lo que hay que mirar con cuidado.** La colisión **se abre con la hoja**, o
+el paso queda abierto a la vista y cerrado al caminar — que es la peor
+combinación posible, porque el jugador ve que puede pasar y el juego le dice
+que no sin explicarle nada. Es la misma familia que la pared invisible de la
+18.12.
+
+**Y una decisión que conviene tomar ahora:** la puerta cerrada **tiene que
+poder verse desde lejos**. Si el jugador la descubre al chocarla, el tramo
+se siente como un pasillo con un error al final; si la ve a cincuenta
+metros, el tramo se siente como una sala.
 
 ---
 
@@ -61,7 +68,7 @@ su tramo declarado y su cantidad— salvo la puerta.
 | ✅ | 16 — La poda | **Cerrada el 20/11.** Ocho tareas |
 | 🔄 | **17 — Combate automático** | **Hecha en código.** Falta jugarla en el teléfono: la cadencia (17.9) no se puede ajustar de otra manera |
 | 🔄 | 18 — El recorrido real | **Hecha en código.** Falta jugarla |
-| ⬜ | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Va con la 18 |
+| 🔄 | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Lo obligatorio hecho; falta la puerta |
 | ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
@@ -1213,19 +1220,19 @@ de tres cajas tiradas en el piso.
 
 ### 19A — La esclusa · el corazón del juego nuevo (D-37)
 
-> ⚠️ **Antes de todo lo demás: 19A.0.** Hay un error en el código que hoy no
-> se ve y que con la puerta vuelve la partida imposible de terminar. Está
-> descrito abajo y **es condición previa de todo lo demás de esta fase**.
+> ✅ **La parte obligatoria está hecha (21/11).** El error que volvía la
+> partida imposible de terminar —el zombi que desaparecía sin morir— está
+> arreglado y con pruebas. Lo que sigue es la puerta.
 
 **La parte obligatoria, antes de la esclusa:**
 
-- [ ] **19A.0 El zombi que desaparece sin morir.** 🐛 **Es un error, no una mejora.** En [src/enemies/spawnManager.js:184](src/enemies/spawnManager.js#L184), cuando el jugador se aleja más de 55 × 1,4 m, el zombi se apaga y se saca de `enJuego` — **pero su puesto queda marcado en `puestosUsados` para siempre**. O sea que un zombi del que te alejaste **se va del juego sin morir y no vuelve nunca**. Hoy es invisible porque nada depende de las muertes. Con D-37, el jugador va a recibir la orden de matar a todos y algunos **ya no existen**: la puerta no abre jamás. Hay que liberar el puesto al apagar un zombi vivo, y dejar marcados sólo los puestos de los muertos
-- [ ] **19A.1 Zonas con dueño, y el reparto por tramo.** Hoy cada puesto de aparición lleva `zona.nota`, que es un texto. Para contar "los zombis de este tramo" hace falta que cada zona de `mission001.js` declare **a qué tramo pertenece**, y que el `SpawnManager` sepa cuántos hay vivos por tramo. **Y es acá donde entra la otra mitad de lo que pidió Gus:** cada tramo declara **cuántos zombis y de qué tipo** — el estándar de 100/10, el agresivo de 120/20, los esqueletos como mini-jefes — y de ahí se sueltan con posición aleatoria dentro de la zona. No es ahorro de memoria (ver D-42): es la perilla de diseño que hace que cada cuadra se sienta distinta de la anterior
-- [ ] **19A.2 Puestos alcanzables, verificado por una prueba.** Ningún puesto puede caer en un hueco que las bocacalles tapadas (D-34) dejen aislado. Un zombi ahí adentro traba la partida para siempre. Lo verifica una prueba contra el mapa construido, no el ojo
+- [x] **19A.0 El zombi que desaparece sin morir.** ✅ *21/11/2026 — el puesto se libera al apagar un zombi vivo; los de los muertos quedan marcados. Con 8 pruebas, incluida la que demuestra el error al revés* 🐛 **Es un error, no una mejora.** En [src/enemies/spawnManager.js:184](src/enemies/spawnManager.js#L184), cuando el jugador se aleja más de 55 × 1,4 m, el zombi se apaga y se saca de `enJuego` — **pero su puesto queda marcado en `puestosUsados` para siempre**. O sea que un zombi del que te alejaste **se va del juego sin morir y no vuelve nunca**. Hoy es invisible porque nada depende de las muertes. Con D-37, el jugador va a recibir la orden de matar a todos y algunos **ya no existen**: la puerta no abre jamás. Hay que liberar el puesto al apagar un zombi vivo, y dejar marcados sólo los puestos de los muertos
+- [x] **19A.1 Zonas con dueño, y el reparto por tramo.** ✅ *21/11/2026 — y las zonas pasaron a ser **una por cuadra**: un tramo son dos cuadras y dos cuadras pueden doblar una esquina* Hoy cada puesto de aparición lleva `zona.nota`, que es un texto. Para contar "los zombis de este tramo" hace falta que cada zona de `mission001.js` declare **a qué tramo pertenece**, y que el `SpawnManager` sepa cuántos hay vivos por tramo. **Y es acá donde entra la otra mitad de lo que pidió Gus:** cada tramo declara **cuántos zombis y de qué tipo** — el estándar de 100/10, el agresivo de 120/20, los esqueletos como mini-jefes — y de ahí se sueltan con posición aleatoria dentro de la zona. No es ahorro de memoria (ver D-42): es la perilla de diseño que hace que cada cuadra se sienta distinta de la anterior
+- [x] **19A.2 Puestos alcanzables, verificado por una prueba.** ✅ *21/11/2026 — los 58 puestos, sobre el mapa construido entero* Ningún puesto puede caer en un hueco que las bocacalles tapadas (D-34) dejen aislado. Un zombi ahí adentro traba la partida para siempre. Lo verifica una prueba contra el mapa construido, no el ojo
 
 **La esclusa:**
 
-- [ ] **19A.3 Las siete puertas** (D-46) como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el octavo tramo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
+- [ ] **19A.3 Las siete puertas** ⬅️ *la que sigue* (D-46) como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el octavo tramo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
 - [ ] **19A.4 Cerrada: el cartel.** Al tocar la puerta con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
 - [ ] **19A.5 El contador.** Cuántos quedan **vivos** en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas. ⚠️ **Cuenta vivos, no matados por un disparo:** los power-ups de veneno y fuego pueden matar a un zombi lejos y sin que el jugador lo vea, y si el contador no se entera la puerta no abre nunca
 - [ ] **19A.6 La brújula cambia de blanco** (D-38). Mientras la puerta frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
@@ -1237,9 +1244,9 @@ de tres cajas tiradas en el piso.
 
 **Criterio de salida de la 19A**
 
-- [ ] Ningún zombi desaparece sin morir, con una prueba que lo verifique
+- [x] Ningún zombi desaparece sin morir, con una prueba que lo verifique
 - [ ] El contador llega a cero si y sólo si están todos muertos
-- [ ] Ningún puesto de aparición queda en un lugar inalcanzable
+- [x] Ningún puesto de aparición queda en un lugar inalcanzable — *58 puestos, verificados contra el mapa construido*
 - [ ] La puerta no se pasa con un zombi vivo en el tramo, probado intentándolo
 - [ ] El cartel de prohibido se entiende sin leer el texto dos veces
 - [ ] Al limpiar el tramo la puerta abre, y el paso queda libre **también para la colisión**

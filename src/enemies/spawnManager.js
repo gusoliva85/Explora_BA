@@ -131,7 +131,15 @@ export class SpawnManager {
       const cuantos = zona.cantidad ?? Math.max(1, Math.round(zona.peso * 5));
       for (let i = 0; i < cuantos; i++) {
         const p = this.#puntoLibre(zona);
-        if (p) puestos.push({ ...p, zona: zona.nota });
+        /*
+         * El puesto se queda con **el tramo** de su zona, no solo con su
+         * nota (19A.1).
+         *
+         * Hasta ahora llevaba `zona.nota`, que es un texto para leer en el
+         * diagnostico. La esclusa necesita otra cosa: poder preguntar
+         * **cuantos quedan vivos en ESTE tramo**, y un texto no se cuenta.
+         */
+        if (p) puestos.push({ ...p, tramo: zona.tramo ?? 0, zona: zona.nota });
       }
     }
     return puestos;
@@ -201,6 +209,38 @@ export class SpawnManager {
     return null;
   }
 
+  /**
+   * Cuantos zombis quedan **vivos** en un tramo (19A.1, D-37).
+   *
+   * ---------------------------------------------------------------------------
+   * SE CUENTAN LOS PUESTOS, NO LOS QUE ESTAN EN PANTALLA
+   * ---------------------------------------------------------------------------
+   * Es la unica forma correcta y conviene entender por que. `enJuego` son
+   * los que estan encendidos **cerca del jugador**: un zombi del tramo que
+   * quedo a sesenta metros no esta ahi, y contarlo asi daria cero con el
+   * tramo todavia sucio. La puerta abriria antes de tiempo.
+   *
+   * Un puesto que no esta en `puestosUsados` es un zombi **que todavia no
+   * aparecio pero existe**. Uno que esta marcado y cuyo zombi ya no esta
+   * encendido es **un muerto**. Esa distincion es exactamente el arreglo
+   * de la 19A.0.
+   */
+  vivosEnTramo(tramo) {
+    let vivos = 0;
+    for (let i = 0; i < this.puestos.length; i++) {
+      if (this.puestos[i].tramo !== tramo) continue;
+      // Sin usar: todavia no aparecio, pero esta vivo.
+      if (!this.puestosUsados.has(i)) {
+        vivos++;
+        continue;
+      }
+      // Usado: vive mientras su zombi siga vivo.
+      const z = this.enJuego.find((e) => e.puestoId === i);
+      if (z && z.vivo) vivos++;
+    }
+    return vivos;
+  }
+
   /** Vuelve todo al estado inicial. Lo llama el reinicio de la mision. */
   reiniciar() {
     for (const z of this.reserva) z.desactivar();
@@ -222,6 +262,12 @@ export class SpawnManager {
     for (let i = this.enJuego.length - 1; i >= 0; i--) {
       const z = this.enJuego[i];
       if (!z.activo) {
+        /*
+         * Aca el puesto NO se libera: si llego inactivo a este punto es
+         * porque murio, y un muerto no vuelve (D-31). Es la otra mitad de
+         * la regla de arriba, y la que hace que limpiar un tramo sea
+         * permanente.
+         */
         this.enJuego.splice(i, 1);
         continue;
       }
@@ -230,6 +276,27 @@ export class SpawnManager {
       // Un zombi que te esta persiguiendo no se apaga aunque te alejes: se
       // apagaria justo cuando mas importa que siga ahi.
       if (d > corte * 1.4 && !z.ai.persiguiendo) {
+        /*
+         * 🐛 EL ZOMBI QUE DESAPARECIA SIN MORIR (19A.0)
+         * -------------------------------------------------------------------
+         * Al alejarse, el zombi se apaga y sale de `enJuego` — **pero su
+         * puesto quedaba marcado en `puestosUsados` para siempre**. O sea
+         * que un zombi del que te alejabas se iba del juego sin morir y no
+         * volvia nunca.
+         *
+         * Era invisible porque hasta ahora nada dependia de las muertes:
+         * el jugador corria hacia la meta y un zombi de menos no se nota.
+         *
+         * Con la esclusa (D-37) deja de ser invisible y pasa a ser fatal:
+         * el jugador recibe la orden de matar a todos los del tramo, y
+         * algunos **ya no existen**. La puerta no abre jamas y la partida
+         * es imposible de terminar.
+         *
+         * El puesto se libera porque el zombi **sigue vivo**: no murio, se
+         * apago. Los puestos de los muertos quedan marcados, que es lo que
+         * hace que un tramo se pueda limpiar de verdad.
+         */
+        if (z.puestoId !== undefined) this.puestosUsados.delete(z.puestoId);
         z.desactivar();
         this.enJuego.splice(i, 1);
       }
@@ -254,6 +321,7 @@ export class SpawnManager {
 
       libre.activar(puesto.x, puesto.z, this.rng);
       libre.puestoId = i;
+      libre.tramo = puesto.tramo;
       this.puestosUsados.add(i);
       this.enJuego.push(libre);
     }

@@ -142,64 +142,82 @@ const blocks = TRAZADO.slice(1).map((p) => {
  * apretar un botón.
  */
 const TRAMOS = PUERTAS.length + 1;
-const zonas = Array.from({ length: TRAMOS }, (_, t) => {
-  /*
-   * La zona es **el corredor de calle del tramo**, no un círculo.
-   *
-   * Un tramo son doscientos metros; un círculo que los cubra tiene cien de
-   * radio y abarca 31.400 m², de los cuales la calle son 3.200. El resto es
-   * adentro de los edificios. Con `a` y `b` la zona sigue la calle, que es
-   * donde el jugador va a estar.
-   */
-  const desde = TRAZADO[Math.min(t * CUADRAS_POR_TRAMO, TRAZADO.length - 1)];
-  const hasta = TRAZADO[Math.min((t + 1) * CUADRAS_POR_TRAMO, TRAZADO.length - 1)];
-  const i = Math.min(t * CUADRAS_POR_TRAMO + 1, TRAZADO.length - 1);
-  const p = TRAZADO[i];
 
-  /*
-   * La curva de dificultad. El primero flojo, y de ahí para arriba sin
-   * saltos: cada tramo pide un poco más que el anterior. El último no es el
-   * más duro —llegar a lo de Sergio tiene que sentirse como llegar, no como
-   * una pared— sino el anteúltimo.
-   */
-  const curva = [0.25, 0.45, 0.6, 0.7, 0.8, 0.88, 0.95, 0.75];
+/**
+ * La curva de dificultad, por tramo.
+ *
+ * El primero flojo —hay que dejar aprender a moverse, y con el combate
+ * automático lo que se aprende es *cuándo frenar*, que es más sutil que
+ * apretar un botón— y el último aflojando: llegar a lo de Sergio tiene que
+ * sentirse como llegar, no como una pared. El más duro es el anteúltimo.
+ */
+const CURVA = [0.25, 0.45, 0.6, 0.7, 0.8, 0.88, 0.95, 0.75];
+
+/**
+ * ===========================================================================
+ * LAS ZONAS DE ZOMBIS — una por cuadra, y cada una declara su tramo
+ * ===========================================================================
+ * (18.9, 19A.1)
+ *
+ * ---------------------------------------------------------------------------
+ * ERAN UNA POR TRAMO, Y ESTABA MAL
+ * ---------------------------------------------------------------------------
+ * El error es bonito porque parecía correcto: **un tramo son dos cuadras, y
+ * dos cuadras pueden doblar una esquina.** La zona iba derecha del principio
+ * al final del tramo, así que en los cinco tramos con giro **cortaba camino
+ * por adentro de la manzana** y los zombis nacían dentro de los edificios.
+ *
+ * Lo encontró una prueba, no el ojo: un zombi dentro de una pared no se ve,
+ * y con la esclusa (D-37) **traba la partida para siempre** — el contador
+ * dice "queda 1" y el jugador no lo encuentra.
+ *
+ * Una cuadra, en cambio, es recta por definición. Y el tramo sigue
+ * existiendo como dato: cada zona lo declara, que es lo que la esclusa
+ * necesita para contar.
+ */
+const zonas = TRAZADO.slice(1).map((hasta, i) => {
+  const desde = TRAZADO[i];
+  const tramo = Math.floor(i / CUADRAS_POR_TRAMO);
+  const peso = CURVA[tramo] ?? 0.8;
 
   return {
     tipo: 'zombis',
-    tramo: t,
-    x: p.x,
-    z: p.z,
+    tramo,
+    cuadra: i,
+    // El centro, para el diagnóstico y para lo que quiera un punto solo.
+    x: (desde.x + hasta.x) / 2,
+    z: (desde.z + hasta.z) / 2,
     a: { x: desde.x, z: desde.z },
     b: { x: hasta.x, z: hasta.z },
-    /** Ancho del corredor: la calzada, sin subirse a la vereda. */
-    ancho: 8,
-    /*
-     * El radio cubre **el tramo entero**, no un pedacito del medio.
-     *
-     * Con `CUADRA * 0.42` la zona del primer tramo quedaba centrada a cien
-     * metros del arranque con cuarenta y dos de radio: los zombis mas
-     * cercanos nacian a cincuenta y ocho metros, fuera del corte de
-     * activacion, y el jugador caminaba media cuadra sin ver a nadie.
-     *
-     * Un tramo son dos cuadras, asi que el radio es una cuadra: la zona va
-     * de punta a punta del tramo. Es coherente con lo que la esclusa
-     * necesita (19A.1), que es poder contar **los zombis de este tramo**.
-     */
-    radio: CUADRA,
-    peso: curva[t] ?? 0.8,
 
-    /*
-     * Cuántos zombis pone el tramo. **Es la perilla principal del juego**
-     * (19A.11): con la esclusa, la puerta no abre hasta que no quede uno
-     * vivo, así que esto por 1,6 s —lo que cuesta matar uno (D-31)— es el
-     * piso del tiempo que el jugador pasa en el tramo.
+    /**
+     * El ancho del corredor: **sólo el carril del medio**.
      *
-     * Van de 3 a 10, o sea de unos 5 s a unos 16 s de combate puro por
-     * tramo, sin contar moverse ni esperar a estar encarado. Se ajusta
-     * jugando en el teléfono, igual que la cadencia.
+     * No es media calle. Los autos abandonados se generan contra el cordón
+     * —a 3,6 m del eje, ocupando de 2,4 a 4,8— así que un corredor de ±2 m
+     * deja a los zombis donde no hay autos.
+     *
+     * Es por construcción y no por comprobación, y eso importa: los puestos
+     * se calculan **al empezar la misión**, cuando las cuadras lejanas
+     * todavía no están construidas y no tienen una sola caja de colisión
+     * contra la cual verificar nada. Lo que no se puede comprobar hay que
+     * garantizarlo con la geometría.
      */
-    cantidad: Math.max(3, Math.round((curva[t] ?? 0.8) * 11)),
-    nota: `Tramo ${t + 1} de ${TRAMOS}: ${p.calle ?? ''}`
+    ancho: 4,
+
+    peso,
+    /**
+     * Cuántos pone esta cuadra: la mitad de lo que pide el tramo, porque un
+     * tramo son dos cuadras.
+     *
+     * **Es la perilla principal del juego** (19A.11). Con la esclusa, la
+     * puerta no abre hasta que no quede uno vivo, así que lo que pone el
+     * tramo entero por 1,6 s —lo que cuesta matar uno (D-31)— es el piso
+     * del tiempo que el jugador pasa ahí: de 5 a 16 segundos de combate
+     * puro por tramo, sin contar moverse ni esperar a estar encarado.
+     */
+    cantidad: Math.max(2, Math.round((peso * 11) / CUADRAS_POR_TRAMO)),
+    nota: `Tramo ${tramo + 1} de ${TRAMOS}, cuadra ${i + 1}: ${hasta.calle ?? ''}`
   };
 });
 

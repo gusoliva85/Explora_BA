@@ -6621,6 +6621,96 @@ regla sigue dando.
 
 ---
 
+## 19A.0 a 19A.2 — El zombi que se iba sin morir, y zonas que cortaban camino
+
+**21 de noviembre de 2026.** Lo obligatorio antes de la esclusa.
+
+### El error que estaba esperando a la puerta
+
+Estaba anotado en el roadmap y era exacto. En `spawnManager`, cuando el
+jugador se aleja más de 55 × 1,4 m, el zombi se apaga y sale de `enJuego`
+—**pero su puesto quedaba marcado en `puestosUsados` para siempre**—. Un
+zombi del que te alejabas **se iba del juego sin morir y no volvía nunca**.
+
+Era invisible porque hasta ahora nada dependía de las muertes: el jugador
+corría hacia la meta y un zombi de menos no se nota.
+
+Con D-37 deja de ser invisible. El arreglo es una línea, y lo que importa es
+la distinción que la hace correcta:
+
+| Qué pasó | El puesto |
+|---|---|
+| Se apagó por distancia, **sigue vivo** | **Se libera**: puede volver a aparecer |
+| Murió | **Queda marcado**: un muerto no vuelve (D-31) |
+
+Esa diferencia es exactamente lo que hace que **limpiar un tramo sea
+permanente**.
+
+### Contar vivos es contar puestos, no lo que hay en pantalla
+
+Es la parte que más fácil se escribe mal. `enJuego` son los zombis
+encendidos **cerca del jugador**: un zombi del tramo que quedó a sesenta
+metros no está ahí.
+
+Contando así, el tramo daría **cero estando sucio**, la puerta abriría antes
+de tiempo y la esclusa dejaría de ser una esclusa.
+
+Un puesto sin marcar es un zombi **que todavía no apareció pero existe**.
+Uno marcado cuyo zombi ya no está encendido es **un muerto**. Esa distinción
+es la misma del arreglo de arriba, vista desde el otro lado.
+
+### Y las zonas cortaban camino por adentro de la manzana
+
+Esto no estaba previsto y lo encontró la prueba de la 19A.2, no el ojo.
+
+Las zonas eran **una por tramo**, y el error es bonito porque parecía
+correcto: **un tramo son dos cuadras, y dos cuadras pueden doblar una
+esquina.** La zona iba derecha del principio al final del tramo, así que en
+los cinco tramos con giro **atravesaba la manzana en diagonal** y los
+zombis nacían dentro de los edificios.
+
+Siete de cincuenta y ocho. Y con la esclusa, uno solo alcanza para trabar la
+partida para siempre: el contador dice *"queda 1"* y el jugador no lo
+encuentra.
+
+**Una cuadra, en cambio, es recta por definición.** Ahora hay dieciséis
+zonas, una por cuadra, y el tramo sigue existiendo como dato: cada zona lo
+declara, que es lo que la esclusa necesita para contar.
+
+### Lo que no se puede comprobar hay que garantizarlo con la geometría
+
+El segundo hallazgo de la misma prueba: un puesto había caído **adentro de
+un auto**.
+
+La causa es el cruce con la ventana de cuadras (18.12). Los puestos se
+calculan **al empezar la misión**, cuando las cuadras lejanas todavía no
+están construidas: ahí no hay una sola caja de colisión contra la cual
+verificar nada, así que `#puntoLibre` acepta cualquier punto.
+
+No se arregla verificando mejor —no hay contra qué— sino **eligiendo mejor**:
+los autos abandonados se generan contra el cordón, a 3,6 m del eje y
+ocupando de 2,4 a 4,8. Un corredor de ±2 m deja a los zombis en el carril
+del medio, donde no hay autos **por construcción**.
+
+> Es la tercera vez que la ventana de cuadras rompe algo que daba por
+> sentado que el mundo está entero: primero las zonas circulares que
+> empujaban a los zombis al mapa inexistente, después los props que colgaban
+> de la raíz, ahora los puestos. **Construir por partes no es una
+> optimización transparente: cambia qué se puede saber y cuándo.**
+
+### La prueba que encontró las dos cosas
+
+Recorre los cincuenta y ocho puestos sobre el mapa **construido entero** y
+pide dos cosas: que ninguno esté dentro de una caja sólida, y que ninguno
+quede fuera del corredor de la ruta.
+
+Lo segundo es la forma barata y correcta de comprobar que no está
+encerrado: la ruta es el único corredor abierto (D-34), así que **estar
+sobre ella es ser alcanzable**. Buscar caminos sería más caro y no diría
+nada que esto no diga.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo
