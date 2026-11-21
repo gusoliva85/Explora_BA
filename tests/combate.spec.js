@@ -44,6 +44,12 @@ test.describe('direccion de lo que se ve en pantalla', () => {
 
   test('quedarse quieto elige un blanco, y moverse lo suelta', async ({ page }) => {
     /*
+     * Timeout largo: la prueba deja correr cuadros de juego de verdad, y el
+     * navegador de prueba usa WebGL por software a cuatro cuadros por
+     * segundo. Un segundo de juego cuesta cuatro de pared.
+     */
+    test.setTimeout(180000);
+    /*
      * El cableado de la 17.3, de punta a punta.
      *
      * Las unitarias cubren la maquina de estados con numeros y
@@ -82,7 +88,7 @@ test.describe('direccion de lo que se ve en pantalla', () => {
        * mide la eleccion y no la suerte de que haya alguien cerca.
        */
       const p0 = g.player.position;
-      const victima = g.zombis.enJuego.find((z) => z.vivo);
+      let victima = g.zombis.enJuego.find((z) => z.vivo);
       if (!victima) return { vivos: 0 };
 
       /*
@@ -95,17 +101,42 @@ test.describe('direccion de lo que se ve en pantalla', () => {
        * que queria medir. En una calle de Boedo, "siete metros para alla"
        * es adentro de un edificio la mitad de las veces.
        */
-      let puesto = false;
-      for (let a = 0; a < 360 && !puesto; a += 15) {
+      let lugar = null;
+      for (let a = 0; a < 360 && !lugar; a += 15) {
         const d = g.rumbo.dirDeRumbo(a);
         const x = p0.x + d.x * 7;
         const z = p0.z + d.z * 7;
         const hit = g.collision.raycast(p0.x, p0.z, x, z, g.arma.arma.shotHeight);
         if (hit && hit.t < 0.95) continue;
-        victima.entity.setPosition(x, 0, z);
-        puesto = true;
+        lugar = { x, z };
       }
-      if (!puesto) return { sinLugar: true };
+      if (!lugar) return { sinLugar: true };
+
+      /*
+       * El zombi se mantiene PLANTADO ahi, cuadro a cuadro, y no se lo hace
+       * invencible.
+       *
+       * Hubo dos intentos antes y los dos fallaban por motivos opuestos.
+       * Con vida normal, el combate automatico lo mata en 1,6 s y para
+       * cuando la prueba mira ya no hay a quien elegir. Con vida infinita
+       * —99999— deja de morir pero **camina hasta Gus y lo mata a el**:
+       * doce mordidas y la partida se termina, asi que tampoco hay blanco.
+       *
+       * Plantarlo resuelve las dos: no se acerca, y si igual muere se pone
+       * otro en su lugar. Esta prueba es sobre **elegir**; matar y morir
+       * tienen las suyas.
+       */
+      const plantar = () => {
+        if (!victima.vivo) {
+          const otro = g.zombis.enJuego.find((z) => z.vivo && z !== victima);
+          if (!otro) return false;
+          victima = otro;
+        }
+        victima.entity.setPosition(lugar.x, 0, lugar.z);
+        victima.ai.estado = 'IDLE';
+        victima.ai.ultimoVisto = null;
+        return true;
+      };
       /*
        * Se espera A QUE HAYA BLANCO, no una cantidad de cuadros.
        *
@@ -119,10 +150,52 @@ test.describe('direccion de lo que se ve en pantalla', () => {
        * dice medir: que estando quieto con alguien a tiro, elige. Y si
        * nunca elige, falla, que es lo que corresponde.
        */
+      /*
+       * Se espera a un cuadro en el que **las dos mediciones valgan a la
+       * vez**: que haya blanco y que forzar una eleccion nueva encuentre a
+       * alguien.
+       *
+       * Antes se esperaba al blanco y despues se forzaba la eleccion, y
+       * fallaba de a ratos en la corrida completa: entre un cuadro y el
+       * siguiente el zombi camina, y le alcanza con meterse detras de un
+       * colectivo para que el forzado no encuentre a nadie. El juego hacia
+       * lo correcto; la prueba miraba dos instantes y los trataba como uno.
+       */
       let elegido = null;
-      for (let i = 0; i < 40 && !elegido; i++) {
+      let reelegido = null;
+      let aqui = { x: 0, z: 0 };
+      for (let i = 0; i < 150; i++) {
+        /*
+         * Se sostiene al jugador en su lugar, como hacen las otras pruebas
+         * de combate: el zombi plantado no lo toca, pero los demas del mapa
+         * lo empujan y lo muerden, y un Gus que se muere reaparece en el
+         * control anterior —a cincuenta metros— con el blanco viejo todavia
+         * en la mano. Ahi la eleccion forzada no encuentra a nadie, y la
+         * prueba culpaba al juego de algo que habia hecho ella.
+         */
+        g.player.entity.setPosition(p0.x, 0, p0.z);
+        g.player.health = g.balance.PLAYER.maxHealth;
+        if (!plantar()) break;
         await esperar(1);
+
+        /*
+         * Y se lo vuelve a plantar DESPUES del cuadro, justo antes de
+         * medir.
+         *
+         * Plantarlo solo antes no alcanzaba: en un cuadro camina hasta
+         * 1,6 s × 2,9 m/s, y le sobraba con eso para meterse detras de un
+         * auto. La medicion encontraba la linea de vista cortada en 0,44 y
+         * culpaba a la eleccion.
+         */
+        plantar();
         elegido = g.blanco.actual;
+        if (!elegido) continue;
+
+        const pp = g.player.position;
+        aqui = { x: pp.x, z: pp.z };
+        g.blanco.reiniciar();
+        reelegido = g.blanco.update(true, aqui, g.zombis.enJuego);
+        if (reelegido) break;
       }
 
       const vivos = g.zombis.enJuego.filter((z) => z.vivo).length;
@@ -153,11 +226,6 @@ test.describe('direccion de lo que se ve en pantalla', () => {
        * freno**, y esa es justamente la regla que la 17.3 implementa. Medir
        * una foto contra el presente no prueba nada.
        */
-      const p = g.player.position;
-      const aqui = { x: p.x, z: p.z };
-      g.blanco.reiniciar();
-      const reelegido = g.blanco.update(true, aqui, g.zombis.enJuego);
-
       let masCercanoVisible = Infinity;
       for (const z of g.zombis.enJuego) {
         if (!z.vivo) continue;
@@ -176,21 +244,6 @@ test.describe('direccion de lo que se ve en pantalla', () => {
       return {
         vivos,
         quieto,
-        diag: {
-          vidaVictima: victima.health.actual,
-          vivaVictima: victima.vivo,
-          dist: Math.hypot(victima.posicion.x - p0.x, victima.posicion.z - p0.z),
-          tapada: (() => {
-            const h = g.collision.raycast(
-              g.player.position.x,
-              g.player.position.z,
-              victima.posicion.x,
-              victima.posicion.z,
-              g.arma.arma.shotHeight
-            );
-            return h ? h.t : null;
-          })()
-        },
         hayBlanco: !!elegido,
         marcaVisible,
         marcaLejosDelBlanco,
@@ -206,12 +259,12 @@ test.describe('direccion de lo que se ve en pantalla', () => {
     test.skip(!!r.sinLugar, 'no habia ningun punto a la vista a siete metros');
 
     expect(r.quieto, 'sin tocar nada, el jugador tiene que quedar quieto').toBe(true);
-    expect(r.hayBlanco, `no eligio a nadie. ${JSON.stringify(r.diag)}`).toBe(true);
+    expect(r.hayBlanco, 'estando quieto con un zombi a tiro no eligio a nadie').toBe(true);
     expect(r.blancoVivo).toBe(true);
     expect(r.distancia).toBeLessThanOrEqual(r.alcance);
     // Y al elegir, elige al mas cercano de los que se VEN, no a uno
     // cualquiera: medido en el mismo instante, con el escenario de verdad.
-    expect(r.reeligio).toBe(true);
+    expect(r.reeligio, 'no quedo nadie a tiro al forzar una eleccion nueva').toBe(true);
     expect(r.distancia).toBeCloseTo(r.masCercanoVisible, 1);
 
     // Y se MARCA, en el lugar donde esta el blanco (17.8).

@@ -5886,6 +5886,125 @@ Todo lo que necesita un pulgar:
 
 ---
 
+## 18.12 (primera mitad) — La cuadra como unidad, y el azar que tuvo que cambiar
+
+**21 de noviembre de 2026.**
+
+Antes de poder construir la ciudad por tramos hay que poder **soltar** una
+cuadra. Eso no existía: el mapa se construía entero al empezar y se borraba
+entero al reiniciar.
+
+**Lo que ahora tiene cada cuadra:** su entidad raíz, su grupo de agrupado,
+sus cajas de colisión y **su propia semilla de azar**. Más
+`CollisionWorld.remove()`, que tampoco existía.
+
+### La parte peligrosa es la colisión, y por eso tiene seis pruebas
+
+> **Una caja que sobrevive a su fachada es una pared invisible.** Es el peor
+> error posible en un juego de correr por una calle: el jugador choca contra
+> nada, no tiene forma de entender qué pasó, y no hay nada en pantalla que se
+> pueda mirar para diagnosticarlo.
+
+Y hay una trampa adentro: la grilla espacial indexa **la misma caja en
+varias celdas** —una de doce metros con celdas de ocho entra en cuatro—, así
+que olvidarse de una celda deja la pared viva en un pedazo del mapa y muerta
+en el resto. Eso es peor que no borrarla: **falla a veces**.
+
+La prueba que más me importa es la del ciclo largo: poner y sacar cien
+cajas deja el mundo exactamente como estaba. Es el caso real —dieciséis
+cuadras construyéndose y liberándose— y si cada ciclo dejara un resto, al
+final del recorrido el mundo sería una sopa de paredes invisibles.
+
+### El azar tuvo que dejar de ser una secuencia
+
+Esto no lo tenía previsto y es el cambio más de fondo de la tarea.
+
+El mundo se generaba con **un solo generador** recorrido de punta a punta:
+la cuadra 5 salía como salía porque las cuatro anteriores habían consumido
+azar antes que ella.
+
+Con la ciudad por tramos eso se rompe solo:
+
+- La cuadra 5 se construye **cuando el jugador se acerca**, no después de la 4.
+- Si el jugador vuelve a entrar a una que se liberó, se reconstruye desde
+  otro punto de la secuencia.
+
+**La misma cuadra saldría distinta cada vez.** Así que la semilla sale del
+índice y no del orden: la cuadra 5 es la cuadra 5 se construya cuando se
+construya, y dos partidas con la misma semilla siguen siendo idénticas
+(D-12).
+
+Es la misma familia de razonamiento que la 17.3 bis, donde separar los
+generadores permitió borrar uno sin tocar el mapa. **El azar con semilla no
+es sólo reproducibilidad: es poder cambiar el orden de las cosas sin que
+cambie el resultado.**
+
+### Lo que costó: el mundo cambió, y tres pruebas se cayeron
+
+Cambiar la semilla cambia la calle. Era inevitable y está bien —no hay nada
+sagrado en el reparto anterior— pero destapó tres cosas:
+
+**Un camino que parecía trabado y no lo estaba.** La prueba del recorrido
+dio *"se trabó"* contra un colectivo puesto a mano. En vez de suponer, lo
+medí: una **búsqueda en anchura** sobre una grilla de 25 cm, con el radio
+real del jugador, encontró camino. La ruta estaba bien.
+
+Lo que estaba mal era el caminante de la prueba: tomaba **la primera
+dirección que avanzara**, y `moveCircle` desliza por las paredes, así que
+apretar contra la chapa de un colectivo "avanza" sin acercarse. Se quedaba
+yendo y viniendo sobre la misma cara hasta agotar el presupuesto de pasos.
+
+Ahora elige **el desvío que más acerca**, y sólo cuando ninguno acerca toma
+el primero que mueva —que es el caso de bordear algo largo—. Y el abanico
+llega a 180°, porque un jugador puede caminar para atrás y un caminante que
+no puede es más exigente que la realidad.
+
+> **Una prueba más exigente que la realidad falla cuando no debe**, y lo
+> peor es que parece un hallazgo.
+
+**Dos pruebas del combate que se volvieron frágiles**, las dos por lo mismo
+que la 17.5 ya había dejado anotado: daban por sentado que nada pasa si el
+jugador no lo pide. La del tiro a diez metros medía *"cuatro tiros matan"*
+sobre un zombi al que el combate automático ya le había sacado dos. La de la
+elección del blanco peleó tres rondas:
+
+| Intento | Qué pasó |
+|---|---|
+| Vida normal | El combate lo mata en 1,6 s y no queda a quién elegir |
+| Vida infinita | Deja de morir, pero **camina hasta Gus y lo mata a él** |
+| Plantarlo antes del cuadro | En un cuadro camina 1,6 m y se mete detrás de un auto |
+| **Plantarlo también después** | ✅ |
+
+Las cuatro versiones fallaron apuntando a la prueba y no al juego. Y la
+tercera es la que más enseña: **un cuadro de juego es mucho tiempo**. A 2,9
+m/s un zombi recorre casi dos metros, y eso alcanza para cambiar la
+respuesta a *"¿lo ves?"*.
+
+### Y un huérfano más, encontrado al repartir
+
+`this.faroles` en el constructor del generador, con un bucle en `destroy()`
+que lo recorría destruyendo. **Nadie lo llenaba nunca.** Los faroles entran
+por `addProp` como cualquier prop; la lista venía de una versión en la que
+eran luces de verdad que había que apagar a mano.
+
+Lo encontré porque me puse a repartirla por cuadra y descubrí que no había
+nada que repartir. Es exactamente el tipo de resto que la Fase 16 estuvo
+ocho tareas sacando, sobreviviendo dos fases más.
+
+### Lo que esta mitad deja planteado para la otra
+
+La ventana. Cuatro cuadras en pie, disparada por un **evento** —cruzar una
+puerta— y no por una distancia adivinada, construyendo la siguiente
+repartida en varios cuadros.
+
+Y una advertencia que conviene tener antes de empezar: **repartir la
+construcción es lo que evita el tirón y también lo que puede dejar media
+cuadra en pie.** Si el jugador llega antes de que termine, hay fachadas sin
+colisión o colisiones sin fachada — y la segunda es la pared invisible otra
+vez.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

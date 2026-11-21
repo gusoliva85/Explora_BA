@@ -52,6 +52,21 @@ async function prepararTiro(page, distancia) {
       g.player.teleport(parado.x, parado.z, rumbo);
       g.player.yaw = rumbo;
 
+      /*
+       * La victima arranca ENTERA, siempre.
+       *
+       * Desde la 17.5 Gus dispara solo, asi que entre que la pagina abre y
+       * que la prueba prepara el tiro puede haberle sacado uno o dos tiros
+       * a este mismo zombi. La prueba mide "cuatro tiros matan", y cuatro
+       * tiros no matan a uno que ya venia con dos: lo mataban dos.
+       *
+       * Fallaba solo en la corrida completa, que es cuando la pagina lleva
+       * mas tiempo abierta. Es la misma familia de problema que la 17.5
+       * dejo anotada: las pruebas viejas daban por sentado que nada pasa
+       * si el jugador no lo pide.
+       */
+      victima.health.actual = victima.health.maximo;
+
       // Se guarda para las llamadas siguientes de la misma prueba.
       globalThis.__tiro = { parado, rumbo, victima };
       return { parado, rumbo, vida: victima.health.actual };

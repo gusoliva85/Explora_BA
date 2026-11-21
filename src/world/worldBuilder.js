@@ -81,6 +81,18 @@ function extenderHaciaAtras(a, b, metros) {
   return { x: a.x - (dx / len) * metros, z: a.z - (dz / len) * metros };
 }
 
+/**
+ * La semilla de una cuadra: la de la mision, mezclada con el indice.
+ *
+ * El `0x9e3779b9` es la proporcion aurea en 32 bits, el multiplicador que
+ * se usa para desparramar indices consecutivos. Sin mezclar, las cuadras
+ * 0, 1 y 2 arrancarian con semillas casi iguales y las tres saldrian
+ * parecidas, que es exactamente lo que no se quiere en una calle.
+ */
+export function semillaDeCuadra(semillaMision, indice) {
+  return (semillaMision ^ ((indice + 1) * 0x9e3779b9)) >>> 0;
+}
+
 export class WorldBuilder {
   /**
    * @param {pc.Application} app
@@ -95,7 +107,17 @@ export class WorldBuilder {
     this.app.root.addChild(this.root);
 
     this.mats = new Materiales();
-    this.faroles = [];
+    /*
+     * Habia un `this.faroles = []` y un bucle en `destroy()` que lo
+     * recorria destruyendo. **Nadie lo llenaba nunca.** Los faroles entran
+     * por `addProp`, como cualquier prop, y cuelgan de la raiz del mundo:
+     * la lista existia desde una version en la que los faroles eran luces
+     * de verdad y habia que apagarlas a mano.
+     *
+     * Se fue en la 18.12, al partir el mundo en cuadras: me puse a
+     * repartirla por cuadra y descubri que no habia nada que repartir. Es
+     * el mismo tipo de resto que la Fase 16 estuvo ocho tareas sacando.
+     */
 
     /*
      * Grupo de agrupado estatico. `dynamic: false` promete que nada de lo
@@ -105,6 +127,40 @@ export class WorldBuilder {
      * descartar nada que este fuera de pantalla.
      */
     this.grupoEstatico = this.app.batcher.addGroup('mundo', false, MAX_LOTE);
+
+    /**
+     * Las cuadras construidas, por indice de tramo.
+     *
+     * ---------------------------------------------------------------------
+     * POR QUE EL MUNDO SE PARTE EN PEDAZOS QUE SE PUEDEN SOLTAR
+     * ---------------------------------------------------------------------
+     * Hasta la Fase 18 el mapa se construia entero al empezar y se borraba
+     * entero al reiniciar. Con tres cuadras alcanzaba. Con las dieciseis de
+     * D-46 **el juego no abre en un telefono**: la ciudad es el 86 % de las
+     * mallas y es lo unico que crece con los metros, y dieciseis cuadras
+     * proyectan unas 12.700 entidades contra un presupuesto de 150 llamadas
+     * de dibujo.
+     *
+     * Asi que cada cuadra es una unidad que se construye y se libera sola
+     * (D-42, D-47), y para eso necesita ser **dueña de sus cosas**: sus
+     * entidades, su grupo de agrupado y sus cajas de colision.
+     *
+     * Las cajas son la parte peligrosa. Una que sobrevive a su fachada es
+     * **una pared invisible**: el jugador choca contra nada y no hay nada en
+     * pantalla que mirar para entenderlo.
+     *
+     * @type {Map<number, {raiz: pc.Entity, grupo: object, cajas: Array}>}
+     */
+    this.cuadras = new Map();
+
+    /**
+     * A donde van las piezas que se agregan ahora.
+     *
+     * `null` significa "al mundo entero", que es donde van las cosas que no
+     * pertenecen a ninguna cuadra: los marcadores de control y de meta. Lo
+     * demas se construye con una cuadra abierta.
+     */
+    this.destino = null;
 
     /**
      * Zonas que el diseño reserva. Todo lo colocado a mano reclama un
@@ -131,6 +187,92 @@ export class WorldBuilder {
     this.huecos = [];
 
     this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0, desvios: 0 };
+  }
+
+  /**
+   * Empieza a construir una cuadra: lo que se agregue a partir de aca le
+   * pertenece, y se va con ella cuando se libere.
+   *
+   * @param {number} indice tramo de la ruta
+   */
+  abrirCuadra(indice) {
+    if (this.cuadras.has(indice)) return this.cuadras.get(indice);
+
+    const raiz = new pc.Entity(`Cuadra_${indice}`);
+    this.root.addChild(raiz);
+
+    /*
+     * Un grupo de agrupado POR CUADRA, no uno para todo.
+     *
+     * Es lo que permite soltarla: el agrupado funde las mallas de un grupo
+     * en una sola, asi que una cuadra metida en el grupo de todas no se
+     * puede sacar sin rehacer el mundo entero.
+     *
+     * El tope de tamaño sigue valiendo por lo mismo de siempre: si la
+     * cuadra fuera una unica malla gigante, nunca se podria descartar lo
+     * que queda fuera de pantalla.
+     */
+    const grupo = this.app.batcher.addGroup(`cuadra_${indice}`, false, MAX_LOTE);
+
+    const cuadra = { indice, raiz, grupo, cajas: [] };
+    this.cuadras.set(indice, cuadra);
+    this.destino = cuadra;
+    return cuadra;
+  }
+
+  /**
+   * Termina la cuadra abierta y funde sus mallas.
+   *
+   * El agrupado va al cerrar y no al abrir porque funde lo que YA esta
+   * adentro: todo lo que se agregue despues queda suelto y se dibuja aparte.
+   */
+  cerrarCuadra() {
+    if (!this.destino) return;
+    this.app.batcher.generate([this.destino.grupo]);
+    this.destino = null;
+  }
+
+  /**
+   * Suelta una cuadra entera: entidades, mallas, grupo y **cajas de
+   * colision**.
+   *
+   * Las cajas son lo que no se puede olvidar. Ver `abrirCuadra`.
+   *
+   * @returns {boolean} true si estaba construida
+   */
+  liberarCuadra(indice) {
+    const cuadra = this.cuadras.get(indice);
+    if (!cuadra) return false;
+    if (this.destino === cuadra) this.destino = null;
+
+    for (const caja of cuadra.cajas) this.collision.remove(caja);
+
+    this.app.batcher.removeGroup(cuadra.grupo.id);
+    cuadra.raiz.destroy();
+    this.cuadras.delete(indice);
+    return true;
+  }
+
+  /** Los indices de las cuadras que estan en pie ahora. */
+  get cuadrasEnPie() {
+    return [...this.cuadras.keys()].sort((a, b) => a - b);
+  }
+
+  /** Donde cuelgan las piezas nuevas, y a que grupo entran. */
+  get #padre() {
+    return this.destino ? this.destino.raiz : this.root;
+  }
+
+  get #grupo() {
+    return this.destino ? this.destino.grupo : this.grupoEstatico;
+  }
+
+  /** Registra una caja de colision a nombre de la cuadra abierta. */
+  #colisionar(caja) {
+    this.collision.add(caja);
+    if (this.destino) this.destino.cajas.push(caja);
+    this.stats.colliders++;
+    return caja;
   }
 
   /** @returns {boolean} true si el rectangulo pisa algun hueco. */
@@ -175,17 +317,18 @@ export class WorldBuilder {
       // texto, que no se pueden describir con un color (12R.5).
       material: material ?? (plano ? this.mats.getPlano(rgb) : this.material(rgb, acabado)),
       castShadows: sombra,
-      batchGroupId: this.grupoEstatico.id
+      batchGroupId: this.#grupo.id
     });
     e.setLocalScale(size.x, size.y, size.z);
     e.setPosition(pos.x, pos.y, pos.z);
-    this.root.addChild(e);
+    this.#padre.addChild(e);
     this.stats.piezas++;
 
     if (collide) {
       const alturaCima = pos.y + size.y / 2;
-      this.collision.add(Box2D.fromCenter(pos.x, pos.z, size.x, size.z, tag, alturaCima));
-      this.stats.colliders++;
+      this.#colisionar(
+        Box2D.fromCenter(pos.x, pos.z, size.x, size.z, tag, alturaCima)
+      );
     }
     return e;
   }
@@ -211,17 +354,17 @@ export class WorldBuilder {
     e.setEulerAngles(0, rot, 0);
 
     // Todas las piezas del prop entran al mismo grupo de agrupado.
+    const grupo = this.#grupo.id;
     for (const hijo of e.find((n) => n.render)) {
-      hijo.render.batchGroupId = this.grupoEstatico.id;
+      hijo.render.batchGroupId = grupo;
     }
 
-    this.root.addChild(e);
+    this.#padre.addChild(e);
     this.stats.props++;
 
     if (opt.collide) {
       const { w, d, h = 2 } = opt.collide;
-      this.collision.add(Box2D.fromCenter(pos.x, pos.z, w, d, opt.tag ?? 'prop', h));
-      this.stats.colliders++;
+      this.#colisionar(Box2D.fromCenter(pos.x, pos.z, w, d, opt.tag ?? 'prop', h));
     }
     return e;
   }
@@ -254,24 +397,8 @@ export class WorldBuilder {
     // fachadas, porque el generador las consulta mientras construye.
     this.#registrarHuecos(mission);
 
-    for (let i = 0; i < mission.route.length - 1; i++) {
-      let a = mission.route[i];
-      const b = mission.route[i + 1];
-      const cfg = mission.blocks[Math.min(i, mission.blocks.length - 1)];
+    for (let i = 0; i < mission.route.length - 1; i++) this.construirCuadra(mission, i);
 
-      // El primer tramo se estira hacia atras del punto de aparicion: sin
-      // esta cola, al arrancar se ve el borde del mapa.
-      if (i === 0) a = extenderHaciaAtras(a, b, PROLOGO);
-
-      /*
-       * Si cada punta del tramo da a una bocacalle. Los extremos del
-       * recorrido no lo son: ahi la vereda sigue derecho hasta el borde.
-       */
-      const esquinas = { a: i > 0, b: i + 1 < mission.route.length - 1 };
-      this.#buildStreetSegment(a, b, cfg, rng, i, esquinas);
-    }
-
-    this.#buildEsquinas(mission, rng);
     this.#buildDesvios(mission, rng);
 
     // Lo colocado a mano va despues de lo generado, para que pueda pisarlo.
@@ -297,6 +424,63 @@ export class WorldBuilder {
     this.app.batcher.generate([this.grupoEstatico]);
 
     return { markers, stats: this.stats };
+  }
+
+  /**
+   * Construye UNA cuadra, entera y por su cuenta.
+   *
+   * ---------------------------------------------------------------------------
+   * CADA CUADRA TIENE SU PROPIO AZAR, Y ESO NO ES UN DETALLE
+   * ---------------------------------------------------------------------------
+   * Antes el mundo se generaba con **un solo generador** recorrido de punta
+   * a punta: la cuadra 5 salia como salia porque las cuatro anteriores
+   * habian consumido azar antes que ella.
+   *
+   * Con la ciudad construida por tramos eso se rompe solo. La cuadra 5 se
+   * construye cuando el jugador se acerca, no despues de la 4; y si el
+   * jugador vuelve a entrar a una que se libero, se reconstruye desde otro
+   * punto de la secuencia. **La misma cuadra saldria distinta cada vez.**
+   *
+   * Asi que la semilla sale del indice, no del orden: la cuadra 5 es la
+   * cuadra 5 se construya cuando se construya, y dos partidas con la misma
+   * semilla siguen siendo identicas (D-12).
+   *
+   * @param {object} mission
+   * @param {number} i indice del tramo
+   */
+  construirCuadra(mission, i) {
+    if (this.cuadras.has(i)) return this.cuadras.get(i);
+    const cuadra = this.abrirCuadra(i);
+
+    const rng = createRng(semillaDeCuadra(mission.seed, i));
+
+    let a = mission.route[i];
+    const b = mission.route[i + 1];
+    const cfg = mission.blocks[Math.min(i, mission.blocks.length - 1)];
+
+    // El primer tramo se estira hacia atras del punto de aparicion: sin
+    // esta cola, al arrancar se ve el borde del mapa.
+    if (i === 0) a = extenderHaciaAtras(a, b, PROLOGO);
+
+    /*
+     * Si cada punta del tramo da a una bocacalle. Los extremos del
+     * recorrido no lo son: ahi la vereda sigue derecho hasta el borde.
+     */
+    const esquinas = { a: i > 0, b: i + 1 < mission.route.length - 1 };
+    this.#buildStreetSegment(a, b, cfg, rng, i, esquinas);
+
+    /*
+     * La esquina del FINAL del tramo le pertenece a esta cuadra.
+     *
+     * Hay que repartirlas de alguna manera y da igual cual, con tal de que
+     * sea una sola: una esquina construida por las dos cuadras que la
+     * tocan queda con dos semaforos encimados, y liberar una de las dos
+     * borraria la mitad de la otra.
+     */
+    if (esquinas.b) this.#buildEsquina(mission, i + 1, rng);
+
+    this.cerrarCuadra();
+    return cuadra;
   }
 
   /** Una cuadra: calzada, veredas, cordones, pintura, edificios y props. */
@@ -372,26 +556,23 @@ export class WorldBuilder {
   }
 
   /** Plancha de vereda en cada esquina, con senda peatonal y semaforo. */
-  #buildEsquinas(mission, rng) {
-    const w = UNITS.streetWidth + UNITS.sidewalkWidth * 2;
-    for (let i = 1; i < mission.route.length - 1; i++) {
-      const p = mission.route[i];
-      calle.esquina(this, { punto: p, nombre: String(i) });
+  #buildEsquina(mission, i, rng) {
+    const p = mission.route[i];
+    calle.esquina(this, { punto: p, nombre: String(i) });
 
-      const previo = mission.route[i - 1];
-      const alongX = Math.abs(p.x - previo.x) > Math.abs(p.z - previo.z);
-      const retroceso = alongX ? { x: p.x + 9, z: p.z } : { x: p.x, z: p.z + 9 };
-      calle.senda(this, { punto: retroceso, alongX, nombre: `e${i}` });
+    const previo = mission.route[i - 1];
+    const alongX = Math.abs(p.x - previo.x) > Math.abs(p.z - previo.z);
+    const retroceso = alongX ? { x: p.x + 9, z: p.z } : { x: p.x, z: p.z + 9 };
+    calle.senda(this, { punto: retroceso, alongX, nombre: `e${i}` });
 
-      // Semaforo y cartel de calle: marcan que ahi hay un cruce desde lejos.
-      const esq = UNITS.streetWidth / 2 + 1.4;
-      this.addProp('semaforo', { x: p.x + esq, z: p.z + esq }, rng.range(0, 360), rng, {
-        collide: { w: 0.4, d: 0.4, h: 3.6 }
-      });
-      this.addProp('carteCalle', { x: p.x - esq, z: p.z - esq }, 0, rng, {
-        args: { material: materialDeCalle(this.app, p.calle ?? 'CALLE') }
-      });
-    }
+    // Semaforo y cartel de calle: marcan que ahi hay un cruce desde lejos.
+    const esq = UNITS.streetWidth / 2 + 1.4;
+    this.addProp('semaforo', { x: p.x + esq, z: p.z + esq }, rng.range(0, 360), rng, {
+      collide: { w: 0.4, d: 0.4, h: 3.6 }
+    });
+    this.addProp('carteCalle', { x: p.x - esq, z: p.z - esq }, 0, rng, {
+      args: { material: materialDeCalle(this.app, p.calle ?? 'CALLE') }
+    });
   }
 
   /**
@@ -874,10 +1055,9 @@ export class WorldBuilder {
   destroy() {
     this.reservado.length = 0;
     this.huecos.length = 0;
+    for (const i of this.cuadrasEnPie) this.liberarCuadra(i);
     this.app.batcher.removeGroup(this.grupoEstatico.id);
     this.root.destroy();
-    for (const f of this.faroles) f.destroy();
-    this.faroles.length = 0;
     this.collision.clear();
     this.mats.clear();
     /*

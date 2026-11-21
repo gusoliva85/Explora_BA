@@ -80,8 +80,28 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
       { p: m.route[m.goal.atRouteIndex], label: 'meta' }
     ];
 
-    // Abanico de desvios, en grados. Alternando lados para no sesgar.
-    const DESVIOS = [0, 30, -30, 60, -60, 90, -90, 125, -125];
+    /*
+     * Abanico de desvios, en grados. Alternando lados para no sesgar.
+     *
+     * ---------------------------------------------------------------------
+     * POR QUE LLEGA HASTA 180 Y ANTES LLEGABA A 125
+     * ---------------------------------------------------------------------
+     * Sin el 180 el caminante **no sabe retroceder**, y eso lo deja clavado
+     * en cualquier bolsillo: entra en un hueco entre un colectivo y una
+     * fachada, no puede seguir, y los desvios que tiene lo dejan oscilando
+     * adentro del hueco hasta que se agota el presupuesto de pasos.
+     *
+     * Lo encontro la Fase 18.12, cuando cada cuadra paso a generarse con su
+     * propio azar y la calle quedo repartida distinto. La duda era si la
+     * ruta se habia trabado de verdad. **Se midio en vez de suponerlo**:
+     * una busqueda en anchura sobre una grilla de 25 cm, con el radio real
+     * del jugador, encontro camino. La ruta estaba bien; el caminante no.
+     *
+     * Y la correccion no es aflojar la prueba: un jugador puede caminar
+     * para atras. Un caminante que no puede es mas exigente que la realidad,
+     * y una prueba mas exigente que la realidad falla cuando no debe.
+     */
+    const DESVIOS = [0, 30, -30, 60, -60, 90, -90, 125, -125, 155, -155, 180];
 
     let distanciaTotal = 0;
     const trabas = [];
@@ -105,15 +125,48 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
         // que evita que zigzaguee bordeando un obstaculo largo.
         const orden = [ultimoDesvio, ...DESVIOS.filter((d) => d !== ultimoDesvio)];
 
-        let avance = 0;
-        for (const grados of orden) {
+        /*
+         * Se elige el desvio que MAS ACERCA, no el primero que mueve.
+         *
+         * Antes tomaba el primero que avanzara, y eso lo dejaba resbalando
+         * de lado contra la chapa de un colectivo: `moveCircle` desliza por
+         * las paredes, asi que apretar contra un obstaculo "avanza" sin
+         * acercarse ni un metro. El caminante se quedaba yendo y viniendo
+         * sobre la misma cara hasta agotar el presupuesto de pasos.
+         *
+         * El desvio que funciono la vez anterior sigue teniendo prioridad
+         * —es lo que evita el zigzag bordeando un obstaculo largo— pero
+         * solo si ademas acerca. Si no, se prueban todos y gana el mejor.
+         *
+         * Cuando ninguno acerca, se toma el primero que mueva: es el caso
+         * de bordear algo largo, donde hay que alejarse un rato para poder
+         * pasar.
+         */
+        const volverA = { x: p.x, z: p.z };
+        const probar = (grados) => {
+          player.entity.setPosition(volverA.x, 0, volverA.z);
           const a = base + (grados * Math.PI) / 180;
-          avance = mover(Math.sin(a), Math.cos(a));
-          if (avance > PASO * 0.4) {
-            ultimoDesvio = grados;
-            break;
+          const movio = mover(Math.sin(a), Math.cos(a));
+          return { grados, movio, nueva: dist(player.position, destino) };
+        };
+
+        let elegido = probar(ultimoDesvio);
+        if (!(elegido.movio > PASO * 0.4 && elegido.nueva < actual)) {
+          let mejorPaso = null;
+          let primeroQueMueve = null;
+          for (const grados of orden) {
+            const r = probar(grados);
+            if (r.movio <= PASO * 0.4) continue;
+            if (!primeroQueMueve) primeroQueMueve = r;
+            if (r.nueva < actual && (!mejorPaso || r.nueva < mejorPaso.nueva)) mejorPaso = r;
           }
+          elegido = mejorPaso ?? primeroQueMueve ?? { grados: 0, movio: 0 };
+          player.entity.setPosition(volverA.x, 0, volverA.z);
+          if (elegido.movio > 0) probar(elegido.grados);
         }
+
+        const avance = elegido.movio;
+        if (avance > PASO * 0.4) ultimoDesvio = elegido.grados;
 
         if (avance <= PASO * 0.4) {
           trabas.push({

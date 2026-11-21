@@ -63,6 +63,62 @@ export class CollisionWorld {
     return box;
   }
 
+  /**
+   * Saca una caja del mundo, de la lista y de la grilla.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ESTO NO EXISTIA HASTA LA FASE 18
+   * ---------------------------------------------------------------------------
+   * Hasta ahora el mapa se construia entero al empezar y se borraba entero al
+   * reiniciar: `add` y `clear` alcanzaban. Con la ciudad construida por
+   * tramos (D-42, D-47) eso deja de valer, porque se libera una cuadra
+   * mientras el resto sigue en pie.
+   *
+   * ---------------------------------------------------------------------------
+   * Y POR QUE ES LA PARTE PELIGROSA DE LIBERAR
+   * ---------------------------------------------------------------------------
+   * **Una caja que sobrevive a su fachada es una pared invisible**, y es el
+   * peor error posible en un juego de correr por una calle: el jugador choca
+   * contra nada, no tiene forma de entender que paso, y no hay nada en
+   * pantalla que se pueda mirar para diagnosticarlo.
+   *
+   * Por eso se saca de los dos lados. La grilla indexa la MISMA caja en
+   * varias celdas —una caja de doce metros con celdas de ocho entra en
+   * cuatro— asi que olvidarse de una celda deja la pared viva en un pedazo
+   * del mapa y muerta en el resto, que es todavia peor: falla a veces.
+   *
+   * @returns {boolean} true si la caja estaba
+   */
+  remove(box) {
+    const i = this.boxes.indexOf(box);
+    if (i < 0) return false;
+    this.boxes.splice(i, 1);
+
+    /*
+     * Se recorren exactamente las mismas celdas que `#index` recorrio al
+     * agregarla, y no la grilla entera. Es lo que hace que sacar una cuadra
+     * cueste lo mismo sin importar cuanto mapa haya construido.
+     */
+    const c = this.cellSize;
+    const x0 = Math.floor(box.minX / c);
+    const x1 = Math.floor(box.maxX / c);
+    const z0 = Math.floor(box.minZ / c);
+    const z1 = Math.floor(box.maxZ / c);
+    for (let x = x0; x <= x1; x++) {
+      for (let z = z0; z <= z1; z++) {
+        const k = this.#key(x, z);
+        const cell = this.grid.get(k);
+        if (!cell) continue;
+        const j = cell.indexOf(box);
+        if (j >= 0) cell.splice(j, 1);
+        // Una celda vacia se borra: con dieciseis cuadras, dejarlas
+        // acumuladas es una fuga lenta de claves que nadie vuelve a mirar.
+        if (cell.length === 0) this.grid.delete(k);
+      }
+    }
+    return true;
+  }
+
   clear() {
     this.boxes.length = 0;
     this.grid.clear();
