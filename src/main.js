@@ -741,6 +741,26 @@ app.on('update', (rawDt) => {
     arma.update(dt, pos2d, rumboDeTiro, zombis.enJuego);
 
     /*
+     * La marca del blanco (17.8).
+     *
+     * Se refresca en cada cuadro porque el zombi camina: una marca que se
+     * queda donde el zombi estaba señala el lugar equivocado, y señalar
+     * mal es peor que no señalar.
+     *
+     * ⚠️ Y la camara NO se mueve por esto (D-39): acompaña al jugador, no
+     * al blanco. Es lo primero que uno quiere hacer aca —seguir al
+     * objetivo, centrar la pelea— y esta prohibido. La camara es la
+     * referencia de escala de todo el arte, y una que persigue cosas marea
+     * en vertical.
+     */
+    if (blanco.actual) {
+      const q = blanco.actual.posicion;
+      efectos.marcarBlanco(q.x, q.z);
+    } else {
+      efectos.ocultarMarca();
+    }
+
+    /*
      * La mira muestra el alcance REAL del arma, no un largo decorativo:
      * veintiocho metros. Antes servia para que se entendiera la diferencia
      * entre las dos armas sin leer nada; ahora lo que dice es hasta donde

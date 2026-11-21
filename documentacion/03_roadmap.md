@@ -24,39 +24,35 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.8 — La marca del blanco** · que se entienda a quién le dispara
+### **17.9 — La cadencia** · el único número que se ajusta jugando
 
-> ✅ **El juego ya se juega solo.** Desde la 17.5, Gus frena, encara y mata
-> sin que el jugador toque un botón. Lo que falta es que **se entienda**.
+**Qué se hace.** Probar el combate en el teléfono y mover **un** número:
+`WEAPONS.pistol.cooldown`, hoy en 0,4 s.
 
-**Qué se hace.** Lo mínimo que alcance para que, mirando la pantalla del
-teléfono, se sepa a quién le está disparando.
+**Lo que ese número controla, dicho en lo que se siente:**
 
-**Por qué es una tarea y no un adorno.** Sin botón, el jugador perdió la
-única señal que tenía de a quién apuntaba: su propio dedo. Hoy la única
-pista es que Gus gira, y a cuarenta píxeles un giro de quince grados no se
-lee. Si no se entiende el blanco, no se entiende **por qué no murió el que
-tenías encima**, que es la pregunta que va a hacerse todo el tiempo.
-
-| Archivo | Qué pasa |
+| Hoy | Cuánto |
 |---|---|
-| `src/combat/combatFx.js` | la marca: se crea una vez y se enciende y apaga, como todo |
-| `src/main.js` | mostrarla cuando hay blanco, esconderla cuando no |
-| pruebas | que aparezca con blanco y desaparezca al moverse |
+| Un zombi | 4 tiros × 0,4 s = **1,6 s quieto al lado suyo** |
+| Un zombi mordiendo mientras tanto | 1 mordida cada 1,4 s → te alcanza a dar **una** |
+| Dos zombis encima | 3,2 s expuesto → **dos o tres mordidas**, de las doce que aguantás |
 
-**⚠️ Y la cámara NO se mueve** (D-39). Acompaña al jugador, no al blanco. Es
-lo primero que uno quiere hacer acá —seguir al objetivo, centrar la pelea—
-y está prohibido: la cámara es la referencia de escala de todo el arte, y
-una cámara que persigue cosas marea en vertical.
+**Por qué es la perilla principal.** Es lo único que decide si *pararse* es
+una decisión difícil o un trámite. Más rápido y nunca conviene correr; más
+lento y nunca conviene pelear.
 
-**Lo que hay que mirar con cuidado.** Un anillo a los pies del zombi es lo
-obvio y puede no alcanzar: a veinte metros de cámara cenital, con la calle
-llena de zombis, lo que se lee es **movimiento y contraste**, no una línea
-fina. La 16.6 dejó escrita la regla al borrar el botón que latía: *un
-elemento que aparece en medio de la acción necesita movimiento, no color.*
+**Cómo se ajusta, y es lo importante:** no se mira el número, **se juega**.
+La pregunta concreta es *¿dudé antes de pararme?*. Si nunca dudé, la
+cadencia es muy rápida. Si nunca me paré, es muy lenta.
 
-**Cómo se sabe que está lista:** en una captura del teléfono, con cuatro
-zombis en pantalla, se sabe cuál es el blanco sin mirar dos veces.
+**⚠️ Y hay una cuenta que no se puede romper.** `damage × tiros = vida del
+zombi`, exacto (D-31, 17.1). La cadencia **no toca el daño**: cambia cuánto
+tarda, no cuántos tiros. Si para acelerar el combate alguien sube el daño,
+rompe la cuenta exacta y las cartas de la 19B empiezan a mentir.
+
+**Y conviene mirar de paso:** el `quietoDelay` de 0,15 s. Son dos números
+que se suman en la misma sensación —cuánto tarda Gus en empezar a matar— y
+se ajustan juntos o no se entiende cuál hizo qué.
 
 ---
 
@@ -1124,8 +1120,8 @@ jugándolo, no sirve nada de lo que viene después.
 - [x] **17.5 Girar y disparar.** El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco ✅ *21/11/2026 — **el juego ya se juega solo.** Gus encara con giro suavizado y dispara cuando está encarado*
 - [x] **17.6 Al moverse, suelta.** ✅ *21/11/2026 — salió gratis: sin blanco no hay a quién dispararle. Lo resolvió la 17.3*
 - [x] **17.7 El daño es permanente** (D-31) ✅ *21/11/2026 — verificado: nadie regenera. Lo prueba la secuencia de tres muertes seguidas con ocho tiros*
-- [ ] **17.8 La marca del blanco.** ⬅️ *la que sigue* Sin botón, el jugador necesita ver a quién le está disparando. Lo mínimo que alcance. ⚠️ **Y la cámara no se mueve** (D-39): acompaña al jugador, no al blanco. Es lo primero que uno quiere hacer acá, y está prohibido
-- [ ] **17.9 La cadencia.** Hoy 0,4 s: 1,6 s para matar un zombi. Probar en el teléfono y ajustar
+- [x] **17.8 La marca del blanco.** Sin botón, el jugador necesita ver a quién le está disparando ✅ *21/11/2026 — un anillo rojo que late a los pies del blanco. La cámara no se movió* ⚠️ **Y la cámara no se mueve** (D-39): acompaña al jugador, no al blanco
+- [ ] **17.9 La cadencia.** Hoy 0,4 s: 1,6 s para matar un zombi. Probar en el teléfono y ajustar ⬅️ *la que sigue, y **sólo se puede hacer en el teléfono***
 - [ ] **17.10 La máquina de estados completa, con pruebas.** Moverse → quieto → blanco → muere → siguiente → moverse → quieto → otro blanco
 
 **Decisiones que esta fase tiene que cerrar**
@@ -1163,7 +1159,7 @@ Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
 - [x] Al matar un zombi estando quieto, pasa al siguiente sin que el jugador toque nada — *la elección ya lo hace (17.4); falta que dispare*
 - [x] Moviéndose nunca dispara — *sin blanco no hay disparo automático, y moverse suelta el blanco en el acto*
 - [ ] Nunca dispara a través de una pared ni de un auto — *la elección ya lo respeta (17.3); falta que lo respete el tiro*
-- [ ] Se entiende a quién le está disparando, mirando la pantalla del teléfono
+- [x] Se entiende a quién le está disparando, mirando la pantalla del teléfono — *verificado en captura con cuatro zombis en cuadro; falta el teléfono de verdad*
 - [ ] Se puede terminar la misión sin tocar nada más que el joystick — *se puede limpiar un grupo sin tocar **nada**, probado de punta a punta. Falta la misión entera y el teléfono*
 
 ---

@@ -5664,6 +5664,92 @@ gira, y a cuarenta píxeles un giro de quince grados no se lee.
 
 ---
 
+## 17.8 — La marca, que es un anillo rojo que late
+
+**21 de noviembre de 2026.**
+
+Un anillo a los pies del zombi elegido. Rojo, aditivo, y **late**: crece un
+18 % y se desvanece, algo más de una vez por segundo.
+
+### Tres decisiones, y ninguna fue de gusto
+
+**Anillo y no disco.** Un disco tapa al zombi, que es justo lo que hay que
+mirar.
+
+**Rojo y no ámbar.** El ámbar ya está tomado, y de la peor manera posible:
+**Gus tiene su propio disco ámbar a los pies**, más la brújula y el objetivo
+del HUD. Dos manchas del mismo color a veinte metros de cámara son la misma
+mancha. El rojo de alarma es el color que el proyecto reserva para lo que
+exige atención, y acá significa exactamente eso.
+
+**Y late**, que es lo que de verdad lo hace visible. Es la regla que dejó
+escrita el botón de interactuar al borrarse en la 16.6:
+
+> **Un elemento que aparece en medio de la acción necesita movimiento, no
+> color.** El color se lee mirando; el movimiento se nota con el ojo en otro
+> lado, que es donde está el ojo del jugador cuando el aviso importa.
+
+El botón que la enseñó se borró hace dos días. El comentario quedó en el
+CSS, y resultó ser la especificación de esta tarea.
+
+### Por qué era una tarea y no un adorno
+
+Sin botón de disparar, el jugador perdió la única señal que tenía de a quién
+apuntaba: **su propio dedo**. La otra pista es que Gus gira, y a cuarenta
+píxeles un giro de quince grados no se lee.
+
+Sin la marca, la pregunta que el jugador se va a hacer todo el tiempo —*¿por
+qué no se murió el que tenía encima?*— no tiene respuesta en pantalla. Con
+ella, la respuesta es obvia: le estaba disparando a otro.
+
+### La cámara no se movió, y hubo que no hacerlo a propósito
+
+D-39 lo prohíbe: la cámara acompaña al jugador, no al blanco. **Es lo
+primero que uno quiere hacer acá** —seguir al objetivo, centrar la pelea— y
+está anotado en el código al lado de la marca para que no se cuele después.
+
+La razón es que la cámara es la referencia de escala de todo el arte, y una
+cámara que persigue cosas marea en vertical.
+
+### Lo que la prueba mide, y no es que esté prendida
+
+```js
+expect(marcaLejosDelBlanco).toBeLessThan(0.5);
+```
+
+Se mide **dónde está** la marca en el mundo, no sólo que esté encendida. Una
+marca prendida en el lugar equivocado es peor que ninguna, porque señala a
+otro zombi — y el jugador le creería.
+
+Y se refresca en cada cuadro, porque el zombi camina. Es la misma distinción
+de la 17.4: lo que se congela es *a quién*, nunca *dónde está*.
+
+La otra mitad de la prueba es que **se apaga al moverse**. Una marca
+huérfana señalaría a alguien al que Gus ya no le dispara.
+
+### Verificado en captura, con cuatro zombis en cuadro
+
+Se ve el anillo rojo bajo uno de los cuatro, el disco ámbar bajo Gus, y no
+hay duda de cuál es cuál. Es el criterio de salida de la tarea.
+
+**Lo que falta es el teléfono de verdad**, y eso vale para esto y para todo
+el resto de la fase.
+
+### Lo que la 17.8 deja planteado para la 17.9
+
+La 17.9 es la única tarea de la fase que **no se puede hacer acá**: se
+ajusta jugando, en el teléfono, y la pregunta concreta es *¿dudé antes de
+pararme?*. Si nunca dudé, la cadencia es muy rápida. Si nunca me paré, muy
+lenta.
+
+Y lleva una advertencia: **la cadencia no toca el daño.** `damage × tiros =
+vida del zombi` tiene que seguir dando exacto (D-31). Si para acelerar el
+combate alguien sube el daño en vez de la cadencia, rompe la cuenta y las
+cartas de la 19B empiezan a mentir: un *"+20 % de daño"* que no quita un
+tiro entero no se nota.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

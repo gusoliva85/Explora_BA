@@ -127,6 +127,17 @@ test.describe('direccion de lo que se ve en pantalla', () => {
 
       const vivos = g.zombis.enJuego.filter((z) => z.vivo).length;
       const quieto = g.player.quieto;
+      /*
+       * La marca del blanco (17.8). Se mira **su posicion en el mundo**,
+       * no sólo que este encendida: una marca prendida en el lugar
+       * equivocado es peor que ninguna, porque señala a otro.
+       */
+      const marca = g.efectos.marca;
+      const mp = marca.getPosition();
+      const marcaVisible = marca.enabled;
+      const marcaLejosDelBlanco = elegido
+        ? Math.hypot(mp.x - elegido.posicion.x, mp.z - elegido.posicion.z)
+        : null;
 
       /*
        * Y ahora, la regla: que el elegido sea el mas cercano VISIBLE.
@@ -181,6 +192,8 @@ test.describe('direccion de lo que se ve en pantalla', () => {
           })()
         },
         hayBlanco: !!elegido,
+        marcaVisible,
+        marcaLejosDelBlanco,
         blancoVivo: elegido ? elegido.vivo : null,
         distancia: g.blanco.distancia,
         alcance: g.arma.arma.range,
@@ -200,6 +213,13 @@ test.describe('direccion de lo que se ve en pantalla', () => {
     // cualquiera: medido en el mismo instante, con el escenario de verdad.
     expect(r.reeligio).toBe(true);
     expect(r.distancia).toBeCloseTo(r.masCercanoVisible, 1);
+
+    // Y se MARCA, en el lugar donde esta el blanco (17.8).
+    expect(r.marcaVisible, 'hay blanco pero no se marca a nadie').toBe(true);
+    expect(
+      r.marcaLejosDelBlanco,
+      `la marca esta a ${r.marcaLejosDelBlanco?.toFixed(1)} m del blanco`
+    ).toBeLessThan(0.5);
 
     /*
      * Y moverse lo suelta. Se mueve con el teclado, que es la via normal
@@ -225,12 +245,16 @@ test.describe('direccion de lo que se ve en pantalla', () => {
     });
     const enMovimiento = await page.evaluate(() => ({
       quieto: globalThis.game.player.quieto,
-      hayBlanco: !!globalThis.game.blanco.actual
+      hayBlanco: !!globalThis.game.blanco.actual,
+      marcaVisible: globalThis.game.efectos.marca.enabled
     }));
     await page.keyboard.up('KeyW');
 
     expect(enMovimiento.quieto).toBe(false);
     expect(enMovimiento.hayBlanco, 'siguio encarando al blanco mientras huia').toBe(false);
+    // Y la marca se apaga con el: una marca huerfana señalaria a un zombi
+    // al que Gus ya no le dispara, que es informacion falsa.
+    expect(enMovimiento.marcaVisible, 'quedo una marca sin blanco').toBe(false);
   });
 
   test('sin tocar NADA, limpia un grupo de zombis uno tras otro', async ({ page }) => {

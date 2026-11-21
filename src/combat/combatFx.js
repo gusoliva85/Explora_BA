@@ -114,8 +114,116 @@ export class CombatFx {
      */
     this.mira = this.#crearMira();
 
+    this.marca = this.#crearMarcaBlanco();
+    /** Reloj propio del latido de la marca. */
+    this.marcaFase = 0;
+
     /** Anillos de ruido: solo se dibujan con el diagnostico encendido. */
     this.ruidos = [];
+  }
+
+  /**
+   * La marca del blanco: un anillo que late a los pies del zombi elegido.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ES UNA TAREA Y NO UN ADORNO
+   * ---------------------------------------------------------------------------
+   * Sin boton de disparar (D-28), el jugador perdio la unica señal que tenia
+   * de a quien le apuntaba: **su propio dedo**. La otra pista es que Gus
+   * gira, y a cuarenta pixeles un giro de quince grados no se lee.
+   *
+   * Si no se entiende quien es el blanco, la pregunta que el jugador se va a
+   * hacer todo el tiempo —*por que no murio el que tenia encima*— no tiene
+   * respuesta en pantalla.
+   *
+   * ---------------------------------------------------------------------------
+   * ANILLO Y NO DISCO, Y ROJO Y NO AMBAR
+   * ---------------------------------------------------------------------------
+   * Un disco tapa al zombi, que es justo lo que hay que mirar. Y el ambar
+   * ya esta tomado: **Gus tiene su propio disco ambar a los pies**, mas la
+   * brujula y el objetivo del HUD. Dos manchas del mismo color a veinte
+   * metros de camara son la misma mancha.
+   *
+   * El rojo de alarma es el color que el proyecto reserva para lo que exige
+   * atencion, y aca significa exactamente eso.
+   *
+   * ---------------------------------------------------------------------------
+   * Y LATE, QUE ES LO QUE DE VERDAD LO HACE VISIBLE
+   * ---------------------------------------------------------------------------
+   * Es la regla que dejo escrita el boton de interactuar al borrarse en la
+   * 16.6: **un elemento que aparece en medio de la accion necesita
+   * movimiento, no color.** El color se lee mirando; el movimiento se nota
+   * con el ojo en otro lado, que es donde esta el ojo del jugador cuando el
+   * aviso importa.
+   */
+  #crearMarcaBlanco() {
+    /*
+     * El anillo se construye a mano porque ninguna primitiva es un anillo
+     * plano. Son 24 segmentos: a veinte metros de camara, mas lados no se
+     * distinguen y menos se ven como un poligono.
+     */
+    const SEGMENTOS = 24;
+    const INTERIOR = 0.55;
+    const EXTERIOR = 0.78;
+
+    const positions = [];
+    const indices = [];
+    for (let i = 0; i <= SEGMENTOS; i++) {
+      const a = (i / SEGMENTOS) * Math.PI * 2;
+      const cx = Math.cos(a);
+      const cz = Math.sin(a);
+      positions.push(cx * INTERIOR, 0, cz * INTERIOR);
+      positions.push(cx * EXTERIOR, 0, cz * EXTERIOR);
+      if (i > 0) {
+        const b = (i - 1) * 2;
+        indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
+      }
+    }
+
+    const mesh = new pc.Mesh(this.app.graphicsDevice);
+    mesh.setPositions(positions);
+    mesh.setIndices(indices);
+    mesh.update(pc.PRIMITIVE_TRIANGLES);
+
+    const material = new pc.StandardMaterial();
+    material.diffuse = new pc.Color(0, 0, 0);
+    // El rojo de alarma del proyecto. Ver art/styleGuide.
+    material.emissive = new pc.Color(1, 0.3, 0.22);
+    material.emissiveIntensity = 2.2;
+    material.useLighting = false;
+    material.blendType = pc.BLEND_ADDITIVE;
+    material.depthWrite = false;
+    material.cull = pc.CULLFACE_NONE;
+    material.update();
+
+    const e = new pc.Entity('MarcaBlanco');
+    e.addComponent('render', {
+      meshInstances: [new pc.MeshInstance(mesh, material)],
+      castShadows: false
+    });
+    e.enabled = false;
+    this.raiz.addChild(e);
+
+    this.materialMarca = material;
+    return e;
+  }
+
+  /**
+   * Pone la marca a los pies del blanco.
+   *
+   * Se llama en cada cuadro mientras haya blanco: el zombi camina, y una
+   * marca que se queda donde el zombi estaba señala el lugar equivocado.
+   */
+  marcarBlanco(x, z) {
+    this.marca.setPosition(x, ALTURA_SOBRE_CORDON, z);
+    this.marca.enabled = true;
+  }
+
+  ocultarMarca() {
+    this.marca.enabled = false;
+    // El latido se reinicia: la proxima marca tiene que nacer chica y
+    // crecer, que es lo que la hace notar al aparecer.
+    this.marcaFase = 0;
   }
 
   /** Destello de impacto: una esfera chica y brillante. */
@@ -341,6 +449,20 @@ export class CombatFx {
   }
 
   update(dt) {
+    if (this.marca.enabled) {
+      /*
+       * Algo mas de un latido por segundo. Mas lento se lee como un error
+       * de dibujo; mas rapido, como una alarma y cansa en una partida de
+       * veinte minutos.
+       */
+      this.marcaFase += dt * 1.6;
+      const k = (Math.sin(this.marcaFase * Math.PI * 2) + 1) / 2;
+      const escala = 1 + k * 0.18;
+      this.marca.setLocalScale(escala, 1, escala);
+      this.materialMarca.opacity = 0.45 + k * 0.4;
+      this.materialMarca.update();
+    }
+
     for (const t of this.trazados) {
       if (t.restante <= 0) continue;
       t.restante -= dt;
