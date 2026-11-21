@@ -11,6 +11,50 @@ import { rumboHacia, direccionDeEntrada, normalizarRumbo } from '../core/rumbo.j
  * espera cualquiera que juegue en tercera persona: "arriba" en el joystick
  * es "hacia donde estoy mirando".
  */
+/**
+ * ¿Gus esta quieto? **Logica pura, y por eso se puede probar con numeros.**
+ *
+ * Se mide **la entrada**, no la velocidad, y el porque largo esta en
+ * `PLAYER.quietoDelay`. En una linea: lo que el juego necesita saber es si
+ * el jugador decidio frenar, y eso esta en el pulgar, no en el cuerpo.
+ *
+ * Vive afuera de la clase por el mismo motivo que `approach` y
+ * `approachAngle`: `PlayerController` necesita una entidad de PlayCanvas
+ * para existir, asi que todo lo que se pueda contestar con numeros se
+ * contesta afuera. Es la entrada de todo el combate automatico (D-28) y
+ * tiene que poder probarse sin abrir un navegador.
+ *
+ * @param {number} tiempoSinEntrada segundos acumulados con el joystick en cero
+ * @param {number} dt
+ * @param {number} inputMag largo del vector de entrada, de 0 a 1
+ * @param {number} [retardo] segundos que hay que aguantar. Para probar.
+ * @returns {{tiempoSinEntrada:number, quieto:boolean}}
+ */
+export function avanzarQuieto(tiempoSinEntrada, dt, inputMag, retardo = PLAYER.quietoDelay) {
+  /*
+   * El umbral de "hay entrada" es el MISMO que usa el movimiento:
+   * `inputMag > 0`. No se inventa uno propio, y es deliberado.
+   *
+   * Si quieto usara un umbral mas alto que el del movimiento, quedaria una
+   * franja —el pulgar apenas desviado— donde Gus camina despacio **y**
+   * dispara al mismo tiempo. Eso contradice D-28 de la peor manera: no con
+   * un error visible, sino con un rincon del joystick donde el juego se
+   * rompe y nadie sabe por que.
+   */
+  if (inputMag > 0) return { tiempoSinEntrada: 0, quieto: false };
+
+  /*
+   * El contador se REINICIA al tocar —arriba—, no se pausa.
+   *
+   * Soltar y volver a tocar dentro del retardo no cuenta como haber estado
+   * quieto. Si se pausara, un pulgar que se mueve a tirones acumularia
+   * quietud que nunca tuvo, y Gus dispararia en medio de una corrida
+   * entrecortada.
+   */
+  const t = tiempoSinEntrada + dt;
+  return { tiempoSinEntrada: t, quieto: t >= retardo };
+}
+
 export class PlayerController {
   /**
    * @param {pc.Entity} entity
@@ -30,6 +74,16 @@ export class PlayerController {
     /** Angulo al que mira el personaje, en grados. */
     this.yaw = 0;
     this.invulnerableFor = 0;
+
+    /**
+     * ¿El jugador solto el joystick hace al menos `PLAYER.quietoDelay`?
+     *
+     * Es la entrada del combate automatico (D-28). Lo produce `update()` y
+     * lo lee el resto del juego; nadie lo escribe desde afuera.
+     */
+    this.quieto = false;
+    /** Segundos acumulados con la entrada en cero. */
+    this.tiempoSinEntrada = 0;
     /*
      * Habia un `isRunning`, y era el estado mas leido del jugador: elegia
      * la velocidad, elegia la pose, y lo miraba el HUD. Se fue en la Fase
@@ -51,6 +105,22 @@ export class PlayerController {
     this.velocity.set(0, 0, 0);
     this.yaw = yaw;
     this.entity.setEulerAngles(0, yaw, 0);
+    /*
+     * Teletransportarse NO deja quieto.
+     *
+     * Es un respawn o un salto de prueba, no una decision del jugador: si
+     * lo dejara quieto, Gus apareceria en el control ya peleando, antes de
+     * que el jugador haya mirado la pantalla.
+     */
+    this.quieto = false;
+    this.tiempoSinEntrada = 0;
+  }
+
+  /** Ver `avanzarQuieto`, que es donde vive la regla y donde se prueba. */
+  #actualizarQuieto(dt, inputMag) {
+    const r = avanzarQuieto(this.tiempoSinEntrada, dt, inputMag);
+    this.tiempoSinEntrada = r.tiempoSinEntrada;
+    this.quieto = r.quieto;
   }
 
   /**
@@ -68,6 +138,8 @@ export class PlayerController {
     const dirX = dir.x;
     const dirZ = dir.z;
     const inputMag = Math.hypot(dirX, dirZ);
+
+    this.#actualizarQuieto(dt, inputMag);
 
     /*
      * 2. Velocidad objetivo con aceleracion, no instantanea.

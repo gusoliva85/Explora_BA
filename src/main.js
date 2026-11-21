@@ -731,6 +731,16 @@ app.on('update', (rawDt) => {
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
   debug.set('arma', arma.estado);
+  /*
+   * Quieto va al diagnostico porque es la entrada del combate automatico y
+   * **no se puede ver de otra manera**: no mueve nada en pantalla todavia.
+   * Se mira en el telefono, soltando el joystick, que es donde el pulgar
+   * tiembla de verdad.
+   */
+  debug.set(
+    'quieto',
+    player.quieto ? 'SI' : `no (${player.tiempoSinEntrada.toFixed(2)} s)`
+  );
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
 
   /*

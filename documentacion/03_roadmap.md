@@ -24,43 +24,34 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.2 — Definir "quieto"** · la entrada de todo lo demás
+### **17.3 — Buscar el más cercano** · elegir a quién se le dispara
 
-**Qué se hace.** Producir el estado *quieto*, que es lo único que el resto
-de la fase necesita como entrada. **No dispara todavía**: esta tarea sólo
-dice si Gus está quieto o no, y lo muestra en el diagnóstico.
+**Qué se hace.** Con `objetivoAutomatico()`, el rescate de la 16.3, elegir
+el blanco al entrar en quieto. **Todavía no dispara**: esta tarea elige y
+marca, la 17.5 gira y la 17.9 dispara.
 
-**La definición ya está decidida y escrita más abajo**, en la Fase 17. En
-una línea: **quieto es el joystick en cero, con 0,15 s de retardo.**
+**La regla, que la cierra D-36:** el más cercano **con línea de vista**. Lo
+único que invalida un blanco es una barrera física —una pared, un auto— y
+vale para los dos lados: si no le podés tirar, no te puede morder de lejos.
+Si el más cercano está tapado, **se busca el siguiente**, no se espera.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/player/playerController.js` | un `quieto` que mira **la entrada**, no la velocidad, y el contador del retardo |
-| `src/config/balance.js` | el retardo, con nombre y con el porqué |
-| `src/main.js` | al diagnóstico (`F1`), para poder verlo jugando |
-| pruebas | unitarias: que un roce no lo apague, que soltar lo encienda tras el retardo, y que volver a tocar dentro del retardo lo reinicie |
+| `src/combat/objetivo.js` | ya existe `objetivoAutomatico()` con once pruebas. Hay que ver si ya hace la prueba de visión o si hay que sumársela |
+| `src/main.js` | elegir al entrar en quieto, soltar al moverse |
+| `src/core/debugOverlay.js` | el blanco elegido, para verlo antes de que exista la marca de la 17.8 |
+| pruebas | unitarias del empate, del tapado y del "no hay ninguno" |
 
-**La trampa de la tarea, y es la decisión entera.** "Quieto" se puede medir
-de dos maneras que se parecen mucho hasta que no se parecen:
+**Lo que hay que mirar con cuidado.** `objetivoAutomatico()` nació como el
+apuntado de la bazooka, que elegía **el mejor centro de explosión**, no el
+zombi más cercano. Son cosas parecidas que no son la misma: un arma de área
+prefiere el punto donde caen más enemigos juntos. **Hay que leer qué hace de
+verdad antes de reusarlo**, y si lo que hace es lo de la bazooka, lo que se
+rescató es el archivo, no la función.
 
-| | Qué mide | Qué sale mal |
-|---|---|---|
-| **La entrada** (elegida) | La intención del jugador | Nada que importe |
-| La velocidad | El estado del cuerpo | Chocar contra una pared te deja "quieto" con el pulgar clavado; y soltar en plena carrera tarda 0,18 s en contar |
-
-Gus frena por inercia en 0,18 s. Con la velocidad, cada parada agregaría esa
-demora **encima** del retardo de 0,15: casi un tercio de segundo entre
-soltar y disparar, en un juego donde doce mordidas te matan. Se sentiría
-como que el personaje duda.
-
-**Lo que hay que mirar con cuidado.** El retardo tiene que **reiniciarse**
-al volver a tocar, no sólo pausarse: soltar y retocar dentro de los 0,15 s
-no cuenta como haber estado quieto. Si sólo se pausara, un jugador que mueve
-el pulgar a tirones acumularía quietud que nunca tuvo.
-
-**Cómo se sabe que está lista:** el diagnóstico muestra quieto/moviéndose,
-el retardo se ve al soltar, y una corrección chica del pulgar no lo apaga.
-**Probado en el teléfono**, que es donde el pulgar tiembla de verdad.
+**Cómo se sabe que está lista:** el diagnóstico muestra a quién eligió, la
+elección cambia al moverse y volver a frenar, y un zombi detrás de un auto
+nunca es el elegido.
 
 ---
 
@@ -1118,8 +1109,8 @@ y los números de D-31. Es el corazón del cambio: si esto no se siente bien
 jugándolo, no sirve nada de lo que viene después.
 
 - [x] **17.1 Las estadísticas nuevas.** Gus 120/25, zombi normal 100/10. Con una prueba que fije las cuentas: 4 tiros y 12 golpes, en números, no a ojo ✅ *20/11/2026 — y las cuentas quedaron fijadas con `toBe`, no con "alcanza o sobra"*
-- [ ] **17.2 Definir "quieto".** El umbral y la demora. Gus frena en 0,18 s por inercia: hay que decidir si eso cuenta. Propuesta a probar: quieto cuando el joystick está en cero por 0,15 s o más ⬅️ *la que sigue*
-- [ ] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36): lo único que impide el tiro es una barrera física, y vale para los dos lados
+- [x] **17.2 Definir "quieto".** El umbral y la demora ✅ *20/11/2026 — se mide la ENTRADA, no la velocidad; `avanzarQuieto()` es función pura con 10 pruebas; se ve en `F1`*
+- [ ] **17.3 Buscar el más cercano.** ⬅️ *la que sigue* Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36): lo único que impide el tiro es una barrera física, y vale para los dos lados
 - [ ] **17.3 bis Sacar la dispersión** (D-36). `spreadDegrees` a 0 y el apuntado asistido afuera: el tiro no falla por azar
 - [ ] **17.3 ter Rayo y proyectil, las dos cosas.** ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
   **Mi propuesta:** el **primer** proyectil de cada ráfaga va al blanco elegido y **no falla** (D-36); los demás —el segundo carril, las diagonales, los rebotes— **vuelan y sí pueden errar**. Eso conserva las dos cosas: la promesa de que quedarse quieto sirve, y que el caos de proyectiles del final de la partida sea caos de verdad.

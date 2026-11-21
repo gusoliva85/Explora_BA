@@ -4960,6 +4960,132 @@ tercio de segundo de duda por parada es mucho.
 
 ---
 
+## 17.2 — "Quieto", que es la entrada de todo, y un error que no era un error
+
+**20 de noviembre de 2026.**
+
+Gus está quieto cuando **el joystick está en cero por 0,15 s**. No cuando la
+velocidad llega a cero. El estado vive en `player.quieto`, la regla en la
+función pura `avanzarQuieto()`, el número en `PLAYER.quietoDelay`, y se ve
+en el diagnóstico con `F1`.
+
+**No dispara nada todavía.** Esta tarea sólo produce el booleano.
+
+### Las dos maneras de medir "quieto", y por qué una está mal
+
+Se parecen muchísimo hasta que no se parecen:
+
+| | Qué mide | Qué sale mal |
+|---|---|---|
+| **La entrada** (elegida) | Si el jugador **decidió** frenar | Nada que importe |
+| La velocidad | Si el cuerpo **se detuvo** | Dos cosas, y las dos feas |
+
+La primera es la obvia: Gus frena por inercia en 0,18 s, así que mirando la
+velocidad cada parada sumaría esa demora **encima** del retardo de 0,15.
+Casi un tercio de segundo entre soltar y que salga la bala, en un juego
+donde matar un zombi lleva 1,6 s. Se sentiría como que el personaje duda.
+
+**La segunda es la que no había visto, y es peor:** chocar de frente contra
+una pared deja la velocidad en cero con el pulgar clavado en el joystick.
+Midiendo la velocidad, eso es "quieto": Gus se pondría a pelear contra una
+pared mientras el jugador cree que está escapando. Y no es un caso raro —en
+una calle de diez metros con autos y cordones, chocar es lo normal.
+
+Lo que el juego necesita saber es **si el jugador decidió frenar**. Eso está
+en el pulgar, no en el cuerpo.
+
+### La asimetría: ponerse a pelear tarda, dejar de pelear es instantáneo
+
+Entrar en quieto lleva 0,15 s. Salir es inmediato: cualquier entrada lo
+apaga en el mismo cuadro.
+
+Es deliberado y es a favor del jugador. Si moverse tuviera su propio
+retardo, Gus seguiría disparando —y por lo tanto **encarando al blanco**—
+durante el primer paso de la huida, que es exactamente el paso en el que uno
+huye porque algo salió mal.
+
+### El contador se reinicia, no se pausa
+
+Soltar y volver a tocar dentro de los 0,15 s **no** cuenta como haber estado
+quieto.
+
+Si el contador se pausara en vez de reiniciarse, un pulgar que se mueve a
+tirones —tocar, soltar, tocar, soltar— iría sumando décimas sueltas hasta
+cruzar el umbral, y Gus se pondría a disparar **en medio de una corrida**.
+El jugador no tendría forma de entenderlo: nunca se quedó quieto.
+
+Tiene su prueba, y es la que justifica el diseño entero: dos tramos de 0,083
+s separados por un toque suman 0,166 —que cruzaría el umbral— y no dejan
+quieto.
+
+### El umbral de "hay entrada" se le copia al movimiento, a propósito
+
+`inputMag > 0`, el mismo que ya usaba el movimiento. No se inventó uno
+propio.
+
+Si quieto usara un umbral más alto, quedaría una franja del joystick —el
+pulgar apenas desviado— donde Gus **camina despacio y dispara al mismo
+tiempo**. Eso rompe D-28 de la peor manera posible: no con un error visible,
+sino con un rincón del control donde el juego se comporta distinto y nadie
+sabe por qué.
+
+### La función es pura, y eso no fue un detalle
+
+`PlayerController` necesita una entidad de PlayCanvas para existir, así que
+no tiene pruebas unitarias: todo lo suyo se prueba en el navegador. Si la
+regla de quieto hubiera vivido adentro de la clase, **la entrada de todo el
+combate automático habría quedado sin una sola prueba con números**.
+
+Vive afuera, como `approach` y `approachAngle`, que ya estaban exportadas
+por el mismo motivo. Diez pruebas, incluidas las dos que no se me habrían
+ocurrido mirando la pantalla: qué pasa con un `dt` enorme tras un alt-tab
+(deja quieto, y está bien: el jugador efectivamente no tocó nada) y qué pasa
+con `dt` cero (nada, ni para un lado ni para el otro).
+
+### Y un error que no era un error, que es la parte que vale la pena
+
+La captura con el diagnóstico mostró esto:
+
+```
+quieto    no (0.15 s)
+```
+
+El contador en el umbral y el estado en `no`. Parecía un `>=` escrito como
+`>`. Lo medí en el juego corriendo en vez de suponerlo, y 580 ms después de
+soltar seguía en `no`, con el contador reiniciándose.
+
+**No había ningún error.** El navegador de prueba corre con WebGL por
+software **a 4 cuadros por segundo**, y el juego acota el `dt` a 1/15 de
+segundo (`PERF.maxDeltaTime`) para que un cuadro largo no teletransporte a
+nadie a través de una pared. O sea: **el reloj del juego avanza cuatro veces
+más lento que el de pared**. 580 ms de espera son 0,067 s de juego: un
+cuadro.
+
+Esperando de verdad, pasa a `quieto: true` como corresponde.
+
+> **Lo que me queda escrito:** en este proyecto, un número leído del
+> navegador de prueba está en **tiempo de juego**, no en tiempo de pared, y
+> los dos difieren por un factor de cuatro o más. Las pruebas de punta a
+> punta ya lo sabían —varias tienen el comentario de esperar por condición y
+> no por tiempo— pero yo lo apliqué al escribirlas y no al leer un
+> diagnóstico.
+>
+> Y la otra mitad: **antes de arreglar lo que parece un error de borde, hay
+> que medirlo.** Si hubiera "arreglado" el `>=`, habría cambiado la regla
+> para tapar un problema que no existía.
+
+### Lo que la 17.2 deja planteado para la 17.3
+
+`objetivoAutomatico()` —el rescate de la 16.3, el único de toda la Fase 16—
+nació como el apuntado de la **bazooka**, y una bazooka no busca al enemigo
+más cercano: busca **el mejor centro de explosión**, el punto donde caen más
+juntos. Son dos cosas parecidas que no son la misma.
+
+Hay que leer qué hace de verdad antes de reusarlo. Si hace lo de la bazooka,
+lo que la 16.3 rescató fue el archivo y las pruebas, no la función.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

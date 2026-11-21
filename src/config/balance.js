@@ -77,7 +77,46 @@ export const PLAYER = {
   /** Resistencia para correr, en segundos de carrera continua. 0 = sin limite. */
   staminaSeconds: 0,
   /** Segundos de invulnerabilidad despues de recibir un golpe. */
-  damageInvulnerability: 0.6
+  damageInvulnerability: 0.6,
+
+  /**
+   * Cuanto hay que tener el joystick en cero para contar como QUIETO.
+   *
+   * Es la entrada de todo el combate automatico (D-28): Gus pelea solo
+   * mientras esta quieto, asi que esto decide cuando empieza a pelear.
+   *
+   * ---------------------------------------------------------------------
+   * QUIETO ES LA ENTRADA, NO LA VELOCIDAD
+   * ---------------------------------------------------------------------
+   * Se mide **el joystick en cero**, no que el cuerpo se haya detenido.
+   * Las dos cosas se parecen mucho hasta que no se parecen:
+   *
+   * - Gus frena por inercia en unos 0,18 s. Mirando la velocidad, cada
+   *   parada sumaria esa demora ENCIMA de este retardo: casi un tercio de
+   *   segundo entre soltar y disparar, en un juego donde matar un zombi
+   *   lleva 1,6 s. Se sentiria como que el personaje duda.
+   * - Y al reves: chocar de frente contra una pared deja la velocidad en
+   *   cero con el pulgar clavado en el joystick. Mirando la velocidad, eso
+   *   seria "quieto", y Gus se pondria a pelear contra una pared mientras
+   *   el jugador cree que esta escapando.
+   *
+   * Lo que el juego quiere saber es **si el jugador decidio frenar**, y eso
+   * esta en el pulgar, no en el cuerpo.
+   *
+   * ---------------------------------------------------------------------
+   * Y POR QUE HAY RETARDO
+   * ---------------------------------------------------------------------
+   * No es para castigar: son dos cosas concretas.
+   *
+   * 1. Un roce del pulgar no tiene que disparar. En un joystick virtual el
+   *    dedo nunca vuelve exacto al centro.
+   * 2. El jugador tiene que VER a Gus frenar y encarar antes de que salga
+   *    la bala. Sin eso, el primer tiro aparece de la nada.
+   *
+   * Si jugandolo se siente lento, **lo que baja es este numero, no la
+   * regla**: quieto sigue siendo el joystick en cero.
+   */
+  quietoDelay: 0.15
 };
 
 export const CAMERA = {
