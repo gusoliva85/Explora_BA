@@ -24,43 +24,48 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.3 ter — Rayo y proyectil** · y la fórmula de D-44 desde el primer día
+### **17.4 — El blanco se mantiene** · y cuándo deja de servir
 
-**Qué se hace.** Escribir el disparo como **una ráfaga**, no como un tiro, y
-dejar que los proyectiles extra vuelen.
+**Qué se hace.** Completar `SelectorDeBlanco`: hoy elige al entrar en quieto
+y **nunca suelta** salvo que el jugador se mueva. Falta lo otro.
 
-**La decisión ya está tomada y escrita más abajo.** En corto:
+**Cuándo tiene que soltar el blanco y buscar otro:**
 
-| | Qué es | ¿Puede fallar? |
-|---|---|---|
-| **El primer proyectil** | Rayo instantáneo al blanco elegido | **No** (D-36) |
-| **Los demás** | Proyectiles que viajan: segundo carril, diagonales, rebotes | **Sí** |
+| Pasa esto | Por qué |
+|---|---|
+| **Murió** | Si no, Gus le sigue disparando a un cadáver mientras otro lo muerde |
+| **Salió del alcance** | 28 m es lo que llega el tiro. Más allá, disparar es sólo hacer ruido |
+| **Se perdió de vista** | Dobló una esquina, se metió detrás de un auto (D-36) |
 
-Eso conserva las dos cosas a la vez: la promesa de que quedarse quieto
-**sirve**, y que el caos de proyectiles del final de la partida sea caos de
-verdad (D-44).
+Y en los tres casos: **busca el siguiente en el acto**, sin que el jugador
+toque nada. Es el criterio de salida de la fase: *"al matar un zombi estando
+quieto, pasa al siguiente sin que el jugador toque nada"*.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/combat/weaponController.js` | `#resolverDisparo` pasa a resolver **una ráfaga de N**, con N = carriles × repeticiones |
-| `src/config/balance.js` | `carriles: 1` y `repeticiones: 1`, con la fórmula escrita al lado |
-| pruebas | que con los multiplicadores en 1 el resultado sea **idéntico** al de hoy |
+| `src/combat/blanco.js` | un `#sigueSiendoValido()` y la revalidación en `update` |
+| pruebas | las tres causas, y la que importa: que **reelegir no sea lo mismo que recalcular** |
 
-**Por qué se escribe ahora, con todos los multiplicadores en 1.** Porque es
-gratis hoy y carísimo después. Si la 17 escribe *"un tiro"* en vez de *"una
-ráfaga de uno"*, la 19B no enchufa cartas: **rehace el disparo entero**, y
-lo rehace cuando ya hay números ajustados encima.
+**Lo que hay que mirar con cuidado, y es la trampa.** Revalidar cada cuadro
+se parece peligrosamente a elegir cada cuadro, que es justo lo que la 17.3
+decidió **no** hacer. La diferencia tiene que quedar escrita en el código y
+no sólo en la cabeza:
 
-**Lo que hay que mirar con cuidado.** La prueba que vale es la de
-equivalencia: con `carriles = 1` y `repeticiones = 1`, el comportamiento
-tiene que ser **exactamente** el de hoy, no "parecido". Si cambia algo —el
-orden de los avisos, el ruido, el trazado— la refactorización se llevó
-puesto algo y conviene enterarse ahora y no en la 19B.
+> **Se revalida al actual; no se compara contra los demás.** Si el actual
+> sigue vivo, en rango y a la vista, **se queda**, aunque haya otro a la
+> mitad de distancia. Recién cuando deja de servir se abre la búsqueda.
 
-**Y una decisión que la tarea tiene que cerrar:** ¿el ruido es **uno por
-ráfaga** o uno por proyectil? Propuesta: **uno por ráfaga**. Es un disparo,
-no diez; y con las cartas acumuladas, uno por proyectil haría que una ráfaga
-tardía despertara literalmente a todo el mapa.
+Si eso se confunde, vuelve el problema de la 17.3: con cuatro tiros por
+zombi (D-31), un blanco que cambia solo garantiza que ninguno llegue a los
+cuatro.
+
+**Y una decisión chica que conviene cerrar ahí:** ¿la pérdida de vista es
+inmediata o tiene gracia? Propuesta: **inmediata**. Un retardo haría que Gus
+siga disparando contra un auto, que es exactamente lo que D-36 vino a
+impedir.
+
+**Cómo se sabe que está lista:** se puede limpiar un grupo entero de zombis
+sin tocar el joystick, y Gus nunca le dispara a un muerto ni a una pared.
 
 ---
 
@@ -1121,10 +1126,10 @@ jugándolo, no sirve nada de lo que viene después.
 - [x] **17.2 Definir "quieto".** El umbral y la demora ✅ *20/11/2026 — se mide la ENTRADA, no la velocidad; `avanzarQuieto()` es función pura con 10 pruebas; se ve en `F1`*
 - [x] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36) ✅ *20/11/2026 — `SelectorDeBlanco`, 13 pruebas unitarias y una de punta a punta. El blanco es una foto del momento en que frenó*
 - [x] **17.3 bis Sacar la dispersión** (D-36) ✅ *20/11/2026 — se fueron `spreadDegrees`, `aimAssist`, `dispersar()`, `rumboAsistido()` y el generador de azar del combate entero*
-- [ ] **17.3 ter Rayo y proyectil, las dos cosas.** ⬅️ *la que sigue* ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
+- [x] **17.3 ter Rayo y proyectil, las dos cosas.** ✅ *20/11/2026 — la fórmula de D-44 escrita con los ejes en 1, en `combat/rafaga.js`. Los proyectiles que vuelan llegan con la primera carta que produzca un segundo: ver bitácora* ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
   **Mi propuesta:** el **primer** proyectil de cada ráfaga va al blanco elegido y **no falla** (D-36); los demás —el segundo carril, las diagonales, los rebotes— **vuelan y sí pueden errar**. Eso conserva las dos cosas: la promesa de que quedarse quieto sirve, y que el caos de proyectiles del final de la partida sea caos de verdad.
   **Y hay que escribirlo con la fórmula de D-44 adentro desde el primer día**, aunque en la 17 todos los multiplicadores valgan 1: `proyectiles = carriles × repeticiones` con carriles = 1 y repeticiones = 1. Si la 17 escribe "un tiro" en vez de "una ráfaga de uno", la 19B rehace el disparo entero
-- [ ] **17.4 El blanco se mantiene.** No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista
+- [ ] **17.4 El blanco se mantiene.** ⬅️ *la que sigue* No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista
 - [ ] **17.5 Girar y disparar.** El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco. `rumboForzado` ya existe en `playerController`: se reusa
 - [ ] **17.6 Al moverse, suelta.** Deja de disparar y suelta el blanco, sin arrastre
 - [ ] **17.7 El daño es permanente** (D-31). Verificar que ningún zombi recupere vida al salir del radio de culling de 55 m ni al volver a su zona
@@ -1400,6 +1405,23 @@ techo, la otra llena lo que falta. Con 120 de vida base, Aumentar HP lleva el
 máximo a 144 **sin curar nada**: tomarla con 30 de vida deja al jugador con 30
 de 144, que se va a sentir como una carta que no hizo nada. Es el mismo
 síntoma de D-44 y la misma solución: el texto de la carta (19B.5).
+
+#### ⚠️ Lo que la 17.3 ter dejó medido, y hay que mirar con la carta en la mano
+
+**El abanico de carriles queda cargado a un lado cuando son pares.** El
+carril 0 tiene que ir derecho —es el tiro apuntado, el que no falla
+(D-36)— así que los extras se abren alternando: `0, +12, −12, +24…`
+
+Con cantidad impar cierra simétrico. Con cantidad **par** sobra uno de un
+lado, y el caso más común de todos es el peor: **`tiro doble` da dos
+carriles, o sea `0` y `+12`. Siempre a la derecha.**
+
+No es un error y no se puede "arreglar" acá: no hay forma de centrar un
+abanico par alrededor de un rayo fijo. Si jugando se lee como que el arma
+apunta torcido, la salida es que `tiro doble` abra a **±6** y mueva el rayo
+apuntado al centro del par — **y eso cambia D-36**, así que es una decisión
+y no un ajuste. Está fijado con números en `rafaga.test.js` para que la 19B
+se tropiece con él cuando la carta exista.
 
 #### 🔢 El balance: lo que cambió al entender para qué sirven las cartas
 

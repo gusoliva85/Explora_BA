@@ -1,5 +1,6 @@
 import { WEAPONS } from '../config/balance.js';
 import { blancoDelRayo } from './ballistics.js';
+import { proyectilesDeRafaga } from './rafaga.js';
 
 /**
  * ===========================================================================
@@ -157,7 +158,7 @@ export class WeaponController {
       // El tiro sale desde donde esta el jugador AHORA, no desde donde
       // estaba al apretar: si no, girar durante la demora no serviria de
       // nada y el combate se sentiria rigido.
-      this.#resolverDisparo(pos, rumboGrados, objetivos);
+      this.#resolverRafaga(pos, rumboGrados, objetivos);
       this.estado = EstadoArma.ESPERANDO;
       this.restante = this.arma.cooldown;
       return;
@@ -187,9 +188,58 @@ export class WeaponController {
    *
    * El rumbo que entra es el que sale.
    */
-  #resolverDisparo(pos, rumboGrados, objetivos = []) {
+  /**
+   * Una rafaga: todos los proyectiles de un disparo (D-44).
+   *
+   * Hoy son uno, y el bucle da una sola vuelta. Ver `combat/rafaga.js`, que
+   * explica por que se escribe asi desde el primer dia.
+   *
+   * -------------------------------------------------------------------------
+   * EL RUIDO ES UNO POR RAFAGA, NO UNO POR PROYECTIL
+   * -------------------------------------------------------------------------
+   * Se decide aca y conviene que quede escrito antes de que importe. **Es
+   * un disparo, no diez**: lo que suena es el arma, no cada bala.
+   *
+   * Y tiene consecuencia de balance: con las cartas acumuladas de la 19B,
+   * un ruido por proyectil haria que una rafaga tardia —dieciseis
+   * impactos— despertara literalmente a todo el mapa, y el jugador no
+   * tendria forma de relacionar una cosa con la otra.
+   */
+  #resolverRafaga(pos, rumboGrados, objetivos = []) {
     const arma = this.arma;
-    const rumbo = rumboGrados;
+
+    for (const p of proyectilesDeRafaga(arma)) {
+      /*
+       * Hoy todos los proyectiles se resuelven como rayo, porque hoy hay
+       * **uno solo** y es el apuntado.
+       *
+       * Los `tipo: 'proyectil'` —que vuelan y pueden errar— no estan
+       * implementados a proposito: con `carriles: 1` no existe ninguno, y
+       * un sistema de proyectiles con cero proyectiles seria codigo que no
+       * se puede probar jugando, que es justo lo que la Fase 16 estuvo
+       * ocho tareas borrando. Llegan con la primera carta que produzca un
+       * segundo proyectil (19B).
+       *
+       * Lo que si esta decidido y escrito es **cual es cual**: el indice 0
+       * es el tiro apuntado y no falla (D-36); el resto vuela.
+       */
+      this.#resolverProyectil(pos, rumboGrados + p.desvio, objetivos);
+    }
+
+    /*
+     * El ruido sale IGUAL si el tiro falla. Es el corazon de la mecanica:
+     * lo que atrae a los zombis es el estruendo, no el acierto. Un jugador
+     * que erra y se queda sin saber por que vino la horda aprendio algo
+     * importante sobre disparar.
+     */
+    if (arma.noiseRadius > 0) {
+      this.alHacerRuido?.({ x: pos.x, z: pos.z, radio: arma.noiseRadius, arma: arma.id });
+    }
+  }
+
+  /** Un proyectil de la rafaga, resuelto como rayo instantaneo. */
+  #resolverProyectil(pos, rumbo, objetivos) {
+    const arma = this.arma;
 
     const impacto = blancoDelRayo(pos, rumbo, objetivos, {
       alcance: arma.range,
@@ -228,16 +278,6 @@ export class WeaponController {
       });
     } else {
       this.alFallar?.({ arma: arma.id, x: pos.x, z: pos.z, rumbo });
-    }
-
-    /*
-     * El ruido sale IGUAL si el tiro falla. Es el corazon de la mecanica:
-     * lo que atrae a los zombis es el estruendo, no el acierto. Un jugador
-     * que erra y se queda sin saber por que vino la horda aprendio algo
-     * importante sobre disparar.
-     */
-    if (arma.noiseRadius > 0) {
-      this.alHacerRuido?.({ x: pos.x, z: pos.z, radio: arma.noiseRadius, arma: arma.id });
     }
   }
 }

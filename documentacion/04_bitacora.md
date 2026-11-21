@@ -5320,6 +5320,117 @@ despertara literalmente a todo el mapa.
 
 ---
 
+## 17.3 ter — La ráfaga de uno, y un abanico que se carga para la derecha
+
+**20 de noviembre de 2026.**
+
+El disparo pasa a estar escrito como **ráfaga**, con la fórmula de D-44
+adentro y los dos multiplicadores en 1. Vive en `combat/rafaga.js`, lógica
+pura, con dieciséis pruebas.
+
+```
+proyectiles = carriles × repeticiones
+```
+
+Hoy sale **un** proyectil, exactamente como ayer.
+
+### La prueba de equivalencia la dieron las pruebas que ya existían
+
+La tarea pedía que con los multiplicadores en 1 el comportamiento fuera
+**exactamente** el de hoy, no "parecido". Resultó que esa prueba ya estaba
+escrita: las **39 pruebas de `pistola.test.js` pasaron sin tocar una sola
+línea**, incluidas las ocho que recorren los ocho rumbos cardinales y la que
+exige que dos tiros idénticos den resultados idénticos.
+
+Es una forma de equivalencia que no se me había ocurrido pedir y que es más
+fuerte que cualquier prueba que hubiera escrito a propósito: **el banco de
+pruebas viejo, corriendo sin modificaciones sobre el código nuevo.**
+
+### Lo que no implementé, y por qué
+
+La tarea decía *"tiene que haber proyectiles que viajen"*. **No los hice**,
+y quiero que quede dicho derecho en vez de escondido entre líneas.
+
+Con `carriles: 1` y `repeticiones: 1` **no existe ningún proyectil extra**.
+Un sistema de proyectiles con cero proyectiles es código que no se puede
+probar jugando, que es exactamente lo que la Fase 16 estuvo ocho tareas
+borrando, y que se arregla mal dos veces: primero se escribe a ciegas y
+después se reescribe cuando aparece el primer caso real.
+
+Lo que **sí** está hecho es lo que vuelve barata a la 19B, que es el motivo
+real por el que la tarea existe:
+
+- La **fórmula**, con los dos ejes multiplicándose.
+- El **reparto**: qué proyectil es el rayo apuntado y cuáles vuelan.
+- El **abanico**: a qué ángulo sale cada carril.
+- El **ruido**: uno por ráfaga, no uno por proyectil.
+
+Los proyectiles que vuelan llegan con la primera carta que produzca un
+segundo proyectil. Para entonces habrá un caso real que mirar.
+
+### El ruido es uno por ráfaga, y eso es balance, no prolijidad
+
+Es un disparo, no diez: lo que suena es el arma.
+
+Y tiene consecuencia concreta. Con las cartas acumuladas del final de la
+partida —dieciséis impactos en una ráfaga, según la cuenta de D-44— un ruido
+por proyectil haría que **una sola ráfaga despertara literalmente a todo el
+mapa**. El jugador no tendría forma de relacionar una cosa con la otra:
+dispararía una vez y vendría todo el barrio.
+
+### Y el hallazgo: el abanico se carga para la derecha
+
+Escribí una prueba dando por hecho que el abanico cerraba simétrico, y pedí
+que los desvíos sumaran cero. Con cuatro carriles suman **24**.
+
+Fui a arreglar el código y no había nada que arreglar. **Es inevitable:**
+
+| Carriles | Desvíos | Suma |
+|---|---|---|
+| 1 | `0` | 0 |
+| **2** | **`0, +12`** | **+12** |
+| 3 | `0, +12, −12` | 0 |
+| **4** | **`0, +12, −12, +24`** | **+24** |
+
+El carril 0 **tiene que** ir derecho: es el tiro apuntado, el que no falla
+(D-36). Con cantidad par de carriles siempre sobra uno de un lado, porque no
+hay forma de centrar un abanico par alrededor de un rayo fijo.
+
+Y el caso más común de todos es el peor: **`tiro doble` da dos carriles**,
+o sea `0` y `+12`. Siempre a la derecha. Es probablemente la primera carta
+que va a tomar un jugador.
+
+**No lo "arreglé", y la razón importa.** La salida sería que `tiro doble`
+abra a ±6 y mueva el rayo apuntado al centro del par — pero eso significa
+que el tiro apuntado deja de ir al blanco, **o sea que cambia D-36**. Es una
+decisión de diseño, no un ajuste de números, y no se puede tomar sin la
+carta en la mano para mirarla jugando.
+
+Quedó fijado con números en `rafaga.test.js` y anotado en la 19B del
+roadmap, para que la 19B se tropiece con él cuando corresponda.
+
+> **Es la tercera vez en esta fase que una prueba mal escrita encuentra algo
+> cierto.** En la 17.3 fue el blanco que es una foto; acá, la asimetría del
+> abanico. Las dos veces el reflejo fue "el código está mal" y las dos veces
+> era el código haciendo lo único que podía hacer. **Escribir la prueba
+> primero y mirar quién tiene razón después sigue siendo la parte más
+> barata de todo esto.**
+
+### Lo que la 17.3 ter deja planteado para la 17.4
+
+La 17.4 hace que el blanco se suelte cuando deja de servir, y tiene una
+trampa que conviene nombrar antes: **revalidar cada cuadro se parece
+peligrosamente a elegir cada cuadro**, que es justo lo que la 17.3 decidió
+no hacer.
+
+La diferencia tiene que quedar escrita en el código: *se revalida al actual;
+no se compara contra los demás*. Si el actual sigue vivo, en rango y a la
+vista, se queda, **aunque haya otro a la mitad de distancia**. Si eso se
+confunde, vuelve el problema de la 17.3 y ningún zombi llega nunca a los
+cuatro tiros.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

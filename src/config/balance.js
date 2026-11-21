@@ -325,7 +325,48 @@ export const WEAPONS = {
      */
     shotHeight: 1.2,
     /** Medio ancho del cuerpo de un zombi para el rayo. */
-    targetRadius: 0.45
+    targetRadius: 0.45,
+
+    /**
+     * ---------------------------------------------------------------------
+     * LA RAFAGA (D-44). Hoy sale UN proyectil, y esta escrito como formula.
+     * ---------------------------------------------------------------------
+     * ```
+     * proyectiles = carriles × repeticiones
+     * ```
+     *
+     * **Los dos ejes se multiplican, no se suman.** Dos carriles por dos
+     * repeticiones son cuatro proyectiles, no tres, y esa multiplicacion
+     * **es** la escalada de la partida: al final hay seis o siete cartas y
+     * el personaje dispara para todos lados.
+     *
+     * Las cartas de la 19B no tocan estos numeros a mano: suman a uno de
+     * los dos ejes. `tiro doble` y `disparos diagonales` suman carriles;
+     * `disparo multiple` suma repeticiones.
+     *
+     * Estan en 1 porque todavia no hay cartas. **Estan escritos igual**
+     * porque si la Fase 17 dijera "un tiro" en vez de "una rafaga de uno",
+     * la 19B no enchufaria las cartas: reharia el disparo entero, y con
+     * numeros de combate ya ajustados encima.
+     */
+    carriles: 1,
+    repeticiones: 1,
+
+    /**
+     * Separacion entre carriles, en grados.
+     *
+     * No se usa con `carriles: 1` —no hay segundo carril que separar— y
+     * esta igual, por el mismo motivo que la formula: el dia que una carta
+     * agregue un carril, el angulo tiene que ser una decision tomada y no
+     * un numero inventado en el apuro.
+     *
+     * Doce grados sale de la geometria del juego, no del gusto: a diez
+     * metros son 2,1 m de separacion entre proyectiles, o sea un poco mas
+     * de dos cuerpos de zombi (0,9 m de ancho). Alcanza para que el
+     * abanico le pegue a un segundo zombi del grupo sin que se superponga
+     * con el primero.
+     */
+    carrilDegrees: 12
 
     /*
      * Y habia un `aimAssist: { cono: 14, maxima: 5 }`, el apuntado asistido
