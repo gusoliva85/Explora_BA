@@ -24,39 +24,38 @@
 
 ## ▶️ La tarea que sigue
 
-### **18.12 — La construcción por tramos** · segunda mitad: la ventana
+### **18.3 — El trazado nuevo en `mission001.js`** · las 16 cuadras reales
 
-> ⛔ **La Fase 17 está hecha en código y lo que le falta necesita un pulgar.**
-> La cadencia (17.9), borrar el botón de DISPARAR, el joystick de la derecha
-> y la misión entera sin tocar nada. Está todo listado abajo, en la Fase 17.
-> Mientras tanto se avanza con la 18, que no depende de nada de eso.
+> ✅ **La 18.12 está hecha, y por eso esto se puede hacer.** La ciudad se
+> construye por ventana de cuadras: con el mapa de hoy bajó de 1.419 piezas
+> a **923**, y al cruzar un control libera la cuadra de atrás de verdad —las
+> cajas de colisión bajan de 130 a 92—. Sin esto, dieciséis cuadras no
+> abrirían.
 
-**Lo que ya está hecho** (primera mitad, 21/11): cada cuadra es una unidad
-que se puede construir y liberar sola — su entidad, su grupo de agrupado,
-sus cajas de colisión y **su propio azar**. Más `CollisionWorld.remove()`,
-que no existía.
-
-**Lo que falta: la ventana que decide qué cuadras están en pie.**
-
-| | |
-|---|---|
-| **Ventana** | Cuatro cuadras: la última del tramo anterior, las dos del actual y la primera del siguiente |
-| **Por qué cuatro** | Con tramos de 2 cuadras, la ventana de 3 ya no alcanza: al entrar a un tramo se vería el borde del mapa |
-| **Disparador** | Un **evento** —cruzar una puerta—, no una distancia adivinada |
-| **Sin histéresis** | Con la esclusa el recorrido es de ida: no se vuelve, así que no hay que estabilizar el borde |
-| **Repartido** | La cuadra siguiente se construye **en varios cuadros** mientras se juega la actual |
+**Qué se hace.** Reemplazar las 3 cuadras de prueba por **las 16 de D-46**,
+importando las diecisiete esquinas de `tools/recorrido-real.mjs` para que no
+haya dos fuentes de verdad.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/world/ventana.js` | nuevo: decide qué construir y qué soltar |
-| `src/main.js` | conectarlo al avance por la ruta |
-| pruebas | la ventana con números: qué está en pie en cada tramo, y que soltar no deje cajas |
+| `tools/recorrido-real.mjs` | ya existe y ya imprime el trazado con `--json` |
+| `src/config/mission001.js` | `route` pasa a tener 17 puntos; `blocks`, uno por cuadra |
+| — | las **siete puertas** salen de `puertas()`, no se escriben a mano |
 
-**Lo que hay que mirar con cuidado.** Repartir la construcción en varios
-cuadros es lo que evita el tirón, **y también lo que puede dejar media
-cuadra en pie**: si el jugador llega antes de que termine, hay fachadas sin
-colisión o colisiones sin fachada. La ventana tiene que ser lo bastante
-ancha como para que eso no pase, y eso se mide, no se supone.
+**Lo que hay que mirar con cuidado.** El trazado tiene que **importarse**,
+no copiarse. Si se pega el resultado del script, al día siguiente hay dos
+versiones del recorrido y la que vale es la que nadie mira. Es el mismo
+criterio que ya se aplicó con los ángulos y con los números de balance:
+**el dato se le pide a su dueño.**
+
+**Y una cuenta para tener a mano antes de empezar:** con 16 cuadras y la
+ventana de 4, en pantalla hay como mucho la cuarta parte del mapa. Lo que
+crece sin ventana es el costo de **construir**, no el de dibujar: cada
+cuadra cuesta unos milisegundos y eso ya está repartido de a una por cuadro.
+
+**Cómo se sabe que está lista:** se puede recorrer de Independencia 3250 a
+Billinghurst 250, los giros son todos de 90°, y `trazado.test.js` lo
+verifica contra el script.
 
 ---
 
@@ -1182,7 +1181,7 @@ reemplaza por modelos.
 
 - [x] ~~18.1 El generador, abierto a ángulos arbitrarios~~ — **cancelada por D-35**
 - [x] ~~18.2 Las esquinas que no son esquinas~~ — **cancelada por D-35**
-- [ ] **18.3 El trazado nuevo en `mission001.js`.** Las **diecisiete esquinas de D-46**, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad. Las siete puertas salen de `puertas()`, no se escriben a mano
+- [ ] **18.3 El trazado nuevo en `mission001.js`.** ⬅️ *la que sigue* Las **diecisiete esquinas de D-46**, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad. Las siete puertas salen de `puertas()`, no se escriben a mano
 - [ ] **18.4 Seis controles** en vez de dos, y la meta en Billinghurst 250
 - [ ] **18.5 Los siete textos de objetivo**, en voseo, uno por tramo
 - [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más una flecha en cada uno de los cinco giros. Con la cuadrícula esto es más fácil: la flecha siempre apunta a 90°
@@ -1191,8 +1190,8 @@ reemplaza por modelos.
 - [ ] **18.9 Las zonas de zombis, una por tramo.** **Ocho zonas de dos cuadras** (D-46), con dificultad creciente y la primera floja: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
 - [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, las siete puertas y la casa de Sergio. **Y ya no falta ninguna dirección** (D-46): las diecisiete esquinas tienen nombre real de OpenStreetMap, y las cuatro ubicaciones de Gus que caen en medio de un tramo —Maza 379, Av. Boedo 120, Mario Bravo 90— son carteles de paso
 - [ ] **18.11 La casa de Sergio** ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
-- [ ] 🔄 **18.12 La construcción por tramos** (D-42, D-47) — *mitad hecha el 21/11: la cuadra es una unidad que se construye y se libera sola, con su propio azar. Falta la ventana* ⚠️ **Primera de la fase, no última.** Ya no es "es probable que haga falta" ni siquiera "está medido y hace falta": con las 16 cuadras de D-46 el juego **no abre** en un teléfono sin esto. La ciudad es el 86 % de las mallas y lo único que crece con los metros; 16 cuadras proyectan ~12.700 entidades y ~1.100 llamadas de dibujo contra un presupuesto de 150. **Ventana de cuatro cuadras** —la última del tramo anterior, las dos del actual y la primera del siguiente, porque con tramos de 2 cuadras la ventana de tres ya no alcanza—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
-- [ ] **18.12 bis Liberar de verdad.** Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
+- [x] **18.12 La construcción por tramos** (D-42, D-47) ✅ *21/11/2026 — ventana de cuadras, disparada por el control y no por una distancia. El mapa de hoy pasa de 1.419 piezas a 923, y liberar baja las cajas de colisión de 130 a 92* ⚠️ **Primera de la fase, no última.** Ya no es "es probable que haga falta" ni siquiera "está medido y hace falta": con las 16 cuadras de D-46 el juego **no abre** en un teléfono sin esto. La ciudad es el 86 % de las mallas y lo único que crece con los metros; 16 cuadras proyectan ~12.700 entidades y ~1.100 llamadas de dibujo contra un presupuesto de 150. **Ventana de cuatro cuadras** —la última del tramo anterior, las dos del actual y la primera del siguiente, porque con tramos de 2 cuadras la ventana de tres ya no alcanza—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
+- [x] **18.12 bis Liberar de verdad.** ✅ *21/11/2026 — entidades, grupo de agrupado y **cajas de colisión**, medido en el juego: 130 → 92 al soltar una cuadra. `CollisionWorld.remove()` tiene seis pruebas, incluida la del ciclo de cien* Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
 - [ ] **18.14 La brújula, más grande y protagonista** (D-38). Hoy existe —una pastilla con flecha que rota y los metros al objetivo— y ya se muestra siempre que haya objetivo, así que lo de "siempre" está. Lo que falta: **tamaño**, porque el glifo mide 15 px y es más chico que el texto de al lado; **presencia**, que se vea de reojo mientras se corre; y **el nombre de la calle** por la que se va, que es donde D-40 dice que puede vivir. Y tiene que seguir funcionando cuando la 19A.6 le cambie el blanco al zombi más cercano
 

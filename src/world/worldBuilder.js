@@ -253,6 +253,24 @@ export class WorldBuilder {
     return true;
   }
 
+  /**
+   * Levanta TODAS las cuadras del recorrido, sin ventana.
+   *
+   * No lo usa el juego: lo usan las pruebas que recorren el mapa entero de
+   * una sentada. Esas pruebas corren dentro de un `page.evaluate` que
+   * bloquea el cuadro, asi que la ventana —que construye de a una cuadra
+   * por cuadro— nunca llegaria a mover nada, y el caminante atravesaria
+   * cuadras vacias sin un solo obstaculo. **Una prueba de obstaculos sin
+   * obstaculos pasa siempre.**
+   *
+   * Pedir el mapa completo a proposito es mejor que confiar en que la
+   * ventana alcance: lo que esas pruebas verifican es el diseño del nivel,
+   * no el streaming, y el streaming tiene las suyas en `ventana.test.js`.
+   */
+  construirTodo(mission) {
+    for (let i = 0; i < mission.route.length - 1; i++) this.construirCuadra(mission, i);
+  }
+
   /** Los indices de las cuadras que estan en pie ahora. */
   get cuadrasEnPie() {
     return [...this.cuadras.keys()].sort((a, b) => a - b);
@@ -374,7 +392,7 @@ export class WorldBuilder {
   // =========================================================================
 
   /** Construye la mision entera. */
-  build(mission) {
+  build(mission, opt = {}) {
     const rng = createRng(mission.seed);
     const markers = [];
 
@@ -397,7 +415,16 @@ export class WorldBuilder {
     // fachadas, porque el generador las consulta mientras construye.
     this.#registrarHuecos(mission);
 
-    for (let i = 0; i < mission.route.length - 1; i++) this.construirCuadra(mission, i);
+    /*
+     * Que cuadras se levantan ahora.
+     *
+     * Por omision, todas: es lo que hace una prueba que quiere el mapa
+     * completo, y es lo que hacia el juego hasta la Fase 18. En el juego de
+     * verdad, la ventana (`world/ventana.js`) pasa las de la ventana y el
+     * resto llegan despues, repartidas en varios cuadros.
+     */
+    const cuadras = opt.cuadras ?? [...Array(mission.route.length - 1).keys()];
+    for (const i of cuadras) this.construirCuadra(mission, i);
 
     this.#buildDesvios(mission, rng);
 

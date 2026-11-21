@@ -45,7 +45,22 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
   await expect(page.locator('#screen-hud')).toBeVisible();
 
   const informe = await page.evaluate(async () => {
-    const { player, mission, collision } = globalThis.game;
+    const { player, mission, collision, builder, ventana } = globalThis.game;
+
+    /*
+     * El mapa entero, a proposito.
+     *
+     * Desde la 18.12 la ciudad se construye por ventana de cuadras, y este
+     * caminante corre dentro de un `page.evaluate` que bloquea el cuadro:
+     * la ventana no llegaria a mover nada y el caminante atravesaria
+     * cuadras vacias. **Una prueba de obstaculos sin obstaculos pasa
+     * siempre**, que es la peor forma de verde.
+     *
+     * Lo que esta prueba verifica es el diseño del nivel; el streaming
+     * tiene las suyas en `ventana.test.js`.
+     */
+    builder.construirTodo(mission.mission);
+    for (let i = 0; i < mission.mission.route.length - 1; i++) ventana.enPie.add(i);
     const m = mission.mission;
     const radio = player.radius;
     const PASO = 0.3;
@@ -260,7 +275,22 @@ test('cada pasaje se puede recorrer de punta a punta', async ({ page }) => {
   await expect(page.locator('#screen-hud')).toBeVisible();
 
   const informe = await page.evaluate(async () => {
-    const { player, mission, collision } = globalThis.game;
+    const { player, mission, collision, builder, ventana } = globalThis.game;
+
+    /*
+     * El mapa entero, a proposito.
+     *
+     * Desde la 18.12 la ciudad se construye por ventana de cuadras, y este
+     * caminante corre dentro de un `page.evaluate` que bloquea el cuadro:
+     * la ventana no llegaria a mover nada y el caminante atravesaria
+     * cuadras vacias. **Una prueba de obstaculos sin obstaculos pasa
+     * siempre**, que es la peor forma de verde.
+     *
+     * Lo que esta prueba verifica es el diseño del nivel; el streaming
+     * tiene las suyas en `ventana.test.js`.
+     */
+    builder.construirTodo(mission.mission);
+    for (let i = 0; i < mission.mission.route.length - 1; i++) ventana.enPie.add(i);
     const m = mission.mission;
     const radio = player.radius;
     const PASO = 0.3;

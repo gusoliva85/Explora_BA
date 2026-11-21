@@ -10,6 +10,7 @@ import { PlayerController } from './player/playerController.js';
 import { CameraController } from './player/cameraController.js';
 import { medirEncuadre } from './player/encuadre.js';
 import { WorldBuilder } from './world/worldBuilder.js';
+import { VentanaDeMundo } from './world/ventana.js';
 import { MissionManager } from './missions/missionManager.js';
 import { Hud } from './ui/hud.js';
 import { mission001 } from './config/mission001.js';
@@ -206,7 +207,38 @@ const camera = new CameraController(cameraEntity, collision);
 await precargarModelos(app);
 
 const builder = new WorldBuilder(app, collision);
-const built = builder.build(mission001);
+
+/*
+ * ---------------------------------------------------------------------------
+ * LA VENTANA DE MUNDO (18.12, D-42 y D-47)
+ * ---------------------------------------------------------------------------
+ * La ciudad no se construye entera: se construye una ventana de cuadras
+ * alrededor del jugador y lo que queda atras se suelta. Con las dieciseis
+ * cuadras de D-46 esto no es una optimizacion — **sin esto el juego no abre
+ * en un telefono**.
+ *
+ * El tramo sale de los controles de la mision, no de una distancia: un
+ * tramo es lo que hay entre dos controles, y `mission.nextCheckpoint` ya
+ * lleva esa cuenta. Es el "evento y no distancia adivinada" que pide D-42,
+ * y con la esclusa (D-37) el recorrido es de ida, asi que no hay borde que
+ * titile.
+ */
+const CUADRAS_TOTAL = mission001.route.length - 1;
+const TRAMOS = mission001.checkpoints.length + 1;
+const ventana = new VentanaDeMundo({
+  cuadrasPorTramo: Math.max(1, Math.round(CUADRAS_TOTAL / TRAMOS)),
+  totalCuadras: CUADRAS_TOTAL
+});
+
+/** Levanta la ventana inicial de una, sin repartir: es el arranque. */
+function ventanaInicial() {
+  ventana.irAlTramo(0);
+  const cuadras = [];
+  while (!ventana.completa) cuadras.push(...ventana.siguienteLote());
+  return cuadras;
+}
+
+const built = builder.build(mission001, { cuadras: ventanaInicial() });
 const mission = new MissionManager(mission001, bus);
 
 /*
@@ -404,6 +436,24 @@ function startMission({ fromCheckpoint = false } = {}) {
   camera.reset(sp.yaw ?? 0);
   camera.setStreetHeading(mission.streetHeading(sp));
   camera.snapToStreet();
+
+  /*
+   * La ventana vuelve al tramo donde reaparece el jugador.
+   *
+   * Reaparecer en un control es un salto, no un recorrido: sin esto, la
+   * ventana se quedaria donde estaba y el jugador apareceria mirando dos
+   * cuadras que todavia no estan.
+   */
+  if (mission.nextCheckpoint !== ventana.tramo) {
+    const { soltar } = ventana.irAlTramo(mission.nextCheckpoint);
+    for (const i of soltar) {
+      builder.liberarCuadra(i);
+      ventana.soltada(i);
+    }
+  }
+  while (!ventana.completa) {
+    for (const i of ventana.siguienteLote()) builder.construirCuadra(mission001, i);
+  }
 
   hud.setHealth(player.health);
   hud.setObjective(mission.objectiveText);
@@ -631,6 +681,33 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
 
+/**
+ * Mueve la ventana de mundo si el jugador cambio de tramo, y construye lo
+ * pendiente de a una cuadra por cuadro.
+ *
+ * ---------------------------------------------------------------------------
+ * SOLTAR ES INMEDIATO; CONSTRUIR SE REPARTE
+ * ---------------------------------------------------------------------------
+ * El orden no es casual. Si se construyera primero, el pico de memoria
+ * seria el de la ventana nueva **mas** lo que sobra de la vieja, que es
+ * justo el momento en que un telefono se queda sin aire.
+ *
+ * Y construir una cuadra cuesta varios milisegundos: varias juntas en el
+ * mismo cuadro son un tiron, y el momento en que la ventana se mueve es el
+ * peor para tenerlo, porque es cuando el jugador acaba de cruzar una puerta
+ * y viene de pelear.
+ */
+function actualizarVentana() {
+  if (mission.nextCheckpoint !== ventana.tramo) {
+    const { soltar } = ventana.irAlTramo(mission.nextCheckpoint);
+    for (const i of soltar) {
+      builder.liberarCuadra(i);
+      ventana.soltada(i);
+    }
+  }
+  for (const i of ventana.siguienteLote()) builder.construirCuadra(mission001, i);
+}
+
 // --- Bucle -----------------------------------------------------------------
 
 app.on('update', (rawDt) => {
@@ -689,6 +766,7 @@ app.on('update', (rawDt) => {
 
     player.update(dt, input.move, camera.yaw, rumboDeMira, !giroPorBlanco);
     mission.update(dt, player.position);
+    actualizarVentana();
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
     camera.setStreetHeading(mission.streetHeading(player.position));
     actualizarBrujula();
@@ -879,7 +957,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis, arma, blanco, efectos, gus,
+  postProceso, calidad, zombis, arma, blanco, efectos, gus, ventana,
   stats, progreso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.

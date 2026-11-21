@@ -6005,6 +6005,110 @@ vez.
 
 ---
 
+## 18.12 (segunda mitad) — La ventana, y una mecánica que le simplificó la vida a la técnica
+
+**21 de noviembre de 2026.**
+
+La ciudad se construye por ventana de cuadras. Medido en el juego, con el
+mapa de hoy:
+
+| | Antes | Ahora |
+|---|---|---|
+| Piezas en pie | 1.419 | **923** |
+| Cajas de colisión al arrancar | 130 | **88** |
+| Al cruzar el segundo control | — | **92**, con la cuadra 0 soltada |
+
+El tercer número es el que importa: no es que construya menos al principio,
+es que **suelta de verdad**.
+
+### Cuatro cuadras, y por qué no tres
+
+La ventana es la última del tramo anterior, las dos del actual y la primera
+del siguiente.
+
+Con tramos de dos cuadras (D-46: siete puertas, una cada dos) una ventana de
+tres no alcanza: al entrar a un tramo, el jugador está parado en la primera
+de sus dos cuadras y ya ve hasta el fondo de la segunda. Si la del tramo
+siguiente no estuviera, **vería el borde del mapa desde el primer paso**.
+
+La de atrás existe por el motivo contrario: al cruzar la puerta, la cuadra
+que acaba de dejar sigue en el campo de visión unos segundos.
+
+### La esclusa le resolvió un problema a la técnica
+
+El disparador es un **evento** —cruzar un control— y no una distancia
+inventada. Y con la esclusa (D-37) el recorrido es **de ida**: la puerta se
+cierra a tus espaldas.
+
+Eso elimina de un plumazo el problema clásico de estos sistemas: **la
+histéresis**. Sin ida y vuelta posible no hay borde que titile, no hay que
+inventar un margen para que el mundo no se construya y se suelte dos veces
+por segundo cuando el jugador camina sobre el límite.
+
+> Es la segunda vez que pasa lo mismo. En la Fase 16, la puerta corrediza le
+> avisó al plan que la explosión podía morir. Acá, la puerta le avisa al
+> streaming que no necesita histéresis. **Cada vez que la mecánica se
+> simplificó, el código se achicó.** Si la próxima vuelta de diseño agranda
+> el código, conviene desconfiar de la mecánica.
+
+### Soltar primero, construir después
+
+El orden no es casual: si se construyera primero, el pico de memoria sería
+el de la ventana nueva **más** lo que sobra de la vieja — justo el momento
+en que un teléfono se queda sin aire.
+
+Y construir se reparte de a **una cuadra por cuadro**. Varias juntas son un
+tirón, y el momento en que la ventana se mueve es el peor para tenerlo:
+es cuando el jugador acaba de cruzar una puerta y viene de pelear.
+
+**Repartir tiene su propio riesgo**, y lo que lo cubre es la cuadra de
+colchón: cuando el jugador entra a un tramo, las dos que va a pisar **ya
+estaban en pie** —fueron el colchón del tramo anterior— y lo único
+pendiente es la de adelante, que está a cien metros. O sea: **la ventana no
+es ancha por prolijidad, es ancha para que repartir sea seguro.**
+
+### Una prueba que pasaba siempre, y me di cuenta antes de que doliera
+
+La prueba del recorrido camina el mapa entero dentro de un `page.evaluate`
+que **bloquea el cuadro**. Con la ventana, eso significa que el juego nunca
+corre un cuadro mientras el caminante camina: las cuadras que faltan no se
+construyen nunca y el caminante atraviesa calles vacías.
+
+Y pasa. Verde, perfecto, sin un solo obstáculo que esquivar.
+
+> **Una prueba de obstáculos sin obstáculos pasa siempre, y es la peor forma
+> de verde**: no falla cuando algo se rompe, y encima da confianza.
+
+La salida fue `construirTodo()`, que el juego no usa y la prueba pide a
+propósito. Lo que esa prueba verifica es **el diseño del nivel**; el
+streaming tiene las suyas, con números, en `ventana.test.js`.
+
+### Dónde vive la lógica, y por qué no en el generador
+
+`VentanaDeMundo` no construye nada: **devuelve órdenes**. Quién las ejecuta
+es el bucle del juego.
+
+Esa separación es lo que permite probar la ventana entera sin abrir un
+navegador, que es donde vive el 90 % de los errores de este tipo de sistema:
+fuera de rango en los bordes, cuadras que se sueltan de más, cuadras que no
+se sueltan nunca. Dieciséis pruebas, y las que más me importan son las del
+recorrido completo: **nunca hay más de cuatro cuadras en pie**, y **las dos
+del tramo están siempre antes de pisarlas**.
+
+### Lo que la 18.12 deja planteado para la 18.3
+
+Ahora sí se pueden poner las dieciséis cuadras. Y hay una regla que conviene
+fijar antes de empezar: el trazado se **importa** de
+`tools/recorrido-real.mjs`, no se copia. Si se pega el resultado del script,
+al día siguiente hay dos versiones del recorrido y la que vale es la que
+nadie mira.
+
+Es el mismo criterio que ya se aplicó tres veces en este proyecto —los
+ángulos se le piden al convenio, los números del balance al balance, el
+alcance del blanco al arma—: **el dato se le pide a su dueño.**
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo
