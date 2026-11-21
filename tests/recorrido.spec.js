@@ -61,11 +61,52 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
      */
     builder.construirTodo(mission.mission);
     for (let i = 0; i < mission.mission.route.length - 1; i++) ventana.enPie.add(i);
+
+    /*
+     * Y las siete puertas de la esclusa, abiertas.
+     *
+     * Desde la 19A el recorrido **no es transitable** mientras los tramos
+     * esten sucios: eso es exactamente lo que la puerta tiene que hacer
+     * (D-37), y esta prueba fallo contra la cuarta en cuanto se puso.
+     *
+     * Lo que esta prueba mide es **el diseño del nivel**: que la geometria
+     * deje pasar. Que la puerta frene cuando corresponde tiene sus propias
+     * pruebas, con numeros, en `esclusa.test.js`.
+     */
+    for (const pu of mission.mission.puertas ?? []) {
+      for (const caja of collision.boxes.filter((b) => b.tag === pu.tag)) {
+        collision.remove(caja);
+      }
+    }
     const m = mission.mission;
     const radio = player.radius;
     const PASO = 0.3;
 
     const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+
+    /**
+     * Cuanto se puede alejar el caminante del eje de la ruta.
+     *
+     * Ocho metros: media calzada mas la vereda, o sea la linea municipal.
+     * Mas que eso ya es adentro de una manzana o de otra cuadra.
+     */
+    const MARGEN_RUTA = 8;
+
+    /** Distancia del punto al eje de la ruta, por el tramo mas cercano. */
+    const aLaRuta = (x, z) => {
+      let min = Infinity;
+      for (let i = 0; i < m.route.length - 1; i++) {
+        const a = m.route[i];
+        const b = m.route[i + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const l2 = dx * dx + dz * dz || 1;
+        let t = ((x - a.x) * dx + (z - a.z) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        min = Math.min(min, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
+      }
+      return min;
+    };
 
     /** Intenta moverse en una direccion. Devuelve cuanto avanzo. */
     const mover = (dx, dz) => {
@@ -177,7 +218,35 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
           player.entity.setPosition(volverA.x, 0, volverA.z);
           const a = base + (grados * Math.PI) / 180;
           const movio = mover(Math.sin(a), Math.cos(a));
-          return { grados, movio, nueva: dist(player.position, destino) };
+          const q = player.position;
+          /*
+           * Un paso que se va de la calle NO se considera.
+           *
+           * El caminante es codicioso y, al bordear algo, se metia por una
+           * bocacalle cerrada y quedaba del lado de afuera de un corte:
+           * para volver tenia que atravesarlo. Un jugador no hace eso
+           * —ve la valla— y la prueba terminaba culpando a la valla de
+           * cerrar lo que vino a cerrar.
+           *
+           * El margen es media calle mas la vereda mas un metro: alcanza
+           * para rodear un colectivo cruzado y no para meterse en otra
+           * cuadra.
+           */
+          /*
+           * Y si ya esta afuera, solo valen los pasos que lo acercan a la
+           * calle. Si no, quedaria clavado: todos sus pasos estarian
+           * prohibidos y la prueba diria "se trabo" por culpa de la regla
+           * que la prueba misma se puso.
+           */
+          const fuera = aLaRuta(q.x, q.z);
+          const fueraAntes = aLaRuta(volverA.x, volverA.z);
+          const permitido = fuera <= MARGEN_RUTA || fuera < fueraAntes;
+
+          return {
+            grados,
+            movio: permitido ? movio : 0,
+            nueva: dist(player.position, destino)
+          };
         };
 
         let elegido = probar(ultimoDesvio);

@@ -262,6 +262,98 @@ export function carteDireccion(mats, rng, args = {}) {
   return a.fin();
 }
 
+/**
+ * La puerta de la esclusa (D-37, 19A.3).
+ *
+ * ===========================================================================
+ * NO ES UN OBSTACULO: ES UNA REGLA
+ * ===========================================================================
+ * El ejercito selló la ciudad cuadra por cuadra (D-43), y esto es lo que
+ * queda del operativo: una puerta corrediza que cruza los dieciseis metros
+ * de calle —calzada y las dos veredas— y **que no abre hasta que no quede
+ * un zombi vivo en el tramo**.
+ *
+ * Es el corazon del juego nuevo. Todo lo demas —el combate automatico, el
+ * recorrido de ida, las cartas— existe alrededor de esto.
+ *
+ * ---------------------------------------------------------------------------
+ * TIENE QUE VERSE DESDE LEJOS, Y POR ESO ES ALTA
+ * ---------------------------------------------------------------------------
+ * Si el jugador la descubre al chocarla, el tramo se siente como un pasillo
+ * con un error al final. Si la ve a cincuenta metros, el tramo se siente
+ * como una sala — y eso cambia como se juega: se pelea distinto cuando uno
+ * sabe que la salida esta cerrada.
+ *
+ * Por eso mide tres metros y medio y lleva franjas de peligro: a veinte
+ * metros de camara cenital, lo que llega de un objeto es su altura contra
+ * el fondo y el contraste de sus bandas.
+ *
+ * ---------------------------------------------------------------------------
+ * DOS HOJAS, Y ESO NO ES DECORACION
+ * ---------------------------------------------------------------------------
+ * Abre corriendose a los costados, que es una animacion de posicion: barata,
+ * sin particulas, y legible desde arriba porque lo que cambia es **el
+ * hueco**, no un color.
+ *
+ * Las hojas son hijas con nombre —`HojaIzq` y `HojaDer`— para que el juego
+ * pueda moverlas sin tener que adivinar cual es cual.
+ */
+export function puertaEsclusa(mats, rng, args = {}) {
+  const a = new Armador('PuertaEsclusa', mats);
+  const ancho = args.ancho ?? 16;
+  const alto = 3.5;
+  const hoja = ancho / 2;
+
+  // El marco: dos columnas de hormigon, una a cada punta.
+  for (const dx of [-ancho / 2 - 0.4, ancho / 2 + 0.4]) {
+    a.add('box', [dx, 0, 0], [0.8, alto + 0.4, 0.8], COLORS.rubble, {
+      acabado: ACABADO.revoque,
+      sombra: true
+    });
+  }
+
+  /*
+   * Las dos hojas. Se arman como entidades propias para poder correrlas:
+   * el `Armador` devuelve la pieza, asi que se le cuelga lo demas encima.
+   */
+  for (const [nombre, signo] of [
+    ['HojaIzq', -1],
+    ['HojaDer', 1]
+  ]) {
+    const pieza = a.add('box', [(signo * hoja) / 2, 0, 0], [hoja, alto, 0.35], COLORS.metal, {
+      acabado: ACABADO.persiana,
+      sombra: true
+    });
+    pieza.name = nombre;
+
+    /*
+     * Franjas de peligro: lo que la hace legible desde veinte metros.
+     *
+     * Llevan **el nombre de su hoja como prefijo**, y no es cosmético: al
+     * abrir, la puerta corre las hojas, y una franja que se quede quieta
+     * deja una banda negra atravesada en la calle con el paso ya libre.
+     * Pasó, y se vio en la primera captura: la puerta figuraba abierta —sin
+     * colisión y sin cartel— y en pantalla seguía tapando todo.
+     *
+     * No se cuelgan como hijas de la hoja porque la hoja es una caja
+     * **escalada**, y un hijo heredaría ese escalado. Así que son
+     * hermanas con apellido, y quien las mueve las junta por el nombre.
+     */
+    for (let i = 0; i < 3; i++) {
+      const franja = a.add(
+        'box',
+        [(signo * hoja) / 2, 0.5 + i * 1.1, -0.2],
+        [hoja * 0.92, 0.3, 0.08],
+        i % 2 === 0 ? COLORS.paintYellow : COLORS.metalDark,
+        { acabado: ACABADO.pintura, sombra: false }
+      );
+      franja.name = `${nombre}_franja${i}`;
+    }
+  }
+
+  return a.fin();
+}
+
 /** Farol de vereda. De dia es mobiliario, no una luz. */
 export function farol(mats) {
   const a = new Armador('Farol', mats);
@@ -582,5 +674,6 @@ export const PROPS = {
   auto,
   colectivo,
   comisaria,
-  casaDeSergio
+  casaDeSergio,
+  puertaEsclusa
 };

@@ -174,6 +174,61 @@
 
 /* Brujula al objetivo. Vive al lado del texto de objetivo porque las dos
    cosas responden a la misma pregunta: a donde voy. */
+/* --- La esclusa (19A.4, D-37) ---------------------------------------------
+   El cartel que aparece cuando la puerta frena al jugador.
+
+   TIENE QUE ENTENDERSE SIN LEER EL TEXTO DOS VECES. De ahi el orden: el
+   simbolo de prohibido primero, el NUMERO grande despues, y recien ahi la
+   explicacion en chico. Un jugador que ya lo vio una vez le alcanza con el
+   numero; uno que lo ve por primera vez tiene la frase abajo.
+
+   Rojo, que es el color que el proyecto reserva para lo que exige atencion
+   —el mismo del anillo del blanco— y no ambar: ambar es "por aca se va", y
+   esto es exactamente lo contrario. */
+
+.esclusa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: center;
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(40, 10, 8, 0.72);
+  border: 1.5px solid rgba(255, 92, 80, 0.55);
+  box-shadow: 0 0 22px rgba(255, 60, 48, 0.18);
+  backdrop-filter: blur(10px) saturate(1.2);
+  animation: entraEsclusa 0.28s var(--sal);
+}
+@keyframes entraEsclusa {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.esclusa-icono {
+  font-size: 22px;
+  line-height: 1;
+}
+.esclusa-texto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+  color: #ffd9d4;
+}
+.esclusa-texto b {
+  font-size: 19px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+  color: #ff8d80;
+}
+.esclusa-detalle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+}
+
 /* --- Brujula (D-38) -------------------------------------------------------
    Es LO UNICO que orienta. Los carteles de esquina son decorado (D-40), y
    con dieciseis cuadras y cinco giros de 90 grados, perderse es facil.

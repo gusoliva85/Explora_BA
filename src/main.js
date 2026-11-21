@@ -11,6 +11,7 @@ import { CameraController } from './player/cameraController.js';
 import { medirEncuadre } from './player/encuadre.js';
 import { WorldBuilder } from './world/worldBuilder.js';
 import { VentanaDeMundo } from './world/ventana.js';
+import { Esclusa, EstadoPuerta } from './missions/esclusa.js';
 import { MissionManager } from './missions/missionManager.js';
 import { Hud } from './ui/hud.js';
 import { mission001 } from './config/mission001.js';
@@ -18,6 +19,7 @@ import { montarPostProceso } from './render/postProcess.js';
 import { SpawnManager } from './enemies/spawnManager.js';
 import { WeaponController } from './combat/weaponController.js';
 import { SelectorDeBlanco } from './combat/blanco.js';
+import { objetivoAutomatico } from './combat/objetivo.js';
 import { CombatFx } from './combat/combatFx.js';
 import { Gus, Pose } from './characters/gus.js';
 import { ArmasEnMano } from './characters/armas.js';
@@ -402,6 +404,94 @@ const blanco = new SelectorDeBlanco({
   rayo: (ax, az, bx, bz, altura) => collision.raycast(ax, az, bx, bz, altura)
 });
 
+/*
+ * ---------------------------------------------------------------------------
+ * LA ESCLUSA (19A, D-37)
+ * ---------------------------------------------------------------------------
+ * El corazón del juego nuevo: la puerta no abre hasta que no quede un zombi
+ * vivo en el tramo, y se cierra a tus espaldas.
+ *
+ * La máquina de estados es lógica pura y vive en `missions/esclusa.js`.
+ * Acá sólo se la conecta con tres cosas que ella no conoce: **las hojas de
+ * la puerta, su caja de colisión y el HUD.**
+ */
+const esclusa = new Esclusa(mission001.puertas ?? []);
+
+/** Las hojas de cada puerta, para poder correrlas. */
+const hojasDePuerta = new Map();
+
+/**
+ * Encuentra las dos hojas de una puerta en el mundo construido.
+ *
+ * Se buscan **cuando hacen falta** y no al construir, y es a proposito: la
+ * puerta pertenece a su cuadra (18.12), asi que puede no existir todavia
+ * cuando la mision arranca, y puede volver a crearse si el jugador muere y
+ * reaparece. Guardar una referencia al construir daria una entidad muerta.
+ *
+ * Las hojas se reconocen por nombre —`HojaIzq` y `HojaDer`— que es lo que
+ * el prop les puso justamente para esto.
+ */
+function buscarHojas(puerta) {
+  const raiz = builder.root
+    .find((n) => n.name === 'PuertaEsclusa')
+    .find((e) => {
+      const q = e.getPosition();
+      return Math.hypot(q.x - puerta.x, q.z - puerta.z) < 1;
+    });
+  if (!raiz) return null;
+
+  const ancho = puerta.args?.ancho ?? 16;
+  const hojas = [];
+  for (const [nombre, signo] of [
+    ['HojaIzq', -1],
+    ['HojaDer', 1]
+  ]) {
+    /*
+     * Se juntan por prefijo: la hoja y sus franjas de peligro.
+     *
+     * Las franjas son hermanas y no hijas —la hoja es una caja escalada y
+     * un hijo heredaria el escalado— asi que hay que moverlas a mano. La
+     * primera version movia solo la hoja y dejaba las franjas atravesadas
+     * en la calle con el paso ya libre: la puerta figuraba abierta, sin
+     * colision y sin cartel, y en pantalla seguia tapando todo.
+     */
+    for (const entidad of raiz.find((n) => n.name.startsWith(nombre))) {
+      hojas.push({ entidad, signo, ancho: ancho / 2 });
+    }
+  }
+  hojasDePuerta.set(puerta.tramo, hojas);
+  return hojas;
+}
+
+/**
+ * Corre las hojas de una puerta y **abre su colisión con ellas**.
+ *
+ * Las dos cosas van juntas a propósito. Si la colisión no se fuera con la
+ * hoja, el paso quedaría abierto a la vista y cerrado al caminar — que es
+ * la peor combinación posible, porque el jugador ve que puede pasar y el
+ * juego le dice que no sin explicarle nada. Es la misma familia que la
+ * pared invisible de la 18.12.
+ */
+function abrirPuerta(tramo) {
+  const puerta = esclusa.puertaDe(tramo);
+  if (!puerta) return;
+
+  const hojas = hojasDePuerta.get(tramo) ?? buscarHojas(puerta);
+  if (hojas) {
+    for (const { entidad, signo, ancho } of hojas) {
+      const p = entidad.getLocalPosition();
+      // Se corre una hoja entera hacia su costado: el hueco que queda es
+      // el ancho completo de la calle.
+      entidad.setLocalPosition(p.x + signo * ancho, p.y, p.z);
+    }
+  }
+
+  // Y la caja se va. El `tag` es único por tramo, de ahí que se pueda.
+  for (const caja of collision.boxes.filter((b) => b.tag === puerta.tag)) {
+    collision.remove(caja);
+  }
+}
+
 function startMission({ fromCheckpoint = false } = {}) {
   if (!fromCheckpoint) mission.reset();
 
@@ -429,6 +519,8 @@ function startMission({ fromCheckpoint = false } = {}) {
   zombis.reiniciar();
   arma.reiniciar();
   blanco.reiniciar();
+  esclusa.reiniciar();
+  hojasDePuerta.clear();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -583,6 +675,39 @@ function distanciaAlObjetivo() {
  * piso deja de verse desde lejos. Esta flecha es lo que reemplaza eso.
  */
 function actualizarBrujula() {
+  /*
+   * LA BRUJULA CAMBIA DE BLANCO MIENTRAS LA PUERTA FRENA (19A.6, D-38)
+   * ---------------------------------------------------------------------------
+   * Con el tramo sucio, el control **no es el objetivo**: es una puerta
+   * cerrada. Apuntar ahi seria mandar al jugador contra una pared y
+   * dejarlo buscando a ciegas al que falta, que es justo lo que el
+   * contador vino a evitar.
+   *
+   * Asi que mientras frene, la flecha apunta al **zombi vivo mas cercano**.
+   * Las dos lecturas se distinguen porque el cartel rojo de la esclusa esta
+   * en pantalla: si esta, la flecha busca; si no, la flecha lleva.
+   */
+  const frena = esclusa.frena(mission.nextCheckpoint);
+  if (frena) {
+    const p = player.position;
+    const cerca = objetivoAutomatico(
+      { x: p.x, z: p.z },
+      zombis.enJuego,
+      { alcance: PERF.zombieCullDistance }
+    );
+    if (cerca) {
+      hud.mostrarBrujula(true);
+      hud.setBrujula(
+        cerca.rumbo - camera.yaw - 90,
+        cerca.distancia,
+        mission.calleActual(p)
+      );
+      return;
+    }
+    // Sin ninguno a la vista, la flecha vuelve al control: el que falta
+    // esta lejos, y la direccion del tramo es mejor que nada.
+  }
+
   const destino = mission.objetivoActual();
   if (!destino) {
     hud.mostrarBrujula(false);
@@ -708,6 +833,39 @@ function actualizarVentana() {
   for (const i of ventana.siguienteLote()) builder.construirCuadra(mission001, i);
 }
 
+/**
+ * Un paso de la esclusa, con todo lo que el mundo real le agrega.
+ *
+ * La máquina decide; acá se ejecuta lo que decidió y se le cuenta al
+ * jugador. Esa separación es la que permite probar la regla con números.
+ */
+function actualizarEsclusa(pos2d) {
+  const tramo = mission.nextCheckpoint;
+
+  for (const ev of esclusa.update(tramo, pos2d, (t) => zombis.vivosEnTramo(t))) {
+    if (ev.tipo === 'abre') {
+      abrirPuerta(ev.tramo);
+      hud.flash(`CONTROL ${ev.control} — PASO LIBRE`, 2200);
+      /*
+       * El gancho para la 19B (19A.10). Las cartas se enchufan escuchando
+       * esto, y la esclusa no se entera de que existen.
+       */
+      bus.emit(EV.CONTROL_ABIERTO, { control: ev.control, tramo: ev.tramo });
+    }
+  }
+
+  /*
+   * El contador (19A.5).
+   *
+   * **Cuenta vivos, no matados.** Es una distinción que parece la misma y
+   * no lo es: los power-ups de veneno y fuego de la 19B pueden matar a un
+   * zombi lejos y sin que el jugador lo vea. Contando bajas, el contador
+   * se quedaría atrás y la puerta no abriría nunca.
+   */
+  const quedan = esclusa.frena(tramo) ? zombis.vivosEnTramo(tramo) : 0;
+  hud.setEsclusa(esclusa.frena(tramo), quedan);
+}
+
 // --- Bucle -----------------------------------------------------------------
 
 app.on('update', (rawDt) => {
@@ -782,6 +940,14 @@ app.on('update', (rawDt) => {
      * posicion con la que se eligio.
      */
     blanco.update(player.quieto, pos2d, zombis.enJuego);
+
+    /*
+     * LA ESCLUSA (19A).
+     *
+     * Va después del blanco porque lo que la mueve son las muertes, y las
+     * muertes las produce el combate de este mismo cuadro.
+     */
+    actualizarEsclusa(pos2d);
 
     /*
      * DISPARAR SOLO (D-28, 17.5)
@@ -957,7 +1123,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis, arma, blanco, efectos, gus, ventana,
+  postProceso, calidad, zombis, arma, blanco, efectos, gus, ventana, esclusa,
   stats, progreso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.

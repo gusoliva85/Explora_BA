@@ -473,6 +473,66 @@ const casa = (() => {
   };
 })();
 
+/**
+ * ===========================================================================
+ * LAS SIETE PUERTAS DE LA ESCLUSA (19A.3, D-37 y D-46)
+ * ===========================================================================
+ * Una por control, cada dos cuadras. **No abren hasta que no quede un zombi
+ * vivo en el tramo**, y se cierran a tus espaldas.
+ *
+ * ---------------------------------------------------------------------------
+ * NO VAN EN LA ESQUINA: VAN ANTES
+ * ---------------------------------------------------------------------------
+ * Dos de las siete caen en esquinas con giro, y una puerta atravesada en un
+ * cruce es un problema: cierra cuatro calles en vez de una, y el jugador no
+ * entiende cuál de las cuatro es la que le importa.
+ *
+ * Así que se plantan **diez metros antes del cruce, sobre la calle por la
+ * que venís**. Ahí cierran exactamente un corredor —el que el jugador está
+ * recorriendo— y se leen sin ambigüedad.
+ *
+ * Es la misma corrección que necesitaron los carteles, y por el mismo
+ * motivo: **en una esquina, las dos calles comparten el cruce.**
+ */
+const esclusas = PUERTAS.map((p) => {
+  /*
+   * Se busca por número de cuadra y no con `indexOf`.
+   *
+   * `puertas()` llama a `trazadoOrtogonal()` por su cuenta, así que
+   * devuelve **otros objetos** con los mismos valores: `indexOf` da −1 y
+   * todo lo que venga después lee `undefined`. Es la trampa clásica de
+   * comparar por identidad lo que viene de dos llamadas distintas.
+   */
+  const idx = TRAZADO.findIndex((t) => t.cuadra === p.cuadra);
+  const ant = TRAZADO[idx - 1];
+  const ex = p.x - ant.x;
+  const ez = p.z - ant.z;
+  const largo = Math.hypot(ex, ez) || 1;
+  const entrada = { x: ex / largo, z: ez / largo };
+
+  const RETIRO_PUERTA = 10;
+  const ANCHO_PUERTA = 16;
+  const alongX = Math.abs(entrada.x) > Math.abs(entrada.z);
+
+  return {
+    tipo: 'puertaEsclusa',
+    tramo: p.puerta - 1,
+    control: p.puerta,
+    x: p.x - entrada.x * RETIRO_PUERTA,
+    z: p.z - entrada.z * RETIRO_PUERTA,
+    /*
+     * La hoja corre a lo largo de su eje X local, así que la puerta se gira
+     * para quedar ATRAVESADA en la calle por la que viene el jugador.
+     */
+    rot: alongX ? 90 : 0,
+    tag: `puerta${p.puerta - 1}`,
+    args: { ancho: ANCHO_PUERTA },
+    collide: alongX
+      ? { w: 0.6, d: ANCHO_PUERTA, h: 3.5 }
+      : { w: ANCHO_PUERTA, d: 0.6, h: 3.5 }
+  };
+});
+
 export const mission001 = {
   id: 'mission001',
   title: 'Ir a buscar a Sergio',
@@ -544,5 +604,12 @@ export const mission001 = {
    * decide dónde conviene cubrirse. Los autos abandonados que el generador
    * reparte sirven de cobertura y por ahora alcanzan.
    */
-  props: [...cortes, ...carteles, casa]
+  props: [...cortes, ...carteles, casa, ...esclusas],
+
+  /*
+   * Las puertas, aparte, para que la esclusa las encuentre sin tener que
+   * filtrar `props` por tipo. Son los mismos objetos: la lista es un
+   * índice, no una copia.
+   */
+  puertas: esclusas
 };

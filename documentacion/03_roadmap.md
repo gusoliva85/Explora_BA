@@ -24,37 +24,29 @@
 
 ## ▶️ La tarea que sigue
 
-### **19A.3 — Las siete puertas** · la esclusa, por fin
+### ⛔ **El juego está completo de punta a punta. Lo que falta es jugarlo.**
 
-> ✅ **Lo obligatorio ya está.** El zombi que desaparecía sin morir está
-> arreglado, cada zona declara su tramo, el gestor sabe cuántos quedan vivos
-> en cada uno, y **ningún puesto queda encerrado ni adentro de una pared**
-> — lo verifica una prueba sobre el mapa construido.
+De Av. Independencia 3250 a Billinghurst 250. Dieciséis cuadras, 1.600 m,
+siete esclusas, y Gus pelea solo. **Las fases 16, 17, 18 y la 19A están
+hechas en código.**
 
-**Qué se hace.** La puerta corrediza del ejército en cada uno de los siete
-controles (D-46): cruza los **16 m** de calle —calzada y las dos veredas—
-con colisión.
+**Lo que no se puede hacer sin un teléfono en la mano**, por orden:
 
-| Archivo | Qué pasa |
-|---|---|
-| `src/world/props.js` | la puerta: dos hojas que corren, con su marco |
-| `src/config/mission001.js` | una por control, generada de `puertas()` |
-| `src/missions/` o nuevo | el estado: cerrada / abierta, por control |
+| Qué | De qué fase | La pregunta concreta |
+|---|---|---|
+| **La cadencia** | 17.9 | *¿Dudás antes de pararte?* Si nunca dudás, muy rápida; si nunca te parás, muy lenta |
+| **Cuántos zombis por tramo** | 19A.11 | Hoy de 2 a 5 por cuadra. **Es la perilla principal**: define cuánto dura una cuadra |
+| **Borrar el botón DISPARAR** | 17 | Redundante desde la 17.5; se dejó para comparar las dos formas jugando |
+| **El joystick a la derecha** | 16.7 | ¿Cae bajo el pulgar sin recolocar la mano? |
+| **La brújula de reojo** | 18.14 | ¿Se lee **sin mirarla**, corriendo? |
+| **La puerta desde lejos** | 19A.3 | ¿Se ve cerrada a cincuenta metros, o se descubre al chocarla? |
+| **El cartel de la esclusa** | 19A.4 | ¿Se entiende sin leer el texto dos veces? |
+| **La misión entera** | — | 1.600 m sin tocar nada más que el joystick |
 
-**Y el octavo tramo no lleva puerta.** La casa de Sergio no necesita una,
-pero sí que el último tramo esté limpio: llegar con cinco zombis atrás no es
-llegar.
-
-**Lo que hay que mirar con cuidado.** La colisión **se abre con la hoja**, o
-el paso queda abierto a la vista y cerrado al caminar — que es la peor
-combinación posible, porque el jugador ve que puede pasar y el juego le dice
-que no sin explicarle nada. Es la misma familia que la pared invisible de la
-18.12.
-
-**Y una decisión que conviene tomar ahora:** la puerta cerrada **tiene que
-poder verse desde lejos**. Si el jugador la descubre al chocarla, el tramo
-se siente como un pasillo con un error al final; si la ve a cincuenta
-metros, el tramo se siente como una sala.
+**Y lo que sigue en código es la 19B: las cartas.** Tiene la especificación
+completa desde el 8/11 —23 cartas con números— y el gancho ya está puesto:
+el evento `CONTROL_ABIERTO` sale cada vez que una esclusa abre, así que las
+cartas se enchufan sin tocar nada de la esclusa.
 
 ---
 
@@ -68,7 +60,7 @@ metros, el tramo se siente como una sala.
 | ✅ | 16 — La poda | **Cerrada el 20/11.** Ocho tareas |
 | 🔄 | **17 — Combate automático** | **Hecha en código.** Falta jugarla en el teléfono: la cadencia (17.9) no se puede ajustar de otra manera |
 | 🔄 | 18 — El recorrido real | **Hecha en código.** Falta jugarla |
-| 🔄 | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Lo obligatorio hecho; falta la puerta |
+| 🔄 | 19A — **La esclusa** | **Hecha en código.** Falta el ritmo (19A.11), que se ajusta jugando |
 | ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
@@ -1232,28 +1224,28 @@ de tres cajas tiradas en el piso.
 
 **La esclusa:**
 
-- [ ] **19A.3 Las siete puertas** ⬅️ *la que sigue* (D-46) como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el octavo tramo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
-- [ ] **19A.4 Cerrada: el cartel.** Al tocar la puerta con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
-- [ ] **19A.5 El contador.** Cuántos quedan **vivos** en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas. ⚠️ **Cuenta vivos, no matados por un disparo:** los power-ups de veneno y fuego pueden matar a un zombi lejos y sin que el jugador lo vea, y si el contador no se entera la puerta no abre nunca
-- [ ] **19A.6 La brújula cambia de blanco** (D-38). Mientras la puerta frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
-- [ ] **19A.7 Abre.** Tramo limpio → la puerta se desliza y deja pasar. **Y la colisión se abre con ella**, o el paso queda abierto a la vista y cerrado al caminar. Es una animación de posición, no un efecto: barata y sin partículas
-- [ ] **19A.8 Y se cierra a los 20 m** (D-37). El número sale de la cámara: se sienta 7 m detrás de Gus y hasta 14,4 m si el jugador la aleja al máximo. Pasados esos 20 m, la cuadra de atrás ya no se ve y **se dispara el evento que la libera** (D-42)
+- [x] **19A.3 Las siete puertas** ✅ *21/11/2026 — puerta corrediza de 16 m, plantada 10 m antes del cruce para cerrar un corredor y no cuatro* (D-46) como puerta corrediza del ejército que cruza los 16 m de calle —calzada y las dos veredas— con colisión. Y el octavo tramo: la casa de Sergio no necesita puerta, pero sí que el último tramo esté limpio
+- [x] **19A.4 Cerrada: el cartel.** ✅ *21/11/2026 — símbolo, número grande, explicación en chico. Rojo, no ámbar: ámbar es "por acá se va"* Al tocar la puerta con zombis vivos en el tramo: cartel de prohibido y el texto *no podés pasar hasta que mates a todos los zombis*. Que se lea en el teléfono y no tape el juego
+- [x] **19A.5 El contador.** ✅ *21/11/2026 — cuenta **vivos**, contando puestos y no lo que hay en pantalla* Cuántos quedan **vivos** en el tramo, siempre visible. Sin esto, "matá a todos" es una búsqueda a ciegas. ⚠️ **Cuenta vivos, no matados por un disparo:** los power-ups de veneno y fuego pueden matar a un zombi lejos y sin que el jugador lo vea, y si el contador no se entera la puerta no abre nunca
+- [x] **19A.6 La brújula cambia de blanco** ✅ *21/11/2026 — mientras la puerta frena, apunta al zombi vivo más cercano* (D-38). Mientras la puerta frene al jugador, la flecha apunta al **zombi vivo más cercano**, no al control
+- [x] **19A.7 Abre.** ✅ *21/11/2026 — y la colisión se va con la hoja. Las franjas de peligro también: la primera versión las dejaba atravesadas en la calle con el paso ya libre* Tramo limpio → la puerta se desliza y deja pasar. **Y la colisión se abre con ella**, o el paso queda abierto a la vista y cerrado al caminar. Es una animación de posición, no un efecto: barata y sin partículas
+- [x] **19A.8 Y se cierra a los 20 m** ✅ *21/11/2026 — y `SELLADA` no vuelve a abrir aunque el tramo de atrás esté limpio, que siempre lo está* (D-37). El número sale de la cámara: se sienta 7 m detrás de Gus y hasta 14,4 m si el jugador la aleja al máximo. Pasados esos 20 m, la cuadra de atrás ya no se ve y **se dispara el evento que la libera** (D-42)
 - [ ] **19A.9 Guardar y reaparecer del lado de adentro.** Al morir se reaparece al principio del tramo en curso, **nunca del lado de afuera de la puerta**: esa cuadra ya no existe en memoria
-- [ ] **19A.10 El gancho para la 19B.** Un evento `controlAbierto` con el índice del control, para que las cartas se enchufen sin tocar nada de esto
+- [x] **19A.10 El gancho para la 19B.** ✅ *21/11/2026 — `EV.CONTROL_ABIERTO`, con fecha de vencimiento escrita al lado* Un evento `controlAbierto` con el índice del control, para que las cartas se enchufen sin tocar nada de esto
 - [ ] **19A.11 El ritmo.** Siete tramos por limpiar cambian la duración de la misión por completo: hoy hay ~24 zombis en total, unos 3 por tramo. Hay que medir cuánto dura una cuadra y cuántos zombis aguanta antes de aburrir. Es la perilla principal del juego, y se ajusta jugando en el teléfono
 
 **Criterio de salida de la 19A**
 
 - [x] Ningún zombi desaparece sin morir, con una prueba que lo verifique
-- [ ] El contador llega a cero si y sólo si están todos muertos
+- [x] El contador llega a cero si y sólo si están todos muertos — *20 pruebas, incluida la del zombi lejos que sigue contando*
 - [x] Ningún puesto de aparición queda en un lugar inalcanzable — *58 puestos, verificados contra el mapa construido*
-- [ ] La puerta no se pasa con un zombi vivo en el tramo, probado intentándolo
+- [x] La puerta no se pasa con un zombi vivo en el tramo — *lo probó sola la prueba del recorrido: se trabó contra la cuarta*
 - [ ] El cartel de prohibido se entiende sin leer el texto dos veces
-- [ ] Al limpiar el tramo la puerta abre, y el paso queda libre **también para la colisión**
-- [ ] La puerta se cierra a los 20 m y no se puede volver, probado intentándolo
+- [x] Al limpiar el tramo la puerta abre, y el paso queda libre **también para la colisión** — *verificado en el juego: 1 caja antes, 0 después*
+- [x] La puerta se cierra a los 20 m y no se puede volver — *con números; falta probarlo con el pulgar*
 - [ ] Al cerrarse, no se ve ni un pedazo de la cuadra liberada desde ninguna distancia de cámara, incluida la máxima
 - [ ] Al morir se reaparece del lado de adentro
-- [ ] La brújula apunta al zombi que falta cuando la puerta frena
+- [x] La brújula apunta al zombi que falta cuando la puerta frena
 - [ ] Se puede terminar la misión limpiando los siete tramos
 - [ ] Una cuadra no se siente larga, medido en el teléfono
 

@@ -6711,6 +6711,105 @@ nada que esto no diga.
 
 ---
 
+## 19A.3 a 19A.10 — La esclusa, y el juego cierra de punta a punta
+
+**21 de noviembre de 2026.**
+
+Las siete puertas. **No abren hasta que no quede un zombi vivo en el tramo,
+y se cierran a tus espaldas** (D-37). Verificado en el juego de verdad:
+cerrada con 4 vivos y su caja de colisión puesta; al matarlos, abierta, caja
+removida y cartel apagado.
+
+Con esto **el juego cierra de punta a punta**: Gus sale de Av. Independencia
+3250, limpia dieciséis cuadras de a dos, cruza siete esclusas y llega a lo
+de Sergio. Sin tocar un botón.
+
+### La puerta no va en la esquina
+
+Dos de las siete caen en esquinas con giro, y una puerta atravesada en un
+cruce **cierra cuatro calles en vez de una**: el jugador no entiende cuál de
+las cuatro le importa.
+
+Van diez metros antes del cruce, sobre la calle por la que venís. Es la
+misma corrección que necesitaron los carteles, por el mismo motivo: **en una
+esquina, las dos calles comparten el cruce.**
+
+### La máquina es pura, y acá eso importa más que nunca
+
+`Esclusa` no conoce PlayCanvas, ni la puerta, ni la colisión. Recibe cuántos
+quedan vivos por tramo y dónde está el jugador; devuelve qué puerta está
+abierta.
+
+> **Si la esclusa se equivoca, la partida es imposible de terminar y no hay
+> nada en pantalla que lo explique.** El jugador ve "queda 1" y no encuentra
+> a nadie. Por eso tiene veinte pruebas y ciento y pico de líneas.
+
+Y tiene un tercer estado que no es decoración: **SELLADA**. Una puerta que
+se cerró a tus espaldas no vuelve a abrir *aunque el tramo de atrás esté
+limpio* — y siempre lo está, porque por eso pasaste. Sin ese estado, la
+puerta se reabriría apenas el jugador volviera sobre sus pasos, y el
+recorrido dejaría de ser de ida.
+
+### El contador cuenta vivos, no bajas
+
+Parece lo mismo y no lo es. Los power-ups de veneno y fuego de la 19B pueden
+matar a un zombi **lejos y sin que el jugador lo vea**: contando bajas, el
+número se quedaría atrás y la puerta no abriría nunca.
+
+Y cuenta **puestos**, no lo que hay en pantalla: un zombi del tramo que
+quedó a sesenta metros está apagado, y contar `enJuego` daría cero con el
+tramo sucio. La puerta abriría antes de tiempo.
+
+### Dos cosas que el mundo real le agregó a la regla
+
+**La colisión se va con la hoja.** Si no, el paso queda abierto a la vista y
+cerrado al caminar, que es la peor combinación posible: el jugador ve que
+puede pasar y el juego le dice que no sin explicarle nada.
+
+**Y las franjas de peligro también.** La primera captura mostró la puerta
+"abierta" —sin colisión, sin cartel— y en pantalla seguía tapando toda la
+calle: las franjas eran hermanas de la hoja, no hijas, así que no se
+movieron. No se pueden colgar como hijas porque la hoja es una caja
+*escalada* y un hijo heredaría el escalado, así que son hermanas con
+apellido y quien las mueve las junta por el nombre.
+
+> Van dos tareas seguidas donde **el estado lógico era correcto y la pantalla
+> mentía**: la puerta abierta que tapaba, y antes el joystick dibujado donde
+> no se escuchaba. La regla se repite: *lo que el jugador cree es lo que ve,
+> no lo que el estado dice.*
+
+### La brújula cambia de blanco, y las dos lecturas se distinguen solas
+
+Con el tramo sucio, el control **no es el objetivo**: es una puerta cerrada.
+Apuntar ahí sería mandar al jugador contra una pared y dejarlo buscando a
+ciegas al que falta.
+
+Mientras la puerta frene, la flecha apunta al **zombi vivo más cercano**. Y
+no hace falta explicar cuál de las dos cosas está haciendo: **si el cartel
+rojo está en pantalla, la flecha busca; si no, la flecha lleva.**
+
+### La prueba del recorrido se trabó contra la cuarta puerta, y tenía razón
+
+Fue la confirmación más limpia de que la esclusa funciona: la prueba que
+camina las dieciséis cuadras **dejó de poder terminarlas**.
+
+El arreglo no es aflojar la puerta: esa prueba mide **el diseño del nivel**
+—que la geometría deje pasar— y la esclusa tiene las suyas con números. Así
+que ahora abre las siete antes de caminar.
+
+Y de paso destapó que el caminante se metía en bocacallesceradas y quedaba
+**del lado de afuera de un corte**, culpando a la valla de cerrar lo que
+vino a cerrar. Ahora se queda dentro de la línea municipal, que es lo que
+hace un jugador: ve la valla y no entra.
+
+### Lo que falta de la 19A es el ritmo, y es de teléfono
+
+**19A.11.** Hoy cada cuadra pone de 2 a 5 zombis, o sea de 4 a 10 por tramo:
+entre 6 y 16 segundos de combate puro por esclusa, sin contar moverse. Es
+**la perilla principal del juego** y no se puede ajustar sin jugarlo.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

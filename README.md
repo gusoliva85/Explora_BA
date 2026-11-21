@@ -24,7 +24,7 @@ angosto pero lo esquiva.
 > [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
 >
 > 📌 **Este archivo va atrás de la poda, y conviene saber cuánto.** Está al
-> día hasta la tarea **18.11** en lo que toca al arma, al movimiento, a los
+> día hasta la tarea **19A.10** en lo que toca al arma, al movimiento, a los
 > botones, al balance, al combate y **al mapa**: el recorrido ya es el real
 > de dieciséis cuadras, de Av. Independencia 3250 a Billinghurst 250.
 > En lo demás: hay **un arma sola**, no se cambia, no
@@ -65,6 +65,11 @@ además muestra la dirección para abrirlo desde el celular.
 correr (`Shift`), interactuar (`E`), recargar (`R`), curarse (`H`), la
 bazooka (`F`) y cambiar de arma (`Q`). Queda disparar, y eso es el diseño:
 la única decisión del jugador es **dónde pararse y cuánto tiempo**.
+
+**Y cada dos cuadras hay una esclusa.** Una puerta del ejército que **no
+abre hasta que no quede un zombi vivo en el tramo**, y que se cierra a tus
+espaldas: el recorrido es de ida. Son siete en las dieciséis cuadras, y son
+el corazón del juego (D-37).
 
 **Y desde la Fase 17 ni siquiera hace falta apretarlo.** Al soltar el
 joystick, Gus frena, encara al zombi más cercano que pueda ver y le dispara

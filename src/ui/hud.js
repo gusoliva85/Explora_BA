@@ -46,6 +46,8 @@ export class Hud {
       brujulaFlecha: document.getElementById('brujula-flecha'),
       brujulaTexto: document.getElementById('brujula-texto'),
       brujulaCalle: document.getElementById('brujula-calle'),
+      esclusa: document.getElementById('esclusa'),
+      esclusaCuantos: document.getElementById('esclusa-cuantos'),
       dano: document.getElementById('dano')
       /*
        * Habia un `btnAttack` y se fue en la 16.8. Lo leia `setArma()`, para
@@ -181,6 +183,36 @@ export class Hud {
       if (this.el.brujulaCalle.textContent !== nuevo) {
         this.el.brujulaCalle.textContent = nuevo;
       }
+    }
+  }
+
+  /**
+   * El cartel de la esclusa (19A.4 y 19A.5, D-37).
+   *
+   * ---------------------------------------------------------------------------
+   * EL CONTADOR NO ES UN ADORNO: SIN EL, "MATA A TODOS" ES UNA BUSQUEDA A
+   * CIEGAS
+   * ---------------------------------------------------------------------------
+   * El jugador tiene que poder saber **si le falta uno o le faltan seis**,
+   * porque son dos decisiones distintas: con uno se lo busca, con seis se
+   * pelea donde uno esta parado.
+   *
+   * Y cuenta **vivos**, no bajas. Los power-ups de veneno y fuego de la 19B
+   * pueden matar a un zombi lejos y sin que el jugador lo vea: contando
+   * bajas, el numero se quedaria atras y la puerta no abriria nunca.
+   *
+   * @param {boolean} frena si la puerta esta cerrando el paso
+   * @param {number} cuantos cuantos zombis quedan vivos en el tramo
+   */
+  setEsclusa(frena, cuantos) {
+    if (!this.el.esclusa) return;
+    this.el.esclusa.classList.toggle('hidden', !frena);
+    if (!frena) return;
+    const texto = String(cuantos);
+    // Se escribe solo cuando cambia: en el DOM, sesenta veces por segundo
+    // para un numero que cambia cada varios segundos es tirar cuadros.
+    if (this.el.esclusaCuantos.textContent !== texto) {
+      this.el.esclusaCuantos.textContent = texto;
     }
   }
 

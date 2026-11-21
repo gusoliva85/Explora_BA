@@ -63,7 +63,21 @@ export const EV = {
    * espera a una fase que esta en el plan. Si la 11 pasa y nadie lo
    * escucha, se borra.
    */
-  NOISE_EMITTED: 'world:noise'
+  NOISE_EMITTED: 'world:noise',
+
+  /**
+   * Un control de la esclusa abrio (19A.10, D-37).
+   *
+   * Lleva el numero de control. Existe para que **las cartas de la 19B se
+   * enchufen sin tocar nada de la esclusa**: tomar una carta pasa a ser
+   * escuchar este evento, y la esclusa no se entera de que existen las
+   * cartas.
+   *
+   * Es el mismo criterio que `NOISE_EMITTED`, con una diferencia que vale
+   * la pena: aquel espera a la Fase 11 y este a la 19B, que es la que
+   * sigue. Si la 19B pasa y nadie lo escucha, se borra.
+   */
+  CONTROL_ABIERTO: 'mission:controlAbierto'
   /*
    * Habia un `INTERACT_AVAILABLE: 'player:interactAvailable'`, y se fue en
    * la Fase 16.6. No lo emitia nadie y no lo escuchaba nadie: era el aviso

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SpawnManager } from '../src/enemies/spawnManager.js';
+import { Esclusa, EstadoPuerta, DISTANCIA_SELLADO } from '../src/missions/esclusa.js';
 
 /**
  * ===========================================================================
@@ -123,5 +124,148 @@ describe('alejarse no mata a nadie', () => {
     const { g, z } = ciclo();
     g.enJuego.length = 0; // se apago, pero el puesto sigue marcado
     expect(g.vivosEnTramo(0)).toBe(0);
+  });
+});
+
+/**
+ * ===========================================================================
+ * LA MAQUINA DE LA ESCLUSA (19A.3 a 19A.8, D-37)
+ * ===========================================================================
+ * Si la esclusa se equivoca, **la partida es imposible de terminar** y no
+ * hay nada en pantalla que lo explique. Por eso vive como logica pura y por
+ * eso tiene mas pruebas que codigo.
+ */
+
+const PUERTAS = [
+  { tramo: 0, control: 1, x: 0, z: -200 },
+  { tramo: 1, control: 2, x: 0, z: -400 },
+  { tramo: 2, control: 3, x: 0, z: -600 }
+];
+
+const sucio = () => 3;
+const limpio = () => 0;
+
+describe('la puerta no abre con zombis vivos', () => {
+  it('arranca cerrada', () => {
+    const e = new Esclusa(PUERTAS);
+    expect(e.estado(0)).toBe(EstadoPuerta.CERRADA);
+    expect(e.frena(0)).toBe(true);
+  });
+
+  it('con el tramo sucio sigue cerrada, por mucho que se insista', () => {
+    const e = new Esclusa(PUERTAS);
+    for (let i = 0; i < 50; i++) e.update(0, { x: 0, z: -190 }, sucio);
+    expect(e.estado(0)).toBe(EstadoPuerta.CERRADA);
+  });
+
+  it('al limpiar el tramo, abre y lo avisa una sola vez', () => {
+    const e = new Esclusa(PUERTAS);
+    const ev = e.update(0, { x: 0, z: -190 }, limpio);
+    expect(e.estado(0)).toBe(EstadoPuerta.ABIERTA);
+    expect(ev).toEqual([{ tipo: 'abre', tramo: 0, control: 1 }]);
+
+    // Y no vuelve a avisar: el aviso es un flanco, no un estado.
+    expect(e.update(0, { x: 0, z: -190 }, limpio)).toEqual([]);
+  });
+
+  it('solo abre la del tramo donde esta el jugador', () => {
+    /*
+     * Una puerta de un tramo que el jugador todavia no piso puede estar
+     * "limpia" simplemente porque sus zombis no aparecieron nunca. Abrirla
+     * de antemano le quita a la esclusa lo unico que la hace una esclusa:
+     * que el jugador la encuentre cerrada.
+     */
+    const e = new Esclusa(PUERTAS);
+    e.update(0, { x: 0, z: -190 }, limpio);
+    expect(e.estado(1)).toBe(EstadoPuerta.CERRADA);
+    expect(e.estado(2)).toBe(EstadoPuerta.CERRADA);
+  });
+});
+
+describe('y se cierra a los veinte metros', () => {
+  /** Deja la puerta del tramo 0 abierta y al jugador recien pasado. */
+  const pasada = () => {
+    const e = new Esclusa(PUERTAS);
+    e.update(0, { x: 0, z: -195 }, limpio);
+    return e;
+  };
+
+  it('recien pasada sigue abierta: cerrar a la vista se ve cerrar', () => {
+    const e = pasada();
+    e.update(1, { x: 0, z: -210 }, sucio);
+    expect(e.estado(0)).toBe(EstadoPuerta.ABIERTA);
+  });
+
+  it('pasados los veinte metros se sella', () => {
+    const e = pasada();
+    const ev = e.update(1, { x: 0, z: -225 }, sucio);
+    expect(e.estado(0)).toBe(EstadoPuerta.SELLADA);
+    expect(ev).toEqual([{ tipo: 'sella', tramo: 0, control: 1 }]);
+  });
+
+  it('SELLADA no vuelve a abrir aunque el tramo de atras este limpio', () => {
+    /*
+     * Es lo que hace que el recorrido sea de ida (D-37). Y el tramo de
+     * atras SIEMPRE esta limpio —por eso pasaste— asi que sin este estado
+     * la puerta se reabriria apenas el jugador volviera sobre sus pasos.
+     */
+    const e = pasada();
+    e.update(1, { x: 0, z: -225 }, sucio);
+    e.update(0, { x: 0, z: -195 }, limpio);
+    expect(e.estado(0)).toBe(EstadoPuerta.SELLADA);
+  });
+
+  it('alejarse para ATRAS no sella nada', () => {
+    /*
+     * Si el jugador retrocede veinte metros antes de cruzar, la puerta
+     * tiene que seguir abierta esperandolo. Sellar ahi lo encerraria del
+     * lado de afuera de su propio tramo.
+     */
+    const e = pasada();
+    e.update(0, { x: 0, z: -160 }, limpio);
+    expect(e.estado(0)).toBe(EstadoPuerta.ABIERTA);
+  });
+
+  it('el numero sale de la camara, no del gusto', () => {
+    // 7 m detras de Gus, hasta 14,4 si la aleja al maximo. Veinte deja
+    // margen para que la cuadra de atras no se vea desde ninguna distancia.
+    expect(DISTANCIA_SELLADO).toBeGreaterThan(14.4);
+  });
+});
+
+describe('el recorrido entero', () => {
+  it('se pueden cruzar las tres puertas en orden, limpiando cada tramo', () => {
+    const e = new Esclusa(PUERTAS);
+    const abiertas = [];
+
+    for (let t = 0; t < 3; t++) {
+      // Llega al tramo con la puerta cerrada...
+      expect(e.frena(t), `tramo ${t}`).toBe(true);
+      // ...lo limpia...
+      for (const ev of e.update(t, { x: 0, z: -200 * t - 190 }, limpio)) {
+        if (ev.tipo === 'abre') abiertas.push(ev.control);
+      }
+      expect(e.frena(t), `tramo ${t} tras limpiar`).toBe(false);
+      // ...y se aleja, sellandola.
+      e.update(t + 1, { x: 0, z: -200 * t - 230 }, sucio);
+    }
+
+    expect(abiertas).toEqual([1, 2, 3]);
+    expect(e.estado(0)).toBe(EstadoPuerta.SELLADA);
+    expect(e.estado(1)).toBe(EstadoPuerta.SELLADA);
+  });
+
+  it('un tramo sin puerta no frena a nadie', () => {
+    // El octavo: la casa de Sergio no necesita puerta (D-46).
+    const e = new Esclusa(PUERTAS);
+    expect(e.estado(7)).toBe(EstadoPuerta.ABIERTA);
+    expect(e.frena(7)).toBe(false);
+  });
+
+  it('reiniciar la mision vuelve a cerrar todas', () => {
+    const e = new Esclusa(PUERTAS);
+    e.update(0, { x: 0, z: -190 }, limpio);
+    e.reiniciar();
+    expect(e.estado(0)).toBe(EstadoPuerta.CERRADA);
   });
 });

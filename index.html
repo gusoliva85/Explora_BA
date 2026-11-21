@@ -81,6 +81,19 @@
                escrito: la informacion que se consulta de reojo va ARRIBA,
                nunca al lado del boton, porque el pulgar derecho tapa
                justamente esa zona. -->
+          <!-- El cartel de la esclusa (19A.4). Aparece cuando la puerta
+               frena al jugador y dice cuantos quedan.
+               Va ARRIBA y al centro, no sobre el boton: es lo unico que el
+               jugador necesita leer cuando no puede avanzar, y el tercio
+               central de abajo tiene que quedar libre. -->
+          <div id="esclusa" class="esclusa hidden">
+            <span class="esclusa-icono">&#9940;</span>
+            <span class="esclusa-texto">
+              <b id="esclusa-cuantos">0</b>
+              <span class="esclusa-detalle">zombis en el tramo</span>
+            </span>
+          </div>
+
           <div class="fila-objetivo">
             <div id="objective" class="objective">Objetivo: llegar al primer control</div>
             <!-- Brujula: flecha al proximo objetivo y distancia. La flecha
