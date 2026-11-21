@@ -24,35 +24,30 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.9 — La cadencia** · el único número que se ajusta jugando
+### ⛔ **Lo que sigue está bloqueado: hay que jugarlo en el teléfono**
 
-**Qué se hace.** Probar el combate en el teléfono y mover **un** número:
-`WEAPONS.pistol.cooldown`, hoy en 0,4 s.
+La Fase 17 está **hecha en código**. Lo que queda no se puede escribir: se
+juega.
 
-**Lo que ese número controla, dicho en lo que se siente:**
-
-| Hoy | Cuánto |
+| Qué | Por qué no se puede hacer acá |
 |---|---|
-| Un zombi | 4 tiros × 0,4 s = **1,6 s quieto al lado suyo** |
-| Un zombi mordiendo mientras tanto | 1 mordida cada 1,4 s → te alcanza a dar **una** |
-| Dos zombis encima | 3,2 s expuesto → **dos o tres mordidas**, de las doce que aguantás |
+| **17.9 — La cadencia** | Se ajusta mirando si *dudás antes de pararte*. Un número elegido sin jugar es inventado |
+| **Borrar el botón DISPARAR** | Está redundante desde la 17.5, pero se deja **a propósito** para poder comparar las dos formas jugando |
+| **El pulgar en el joystick de la derecha** (16.7) | Hecho en código; falta el pulgar de verdad |
+| **La misión entera sin tocar nada** | Se probó un grupo de zombis, no el recorrido completo |
 
-**Por qué es la perilla principal.** Es lo único que decide si *pararse* es
-una decisión difícil o un trámite. Más rápido y nunca conviene correr; más
-lento y nunca conviene pelear.
+**Lo que hay que mirar jugando, en orden de importancia:**
 
-**Cómo se ajusta, y es lo importante:** no se mira el número, **se juega**.
-La pregunta concreta es *¿dudé antes de pararme?*. Si nunca dudé, la
-cadencia es muy rápida. Si nunca me paré, es muy lenta.
+1. **¿Dudás antes de pararte?** Si nunca dudás, la cadencia es muy rápida.
+   Si nunca te parás, es muy lenta. Es *la* pregunta de la fase.
+2. **¿Se entiende a quién le dispara?** El anillo rojo late a los pies del
+   blanco. Si con cuatro zombis encima no se distingue, la 17.8 vuelve.
+3. **¿El joystick cae bajo el pulgar derecho** sin recolocar la mano?
+4. **¿Los 0,15 s de `quietoDelay` se sienten o estorban?** Va junto con la
+   cadencia: son dos números de la misma sensación.
 
-**⚠️ Y hay una cuenta que no se puede romper.** `damage × tiros = vida del
-zombi`, exacto (D-31, 17.1). La cadencia **no toca el daño**: cambia cuánto
-tarda, no cuántos tiros. Si para acelerar el combate alguien sube el daño,
-rompe la cuenta exacta y las cartas de la 19B empiezan a mentir.
-
-**Y conviene mirar de paso:** el `quietoDelay` de 0,15 s. Son dos números
-que se suman en la misma sensación —cuánto tarda Gus en empezar a matar— y
-se ajustan juntos o no se entiende cuál hizo qué.
+**Después de eso, la 18** — el recorrido real de dieciséis cuadras — que es
+la fase más grande de todas y no depende de nada de esto.
 
 ---
 
@@ -64,7 +59,7 @@ se ajustan juntos o no se entiende cuál hizo qué.
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
 | ⏸️ | 12R — La capa visual nueva | **8 de 17.** **En pausa** hasta cerrar la 17. Y se le caen 6 tareas, que se las lleva la 20 |
 | ✅ | 16 — La poda | **Cerrada el 20/11.** Ocho tareas |
-| 🔄 | **17 — Combate automático** | ⬅️ **lo que estamos haciendo** |
+| 🔄 | **17 — Combate automático** | **Hecha en código.** Falta jugarla en el teléfono: la cadencia (17.9) no se puede ajustar de otra manera |
 | ⬜ | 18 — El recorrido real | Depende de la 16 |
 | ⬜ | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Va con la 18 |
 | ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
@@ -1103,7 +1098,7 @@ uno recuerda — es el que quedó guardado en el lugar equivocado.
 
 ---
 
-## 🔄 FASE 17 — Combate automático · **en curso**
+## 🔄 FASE 17 — Combate automático · **hecha en código; falta el teléfono**
 
 **Objetivo:** que Gus pelee solo mientras está quieto, con las reglas de D-28
 y los números de D-31. Es el corazón del cambio: si esto no se siente bien
@@ -1121,8 +1116,8 @@ jugándolo, no sirve nada de lo que viene después.
 - [x] **17.6 Al moverse, suelta.** ✅ *21/11/2026 — salió gratis: sin blanco no hay a quién dispararle. Lo resolvió la 17.3*
 - [x] **17.7 El daño es permanente** (D-31) ✅ *21/11/2026 — verificado: nadie regenera. Lo prueba la secuencia de tres muertes seguidas con ocho tiros*
 - [x] **17.8 La marca del blanco.** Sin botón, el jugador necesita ver a quién le está disparando ✅ *21/11/2026 — un anillo rojo que late a los pies del blanco. La cámara no se movió* ⚠️ **Y la cámara no se mueve** (D-39): acompaña al jugador, no al blanco
-- [ ] **17.9 La cadencia.** Hoy 0,4 s: 1,6 s para matar un zombi. Probar en el teléfono y ajustar ⬅️ *la que sigue, y **sólo se puede hacer en el teléfono***
-- [ ] **17.10 La máquina de estados completa, con pruebas.** Moverse → quieto → blanco → muere → siguiente → moverse → quieto → otro blanco
+- [ ] ⛔ **17.9 La cadencia.** Hoy 0,4 s: 1,6 s para matar un zombi ⬅️ **bloqueada: sólo se puede hacer jugando en el teléfono**
+- [x] **17.10 La máquina de estados completa, con pruebas.** Moverse → quieto → blanco → muere → siguiente → moverse → quieto → otro blanco ✅ *21/11/2026 — `combateAuto.test.js` compone las tres piezas en el mismo orden que `main`, incluido el cuadro de atraso del giro*
 
 **Decisiones que esta fase tiene que cerrar**
 

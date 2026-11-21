@@ -24,10 +24,11 @@ angosto pero lo esquiva.
 > [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
 >
 > 📌 **Este archivo va atrás de la poda, y conviene saber cuánto.** Está al
-> día hasta la tarea **17.1** en lo que toca al arma, al movimiento, a los
-> botones y al balance: hay **un arma sola**, no se cambia, no hay cuerpo a cuerpo, **Gus
-> se mueve a una sola velocidad** (6 m/s, corriendo) y queda **un solo botón
-> de acción**, DISPARAR. Lo que sigue describiendo abajo y **ya no
+> día hasta la tarea **17.10** en lo que toca al arma, al movimiento, a los
+> botones, al balance y al combate: hay **un arma sola**, no se cambia, no
+> hay cuerpo a cuerpo, **Gus se mueve a una sola velocidad** (6 m/s,
+> corriendo), queda **un solo botón de acción** — y **el combate es
+> automático al quedarse quieto**, así que ni ése hace falta. Lo que sigue describiendo abajo y **ya no
 > existe** son la munición y la recarga (se fueron en la 16.2), la bazooka
 > (16.3), y los botiquines, los objetos del piso y la curación (16.1). Se va
 > a reescribir entero cuando la fase cierre: arreglarlo tarea por tarea es
@@ -62,6 +63,12 @@ además muestra la dirección para abrirlo desde el celular.
 correr (`Shift`), interactuar (`E`), recargar (`R`), curarse (`H`), la
 bazooka (`F`) y cambiar de arma (`Q`). Queda disparar, y eso es el diseño:
 la única decisión del jugador es **dónde pararse y cuánto tiempo**.
+
+**Y desde la Fase 17 ni siquiera hace falta apretarlo.** Al soltar el
+joystick, Gus frena, encara al zombi más cercano que pueda ver y le dispara
+solo hasta matarlo; después pasa al siguiente. Moverse corta todo. El
+blanco se marca con un anillo rojo que late a sus pies. El botón sigue ahí
+sólo para poder comparar las dos formas jugando, y se va después de eso.
 
 **Y los lados están dados vuelta respecto de un twin-stick clásico** (D-27,
 Fase 16.7): el pulgar derecho mueve y el izquierdo mira. El de disparar está

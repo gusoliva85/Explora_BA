@@ -5750,6 +5750,142 @@ tiro entero no se nota.
 
 ---
 
+## 17.10 — El ciclo entero, y una prueba que midió el instante equivocado
+
+**21 de noviembre de 2026.**
+
+Una prueba que recorre el ciclo completo con números, sin navegador:
+
+```
+moverse → quieto → elige blanco → lo mata → elige el siguiente
+       → moverse (suelta) → quieto → elige otro
+```
+
+### Por qué hacía falta si cada pieza ya estaba probada
+
+`avanzarQuieto` tiene diez pruebas, `SelectorDeBlanco` veintiséis, el arma
+treinta y nueve. Las tres **por separado**.
+
+Y este proyecto ya sabe lo que cuesta eso. Está escrito en la cabecera de
+`pistola.spec.js`, de cuando el cuchillo golpeaba para atrás:
+
+> *"Esa separación ya costó una fase: el arco del cuchillo tenía pruebas
+> unitarias impecables y en el juego golpeaba para atrás, porque nadie había
+> probado las dos puntas juntas."*
+
+Acá las puntas son tres. Cada una contesta bien y la secuencia puede estar
+mal.
+
+### El orden es el de `main`, y ése es todo el valor de la prueba
+
+El simulador compone las piezas en el mismo orden que el bucle del juego,
+**incluido el cuadro de atraso del giro** que la 17.5 tuvo que aceptar por
+la dependencia circular.
+
+Si la prueba las ordenara de otra manera, estaría probando una máquina que
+no existe — **y pasaría igual**. Es el error más fácil de cometer en una
+prueba de integración escrita a mano, y el más difícil de notar: una prueba
+verde no te dice contra qué está verde.
+
+### Dos veces medí el instante equivocado, y las dos son la misma lección
+
+**Una:** corrí 200 cuadros de una y después pregunté a quién había elegido.
+Para entonces **ya había matado a los dos** y la respuesta correcta era
+`null`. El combate automático no espera a que la prueba mire.
+
+**Dos**, y ésta es mejor: la prueba de *"no dispara antes de estar
+encarado"* medía el desvío con el yaw de **antes** del cuadro. Pero el giro
+pasa al principio del cuadro y el disparo después, así que el yaw de antes
+es siempre el viejo. Daba un falso positivo.
+
+O sea: **la prueba que vino a detectar que no se dispare en el instante
+equivocado estaba midiendo en el instante equivocado.** Me reí y lo dejo
+anotado, porque la forma se repite:
+
+> Cuando una prueba pregunta *"¿pasó X?"*, hay que preguntarse también
+> *"¿en qué momento del cuadro?"*. En un bucle de juego, el estado cambia
+> varias veces por cuadro y "antes" y "después" son dos respuestas
+> distintas a la misma pregunta.
+
+Van seis pruebas mías mal escritas en la Fase 17, y las seis apuntaron a mí.
+Ya es un patrón y no mala suerte: **escribo la prueba con el modelo que
+tengo en la cabeza, y el modelo es siempre un poco más simple que el
+sistema.** Lo bueno es que sale barato enterarse así.
+
+### Lo que la prueba fija, y que ninguna otra fijaba
+
+Además del ciclo, cuatro cosas que no pueden pasar nunca:
+
+| | Por qué importa |
+|---|---|
+| No dispara antes de estar encarado | Un primer tiro torcido es **un cuarto del daño** tirado (D-31) |
+| No le dispara a un muerto | Lo verifica por la vida final: exactamente `100 − 25×4`, ni un tiro de más |
+| Sin nadie a tiro no dispara | Por mucho que espere |
+| Moverse corta el combate | Aunque el blanco siga vivo y cerca |
+
+Y la que más me gusta, porque es del ciclo y no de las piezas: **gasta
+exactamente cuatro impactos por zombi**. La tabla de balance ya decía
+25 × 4 = 100 y hay una prueba que lo fija; esto es otra cosa — que el ciclo
+completo no desperdicie uno en un cadáver ni pierda uno disparando antes de
+encarar.
+
+---
+
+## La Fase 17, hecha en código
+
+**20 y 21 de noviembre de 2026. Nueve tareas de diez.**
+
+| | Tarea | Qué dejó |
+|---|---|---|
+| 17.1 | Las estadísticas | 120/25 y 100/10. El tiempo expuesto por zombi **se duplicó** |
+| 17.2 | "Quieto" | Se mide **la entrada**, no la velocidad |
+| 17.3 | El blanco | Una **foto** del momento en que frenó |
+| 17.3 bis | Sin dispersión | El tiro no falla por azar. Se fue el generador entero |
+| 17.3 ter | La ráfaga | La fórmula de D-44 escrita con los ejes en 1 |
+| 17.4 | Revalidar | **Revalidar no es reelegir** |
+| 17.5 | Girar y disparar | **El juego se juega solo** |
+| 17.8 | La marca | Un anillo rojo que late |
+| 17.10 | El ciclo | Las tres piezas juntas, en el orden de `main` |
+| ⛔ 17.9 | La cadencia | **Sólo se puede hacer jugando** |
+
+**El juego hoy:** Gus corre, frena, encara al zombi más cercano que puede
+ver, lo mata en cuatro tiros, pasa al siguiente, y si te movés suelta todo.
+Sin tocar un botón.
+
+### Lo que aprendí, que es distinto de lo de la Fase 16
+
+La 16 fue sobre **borrar**: cómo encontrar código sano que ya no sirve. La
+17 fue sobre **medir**, y lo que se repitió fue otra cosa:
+
+> **Seis de mis pruebas estuvieron mal, y ninguna marcaba un error del
+> juego.** Tres medían en el momento equivocado, una suponía un lugar libre
+> que era una pared, una daba por hecho un abanico simétrico que no puede
+> serlo, y cinco más daban por sentado que *nada pasa si el jugador no lo
+> pide* — cierto hasta que el juego empezó a jugarse solo.
+
+El patrón es siempre el mismo: **escribo la prueba con el modelo que tengo
+en la cabeza, y el modelo es más simple que el sistema.** Y las tres veces
+que algo pareció un error del código —el `>=` del diagnóstico, el blanco que
+moría para siempre, la distancia que no cerraba— era el sistema funcionando.
+
+De ahí la regla que me llevo de esta fase: **antes de arreglar lo que parece
+un error de borde, medirlo.** Las tres veces, "arreglarlo" habría sido
+romper algo que estaba bien.
+
+### Lo que falta, y no es poco
+
+Todo lo que necesita un pulgar:
+
+1. **La cadencia** (17.9). *¿Dudás antes de pararte?*
+2. **Borrar el botón de DISPARAR**, que quedó redundante en la 17.5 y se
+   dejó a propósito para poder comparar.
+3. **El joystick de la derecha** (16.7), que está en código y nunca tocó un
+   dedo.
+4. **La misión entera sin tocar nada.** Se probó un grupo de zombis, no el
+   recorrido completo.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo
