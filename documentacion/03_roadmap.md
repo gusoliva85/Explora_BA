@@ -1235,7 +1235,7 @@ de tres cajas tiradas en el piso.
 - [x] **19A.8 Y se cierra a los 20 m** ✅ *21/11/2026 — y `SELLADA` no vuelve a abrir aunque el tramo de atrás esté limpio, que siempre lo está* (D-37). El número sale de la cámara: se sienta 7 m detrás de Gus y hasta 14,4 m si el jugador la aleja al máximo. Pasados esos 20 m, la cuadra de atrás ya no se ve y **se dispara el evento que la libera** (D-42)
 - [ ] **19A.9 Guardar y reaparecer del lado de adentro.** Al morir se reaparece al principio del tramo en curso, **nunca del lado de afuera de la puerta**: esa cuadra ya no existe en memoria
 - [x] **19A.10 El gancho para la 19B.** ✅ *21/11/2026 — `EV.CONTROL_ABIERTO`, con fecha de vencimiento escrita al lado* Un evento `controlAbierto` con el índice del control, para que las cartas se enchufen sin tocar nada de esto
-- [ ] **19A.11 El ritmo.** Siete tramos por limpiar cambian la duración de la misión por completo: hoy hay ~24 zombis en total, unos 3 por tramo. Hay que medir cuánto dura una cuadra y cuántos zombis aguanta antes de aburrir. Es la perilla principal del juego, y se ajusta jugando en el teléfono
+- [ ] **19A.11 El ritmo.** ⬅️ **la movió la 19B.1, y sigue abierta porque es de teléfono.** Decía "hoy hay ~24 zombis en total, unos 3 por tramo"; hoy son **156 en total, de 16 a 22 por tramo**, y el que persigue corre a 5,2 contra los 6,0 del jugador. Lo que falta es la única pregunta que no se contesta midiendo: **¿te obliga a moverte, o directamente te mata?**
 
 **Criterio de salida de la 19A**
 
