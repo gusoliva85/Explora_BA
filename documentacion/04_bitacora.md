@@ -5086,6 +5086,123 @@ lo que la 16.3 rescató fue el archivo y las pruebas, no la función.
 
 ---
 
+## 17.3 — El blanco, que es una foto y no un seguimiento
+
+**20 de noviembre de 2026.**
+
+Al quedarse quieto, Gus elige al enemigo más cercano que pueda ver, y lo
+mantiene. Vive en `combat/blanco.js` como `SelectorDeBlanco`, lógica pura,
+con trece pruebas unitarias y una de punta a punta. Se ve en el diagnóstico.
+
+**Todavía no dispara.** La 17.5 gira hacia el blanco y la 17.9 aprieta el
+gatillo.
+
+### Primero, una sospecha mía que estaba equivocada
+
+La 17.2 dejó anotado que había que desconfiar de `objetivoAutomatico()`: era
+el apuntado de la **bazooka**, y una bazooka no busca al más cercano, busca
+el mejor **centro de explosión**. Si fuera así, lo que la 16.3 rescató era
+el archivo, no la función.
+
+Lo leí. **No era así.** La función hace exactamente *"el más cercano, vivo,
+dentro del alcance, con línea de vista"*, y hasta tiene escrito por qué la
+línea de vista no es opcional. La bazooka la usaba para elegir **a quién**
+apuntarle, y el daño en área lo resolvía después, en otro lado.
+
+Queda anotado porque la sospecha era razonable y la respuesta no era
+adivinable: **el rescate de la 16.3 fue aún mejor de lo que parecía**. La
+regla central del juego nuevo estaba escrita entera, guardada en el archivo
+de un arma que se borró.
+
+### Por qué el blanco no se recalcula en cada cuadro
+
+Elegir al más cercano sesenta veces por segundo parece lo mismo y es otra
+cosa. Con dos zombis acercándose a la par, el "más cercano" se alterna
+varias veces por segundo: Gus giraría en el lugar y **repartiría** el daño
+en vez de concentrarlo.
+
+Y con los números de la 17.1 eso no es un detalle estético: hacen falta
+**cuatro tiros** por zombi. Un blanco que cambia solo garantiza que ninguno
+llegue nunca a los cuatro. **El combate automático no mataría a nadie.**
+
+Así que se elige **al entrar en quieto** —el flanco, no el estado— y se
+mantiene. Es lo que el criterio de salida de la fase pide con todas las
+letras: *"el blanco elegido es siempre el más cercano **en ese momento**"*.
+
+### Y esa frase me hizo escribir una prueba mal
+
+La prueba de punta a punta comparaba `blanco.distancia` contra las
+posiciones de los zombis **de ahora**. Falló por tres metros: el elegido
+estaba a 5,03 m y el más cercano visible a 1,98 m.
+
+Mi primer reflejo fue que había un error en la elección. No lo había: **los
+zombis caminan**. `blanco.distancia` es la distancia del instante en que
+eligió, y entre esa elección y la medición pasó un segundo entero de juego.
+
+El fallo no marcaba un error del código sino de la prueba, y marcaba
+justamente **la regla que la tarea implementa**: el blanco es una foto del
+momento en que el jugador frenó. Comparar una foto contra el presente no
+prueba nada.
+
+La prueba ahora fuerza una elección nueva y mide **en el mismo instante**,
+sin dejar pasar un cuadro.
+
+> **Van dos tareas seguidas con la misma forma:** en la 17.2 el diagnóstico
+> parecía mostrar un `>=` roto y era el reloj del navegador de prueba; acá
+> una prueba parecía mostrar una elección rota y era la prueba midiendo mal.
+> **Las dos veces, lo que parecía un error era el sistema funcionando como
+> estaba diseñado.** Y las dos veces, lo que lo aclaró fue medir en vez de
+> suponer.
+
+### Lo que sí cambia la elección, y lo que no
+
+| Pasa esto | ¿Vuelve a elegir? |
+|---|---|
+| Otro zombi pasa a estar más cerca | **No.** Es la regla de arriba |
+| El jugador se mueve y vuelve a frenar | **Sí.** Es otra decisión |
+| Frenó donde no había nadie y aparece uno | **Sí**, sin tener que moverse |
+| El blanco muere, se aleja o queda tapado | **Todavía no.** Es la 17.4 |
+
+El tercero merece su párrafo porque es fácil no pensarlo: si el jugador
+frena en una cuadra vacía y un zombi dobla la esquina tres segundos después,
+tiene que empezar a dispararle **sin moverse**. Si hiciera falta un gesto
+para que el juego "se entere", sería un gesto inútil que además lo expone.
+
+### Y moverse lo suelta en el acto
+
+Sin arrastre, igual que `quieto`. Si soltar el blanco tuviera cualquier
+demora, Gus seguiría **encarando** al zombi del que huye durante el primer
+paso de la huida, que es exactamente el paso en el que uno huye porque algo
+salió mal.
+
+### Una prueba intermitente, y la lección ya estaba escrita en este repo
+
+La de punta a punta pasaba sola y fallaba en la corrida completa. Esperaba
+300 ms después de apretar `W` y leía el estado.
+
+El motivo es el mismo de la 17.2: el navegador de prueba corre con WebGL por
+software, a veces a cuatro cuadros por segundo, así que 300 ms de pared
+pueden ser un cuadro de juego **o ninguno**. Varias pruebas de este repo ya
+tienen el comentario *"se espera a que pase, no se mide en un tiempo fijo"*.
+Lo escribí mal igual.
+
+Ahora espera por condición. Y queda anotado que la regla no es "a veces
+conviene": en este proyecto, **esperar por tiempo en una prueba de navegador
+está mal siempre**.
+
+### Lo que la 17.3 deja planteado para la 17.3 bis
+
+Sacar la dispersión tiene una trampa que no es del arma. El azar con semilla
+(D-12) lo usaba **sólo** `dispersar()`. Al sacarla, el generador del combate
+queda sin consumidores, y **si el mundo compartiera ese generador, sacar un
+consumidor correría la secuencia y cambiaría el mapa entero** sin que nadie
+lo pida.
+
+El combate tiene su propia semilla justamente para que eso no pase. Hay que
+verificar que se respetó antes de borrar nada.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

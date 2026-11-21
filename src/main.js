@@ -16,6 +16,7 @@ import { mission001 } from './config/mission001.js';
 import { montarPostProceso } from './render/postProcess.js';
 import { SpawnManager } from './enemies/spawnManager.js';
 import { WeaponController } from './combat/weaponController.js';
+import { SelectorDeBlanco } from './combat/blanco.js';
 import { CombatFx } from './combat/combatFx.js';
 import { Gus, Pose } from './characters/gus.js';
 import { ArmasEnMano } from './characters/armas.js';
@@ -359,6 +360,20 @@ console.info(
 
 // --- Reglas de partida -----------------------------------------------------
 
+/*
+ * A quien le dispara Gus al quedarse quieto (D-28).
+ *
+ * Usa el alcance y la altura de tiro del arma, no numeros propios: lo que
+ * se puede elegir como blanco tiene que ser exactamente lo que se puede
+ * alcanzar de un tiro. Si el selector buscara mas lejos que el arma, Gus se
+ * quedaria encarando a alguien al que no le llega.
+ */
+const blanco = new SelectorDeBlanco({
+  alcance: arma.arma.range,
+  altura: arma.arma.shotHeight,
+  rayo: (ax, az, bx, bz, altura) => collision.raycast(ax, az, bx, bz, altura)
+});
+
 function startMission({ fromCheckpoint = false } = {}) {
   if (!fromCheckpoint) mission.reset();
 
@@ -385,6 +400,7 @@ function startMission({ fromCheckpoint = false } = {}) {
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
   zombis.reiniciar();
   arma.reiniciar();
+  blanco.reiniciar();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -677,6 +693,18 @@ app.on('update', (rawDt) => {
     arma.update(dt, pos2d, player.yaw, zombis.enJuego);
 
     /*
+     * A quien le va a disparar al estar quieto (17.3).
+     *
+     * Va DESPUES de `player.update`, que es quien calcula `quieto`, y antes
+     * del dibujo: la eleccion tiene que ser del mismo cuadro que la
+     * posicion con la que se eligio.
+     *
+     * Todavia no dispara: la 17.5 gira hacia el blanco y la 17.9 aprieta el
+     * gatillo. Por ahora se ve en el diagnostico.
+     */
+    blanco.update(player.quieto, pos2d, zombis.enJuego);
+
+    /*
      * La mira muestra el alcance REAL del arma, no un largo decorativo:
      * veintiocho metros. Antes servia para que se entendiera la diferencia
      * entre las dos armas sin leer nada; ahora lo que dice es hasta donde
@@ -741,6 +769,16 @@ app.on('update', (rawDt) => {
     'quieto',
     player.quieto ? 'SI' : `no (${player.tiempoSinEntrada.toFixed(2)} s)`
   );
+  /*
+   * El blanco, en el diagnostico, porque la marca en pantalla recien llega
+   * en la 17.8 y hasta entonces no hay otra forma de ver a quien eligio.
+   */
+  debug.set(
+    'blanco',
+    blanco.actual
+      ? `${blanco.distancia.toFixed(1)} m, rumbo ${blanco.rumbo.toFixed(0)}`
+      : '—'
+  );
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
 
   /*
@@ -785,7 +823,7 @@ hud.setObjective(mission.objectiveText);
 // Util para depurar desde la consola: game.postProceso.bloom.intensity = 0.2
 globalThis.game = {
   app, bus, state, player, camera, mission, collision, builder, input, debug, device,
-  postProceso, calidad, zombis, arma, efectos, gus,
+  postProceso, calidad, zombis, arma, blanco, efectos, gus,
   stats, progreso,
   // El motor, para que una prueba pueda hacer cuentas con Vec3 y Mat4 sin
   // tener que importar playcanvas por su cuenta dentro del navegador.
