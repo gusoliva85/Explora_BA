@@ -252,6 +252,69 @@ describe('revalidar NO es reelegir', () => {
   });
 });
 
+describe('encarado: cuando se puede disparar', () => {
+  /*
+   * No tiene NADA que ver con la punteria. El tiro apuntado sale exacto
+   * hacia el blanco y no falla (D-36); lo unico que esto decide es cuando
+   * EMPIEZA a disparar.
+   *
+   * Lo que cuida es que el trazado no salga de un cuerpo que mira para
+   * otro lado. El jugador no ve angulos: ve una figura de cuarenta pixeles,
+   * y lo que nota es la incoherencia.
+   */
+  const TOL = 3;
+
+  it('sin blanco no hay nada que encarar', () => {
+    const s = nuevo();
+    expect(s.encarado(0, TOL)).toBe(false);
+  });
+
+  it('mirando justo al blanco, encarado', () => {
+    const s = nuevo();
+    s.update(true, ORIGEN, [zombi(0, 5)]);
+    expect(s.encarado(s.rumbo, TOL)).toBe(true);
+  });
+
+  it('dentro de la tolerancia, encarado; justo afuera, no', () => {
+    const s = nuevo();
+    s.update(true, ORIGEN, [zombi(0, 5)]);
+    expect(s.encarado(s.rumbo + TOL - 0.5, TOL)).toBe(true);
+    expect(s.encarado(s.rumbo + TOL + 0.5, TOL)).toBe(false);
+  });
+
+  it('vale para los dos lados del desvio', () => {
+    const s = nuevo();
+    s.update(true, ORIGEN, [zombi(0, 5)]);
+    expect(s.encarado(s.rumbo - TOL + 0.5, TOL)).toBe(true);
+    expect(s.encarado(s.rumbo - TOL - 0.5, TOL)).toBe(false);
+  });
+
+  it('de espaldas al blanco, NO encarado', () => {
+    /*
+     * Es la razon de ser de la espera: con cuatro tiros por zombi (D-31),
+     * un primer tiro que sale hacia donde Gus miraba antes es un cuarto
+     * del daño tirado en cada cambio de objetivo.
+     */
+    const s = nuevo();
+    s.update(true, ORIGEN, [zombi(0, 5)]);
+    expect(s.encarado(s.rumbo + 180, TOL)).toBe(false);
+  });
+
+  it('cruzando los 360 grados no se confunde', () => {
+    /*
+     * El error clasico de este proyecto, y el que dejo al cuchillo
+     * golpeando para atras toda una fase: comparar angulos crudos en vez
+     * de usar la diferencia del convenio. Mirando a 1 grado y con el
+     * blanco a 359, el desvio real son 2 grados, no 358.
+     */
+    const s = nuevo();
+    s.update(true, ORIGEN, [zombi(0, 5)]);
+    s.rumbo = 359;
+    expect(s.encarado(1, TOL)).toBe(true);
+    expect(s.encarado(359, TOL)).toBe(true);
+  });
+});
+
 describe('reiniciar', () => {
   it('olvida el blanco y el estado de quieto', () => {
     /*

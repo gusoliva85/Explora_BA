@@ -116,7 +116,30 @@ export const PLAYER = {
    * Si jugandolo se siente lento, **lo que baja es este numero, no la
    * regla**: quieto sigue siendo el joystick en cero.
    */
-  quietoDelay: 0.15
+  quietoDelay: 0.15,
+
+  /**
+   * Cuantos grados de desvio se toleran para considerar que Gus **ya esta
+   * encarando** al blanco, y por lo tanto puede disparar.
+   *
+   * ---------------------------------------------------------------------
+   * NO ES PRECISION: ES LECTURA
+   * ---------------------------------------------------------------------
+   * El tiro apuntado sale **exactamente** hacia el blanco y no falla
+   * (D-36), asi que esta tolerancia no afecta la punteria en absoluto. Lo
+   * unico que decide es **cuando empieza a disparar**.
+   *
+   * Y lo que esta en juego es que se lea: si Gus disparara mientras todavia
+   * esta girando, el trazado saldria de un cuerpo que mira para otro lado.
+   * El jugador no ve angulos, ve una figura de cuarenta pixeles; lo que
+   * nota es la incoherencia.
+   *
+   * Tres grados es lo que tarda en recorrer `turnSpeed` (720 °/s) en cuatro
+   * milesimas de segundo: a esa altura del giro, el cuerpo ya se lee como
+   * encarado. Mas estricto y el primer tiro llega tarde sin que se note la
+   * diferencia; mas flojo y se ve el tiro salir de costado.
+   */
+  toleranciaEncarado: 3
 };
 
 export const CAMERA = {

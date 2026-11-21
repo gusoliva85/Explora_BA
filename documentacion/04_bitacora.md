@@ -5530,6 +5530,140 @@ primer tiro torcido es un cuarto del daño tirado en cada cambio de objetivo.
 
 ---
 
+## 17.5 — El juego se juega solo
+
+**21 de noviembre de 2026.**
+
+Gus frena, encara al zombi más cercano y lo mata. Sin apretar nada. **Es la
+primera vez que el juego nuevo se juega**, y con esto quedan cerradas de
+paso la 17.6 y la 17.7.
+
+Medido en el juego de verdad: tres zombis a ocho metros, **ocho tiros, tres
+muertos, cero teclas**. Gus terminó con 110 de 120.
+
+### Dos clientes del mismo rumbo forzado, y giran distinto
+
+`rumboForzado` ya existía: lo usaba el apuntado con el pulgar y hace
+exactamente lo que hacía falta — el personaje **mira** hacia donde se le
+diga, aunque camine para otro lado.
+
+Pero giraba **instantáneo**, y el comentario que lo justificaba decía *"el
+pulgar ya es el suavizado"*. **Ya no hay pulgar.** Si se dejaba instantáneo,
+Gus giraba de golpe como una torreta.
+
+| Quién | Giro | Por qué |
+|---|---|---|
+| El pulgar apuntando | **Instantáneo** | El jugador ya *sabe* hacia dónde apunta: lo está haciendo con la mano |
+| El blanco automático | **Suavizado** | El giro **es** la única señal de que el juego eligió a alguien |
+
+La diferencia no es de gusto. En el primer caso el giro es una respuesta; en
+el segundo es **información**.
+
+### El círculo, y quién se queda un cuadro atrás
+
+Hay una dependencia circular: `quieto` lo calcula `player.update`, el blanco
+necesita `quieto`, y el giro necesita el blanco. Alguien tiene que ir
+atrasado un cuadro.
+
+**Que sea el giro** es la opción barata: son 16 ms sobre un giro que ya es
+gradual —`turnSpeed` tarda un cuarto de segundo en media vuelta— así que el
+atraso es invisible. Al revés, un `quieto` atrasado haría que el combate
+arranque tarde, y eso se suma a los 0,15 s del retardo, que ya es lo más
+caro del sistema.
+
+### Espera a estar encarado, y la decisión del 7/11 queda cerrada
+
+Tres grados de tolerancia. **No es puntería:** el tiro apuntado sale exacto
+hacia el blanco y no falla (D-36), así que la tolerancia no afecta a dónde
+pega. Lo único que decide es **cuándo empieza**.
+
+Lo que cuida es que el trazado no salga de un cuerpo que mira para otro
+lado. El jugador no ve ángulos: ve una figura de cuarenta píxeles, y lo que
+nota es la incoherencia.
+
+Y el tiro sale hacia `blanco.rumbo`, no hacia `player.yaw`. Son casi lo
+mismo —por eso se espera— pero casi no alcanza: tres grados a veintiocho
+metros son metro y medio, más que un cuerpo de zombi.
+
+### Lo que encontré probándolo, que casi anoto como error
+
+La primera medición en el juego real dio esto: mató uno y después **se quedó
+sin blanco para siempre**, con ocho zombis vivos y el jugador quieto.
+
+Fui a buscar el error y no había. Los ocho estaban a **30-43 metros**
+—fuera del alcance de 28— y los ocho **detrás de paredes**, con el rayo
+cortándose en `t ≈ 0,2`. Estaban en `IDLE` porque el ruido llega a 22 m y
+ellos estaban más lejos.
+
+O sea: el sistema descartando correctamente a ocho enemigos por dos razones
+distintas a la vez. **Lo que parecía un sistema muerto era un sistema
+funcionando.** Va la tercera vez en la fase.
+
+### Y cuatro pruebas viejas se rompieron, todas por la misma razón
+
+Esto es lo que más me interesa de la tarea, porque no lo había previsto.
+
+| Prueba | Por qué dejó de andar |
+|---|---|
+| `combate.spec.js` · elige un blanco | Para cuando medía, **ya los había matado** |
+| `combate.spec.js` · limpia un grupo | 240 cuadros a 4 fps = 60 s > el límite de 30 s |
+| `pistola.spec.js` · cuatro tiros matan | `atacar()` devolvía `false`: el arma estaba en `ESPERANDO` |
+| `pistola.spec.js` · el disparo atrae | Lo mismo: medía el ruido de un tiro que nunca salió |
+| `zombis.spec.js` · tiro al aire | *"Lejos de todo"* dejó de ser cierto: el ruido atrae zombis |
+
+**Ninguna marcaba un error.** Las cinco se rompieron porque el juego pasó a
+hacer algo que antes no hacía, y las cinco daban por sentado lo mismo:
+
+> **Que nada pasa si el jugador no lo pide.**
+
+Era cierto hasta ayer. Las pruebas no decían "el arma está libre" ni "no hay
+nadie cerca": lo **suponían**, porque no había forma de que fuera falso.
+
+Las tres de `atacar()` tienen la misma forma exacta: llamaban al gatillo y
+contaban cuadros, sin mirar si el disparo había salido. Ahora esperan a que
+`stats.disparos` aumente. Es la misma lección de la 17.3 —esperar por
+condición, no por tiempo— **aplicada a un recurso compartido en vez de a un
+reloj**.
+
+Y una mejoró de verdad. La del tiro al aire pedía *"que haya al menos un
+fallo"*, que ahora es pedir que no haya nadie cerca: suerte, no una regla.
+Pasó a medir algo más fuerte y que no depende de dónde estén los zombis:
+
+```js
+// Cada disparo se resuelve EXACTAMENTE una vez, como acierto o como fallo.
+expect(info.fallos + info.golpes).toBe(info.disparos);
+```
+
+### Una prueba de punta a punta que falló tres veces seguidas, y las tres por lo mismo
+
+La de "elige un blanco" la arreglé tres veces:
+
+1. Confiaba en los zombis del mapa → **ya los había matado**.
+2. Puse uno a siete metros al norte → **quedó dentro de un edificio**.
+3. Esperé tres cuadros → **el zombi caminó dos metros y se tapó**.
+
+Las tres veces el juego hacía exactamente lo que debía. La versión que
+funciona no elige un lugar ni un momento: **busca un punto con línea de
+vista comprobada y espera a que el blanco exista**.
+
+> En una calle de Boedo, *"siete metros para allá"* es adentro de un
+> edificio la mitad de las veces. Si una prueba necesita un lugar libre,
+> tiene que **preguntarle al escenario**, no suponerlo. Es la misma familia
+> que *"los ángulos se le piden al convenio"*.
+
+### Lo que la 17.5 deja planteado
+
+**El botón de DISPARAR quedó redundante.** Sigue andando y tiene prioridad,
+a propósito: no se borra en la misma tarea que lo reemplaza, para poder
+comparar las dos cosas jugando. Se va en cuanto esto se pruebe en el
+teléfono, y con él la mitad izquierda vuelve a ser sólo cámara (16.7).
+
+Y lo que la 17.8 tiene que resolver: **sin botón, el jugador perdió la única
+señal de a quién apuntaba — su propio dedo.** Hoy la única pista es que Gus
+gira, y a cuarenta píxeles un giro de quince grados no se lee.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

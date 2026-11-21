@@ -68,10 +68,24 @@ async function tirar(page) {
     const { parado, rumbo, victima } = globalThis.__tiro;
 
     const antes = victima.health.actual;
-    g.arma.atacar();
 
-    // Mantener la pose: el zombi empuja y la IA mueve al jugador.
-    for (let i = 0; i < 6; i++) {
+    /*
+     * Se espera a que el arma ESTE LISTA y a que el tiro se resuelva.
+     *
+     * Antes era `atacar()` y seis cuadros. Dejo de alcanzar en la 17.5:
+     * con el combate automatico el arma puede estar en `ESPERANDO` cuando
+     * la prueba aprieta el gatillo, y `atacar()` devuelve `false` sin
+     * hacer nada. La prueba media el daño de un tiro que nunca salio.
+     */
+    const disparos0 = g.stats.disparos;
+    for (let i = 0; i < 60 && g.stats.disparos === disparos0; i++) {
+      // Mantener la pose: el zombi empuja y la IA mueve al jugador.
+      g.player.entity.setPosition(parado.x, 0, parado.z);
+      g.player.yaw = rumbo;
+      if (g.arma.puedeAtacar) g.arma.atacar();
+      await esperar(1);
+    }
+    for (let i = 0; i < 4; i++) {
       g.player.entity.setPosition(parado.x, 0, parado.z);
       g.player.yaw = rumbo;
       await esperar(1);
@@ -246,10 +260,24 @@ test.describe('el ruido es la mecanica de la fase', () => {
       const antes = testigos.map((z) => z.ai.estado);
       const alertadosAntes = antes.filter((e) => e !== 'IDLE').length;
 
-      // El disparo, por la via normal del arma.
+      /*
+       * El disparo, por la via normal del arma. Se espera a que el arma
+       * ESTE LISTA y a que el tiro se resuelva de verdad.
+       *
+       * Antes era `atacar()` y ocho cuadros. Dejo de andar en la 17.5:
+       * con el combate automatico, el arma puede estar en `ESPERANDO`
+       * cuando la prueba aprieta el gatillo, y entonces `atacar()`
+       * devuelve `false` sin hacer nada. La prueba medira el ruido de un
+       * disparo que nunca salio.
+       */
       const rumbo = g.rumbo.rumboHacia(0, 1);
       g.player.yaw = rumbo;
-      g.arma.atacar();
+      const disparos0 = g.stats.disparos;
+      for (let i = 0; i < 60 && g.stats.disparos === disparos0; i++) {
+        g.player.entity.setPosition(pos.x, 0, pos.z);
+        if (g.arma.puedeAtacar) g.arma.atacar();
+        await esperar(1);
+      }
       for (let i = 0; i < 8; i++) {
         g.player.entity.setPosition(pos.x, 0, pos.z);
         await esperar(1);

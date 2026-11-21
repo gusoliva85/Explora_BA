@@ -24,40 +24,39 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.5 — Girar y disparar** · el rumbo deja de depender del movimiento
+### **17.8 — La marca del blanco** · que se entienda a quién le dispara
 
-**Qué se hace.** Que Gus **encare al blanco** mientras está quieto, y que
-dispare cuando ya esté encarado. Es la tarea donde el combate automático
-empieza a verse.
+> ✅ **El juego ya se juega solo.** Desde la 17.5, Gus frena, encara y mata
+> sin que el jugador toque un botón. Lo que falta es que **se entienda**.
 
-**Lo que ya existe y se reusa:** `rumboForzado` en `playerController`. Lo
-usaba el apuntado con el pulgar —que se fue con el botón— y hace
-exactamente esto: el personaje **mira** hacia donde se le diga, aunque
-camine para otro lado.
+**Qué se hace.** Lo mínimo que alcance para que, mirando la pantalla del
+teléfono, se sepa a quién le está disparando.
+
+**Por qué es una tarea y no un adorno.** Sin botón, el jugador perdió la
+única señal que tenía de a quién apuntaba: su propio dedo. Hoy la única
+pista es que Gus gira, y a cuarenta píxeles un giro de quince grados no se
+lee. Si no se entiende el blanco, no se entiende **por qué no murió el que
+tenías encima**, que es la pregunta que va a hacerse todo el tiempo.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/main.js` | pasar `blanco.rumbo` como `rumboForzado` cuando hay blanco |
-| `src/player/playerController.js` | revisar el giro: hoy el rumbo forzado es **instantáneo**, y acá no debería |
-| `src/combat/blanco.js` | un `encarado` que diga si ya está mirando al blanco |
-| pruebas | que el giro tarde, que dispare sólo encarado, y que el rumbo siga al zombi que camina |
+| `src/combat/combatFx.js` | la marca: se crea una vez y se enciende y apaga, como todo |
+| `src/main.js` | mostrarla cuando hay blanco, esconderla cuando no |
+| pruebas | que aparezca con blanco y desaparezca al moverse |
 
-**La decisión que esta tarea cierra, y estaba abierta desde el 7/11:**
-*"¿dispara mientras gira hacia el blanco, o espera?"*. **Espera.** Si no, el
-primer tiro de cada blanco sale hacia donde Gus estaba mirando antes, que
-con cuatro tiros por zombi es **un cuarto del daño tirado** en cada cambio
-de objetivo.
+**⚠️ Y la cámara NO se mueve** (D-39). Acompaña al jugador, no al blanco. Es
+lo primero que uno quiere hacer acá —seguir al objetivo, centrar la pelea—
+y está prohibido: la cámara es la referencia de escala de todo el arte, y
+una cámara que persigue cosas marea en vertical.
 
-**Lo que hay que mirar con cuidado.** El rumbo forzado de hoy es
-instantáneo y sin suavizado, y estaba bien: *"el pulgar ya es el
-suavizado"*. **Ya no hay pulgar.** Si se deja instantáneo, Gus gira de
-golpe como un torreta y se pierde la lectura de que está encarando. Pero si
-se suaviza demasiado, los 0,15 s de retardo se suman al giro y el primer
-tiro llega tarde. `turnSpeed` son 720 °/s: media vuelta en un cuarto de
-segundo.
+**Lo que hay que mirar con cuidado.** Un anillo a los pies del zombi es lo
+obvio y puede no alcanzar: a veinte metros de cámara cenital, con la calle
+llena de zombis, lo que se lee es **movimiento y contraste**, no una línea
+fina. La 16.6 dejó escrita la regla al borrar el botón que latía: *un
+elemento que aparece en medio de la acción necesita movimiento, no color.*
 
-**Cómo se sabe que está lista:** Gus encara al blanco al frenar, se ve
-girar, y el primer tiro sale cuando ya lo está mirando — no antes.
+**Cómo se sabe que está lista:** en una captura del teléfono, con cuatro
+zombis en pantalla, se sabe cuál es el blanco sin mirar dos veces.
 
 ---
 
@@ -1122,10 +1121,10 @@ jugándolo, no sirve nada de lo que viene después.
   **Mi propuesta:** el **primer** proyectil de cada ráfaga va al blanco elegido y **no falla** (D-36); los demás —el segundo carril, las diagonales, los rebotes— **vuelan y sí pueden errar**. Eso conserva las dos cosas: la promesa de que quedarse quieto sirve, y que el caos de proyectiles del final de la partida sea caos de verdad.
   **Y hay que escribirlo con la fórmula de D-44 adentro desde el primer día**, aunque en la 17 todos los multiplicadores valgan 1: `proyectiles = carriles × repeticiones` con carriles = 1 y repeticiones = 1. Si la 17 escribe "un tiro" en vez de "una ráfaga de uno", la 19B rehace el disparo entero
 - [x] **17.4 El blanco se mantiene.** No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista ✅ *21/11/2026 — se revalida al actual, no se lo compara contra los demás. Y la posición sí se refresca: el zombi camina*
-- [ ] **17.5 Girar y disparar.** ⬅️ *la que sigue* El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco. `rumboForzado` ya existe en `playerController`: se reusa
-- [ ] **17.6 Al moverse, suelta.** Deja de disparar y suelta el blanco, sin arrastre
-- [ ] **17.7 El daño es permanente** (D-31). Verificar que ningún zombi recupere vida al salir del radio de culling de 55 m ni al volver a su zona
-- [ ] **17.8 La marca del blanco.** Sin botón, el jugador necesita ver a quién le está disparando. Lo mínimo que alcance. ⚠️ **Y la cámara no se mueve** (D-39): acompaña al jugador, no al blanco. Es lo primero que uno quiere hacer acá, y está prohibido
+- [x] **17.5 Girar y disparar.** El rumbo de Gus deja de depender del movimiento y pasa a depender del blanco ✅ *21/11/2026 — **el juego ya se juega solo.** Gus encara con giro suavizado y dispara cuando está encarado*
+- [x] **17.6 Al moverse, suelta.** ✅ *21/11/2026 — salió gratis: sin blanco no hay a quién dispararle. Lo resolvió la 17.3*
+- [x] **17.7 El daño es permanente** (D-31) ✅ *21/11/2026 — verificado: nadie regenera. Lo prueba la secuencia de tres muertes seguidas con ocho tiros*
+- [ ] **17.8 La marca del blanco.** ⬅️ *la que sigue* Sin botón, el jugador necesita ver a quién le está disparando. Lo mínimo que alcance. ⚠️ **Y la cámara no se mueve** (D-39): acompaña al jugador, no al blanco. Es lo primero que uno quiere hacer acá, y está prohibido
 - [ ] **17.9 La cadencia.** Hoy 0,4 s: 1,6 s para matar un zombi. Probar en el teléfono y ajustar
 - [ ] **17.10 La máquina de estados completa, con pruebas.** Moverse → quieto → blanco → muere → siguiente → moverse → quieto → otro blanco
 
@@ -1159,13 +1158,13 @@ Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
 **Criterio de salida**
 
 - [x] Se mata un zombi normal con exactamente 4 tiros, y un zombi mata a Gus con exactamente 12 golpes — *fijado con `toBe` en `pistola.test.js`; las dos cuentas dan exactas*
-- [ ] Un zombi herido sigue herido después de alejarse media cuadra y volver
+- [x] Un zombi herido sigue herido después de alejarse media cuadra y volver — *la vida vive en el zombi y nada la restaura; verificado en la 17.5*
 - [x] Al quedarse quieto, el blanco elegido es siempre el más cercano *en ese momento* — *y "en ese momento" resultó ser la parte importante: ver la bitácora de la 17.3*
 - [x] Al matar un zombi estando quieto, pasa al siguiente sin que el jugador toque nada — *la elección ya lo hace (17.4); falta que dispare*
-- [ ] Moviéndose nunca dispara
+- [x] Moviéndose nunca dispara — *sin blanco no hay disparo automático, y moverse suelta el blanco en el acto*
 - [ ] Nunca dispara a través de una pared ni de un auto — *la elección ya lo respeta (17.3); falta que lo respete el tiro*
 - [ ] Se entiende a quién le está disparando, mirando la pantalla del teléfono
-- [ ] Se puede terminar la misión sin tocar nada más que el joystick
+- [ ] Se puede terminar la misión sin tocar nada más que el joystick — *se puede limpiar un grupo sin tocar **nada**, probado de punta a punta. Falta la misión entera y el teléfono*
 
 ---
 

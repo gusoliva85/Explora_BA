@@ -67,12 +67,66 @@ test.describe('direccion de lo que se ve en pantalla', () => {
 
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
       g.player.teleport(zona.x, zona.z + 8);
-      // Sin tocar nada: el retardo de quieto corre solo.
-      await esperar(60);
+      await esperar(20);
+
+      /*
+       * El zombi se pone a mano, a tiro y a la vista.
+       *
+       * Antes esta prueba confiaba en los del mapa y esperaba 60 cuadros.
+       * Dejo de andar en la 17.5, cuando Gus empezo a disparar solo: para
+       * cuando media, **ya los habia matado**, y los que quedaban estaban a
+       * treinta metros y detras de una pared.
+       *
+       * El fallo era correcto —el juego hacia exactamente lo que tiene que
+       * hacer— pero la prueba dejaba de medir lo suyo. Poniendo el zombi,
+       * mide la eleccion y no la suerte de que haya alguien cerca.
+       */
+      const p0 = g.player.position;
+      const victima = g.zombis.enJuego.find((z) => z.vivo);
+      if (!victima) return { vivos: 0 };
+
+      /*
+       * El lugar NO se elige a ojo: se busca uno con linea de vista
+       * comprobada.
+       *
+       * La primera version lo ponia siete metros al norte y quedaba
+       * **detras de una pared**: el juego lo descartaba con razon (D-36) y
+       * la prueba fallaba por un motivo que no tenia nada que ver con lo
+       * que queria medir. En una calle de Boedo, "siete metros para alla"
+       * es adentro de un edificio la mitad de las veces.
+       */
+      let puesto = false;
+      for (let a = 0; a < 360 && !puesto; a += 15) {
+        const d = g.rumbo.dirDeRumbo(a);
+        const x = p0.x + d.x * 7;
+        const z = p0.z + d.z * 7;
+        const hit = g.collision.raycast(p0.x, p0.z, x, z, g.arma.arma.shotHeight);
+        if (hit && hit.t < 0.95) continue;
+        victima.entity.setPosition(x, 0, z);
+        puesto = true;
+      }
+      if (!puesto) return { sinLugar: true };
+      /*
+       * Se espera A QUE HAYA BLANCO, no una cantidad de cuadros.
+       *
+       * Las dos versiones anteriores fallaron por lo mismo con dos
+       * disfraces: con doce cuadros, Gus **ya lo habia matado**; con tres,
+       * el zombi habia caminado dos metros y se habia metido detras de una
+       * pared. Las dos veces el juego hacia exactamente lo que tiene que
+       * hacer y la prueba miraba en el momento equivocado.
+       *
+       * Esperando por la condicion, lo que se mide es lo que la prueba
+       * dice medir: que estando quieto con alguien a tiro, elige. Y si
+       * nunca elige, falla, que es lo que corresponde.
+       */
+      let elegido = null;
+      for (let i = 0; i < 40 && !elegido; i++) {
+        await esperar(1);
+        elegido = g.blanco.actual;
+      }
 
       const vivos = g.zombis.enJuego.filter((z) => z.vivo).length;
       const quieto = g.player.quieto;
-      const elegido = g.blanco.actual;
 
       /*
        * Y ahora, la regla: que el elegido sea el mas cercano VISIBLE.
@@ -111,6 +165,21 @@ test.describe('direccion de lo que se ve en pantalla', () => {
       return {
         vivos,
         quieto,
+        diag: {
+          vidaVictima: victima.health.actual,
+          vivaVictima: victima.vivo,
+          dist: Math.hypot(victima.posicion.x - p0.x, victima.posicion.z - p0.z),
+          tapada: (() => {
+            const h = g.collision.raycast(
+              g.player.position.x,
+              g.player.position.z,
+              victima.posicion.x,
+              victima.posicion.z,
+              g.arma.arma.shotHeight
+            );
+            return h ? h.t : null;
+          })()
+        },
         hayBlanco: !!elegido,
         blancoVivo: elegido ? elegido.vivo : null,
         distancia: g.blanco.distancia,
@@ -121,9 +190,10 @@ test.describe('direccion de lo que se ve en pantalla', () => {
     });
 
     test.skip(r.vivos === 0, 'no habia zombis en juego');
+    test.skip(!!r.sinLugar, 'no habia ningun punto a la vista a siete metros');
 
     expect(r.quieto, 'sin tocar nada, el jugador tiene que quedar quieto').toBe(true);
-    expect(r.hayBlanco, 'estando quieto con zombis cerca no eligio a nadie').toBe(true);
+    expect(r.hayBlanco, `no eligio a nadie. ${JSON.stringify(r.diag)}`).toBe(true);
     expect(r.blancoVivo).toBe(true);
     expect(r.distancia).toBeLessThanOrEqual(r.alcance);
     // Y al elegir, elige al mas cercano de los que se VEN, no a uno
@@ -161,6 +231,74 @@ test.describe('direccion de lo que se ve en pantalla', () => {
 
     expect(enMovimiento.quieto).toBe(false);
     expect(enMovimiento.hayBlanco, 'siguio encarando al blanco mientras huia').toBe(false);
+  });
+
+  test('sin tocar NADA, limpia un grupo de zombis uno tras otro', async ({ page }) => {
+    /*
+     * Timeout largo y a proposito: esta prueba deja correr el juego de
+     * verdad durante cientos de cuadros, y el navegador de prueba usa
+     * WebGL por software a cuatro cuadros por segundo. No es que sea
+     * lenta: es que un segundo de juego cuesta cuatro de pared.
+     */
+    test.setTimeout(180000);
+    /*
+     * El criterio de salida de la Fase 17, puesto a prueba en el juego de
+     * verdad: *"se puede terminar la mision sin tocar nada mas que el
+     * joystick"*. Acá ni siquiera se toca el joystick.
+     *
+     * Lo que cruza esta prueba y ninguna unitaria puede cruzar: que
+     * `quieto` salga del jugador real, que el giro llegue al cuerpo, que
+     * `encarado` destrabe el gatillo, que el daño llegue al zombi del
+     * gestor y que al morir uno **el siguiente se elija solo**.
+     */
+    const r = await page.evaluate(async () => {
+      const g = globalThis.game;
+      const esperar = (n) =>
+        new Promise((res) => {
+          let i = 0;
+          const paso = () => (++i >= n ? res() : requestAnimationFrame(paso));
+          requestAnimationFrame(paso);
+        });
+
+      const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
+      g.player.teleport(zona.x, zona.z + 10);
+      await esperar(20);
+
+      /*
+       * Tres zombis puestos a mano, en abanico y a tiro. Se ponen a mano
+       * porque los del mapa estan a treinta metros y detras de paredes: el
+       * juego ya los descarta bien, y lo que hay que probar aca es el
+       * combate, no el descarte.
+       */
+      const p = g.player.position;
+      const victimas = g.zombis.enJuego.filter((z) => z.vivo).slice(0, 3);
+      if (victimas.length < 3) return { pocos: victimas.length };
+      victimas.forEach((z, i) => {
+        z.entity.setPosition(p.x + (i - 1) * 3, 0, p.z - 8);
+        z.ai.estado = 'IDLE';
+      });
+      await esperar(10);
+
+      const disparos0 = g.stats.disparos;
+
+      // Y ahora NADA. Ni una tecla, ni un toque.
+      await esperar(150);
+
+      return {
+        muertas: victimas.filter((z) => !z.vivo).length,
+        disparos: g.stats.disparos - disparos0,
+        quieto: g.player.quieto
+      };
+    });
+
+    test.skip(r.pocos !== undefined, `solo habia ${r.pocos} zombis`);
+
+    expect(r.quieto, 'no estaba quieto: el combate automatico no corre').toBe(true);
+    expect(r.disparos, 'no disparo solo ni una vez').toBeGreaterThan(0);
+    expect(
+      r.muertas,
+      `mato ${r.muertas} de 3 sin que el jugador tocara nada`
+    ).toBeGreaterThanOrEqual(2);
   });
 
   test('los brazos apuntan hacia ADELANTE, no a la espalda', async ({ page }) => {

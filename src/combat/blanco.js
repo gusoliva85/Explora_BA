@@ -1,5 +1,5 @@
 import { objetivoAutomatico } from './objetivo.js';
-import { rumboHacia } from '../core/rumbo.js';
+import { rumboHacia, difRumbos } from '../core/rumbo.js';
 
 /**
  * ===========================================================================
@@ -106,6 +106,24 @@ export class SelectorDeBlanco {
       this.#elegir(origen, objetivos);
     }
     return this.actual;
+  }
+
+  /**
+   * ¿Gus ya esta mirando al blanco?
+   *
+   * Es lo que decide **cuando empieza a disparar** (17.5), y no tiene nada
+   * que ver con la punteria: el tiro apuntado sale exacto hacia el blanco y
+   * no falla (D-36). Lo que esto cuida es que el trazado no salga de un
+   * cuerpo que esta mirando para otro lado.
+   *
+   * Sin blanco devuelve `false`: no hay a quien encarar.
+   *
+   * @param {number} yaw hacia donde mira Gus, en grados
+   * @param {number} tolerancia grados de desvio admitidos
+   */
+  encarado(yaw, tolerancia) {
+    if (!this.actual) return false;
+    return difRumbos(yaw, this.rumbo) <= tolerancia;
   }
 
   /** Olvida el blanco. Para reiniciar la mision o al morir. */

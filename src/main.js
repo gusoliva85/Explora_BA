@@ -662,7 +662,32 @@ app.on('update', (rawDt) => {
         })()
       : null;
 
-    player.update(dt, input.move, camera.yaw, rumboApuntado);
+    /*
+     * EL RUMBO DEL BLANCO MANDA SOBRE EL MOVIMIENTO (17.5)
+     * ------------------------------------------------------------------
+     * Quieto y con blanco, Gus encara al zombi. El rumbo sale de
+     * `blanco.rumbo`, que la revalidacion refresca en cada cuadro: el
+     * zombi camina, y encarar a donde estaba hace dos segundos es no
+     * encarar.
+     *
+     * **Se usa el blanco del cuadro ANTERIOR, y es a proposito.** Hay un
+     * circulo: `quieto` lo calcula `player.update`, el blanco necesita
+     * `quieto`, y el giro necesita el blanco. Alguien tiene que ir un
+     * cuadro atrasado.
+     *
+     * Que sea el giro es la opcion barata: son 16 ms sobre un giro que de
+     * por si es gradual —`turnSpeed` tarda un cuarto de segundo en media
+     * vuelta— asi que el atraso es invisible. Al reves, un `quieto`
+     * atrasado un cuadro haria que el combate arranque tarde, y eso se
+     * suma a los 0,15 s del retardo, que ya es lo mas caro del sistema.
+     *
+     * El pulgar sigue teniendo prioridad mientras exista el boton: si el
+     * jugador esta apuntando a mano, manda el.
+     */
+    const giroPorBlanco = rumboApuntado === null && blanco.actual !== null;
+    const rumboDeMira = giroPorBlanco ? blanco.rumbo : rumboApuntado;
+
+    player.update(dt, input.move, camera.yaw, rumboDeMira, !giroPorBlanco);
     mission.update(dt, player.position);
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
     camera.setStreetHeading(mission.streetHeading(player.position));
@@ -672,33 +697,48 @@ app.on('update', (rawDt) => {
     const pos2d = { x: player.position.x, z: player.position.z };
 
     /*
-     * Disparar.
-     *
-     * Con el pulgar quieto, un toque = un ataque hacia donde mira el
-     * personaje. Con el pulgar arrastrado, el arma dispara SEGUIDO hacia
-     * donde apunta, respetando su propia cadencia.
-     *
-     * Que apuntar implique disparar es deliberado y tiene costo: el arma
-     * hace ruido, asi que mantener apretado para "mirar" sale caro.
-     * Apuntar sin tirar era para lo que estaba el cuchillo; ahora lo unico
-     * que queda son las piernas.
-     */
-    if (input.wasPressed('attack') || (input.buttons.attack && input.apuntando)) {
-      arma.atacar();
-    }
-    arma.update(dt, pos2d, player.yaw, zombis.enJuego);
-
-    /*
-     * A quien le va a disparar al estar quieto (17.3).
+     * A quien le dispara al estar quieto (17.3 y 17.4).
      *
      * Va DESPUES de `player.update`, que es quien calcula `quieto`, y antes
-     * del dibujo: la eleccion tiene que ser del mismo cuadro que la
+     * de disparar: la eleccion tiene que ser del mismo cuadro que la
      * posicion con la que se eligio.
-     *
-     * Todavia no dispara: la 17.5 gira hacia el blanco y la 17.9 aprieta el
-     * gatillo. Por ahora se ve en el diagnostico.
      */
     blanco.update(player.quieto, pos2d, zombis.enJuego);
+
+    /*
+     * DISPARAR SOLO (D-28, 17.5)
+     * ------------------------------------------------------------------
+     * Tres condiciones, y las tres tienen que valer: quieto, con blanco, y
+     * **ya encarado**.
+     *
+     * La tercera cierra una decision que estaba abierta desde el 7/11:
+     * *¿dispara mientras gira, o espera?*. **Espera.** Con cuatro tiros por
+     * zombi (D-31), un primer tiro que sale hacia donde Gus miraba antes es
+     * un cuarto del daño tirado en cada cambio de objetivo.
+     *
+     * El boton sigue andando y tiene prioridad mientras exista: se va en
+     * cuanto esto se pruebe en el telefono. No se borra en la misma tarea
+     * que lo reemplaza, para poder comparar las dos cosas jugando.
+     */
+    const dispararSolo = blanco.encarado(player.yaw, PLAYER.toleranciaEncarado);
+    if (
+      input.wasPressed('attack') ||
+      (input.buttons.attack && input.apuntando) ||
+      dispararSolo
+    ) {
+      arma.atacar();
+    }
+
+    /*
+     * El tiro sale hacia el BLANCO, no hacia donde mira el cuerpo.
+     *
+     * Son casi lo mismo —por eso se espera a estar encarado— pero casi no
+     * alcanza: la tolerancia son tres grados, y a veintiocho metros tres
+     * grados son metro y medio, mas que un cuerpo de zombi. El tiro
+     * apuntado no falla (D-36), asi que tiene que salir exacto.
+     */
+    const rumboDeTiro = blanco.actual ? blanco.rumbo : player.yaw;
+    arma.update(dt, pos2d, rumboDeTiro, zombis.enJuego);
 
     /*
      * La mira muestra el alcance REAL del arma, no un largo decorativo:

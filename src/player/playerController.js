@@ -128,9 +128,10 @@ export class PlayerController {
    * @param {{x:number,y:number}} moveInput vector de entrada normalizado
    * @param {number} cameraYaw orientacion horizontal de la camara, en grados
    * @param {number} [rumboForzado] si se pasa, el personaje MIRA hacia ahi
-   *   aunque camine para otro lado. Lo usa el apuntado con el pulgar.
+   *   aunque camine para otro lado.
+   * @param {boolean} [giroInmediato] si el giro forzado es instantaneo
    */
-  update(dt, moveInput, cameraYaw, rumboForzado = null) {
+  update(dt, moveInput, cameraYaw, rumboForzado = null, giroInmediato = true) {
     if (this.invulnerableFor > 0) this.invulnerableFor -= dt;
 
     // 1. Entrada -> direccion en el mundo, relativa a la camara.
@@ -179,17 +180,28 @@ export class PlayerController {
      * 4. Girar el personaje.
      *
      * Normalmente mira hacia donde camina. Pero si viene un rumbo forzado
-     * —el pulgar derecho apuntando— MANDA ESE, y entonces se puede caminar
-     * para un lado y disparar para el otro. Es lo que separa huir de
-     * "retroceder tirando", que es la diferencia entre escapar y pelear.
+     * MANDA ESE, y entonces se puede caminar para un lado y mirar para el
+     * otro. Es lo que separa huir de "retroceder tirando", que es la
+     * diferencia entre escapar y pelear.
      *
-     * El giro hacia el rumbo apuntado es instantaneo y no suavizado: el
-     * pulgar ya es el suavizado. Pasarlo por el mismo `turnSpeed` que el
-     * movimiento haria que la mira vaya atras del dedo, que se siente como
-     * que el juego no responde.
+     * ---------------------------------------------------------------------
+     * HAY DOS CLIENTES Y GIRAN DISTINTO, A PROPOSITO
+     * ---------------------------------------------------------------------
+     * | Quien | Giro | Por que |
+     * |---|---|---|
+     * | El pulgar apuntando | **Instantaneo** | El pulgar ya es el suavizado. Pasarlo por `turnSpeed` haria que la mira vaya atras del dedo, y se siente como que el juego no responde |
+     * | El blanco automatico (17.5) | **Suavizado** | No hay dedo que lo suavice. Instantaneo, Gus gira de golpe como una torreta y se pierde la lectura de que esta encarando a alguien |
+     *
+     * La diferencia no es de gusto: en el primer caso el jugador ya
+     * **sabe** hacia donde apunta, porque lo esta haciendo con la mano. En
+     * el segundo el giro **es** la unica señal de que el juego eligio un
+     * blanco.
      */
     if (rumboForzado !== null) {
-      this.yaw = normalizarRumbo(rumboForzado);
+      const objetivo = normalizarRumbo(rumboForzado);
+      this.yaw = giroInmediato
+        ? objetivo
+        : approachAngle(this.yaw, objetivo, PLAYER.turnSpeed * dt);
       this.entity.setEulerAngles(0, this.yaw, 0);
       return;
     }

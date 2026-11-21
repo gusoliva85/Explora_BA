@@ -145,7 +145,7 @@ test('se puede escapar de un zombi', async ({ page }) => {
    invertido. Ver src/core/rumbo.js.
    ========================================================================= */
 
-test('un tiro al aire no mata a nadie ni rompe nada', async ({ page }) => {
+test('cada tiro se resuelve una sola vez, y nada revienta', async ({ page }) => {
   test.setTimeout(60000);
   const errores = [];
   page.on('pageerror', (e) => errores.push(e.message));
@@ -167,27 +167,61 @@ test('un tiro al aire no mata a nadie ni rompe nada', async ({ page }) => {
     g.player.teleport(0, -20);
     await esperar(10);
 
+    /*
+     * Lo que se cuenta cambio en la 17.5, y conviene decir por que.
+     *
+     * Antes esta prueba contaba SOLO los fallos y exigia que hubiera al
+     * menos uno: alcanzaba, porque `(0, -20)` estaba lejos de todo y nadie
+     * disparaba sin que se lo pidieran.
+     *
+     * Con el combate automatico (D-28) ninguna de las dos cosas sigue
+     * siendo cierta: Gus dispara solo, el ruido atrae zombis, y para
+     * cuando la prueba corre puede haber alguien a tiro. Pedir un fallo
+     * paso a ser pedir que **no** haya nadie cerca, que es suerte, no una
+     * regla.
+     *
+     * Lo que se mide ahora es mas fuerte y no depende de donde esten los
+     * zombis: **cada disparo se resuelve exactamente una vez**, como
+     * acierto o como fallo. Ni dos avisos por tiro, ni ninguno.
+     */
     let fallos = 0;
-    const original = g.arma.alFallar;
+    let golpes = 0;
+    const alFallar = g.arma.alFallar;
+    const alGolpear = g.arma.alGolpear;
     g.arma.alFallar = (i) => {
       fallos++;
-      original?.(i);
+      alFallar?.(i);
     };
+    g.arma.alGolpear = (i) => {
+      golpes++;
+      alGolpear?.(i);
+    };
+    const disparos0 = g.stats.disparos;
 
     /*
      * Pocos cuadros: esta prueba corre con WebGL por software y cada
      * cuadro cuesta. Con la espera del arma en cuatro decimas, cuarenta
-     * cuadros alcanzan para varios tiros al aire.
+     * cuadros alcanzan para varios tiros.
      */
     for (let i = 0; i < 40; i++) {
       if (g.arma.puedeAtacar) g.arma.atacar();
       await esperar(1);
     }
-    g.arma.alFallar = original;
+    g.arma.alFallar = alFallar;
+    g.arma.alGolpear = alGolpear;
 
-    return { fallos, vivos: g.zombis.stats.vivos };
+    return {
+      fallos,
+      golpes,
+      disparos: g.stats.disparos - disparos0,
+      vivos: g.zombis.stats.vivos
+    };
   });
 
-  expect(info.fallos).toBeGreaterThan(0);
+  expect(info.disparos, 'no salio ni un tiro').toBeGreaterThan(0);
+  expect(
+    info.fallos + info.golpes,
+    `${info.disparos} tiros produjeron ${info.golpes} golpes y ${info.fallos} fallos`
+  ).toBe(info.disparos);
   expect(errores).toEqual([]);
 });
