@@ -758,11 +758,27 @@ byId('btn-restart-win').addEventListener('click', () => startMission());
 byId('btn-restart-lose').addEventListener('click', () => startMission({ fromCheckpoint: true }));
 
 /*
- * El de atacar no es un boton comun: ver `bindAimButton`. Un toque dispara
- * hacia adelante; mantenerlo y arrastrar lo convierte en joystick de
- * apuntado.
+ * ---------------------------------------------------------------------------
+ * ACA SE CONECTABA EL BOTON DE DISPARAR, Y SE FUE
+ * ---------------------------------------------------------------------------
+ * No era un boton comun: un toque disparaba hacia adelante y mantenerlo y
+ * arrastrar lo convertia en un joystick de apuntado. Era lo mas
+ * inteligente del control tactil del juego.
+ *
+ * Y dejo de hacer falta en la 17.5, cuando el combate paso a ser
+ * automatico al quedarse quieto (D-28). Se dejo una fase mas a proposito
+ * —para poder comparar las dos formas jugando— y la comparacion la hizo
+ * Gus: el boton se va.
+ *
+ * Con esto **D-28 se cumple entero**: no hay un solo boton de accion en
+ * pantalla. La unica decision del jugador es donde pararse y cuanto tiempo.
+ *
+ * Lo que el apuntado con el pulgar enseñaba y no se pierde: el umbral de
+ * 18 px para distinguir un toque de un arrastre —un pulgar nunca toca un
+ * punto exacto— sigue escrito en `bindAimButton`, que queda sin llamadores
+ * y se borra con el.
  */
-input.bindAimButton(byId('btn-attack'), 'attack');
+
 
 /*
  * Ajustes del menu de pausa.
@@ -885,44 +901,23 @@ app.on('update', (rawDt) => {
     stats.update(dt);
 
     /*
-     * El rumbo apuntado se calcula ANTES de mover al jugador, para que el
-     * personaje ya mire hacia alla en el mismo cuadro en que se dispara.
-     * Si se hiciera despues, el primer tiro de cada rafaga saldria hacia
-     * donde el personaje estaba mirando antes.
+     * Aca se calculaba el RUMBO APUNTADO A MANO, el del pulgar sobre el
+     * boton de disparar. Se fue con el boton: ya no hay forma de apuntar a
+     * mano, y por lo tanto no hay nada que calcular antes de mover.
+     *
+     * Lo que decia y sigue valiendo para el giro automatico: el rumbo se
+     * resuelve ANTES de mover al jugador, para que el personaje ya mire
+     * hacia alla en el mismo cuadro en que se dispara.
      */
-    const rumboApuntado = input.apuntando
-      ? (() => {
-          const d = direccionDeEntrada(input.aim.x, input.aim.y, camera.yaw);
-          return rumboHacia(d.x, d.z);
-        })()
-      : null;
-
-    /*
-     * EL RUMBO DEL BLANCO MANDA SOBRE EL MOVIMIENTO (17.5)
-     * ------------------------------------------------------------------
-     * Quieto y con blanco, Gus encara al zombi. El rumbo sale de
-     * `blanco.rumbo`, que la revalidacion refresca en cada cuadro: el
-     * zombi camina, y encarar a donde estaba hace dos segundos es no
-     * encarar.
-     *
-     * **Se usa el blanco del cuadro ANTERIOR, y es a proposito.** Hay un
-     * circulo: `quieto` lo calcula `player.update`, el blanco necesita
-     * `quieto`, y el giro necesita el blanco. Alguien tiene que ir un
-     * cuadro atrasado.
-     *
-     * Que sea el giro es la opcion barata: son 16 ms sobre un giro que de
-     * por si es gradual —`turnSpeed` tarda un cuarto de segundo en media
-     * vuelta— asi que el atraso es invisible. Al reves, un `quieto`
-     * atrasado un cuadro haria que el combate arranque tarde, y eso se
-     * suma a los 0,15 s del retardo, que ya es lo mas caro del sistema.
-     *
-     * El pulgar sigue teniendo prioridad mientras exista el boton: si el
-     * jugador esta apuntando a mano, manda el.
-     */
-    const giroPorBlanco = rumboApuntado === null && blanco.actual !== null;
-    const rumboDeMira = giroPorBlanco ? blanco.rumbo : rumboApuntado;
-
-    player.update(dt, input.move, camera.yaw, rumboDeMira, !giroPorBlanco);
+    const giroPorBlanco = blanco.actual !== null;
+    player.update(
+      dt,
+      input.move,
+      camera.yaw,
+      giroPorBlanco ? blanco.rumbo : null,
+      // El giro por blanco es suavizado; no queda ningun otro cliente.
+      false
+    );
     mission.update(dt, player.position);
     actualizarVentana();
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
@@ -960,18 +955,10 @@ app.on('update', (rawDt) => {
      * zombi (D-31), un primer tiro que sale hacia donde Gus miraba antes es
      * un cuarto del daño tirado en cada cambio de objetivo.
      *
-     * El boton sigue andando y tiene prioridad mientras exista: se va en
-     * cuanto esto se pruebe en el telefono. No se borra en la misma tarea
-     * que lo reemplaza, para poder comparar las dos cosas jugando.
+     * Y es la UNICA via: el boton de disparar se borro. Lo que el jugador
+     * controla es si frena o no.
      */
-    const dispararSolo = blanco.encarado(player.yaw, PLAYER.toleranciaEncarado);
-    if (
-      input.wasPressed('attack') ||
-      (input.buttons.attack && input.apuntando) ||
-      dispararSolo
-    ) {
-      arma.atacar();
-    }
+    if (blanco.encarado(player.yaw, PLAYER.toleranciaEncarado)) arma.atacar();
 
     /*
      * El tiro sale hacia el BLANCO, no hacia donde mira el cuerpo.
@@ -1005,18 +992,15 @@ app.on('update', (rawDt) => {
     }
 
     /*
-     * La mira muestra el alcance REAL del arma, no un largo decorativo:
-     * veintiocho metros. Antes servia para que se entendiera la diferencia
-     * entre las dos armas sin leer nada; ahora lo que dice es hasta donde
-     * llega el tiro, que sigue siendo informacion que no esta en ningun
-     * otro lado.
+     * Y aca se dibujaba LA MIRA: una linea en el piso con el alcance real
+     * del arma, mientras el pulgar apuntaba.
+     *
+     * Se fue con el boton. Existia porque apuntar a mano sin ver hacia
+     * donde era adivinar; con el combate automatico no se apunta, y lo que
+     * contesta "a quien le estoy disparando" es la marca del blanco
+     * (17.8), que ademas lo contesta mejor: señala al zombi, no a una
+     * direccion.
      */
-    if (rumboApuntado !== null) {
-      efectos.mostrarMira(pos2d, rumboApuntado, arma.arma.range);
-    } else {
-      efectos.ocultarMira();
-    }
-
     efectos.update(dt);
 
     /*

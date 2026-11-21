@@ -43,18 +43,17 @@ export class InputManager {
      * `move`: quien lo usa lo convierte a mundo con la misma funcion que
      * el movimiento, para que caminar y apuntar nunca se desalineen.
      */
-    this.aim = { x: 0, y: 0 };
-    /** true mientras el arrastre pasa el umbral y hay direccion de apuntado. */
-    this.apuntando = false;
 
     /*
-     * Queda **un solo boton**. Habia seis: correr, atacar, interactuar,
-     * recargar, curarse y la bazooka. Se fueron cinco entre la 16.1 y la
-     * 16.6.
+     * **No queda ninguno.** Habia seis: correr, atacar, interactuar,
+     * recargar, curarse y la bazooka. Cinco se fueron entre la 16.1 y la
+     * 16.6, y el ultimo —atacar— con el combate automatico (D-28).
+     *
+     * El objeto se queda vacio y no se borra: `#setButton` y `wasPressed`
+     * siguen siendo la via por la que entraria cualquier accion futura, y
+     * la 19B va a necesitar una para elegir carta.
      */
-    this.buttons = {
-      attack: false
-    };
+    this.buttons = {};
     /** Botones que se activaron en este frame (flanco de subida). */
     this.pressed = new Set();
 
@@ -91,9 +90,6 @@ export class InputManager {
   reset() {
     this.move.x = this.move.y = 0;
     this.look.x = this.look.y = 0;
-    this.aim.x = this.aim.y = 0;
-    this.apuntando = false;
-    this.aimTouch = null;
     this.keys.clear();
     this.moveTouch = null;
     this.lookTouch = null;
@@ -128,11 +124,15 @@ export class InputManager {
        * la municion, los botiquines, el sistema de bomba, el cuchillo, la
        * segunda velocidad y los items del piso.
        *
-       * No queda nada que alternar, nada que mantener apretado y nada con
-       * lo que interactuar: moverse es con WASD y lo unico que se aprieta
-       * es el gatillo.
+       * Y desde el combate automatico (D-28) **no queda ninguna**: no hay
+       * nada que alternar, nada que mantener apretado, nada con lo que
+       * interactuar y ningun gatillo. Moverse es con WASD y pelear es
+       * frenar.
+       *
+       * El mapa se queda vacio y no se borra: es la via por la que entraria
+       * cualquier tecla futura, y la 19B va a necesitar una para elegir
+       * carta.
        */
-      Space: 'attack'
     };
 
     addEventListener('keydown', (e) => {
@@ -162,10 +162,9 @@ export class InputManager {
       c.setPointerCapture(e.pointerId);
 
       if (e.pointerType === 'mouse') {
-        // En PC: arrastrar con cualquier boton gira la camara, y el click
-        // izquierdo ademas ataca.
+        // En PC: arrastrar con cualquier boton gira la camara. El click ya
+        // no ataca: pelear es frenar (D-28).
         this.mouseLookActive = true;
-        if (e.button === 0) this.#setButton('attack', true);
         return;
       }
 
@@ -222,7 +221,6 @@ export class InputManager {
     const end = (e) => {
       if (e.pointerType === 'mouse') {
         this.mouseLookActive = false;
-        if (e.button === 0) this.#setButton('attack', false);
         return;
       }
       if (this.moveTouch?.id === e.pointerId) this.moveTouch = null;
@@ -237,97 +235,25 @@ export class InputManager {
    * Conecta los botones del HUD. Se usa pointerdown/up en vez de click para
    * que el ataque responda al apoyar el dedo, no al soltarlo.
    */
-  /**
-   * El boton de atacar: boton y joystick de apuntado a la vez.
-   *
-   * @param {HTMLElement} el
-   * @param {string} name boton logico que se activa
-   */
-  bindAimButton(el, name) {
-    if (!el) return;
-
-    /*
-     * El umbral existe para que un toque no se lea como un arrastre.
-     *
-     * Un pulgar nunca toca un punto exacto: al apoyarlo y levantarlo se
-     * mueve unos pixeles solo. Sin umbral, cada disparo simple saldria
-     * apuntado a un lado al azar, que es peor que no tener apuntado.
-     *
-     * 18 px es aproximadamente el temblor de un pulgar apoyado, medido en
-     * pixeles CSS para que no dependa de la densidad de la pantalla.
-     */
-    const UMBRAL = 18;
-    /* Mas alla de este radio el stick ya esta al maximo. */
-    const RADIO = 56;
-
-    const down = (e) => {
-      e.preventDefault();
-      el.setPointerCapture?.(e.pointerId);
-      this.aimTouch = { id: e.pointerId, x: e.clientX, y: e.clientY };
-      this.apuntando = false;
-      this.aim.x = this.aim.y = 0;
-      this.#setButton(name, true);
-    };
-
-    const move = (e) => {
-      if (!this.aimTouch || this.aimTouch.id !== e.pointerId) return;
-      e.preventDefault();
-      const dx = e.clientX - this.aimTouch.x;
-      // En pantalla, Y crece hacia ABAJO. Se invierte para que arrastrar
-      // hacia arriba signifique apuntar hacia adelante.
-      const dy = this.aimTouch.y - e.clientY;
-      const largo = Math.hypot(dx, dy);
-
-      if (largo < UMBRAL) {
-        this.apuntando = false;
-        this.aim.x = this.aim.y = 0;
-        return;
-      }
-
-      const k = Math.min(1, largo / RADIO) / largo;
-      this.aim.x = dx * k;
-      this.aim.y = dy * k;
-      this.apuntando = true;
-    };
-
-    const up = (e) => {
-      if (this.aimTouch && this.aimTouch.id !== e.pointerId) return;
-      e.preventDefault();
-      el.releasePointerCapture?.(e.pointerId);
-      this.aimTouch = null;
-      this.apuntando = false;
-      this.aim.x = this.aim.y = 0;
-      this.#setButton(name, false);
-    };
-
-    el.addEventListener('pointerdown', down);
-    el.addEventListener('pointermove', move);
-    el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', up);
-  }
-
   /*
    * -------------------------------------------------------------------------
-   * ACA HABIA UN `bindHudButton()`, Y SE FUE EN LA 16.8
+   * ACA HABIA UN `bindAimButton()`, Y SE FUE CON EL BOTON DE DISPARAR
    * -------------------------------------------------------------------------
-   * Conectaba un boton del HUD a un boton logico, con `pointerdown` y
-   * `pointerup` en vez de `click` para que la accion respondiera al apoyar
-   * el dedo y no al soltarlo. Lo usaban correr, interactuar, recargar,
-   * curarse y la bazooka.
+   * Era boton y joystick de apuntado a la vez: un toque disparaba hacia
+   * adelante y mantenerlo y arrastrar daba la direccion. Lo mas
+   * inteligente que tuvo el control tactil de este juego.
    *
-   * Los cinco se fueron entre la 16.1 y la 16.6, y el unico boton que queda
-   * —disparar— nunca lo uso: usa `bindAimButton()`, que ademas convierte el
-   * arrastre en apuntado.
+   * Se fue con el combate automatico (D-28): ya no se apunta.
    *
-   * No estaba roto. Era correcto, estaba exportado, y cualquiera podria
-   * haberlo llamado. **No lo llamaba nadie**, que es el caso que la 16.4
-   * bautizo "funcion de cableado": codigo sano que existe para sostener a
-   * otro que ya no esta.
+   * Lo que dejo escrito y vale para cualquier gesto tactil que venga:
    *
-   * Lo que enseñaba sigue vivo arriba, en `bindAimButton()`: `pointerdown`
-   * y no `click`, y `pointercancel` y `pointerleave` tratados como soltar,
-   * porque un dedo que se va del boton sin levantarse dejaria la accion
-   * apretada para siempre.
+   *  - **El umbral.** Un pulgar nunca toca un punto exacto: al apoyarlo y
+   *    levantarlo se mueve unos pixeles solo. Sin umbral, cada toque simple
+   *    se leeria como un arrastre al azar. 18 px es el temblor de un pulgar
+   *    apoyado, medido en pixeles CSS para no depender de la densidad.
+   *  - **`pointercancel` y `pointerleave` cuentan como soltar**, porque un
+   *    dedo que se va del elemento sin levantarse dejaria la accion
+   *    apretada para siempre.
    */
 
   /** Recalcula `move` a partir de teclado o joystick. Llamar antes del update. */

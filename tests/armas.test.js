@@ -45,7 +45,12 @@ describe('el largo no es el real, y eso es deliberado', () => {
   });
 
   it('sigue siendo corta: casi no sobresale de la mano', () => {
-    expect(LARGO.pistola).toBeLessThan(0.35);
+    /*
+     * Subió de 0,26 a 0,42 en la revisión de la 20ª: a cuarenta píxeles por
+     * personaje, 26 cm es una astilla. Sigue siendo "corta" —no sobresale
+     * como un fusil— pero ahora tiene planta suficiente para leerse.
+     */
+    expect(LARGO.pistola).toBeLessThan(0.5);
   });
 });
 
@@ -62,7 +67,7 @@ describe('los colores del arma', () => {
      * las veinticuatro horas —no se guarda, no se suelta, no se recoge del
      * piso— así que contra lo que se la ve es contra Gus.
      */
-    expect(separacion(COLOR_ARMA.metal, COLORES_GUS.guante)).toBeGreaterThan(0.15);
+    expect(separacion(COLOR_ARMA.metalClaro, COLORES_GUS.guante)).toBeGreaterThan(0.15);
   });
 
   it('el cuerpo y las partes oscuras se separan entre sí', () => {
@@ -70,29 +75,28 @@ describe('los colores del arma', () => {
     expect(separacion(COLOR_ARMA.metal, COLOR_ARMA.metalOscuro)).toBeGreaterThan(0.1);
   });
 
-  it.fails('PENDIENTE: el metal NO se separa del asfalto, y es un problema real', () => {
+  it('el arma se separa del asfalto, que es el fondo contra el que se dispara', () => {
     /*
-     * ⚠️ Esta prueba está escrita para FALLAR, a propósito, y queda como
-     * recordatorio con número en vez de como nota al margen.
+     * Esta prueba estuvo escrita para FALLAR durante cinco tareas, con el
+     * número adentro, y así se arregló.
      *
      * La versión vieja medía `COLOR_ARMA.filo` —la hoja clara del
-     * cuchillo— contra el asfalto, y pasaba con holgura. Al borrar el
-     * cuchillo en la 16.4 se fue `filo`, y al medir lo que queda apareció
-     * esto: el cuerpo de la pistola es (0,30 0,31 0,34) y el asfalto es
-     * (0,33 0,325 0,315). Separación: **0,015**. Son el mismo gris.
+     * cuchillo— y pasaba con holgura. Al borrar el cuchillo en la 16.4 se
+     * fue `filo`, y al medir lo que quedaba apareció esto: el cuerpo de la
+     * pistola era (0,30 0,31 0,34) y el asfalto es (0,33 0,325 0,315).
+     * Separación: **0,015**. El mismo gris.
      *
-     * Importa porque el brazo se estira hacia adelante al disparar y, desde
-     * la cámara cenital, el arma queda sobre la calzada: justo en el
-     * momento en que el jugador la mira.
+     * Lo dejé como `it.fails` para que la 20.8 se tropezara con el número.
+     * No hizo falta esperar tanto: Gus lo vio jugando y lo dijo así —*"sigue
+     * disparando con un cuchillo"*—. El cuchillo se había borrado hacía
+     * cinco tareas; lo que veía era la pistola, y tenía razón: una astilla
+     * de 3,5 cm del color del asfalto **es** la silueta de una hoja.
      *
-     * NO se arregla acá subiendo el valor. En la 20.8 Gus elige su arma
-     * entre once modelos del banco y esta pistola de cuatro cajas se
-     * reemplaza entera; retocar un gris que se va a borrar es trabajo
-     * tirado. Lo que no puede pasar es que el dato se pierda, y por eso
-     * está acá: la 20.8 tiene que medir el arma nueva contra el asfalto,
-     * no sólo contra la mano.
+     * Lo que se separa es el **lomo de la corredera**, que es lo único que
+     * se ve desde la cámara cenital. El caño y la culata siguen oscuros,
+     * a propósito: el contraste entre los dos es lo que le da forma de arma.
      */
-    expect(separacion(COLOR_ARMA.metal, COLORS.asphalt)).toBeGreaterThan(0.15);
+    expect(separacion(COLOR_ARMA.metalClaro, COLORS.asphalt)).toBeGreaterThan(0.15);
   });
 
   it('no quedan colores sin usar', () => {
@@ -104,7 +108,7 @@ describe('los colores del arma', () => {
      * el número, que es lo que nadie vuelve a revisar después de borrar un
      * arma. Si aparece un color nuevo, hay que decir quién lo usa.
      */
-    expect(Object.keys(COLOR_ARMA).sort()).toEqual(['metal', 'metalOscuro']);
+    expect(Object.keys(COLOR_ARMA).sort()).toEqual(['metal', 'metalClaro', 'metalOscuro']);
   });
 });
 
@@ -112,7 +116,7 @@ describe('el presupuesto de detalle', () => {
   it('la pistola entra en su presupuesto', () => {
     // Cuatro cajas: doce triángulos cada una. El número sale de contar las
     // piezas en `armas.js`.
-    const piezas = 4;
+    const piezas = 6;
     expect(piezas * 12, `${piezas * 12} triangulos`).toBeLessThanOrEqual(PRESUPUESTO.arma);
   });
 });

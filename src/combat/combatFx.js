@@ -10,7 +10,8 @@ const _p2 = new pc.Vec3();
  * ===========================================================================
  * EFECTOS DE COMBATE
  * ===========================================================================
- * El fogonazo, el trazado de la bala, el destello del impacto y la mira.
+ * El fogonazo, el trazado de la bala, el destello del impacto y la marca
+ * del blanco.
  *
  * Esto NO es decoracion. El criterio es que el jugador entienda sin dudar
  * cuando acerto y cuando fallo, y eso no se consigue con numeros: se
@@ -26,8 +27,8 @@ const _p2 = new pc.Vec3();
  * Vale la pena dejar escrito que el arco se construia a mano, vertice por
  * vertice, leyendo el semiangulo y el alcance del balance para no quedar
  * desfasado del golpe real. Esa es la unica parte que sobrevive como
- * criterio: **ningun efecto inventa sus medidas**. El trazado y la mira
- * siguen midiendose del arma.
+ * criterio: **ningun efecto inventa sus medidas**. El trazado sigue
+ * midiendose del arma.
  *
  * ---------------------------------------------------------------------------
  * POR QUE SE REUTILIZA TODO
@@ -102,17 +103,6 @@ export class CombatFx {
 
     this.fogonazo = this.#crearFogonazo();
     this.fogonazoRestante = 0;
-
-    /*
-     * La mira: una linea en el piso que sale del personaje hacia donde
-     * apunta el pulgar.
-     *
-     * Sin esto, apuntar seria adivinar. El pulgar derecho esta abajo a la
-     * derecha y el personaje en el medio de la pantalla: no hay forma de
-     * saber que direccion elegiste salvo disparando y viendo donde pego,
-     * que con una pistola que hace ruido es una forma cara de averiguarlo.
-     */
-    this.mira = this.#crearMira();
 
     this.marca = this.#crearMarcaBlanco();
     /** Reloj propio del latido de la marca. */
@@ -385,59 +375,32 @@ export class CombatFx {
   }
 
   /** Linea de apuntado. Se enciende y se apaga, no tiene duracion. */
-  #crearMira() {
-    const material = new pc.StandardMaterial();
-    material.diffuse = new pc.Color(0, 0, 0);
-    material.emissive = new pc.Color(1, 0.85, 0.45);
-    material.emissiveIntensity = 1;
-    material.useLighting = false;
-    material.blendType = pc.BLEND_NORMAL;
-    material.depthWrite = false;
-    material.opacity = 0.5;
-    material.update();
 
-    const e = new pc.Entity('Mira');
-    e.addComponent('render', { type: 'box', material, castShadows: false });
-    e.enabled = false;
-    this.raiz.addChild(e);
-    e.material = material;
-    return e;
-  }
 
-  /**
-   * Muestra la mira desde `pos` hacia `rumbo`.
+  /*
+   * -------------------------------------------------------------------------
+   * ACA VIVIA LA MIRA, Y SE FUE CON EL BOTON DE DISPARAR
+   * -------------------------------------------------------------------------
+   * Una linea en el piso que salia del personaje hacia donde apuntaba el
+   * pulgar, con el **alcance real del arma**: veintiocho metros.
    *
-   * @param {{x:number,z:number}} pos
-   * @param {number} rumbo grados
-   * @param {number} largo metros; es el alcance real del arma
+   * Existia porque apuntar a mano sin ver hacia donde era adivinar — el
+   * pulgar esta abajo a la derecha y el personaje en el medio de la
+   * pantalla, asi que no habia forma de saber que direccion elegiste salvo
+   * disparando. Con una pistola que hace ruido, esa es una forma cara de
+   * averiguarlo.
+   *
+   * Con el combate automatico (D-28) no se apunta, y lo que contesta "a
+   * quien le estoy disparando" es la marca del blanco (17.8), que ademas lo
+   * contesta mejor: señala **al zombi**, no a una direccion.
+   *
+   * Lo que dejo escrito y sigue valiendo para todo lo que se dibuje en el
+   * piso: va por ENCIMA del cordon (`UNITS.curbHeight`), no a ras. El mundo
+   * es plano en y=0 y las veredas son cajas apoyadas encima, asi que lo que
+   * se dibuje mas bajo queda adentro de la vereda. La mira funcionaba en la
+   * calzada y desaparecia al subir al cordon, que es justo donde uno se
+   * para a cubrirse.
    */
-  mostrarMira(pos, rumbo, largo) {
-    const d = dirDeRumbo(rumbo);
-    // Arranca fuera del cuerpo para no salir de adentro del personaje.
-    const desde = 0.6;
-    const tramo = Math.max(0.2, largo - desde);
-    const medio = desde + tramo / 2;
-
-    /*
-     * Por encima del cordon, no a ras del piso.
-     *
-     * El mundo es plano en y=0 y las veredas son cajas de 15 cm apoyadas
-     * encima. Cualquier cosa dibujada por debajo de esa altura queda
-     * ADENTRO de la vereda y no se ve: la mira funcionaba en la calzada y
-     * desaparecia al subir al cordon, que es justo donde uno se para a
-     * cubrirse.
-     *
-     * Vale lo mismo para el disco de los objetos. Ver UNITS.curbHeight.
-     */
-    this.mira.setPosition(pos.x + d.x * medio, ALTURA_SOBRE_CORDON, pos.z + d.z * medio);
-    this.mira.setEulerAngles(0, rumbo, 0);
-    this.mira.setLocalScale(0.09, 0.01, tramo);
-    this.mira.enabled = true;
-  }
-
-  ocultarMira() {
-    this.mira.enabled = false;
-  }
 
   /** Destello en el punto donde pego. */
   mostrarImpacto(x, z) {

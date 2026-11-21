@@ -42,8 +42,23 @@ import { ACABADO } from '../world/palette.js';
  * sin que nada lo necesite.
  */
 export const COLOR_ARMA = {
+  /**
+   * El lomo de la corredera: **lo único que se ve desde arriba**.
+   *
+   * Era `0,30 0,31 0,34` y el asfalto es `0,33 0,325 0,315`: **el mismo
+   * gris**. Sumado a que el arma medía 3,5 cm de ancho, lo que llegaba a
+   * la pantalla era una astilla oscura sobre un fondo del mismo tono — que
+   * es, literalmente, la silueta de una hoja de cuchillo.
+   *
+   * Lo reportó Gus mirando el juego: *"sigue disparando con un cuchillo"*.
+   * Y el cuchillo se había borrado en la 16.4: lo que veía era la pistola.
+   *
+   * Ahora es un gris claro que se separa del asfalto **y** del guante, que
+   * son los dos fondos contra los que se la ve.
+   */
+  metalClaro: [0.58, 0.6, 0.64],
   metal: [0.3, 0.31, 0.34],
-  metalOscuro: [0.17, 0.18, 0.2]
+  metalOscuro: [0.14, 0.15, 0.17]
 };
 
 /**
@@ -57,7 +72,7 @@ export const COLOR_ARMA = {
  * lo que va a cambiar en la 20.8 es el contenido, no la forma.
  */
 export const LARGO = {
-  pistola: 0.26
+  pistola: 0.42
 };
 
 /*
@@ -95,11 +110,42 @@ function pieza(mats, padre, nombre, color, escala, pos, rot = null) {
  */
 export function construirPistola(mats) {
   const raiz = new pc.Entity('Pistola');
-  pieza(mats, raiz, 'Corredera', COLOR_ARMA.metal, [0.035, 0.05, 0.2], [0, 0.01, -0.06]);
-  pieza(mats, raiz, 'Cañon', COLOR_ARMA.metalOscuro, [0.022, 0.022, 0.06], [0, 0.01, -0.18]);
-  // La culata hacia abajo y atrás: el palo corto de la L.
-  pieza(mats, raiz, 'Culata', COLOR_ARMA.metalOscuro, [0.032, 0.11, 0.05], [0, -0.07, 0.02], [12, 0, 0]);
-  pieza(mats, raiz, 'Guardamonte', COLOR_ARMA.metal, [0.02, 0.04, 0.02], [0, -0.025, -0.04]);
+
+  /*
+   * El arma se diseña **para la vista cenital**, que es la única que existe.
+   *
+   * La versión anterior era correcta de perfil y no se leía desde arriba:
+   * 3,5 cm de ancho por 26 de largo son una astilla, y encima del color del
+   * asfalto. La guarda y la culata —lo que la hacía una L— quedan **debajo
+   * de la mano** y desde la cámara no se ven nunca.
+   *
+   * Así que lo que tiene que trabajar es **la planta**: el contorno visto
+   * desde arriba. Y para eso hacen falta dos cosas, ancho y contraste.
+   */
+  pieza(mats, raiz, 'Corredera', COLOR_ARMA.metalClaro, [0.075, 0.07, 0.3], [0, 0.015, -0.1]);
+
+  /*
+   * El caño sobresale y es OSCURO. Es lo que convierte un rectángulo en un
+   * arma: un bloque claro con una punta negra apuntando a algún lado se lee
+   * como "esto dispara" sin que haga falta ver el gatillo.
+   */
+  pieza(mats, raiz, 'Cano', COLOR_ARMA.metalOscuro, [0.04, 0.04, 0.12], [0, 0.015, -0.3]);
+
+  // La culata hacia abajo y atrás: el palo corto de la L. Se ve de costado,
+  // que es lo que queda de perfil con la cámara a 48 grados.
+  pieza(mats, raiz, 'Culata', COLOR_ARMA.metalOscuro, [0.06, 0.15, 0.08], [0, -0.09, 0.05], [14, 0, 0]);
+  pieza(mats, raiz, 'Guardamonte', COLOR_ARMA.metalOscuro, [0.035, 0.06, 0.03], [0, -0.03, -0.04]);
+
+  /*
+   * Y una mira: dos tacos claros sobre el lomo. No es detalle por detalle —
+   * a esta escala no existe el detalle— sino **una línea a lo largo**, que
+   * es lo que le da dirección a la planta y hace que el ojo lea para dónde
+   * apunta.
+   */
+  for (const z of [-0.22, 0.0]) {
+    pieza(mats, raiz, 'Mira', COLOR_ARMA.metalClaro, [0.02, 0.025, 0.02], [0, 0.055, z]);
+  }
+
   return raiz;
 }
 

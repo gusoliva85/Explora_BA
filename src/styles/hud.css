@@ -147,7 +147,12 @@
    detiene a mirarlo. En 412 px de ancho los dos no entran enteros, asi que
    el que se achica es el que se lee con tiempo. */
 .objective {
-  align-self: flex-start;
+  /*
+   * El unico elastico de la fila. `min-width: 0` es lo que permite que un
+   * hijo de flex se achique por debajo de su contenido: sin eso, el texto
+   * largo empuja a la brujula fuera de la pantalla en vez de recortarse.
+   */
+  flex: 1 1 auto;
   min-width: 0;
   padding: 6px 12px;
   border-radius: 999px;
@@ -170,7 +175,32 @@
   to { opacity: 1; transform: none; }
 }
 
-.fila-objetivo { display: flex; align-items: center; gap: 8px; }
+/* --- La fila de datos: UNA SOLA LINEA --------------------------------------
+   Objetivo | brujula | esclusa, en ese orden y en un renglon.
+
+   POR QUE UNA Y NO TRES. Tres pastillas apiladas tapan el tercio superior
+   entero de la pantalla, que es justo por donde VIENEN los zombis. Y
+   obligan a recorrerlas con la mirada para encontrar la que importa, que
+   es lo contrario de lo que tiene que hacer un HUD que se mira de reojo.
+
+   COMO ENTRAN LAS TRES EN 412 px. Cada una cede distinto, y el reparto no
+   es casual:
+
+     - El OBJETIVO es el unico elastico: se achica y recorta con puntos
+       suspensivos. Es el que se lee con tiempo, cuando uno se detiene.
+     - La BRUJULA no se achica nunca (`flex: 0 0 auto`). Es lo unico que
+       orienta, y una flecha recortada no es una flecha.
+     - La ESCLUSA tampoco, pero aparece y desaparece. Por eso va ULTIMA: si
+       estuviera en el medio, el HUD entero se reacomodaria cada vez que
+       una puerta abre, y un HUD que salta es un HUD que no se puede mirar
+       de reojo. */
+
+.fila-datos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
 
 /* Brujula al objetivo. Vive al lado del texto de objetivo porque las dos
    cosas responden a la misma pregunta: a donde voy. */
@@ -189,10 +219,9 @@
 .esclusa {
   display: flex;
   align-items: center;
-  gap: 10px;
-  align-self: center;
-  margin-top: 8px;
-  padding: 8px 16px;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 7px 12px 7px 9px;
   border-radius: 999px;
   background: rgba(40, 10, 8, 0.72);
   border: 1.5px solid rgba(255, 92, 80, 0.55);
@@ -205,28 +234,20 @@
   to { opacity: 1; transform: translateY(0); }
 }
 .esclusa-icono {
-  font-size: 22px;
+  font-size: 18px;
   line-height: 1;
 }
-.esclusa-texto {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.05;
-  color: #ffd9d4;
-}
-.esclusa-texto b {
-  font-size: 19px;
+/* El numero solo.
+   Se fue el "ZOMBIS EN EL TRAMO" de abajo, y no se pierde nada: el simbolo
+   de prohibido ya dice que no se pasa, y el numero al lado solo puede
+   significar una cosa. La frase ocupaba quince caracteres para explicar lo
+   que el icono explica en uno, y era lo que obligaba a la pastilla a tener
+   dos renglones. */
+.esclusa b {
+  font-size: 18px;
   font-weight: 850;
   font-variant-numeric: tabular-nums;
   color: #ff8d80;
-}
-.esclusa-detalle {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--hud-dim);
 }
 
 /* --- Brujula (D-38) -------------------------------------------------------
@@ -336,7 +357,15 @@
   justify-content: space-between;
 }
 
+/* El joystick vive en la mitad DERECHA (D-27), y desde que se borro el
+   boton de disparar es el unico hijo de `.hud-bottom`. Con `space-between`
+   y un solo hijo, el flex lo manda al principio: a la IZQUIERDA.
+
+   Lo destapo una captura, y es la segunda vez que pasa lo mismo —en la
+   16.7 el joystick se dibujaba de un lado y se escuchaba del otro—. La
+   regla no cambia: **el control se dibuja donde se escucha.** */
 .joystick {
+  margin-left: auto;
   position: relative;
   width: 136px;
   height: 136px;
@@ -358,143 +387,16 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
-/*
- * EL BOTON, QUE ES UNO Y ESTA A LA IZQUIERDA, Y LAS DOS COSAS SON PROVISORIAS
- * ---------------------------------------------------------------------------
- * Habia seis botones, `.action-cluster` para apilar las filas y
- * `.action-row` para cada fila. Los dos contenedores se fueron en la 16.8:
- * dos capas de flex para alinear un elemento es andamio, no estructura.
- *
- * Y esta a la IZQUIERDA por la 16.7. D-27 manda el joystick a la mitad
- * derecha, y el boton vivia justo ahi: se pisaban. D-27 esta escrita para
- * un mundo SIN este boton —dice, textual, que "sin botones de accion la
- * mitad derecha quedaba vacia"— y esa mitad no va a estar vacia hasta la
- * Fase 17, cuando el combate pase a ser automatico (D-28).
- *
- * Mientras tanto queda el esquema de dos pulgares dado vuelta: **el derecho
- * mueve, el izquierdo dispara y apunta.** Cuando la 17 borre el boton, se
- * va con el todo este bloque y la mitad izquierda vuelve a ser solo camara.
- */
-.btn.btn-action {
-  position: relative;
-  width: 82px;
-  height: 82px;
-  margin: 0;
-  padding: 0;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: var(--hud-ink);
-  background: var(--hud-vidrio);
-  border: 1.5px solid var(--hud-borde);
-  backdrop-filter: blur(10px) saturate(1.2);
-  box-shadow: 0 8px 26px -10px rgba(0, 0, 0, 0.95);
-  transition: transform 0.14s var(--sal), box-shadow 0.14s linear, background 0.14s linear;
-}
-.btn.btn-action:active {
-  transform: scale(0.9);
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.08);
-}
+/* --- Botones de accion: NO HAY ---------------------------------------------
+   Habia seis y despues uno. `.btn-action` y `.btn-attack` se fueron con el
+   ultimo —DISPARAR— cuando el combate automatico (D-28) lo volvio
+   redundante.
 
-.btn.btn-attack {
-  width: 112px;
-  height: 112px;
-  font-size: 13px;
-  color: #fff;
-  /*
-   * Ambar, no rojo.
-   *
-   * El boton era rojo cuando era ATACAR, y una clase aparte,
-   * `.btn-disparar`, lo pasaba a ambar cuando el arma equipada era la
-   * pistola: mismo tamano y mismo lugar —la mano no tiene que volver a
-   * buscarlo— pero otro color, para que el jugador supiera de un vistazo
-   * cual de las dos cosas iba a hacer.
-   *
-   * Con un arma sola siempre va a hacer la misma, asi que las dos clases se
-   * fusionaron en esta y el color que quedo es el del disparo. El rojo era
-   * el del cuerpo a cuerpo, y el cuerpo a cuerpo no existe.
-   */
-  background: radial-gradient(circle at 50% 36%, rgba(255, 182, 39, 0.42), rgba(120, 76, 8, 0.52));
-  border-color: rgba(255, 182, 39, 0.6);
-}
-.btn.btn-attack:active {
-  box-shadow: 0 0 0 8px rgba(255, 182, 39, 0.18), 0 0 30px rgba(255, 182, 39, 0.5);
-}
+   Lo que dejan escrito, y vale para la 19B: el ambar del boton era el del
+   disparo, y el rojo que tenia antes era el del cuerpo a cuerpo. Cuando
+   algo vuelva a ocupar esa esquina, el color tiene que decir que hace, no
+   que lindo queda. */
 
-/* --- Arma: no hay ---------------------------------------------------------
-   Aca vivian `.fila-arma`, `.arma-caja` y `.arma-nombre`: la caja que
-   mostraba el nombre del arma y, hasta la 16.2, el contador de balas con
-   tres niveles de aviso. Se fue entera en la 16.4 junto con el cambio de
-   arma (D-29). */
-
-/* --- Marcador de fin de partida ------------------------------------------
-   Dos columnas: etiqueta a la izquierda, número a la derecha. Los números
-   van en cifras tabulares y un punto más grandes que las etiquetas, porque
-   son lo que se lee; la etiqueta solo dice de qué. */
-
-.marcador {
-  width: 100%;
-  margin: 4px 0 20px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--hud-borde);
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 9px 16px;
-  text-align: left;
-}
-.marcador dt {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--hud-dim);
-  align-self: center;
-}
-.marcador dd {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color: var(--hud-ink);
-  text-align: right;
-}
-/* El dato principal —el tiempo— va más grande que el resto. */
-.marcador dd.principal { font-size: 22px; color: var(--hud-ambar); }
-
-.record {
-  margin: -10px 0 18px;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--hud-ambar);
-  text-shadow: 0 0 24px rgba(255, 182, 39, 0.5);
-  animation: entraRecord 0.5s var(--sal);
-}
-@keyframes entraRecord {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/*
- * REGLA DE ESPECIFICIDAD, aprendida dos veces y escrita una.
- *
- * Para esconder un boton se usa la clase `.hidden` de game.css, que ya
- * existe y lleva `!important`.
- *
- * Hubo una clase nueva, `.oculto-sin-carga`, con un `display: none` comun.
- * No funcionaba: `.btn` se define mas abajo en la hoja, tiene la misma
- * especificidad, y por orden le ganaba. El boton se veia siempre.
- *
- * Es el mismo error que ya habia pasado con `.btn-action` y `.btn-icon`. De
- * ahi la regla: **si hay una clase que ya resuelve esto, se usa esa.**
- *
- * El boton que lo provoco era el de la bazooka, que se borro en la Fase
- * 16.3. La regla queda, porque el error no era del boton.
- */
 /* --- Interactuar: no hay ---------------------------------------------------
    Aca vivian `.btn-interact` y la animacion `respira`, que era un halo que
    latia cada 1,8 s. Era el unico boton del juego que aparecia y desaparecia

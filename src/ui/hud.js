@@ -222,7 +222,16 @@ export class Hud {
 
   setObjective(text) {
     const el = this.el.objective;
-    const nuevo = `Objetivo: ${text}`;
+    /*
+     * Sin el "Objetivo: " adelante.
+     *
+     * Son diez caracteres de los que entran, y no informan: la pastilla ya
+     * esta ahi arriba y dice una sola cosa. Con la fila en una linea el
+     * texto tiene que ceder lugar a la brujula y al contador, y lo primero
+     * que cede es lo que no dice nada. Antes se leia "Objetivo: Avanza
+     * hast..." y ahora entra la frase entera.
+     */
+    const nuevo = text;
     if (el.textContent === nuevo) return;
     el.textContent = nuevo;
     // Reinicio de la animacion de entrada, igual que con el daño.

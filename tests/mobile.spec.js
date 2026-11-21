@@ -33,8 +33,10 @@ test('se detecta como tactil y los controles son los del dedo', async ({ page })
   await expect(page.locator('.desktop-only').first()).toBeHidden();
 
   await page.locator('#btn-start').click();
-  await expect(page.locator('#btn-attack')).toBeVisible();
+  // El joystick es el unico control que el dedo necesita (D-28): los
+  // botones de accion ya no existen.
   await expect(page.locator('#joystick')).toBeVisible();
+  await expect(page.locator('.btn-action')).toHaveCount(0);
 
   // Vertical es la orientacion para la que se diseña (D-15): no debe
   // aparecer ningun cartel pidiendo girar el telefono.

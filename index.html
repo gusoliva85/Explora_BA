@@ -74,36 +74,25 @@
             <span id="health-text" class="stat-value">100</span>
             <button id="btn-pause" class="btn btn-icon" aria-label="Pausa">II</button>
           </div>
-          <!-- Aca estaba la caja del arma: el nombre, y hasta la 16.2 el
-               contador de balas. Se fue en la 16.4 con el cambio de arma,
-               porque un nombre que no puede cambiar no informa nada.
-               Lo que sigue valiendo del lugar que ocupaba, y por eso queda
-               escrito: la informacion que se consulta de reojo va ARRIBA,
-               nunca al lado del boton, porque el pulgar derecho tapa
-               justamente esa zona. -->
-          <!-- El cartel de la esclusa (19A.4). Aparece cuando la puerta
-               frena al jugador y dice cuantos quedan.
-               Va ARRIBA y al centro, no sobre el boton: es lo unico que el
-               jugador necesita leer cuando no puede avanzar, y el tercio
-               central de abajo tiene que quedar libre. -->
-          <div id="esclusa" class="esclusa hidden">
-            <span class="esclusa-icono">&#9940;</span>
-            <span class="esclusa-texto">
-              <b id="esclusa-cuantos">0</b>
-              <span class="esclusa-detalle">zombis en el tramo</span>
-            </span>
-          </div>
+          <!-- UNA SOLA FILA, y es una regla y no una preferencia.
+               ====================================================================
+               Aca vivian tres cosas apiladas: el objetivo, la brujula y el
+               cartel de la esclusa, cada uno en su renglon. Tres renglones
+               de pastillas sobre la calle tapan el tercio superior entero
+               —que es justo por donde VIENEN los zombis— y obligan a
+               recorrerlos con la mirada para encontrar el que importa.
 
-          <div class="fila-objetivo">
-            <div id="objective" class="objective">Objetivo: llegar al primer control</div>
-            <!-- Brujula: flecha al proximo objetivo y distancia. La flecha
-                 gira respecto de la camara, no respecto del norte. -->
+               Ahora es una linea sola: objetivo | brujula | esclusa. Los
+               tres caben porque cada uno se achica distinto —el objetivo
+               recorta con puntos suspensivos, la brujula nunca— y porque
+               el que menos importa es el que mas cede. -->
+          <div class="fila-datos">
+            <div id="objective" class="objective">Llegar al primer control</div>
+
             <!-- La brujula (D-38). Es LO UNICO que orienta: los carteles de
                  esquina son decorado (D-40), y con dieciseis cuadras y
                  cinco giros perderse es facil.
-                 Tiene que leerse de reojo mientras se corre, asi que la
-                 flecha pesa mas que el texto y el numero va en cifras
-                 tabulares para que no baile al cambiar. -->
+                 La flecha gira respecto de la camara, no del norte. -->
             <div id="brujula" class="brujula hidden">
               <span id="brujula-flecha" class="brujula-flecha">&#10148;</span>
               <span class="brujula-datos">
@@ -111,28 +100,38 @@
                 <span id="brujula-calle" class="brujula-calle"></span>
               </span>
             </div>
+
+            <!-- El contador de la esclusa (19A.4). Aparece cuando la puerta
+                 frena al jugador. Ultimo de la fila porque es el unico que
+                 aparece y desaparece: si estuviera en el medio, el HUD se
+                 reacomodaria cada vez que una puerta abre. -->
+            <div id="esclusa" class="esclusa hidden">
+              <span class="esclusa-icono">&#9940;</span>
+              <b id="esclusa-cuantos">0</b>
+            </div>
           </div>
         </div>
 
         <div class="hud-bottom">
 
-          <!-- EL BOTON. Uno, y solo en modo tactil: en escritorio estorba,
-               porque la misma accion ya esta en el teclado.
+          <!-- NO HAY BOTONES. Habia seis.
+               ====================================================================
+               Correr, interactuar, recargar, curarse, la bazooka y cambiar
+               de arma se fueron entre la 16.1 y la 16.6. El ultimo
+               —DISPARAR— quedo redundante en la 17.5, cuando el combate
+               paso a ser automatico al quedarse quieto (D-28), y se dejo
+               una fase mas a proposito: para poder comparar las dos formas
+               jugando antes de borrarlo. Gus comparo y lo borro.
 
-               Habia seis y dos capas de contenedor para ordenarlos:
-               `.action-cluster` apilaba las filas y `.action-row` ponia los
-               botones de cada fila. Se fueron en la 16.8 junto con el
-               penultimo boton: dos divs para centrar uno solo es andamio.
+               Con esto **D-28 se cumple entero**: no hay un solo boton de
+               accion en pantalla. La unica decision del jugador es donde
+               pararse y cuanto tiempo.
 
                Lo que dejaron escrito, porque no era de los botones sino del
                telefono: **el tercio central queda LIBRE.** Ahi pasa la
                accion, y una mano tapandolo es el peor error posible en
                vertical. Cuando la 19B traiga las cartas de power-up, van en
-               el medio y en pantalla quieta: es otra cosa, no vuelve esto.
-
-               Y el boton tambien es provisorio: se va en la Fase 17 con el
-               combate automatico (D-28). -->
-          <button id="btn-attack" class="btn btn-action btn-attack touch-only">DISPARAR</button>
+               el medio y en pantalla quieta: es otra cosa, no vuelve esto. -->
 
           <!-- Joystick virtual: aparece donde el jugador apoya el dedo, y
                descansa ACA, abajo a la derecha.

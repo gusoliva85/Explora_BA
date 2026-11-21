@@ -288,10 +288,15 @@ test('arranca en modo tactil, aunque sea una computadora', async ({ page }) => {
   await expect(page.locator('.desktop-only').first()).toBeHidden();
 
   await page.locator('#btn-start').click();
-  await expect(page.locator('#joystick')).toBeVisible();
-  // Era `.action-cluster`, el contenedor de los seis botones. Se fue en la
-  // 16.8 junto con el penultimo boton: ahora se mira el boton directo.
-  await expect(page.locator('#btn-attack')).toBeVisible();
+  /*
+   * Y el joystick es LO UNICO que se dibuja de mas en tactil.
+   *
+   * Aca se miraba tambien el boton de disparar —y antes `.action-cluster`,
+   * el contenedor de los seis—. No queda ninguno: con el combate
+   * automatico (D-28) el ultimo se borro, asi que la diferencia entre
+   * tactil y teclado es un joystick y nada mas.
+   */
+  await expect(page.locator('.btn-action')).toHaveCount(0);
 });
 
 test('forzar el modo teclado por URL cambia el HUD', async ({ page }) => {

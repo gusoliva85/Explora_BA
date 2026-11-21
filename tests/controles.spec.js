@@ -60,14 +60,19 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     }
   });
 
-  test('los botones de accion reciben los toques', async ({ page }) => {
+  test('los botones que quedan reciben los toques', async ({ page }) => {
     await page.goto('/');
     await page.locator('#btn-start').click();
     await expect(page.locator('#screen-hud')).toBeVisible();
 
-    // El centro de cada boton tiene que devolver ese boton, no otra cosa.
-    // Eran tres: `btn-run` se fue en la 16.5 con la segunda velocidad.
-    for (const id of ['btn-attack', 'btn-pause']) {
+    /*
+     * El centro de cada boton tiene que devolver ese boton, no otra cosa.
+     *
+     * Eran tres. `btn-run` se fue en la 16.5 con la segunda velocidad y
+     * `btn-attack` con el combate automatico (D-28): queda la pausa, que
+     * no es una accion del juego sino una del telefono.
+     */
+    for (const id of ['btn-pause']) {
       const quien = await page.evaluate((idBoton) => {
         const b = document.getElementById(idBoton);
         const r = b.getBoundingClientRect();
@@ -103,7 +108,6 @@ test.describe('el toque llega a donde tiene que llegar', () => {
 
     const medio = await page.evaluate(() => innerWidth / 2);
     const joystick = await page.locator('#joystick').boundingBox();
-    const boton = await page.locator('#btn-attack').boundingBox();
 
     const centro = (c) => c.x + c.width / 2;
 
@@ -113,15 +117,16 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     ).toBeGreaterThan(medio);
 
     /*
-     * Y el botón, del otro lado. Es provisorio: D-27 está escrita para un
-     * mundo sin botones de acción, y el de disparar se va en la Fase 17 con
-     * el combate automático (D-28). Hasta entonces no puede compartir el
-     * pulgar con el joystick.
+     * Y ahora el joystick esta SOLO abajo. Eso tiene una trampa propia que
+     * costo un arreglo: `.hud-bottom` repartia a sus hijos con
+     * `space-between`, y con un solo hijo eso lo manda a la izquierda. El
+     * joystick se dibujo del lado equivocado otra vez, por un motivo
+     * distinto del de la 16.7 y con el mismo resultado.
+     *
+     * Por eso esta prueba no se cambio cuando se borro el boton: mide lo
+     * que importa —donde descansa el joystick— y no quien lo acompaña.
      */
-    expect(
-      centro(boton),
-      `el boton de disparar se pisa con el joystick`
-    ).toBeLessThan(medio);
+    await expect(page.locator('.btn-action')).toHaveCount(0);
   });
 
   test('el joystick aparece al apoyar el dedo y mueve al jugador', async ({ page }) => {
@@ -270,28 +275,18 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     await toque('touchEnd', arriba);
   });
 
-  test('tocar ATACAR dispara el ataque', async ({ page }) => {
-    await page.goto('/');
-    await page.locator('#btn-start').click();
-    await expect(page.locator('#screen-hud')).toBeVisible();
-
-    const caja = await page.locator('#btn-attack').boundingBox();
-    const cx = caja.x + caja.width / 2;
-    const cy = caja.y + caja.height / 2;
-
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchStart',
-      touchPoints: [{ x: cx, y: cy }]
-    });
-
-    // El arma tiene que haber salido de LISTA.
-    await page.waitForFunction(() => globalThis.game.arma.estado !== 'LISTA', null, {
-      timeout: 10000
-    });
-
-    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-  });
+  /*
+   * ---------------------------------------------------------------------
+   * ACA SE PROBABA QUE TOCAR *ATACAR* DISPARABA
+   * ---------------------------------------------------------------------
+   * Buscaba el boton, le mandaba un `touchStart` real por CDP y esperaba
+   * que el arma saliera de LISTA.
+   *
+   * Se fue con el boton (D-28): ya no hay forma de disparar con el dedo.
+   * Lo que la reemplaza no es una prueba tactil sino una de juego —
+   * `combateAuto.test.js` y la marca de blanco—, porque lo que dispara
+   * ahora es **quedarse quieto con alguien cerca**, y eso no se toca.
+   */
 
   test('el boton de empezar responde a un toque real', async ({ page }) => {
     await page.goto('/');
