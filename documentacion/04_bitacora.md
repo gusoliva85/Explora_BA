@@ -5431,6 +5431,105 @@ cuatro tiros.
 
 ---
 
+## 17.4 — Revalidar no es reelegir
+
+**21 de noviembre de 2026.**
+
+El blanco se suelta cuando deja de servir, y busca otro en el acto. Tres
+causas, y las tres terminan en lo mismo: **seguir disparándole sería tirar
+tiempo mientras otro zombi se acerca.**
+
+| Pasa esto | Por qué invalida |
+|---|---|
+| Murió | Gus le seguiría disparando a un cadáver mientras otro lo muerde |
+| Salió del alcance | Más allá de 28 m el tiro no llega: es sólo ruido |
+| Se perdió de vista | Dobló una esquina o se metió detrás de un auto (D-36) |
+
+### La distinción entera de la tarea, en una línea
+
+> **Se revalida al actual; no se lo compara contra los demás.**
+
+Parece obvio escrito así, y es exactamente lo que más fácil se rompe al
+implementarlo. Revalidar en cada cuadro se parece peligrosamente a **elegir**
+en cada cuadro: las dos cosas recorren la lista, las dos miran distancia y
+visión, y la diferencia está sólo en qué se hace con el resultado.
+
+Si el actual sigue vivo, en rango y a la vista, **se queda** — aunque haya
+otro a la mitad de distancia. Recién cuando deja de servir se abre la
+búsqueda.
+
+Y si eso se confunde vuelve el problema que la 17.3 resolvió: con cuatro
+tiros por zombi (D-31), un blanco que cambia solo garantiza que ninguno
+llegue nunca a los cuatro, y **el combate automático no mata a nadie**.
+Tiene su prueba, con el competidor puesto a la mitad de distancia y diez
+cuadros seguidos exigiendo que no cambie.
+
+### Pero la posición sí se refresca, y eso no es contradictorio
+
+El blanco es una foto del momento en que el jugador frenó. **Su posición
+no.** El zombi camina.
+
+Es una distinción fina que conviene tener escrita porque las dos frases
+suenan opuestas: *la elección* es una foto, *el seguimiento* no. Lo que se
+congela es **a quién**, no **dónde está**. Si se congelara la posición, la
+17.5 haría girar a Gus hacia donde el zombi estaba hace dos segundos, y le
+dispararía a un lugar vacío.
+
+Así que la revalidación aprovecha el viaje: ya calculó distancia y rumbo
+para decidir si sigue sirviendo, y los guarda. Sale gratis y es justo lo que
+la 17.5 necesita.
+
+### La pérdida de vista es inmediata, sin gracia
+
+Lo dejé decidido antes de escribirlo y lo confirmo: **sin retardo**.
+
+Un retardo haría que Gus siga disparándole al auto que lo tapa, que es
+exactamente lo que D-36 vino a impedir. Y sería **invisible**: el jugador
+vería los trazados pegarle a la chapa sin entender por qué nadie se muere.
+Un error que el jugador no puede diagnosticar es peor que uno que se nota.
+
+### Un detalle de implementación que importa más de lo que parece
+
+La revalidación usa **el mismo criterio de visión que la elección**:
+`hit.t < 0.95`, donde el 0,95 es para que el propio cuerpo del blanco no
+cuente como pared.
+
+Si los dos no coincidieran —si la elección fuera más permisiva que la
+revalidación, por ejemplo— pasaría algo feo y difícil de diagnosticar: un
+blanco recién elegido se invalidaría en el cuadro siguiente, se elegiría
+otro, y ese otro también. **Gus cambiaría de objetivo sin parar, varias
+veces por segundo, sin dispararle a ninguno.**
+
+Es el mismo tipo de error que una prueba unitaria no encuentra, porque cada
+mitad funciona perfecto por separado.
+
+### Una prueba mía mal escrita, la cuarta de la fase
+
+La de "sale del alcance" ponía el blanco a 9 m y el competidor a 5, y
+esperaba que eligiera el de 9. Obvio que no: elige al **más cercano**.
+
+Van cuatro en la Fase 17 —el diagnóstico de la 17.2, la distancia de la
+17.3, el abanico de la 17.3 ter y ésta—. Las cuatro fallaron apuntando a mí
+y no al código. Ya no me sorprende, y **esa es la parte buena**: escribir la
+prueba primero sigue saliendo más barato que razonarlo bien de entrada.
+
+### Lo que la 17.4 deja planteado para la 17.5
+
+`rumboForzado` existe y hace exactamente lo que la 17.5 necesita. Pero gira
+**instantáneo y sin suavizado**, y eso estaba bien por una razón que ya no
+vale: el comentario dice *"el pulgar ya es el suavizado"*.
+
+**Ya no hay pulgar.** Si se deja instantáneo, Gus va a girar de golpe como
+una torreta y se pierde la lectura de que está encarando. Si se suaviza
+demasiado, el giro se suma a los 0,15 s del retardo y el primer tiro llega
+tarde.
+
+Y con eso se cierra la decisión que estaba abierta desde el 7/11: **espera a
+estar encarado antes del primer tiro.** Con cuatro tiros por zombi, un
+primer tiro torcido es un cuarto del daño tirado en cada cambio de objetivo.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

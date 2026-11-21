@@ -140,6 +140,118 @@ describe('la linea de vista decide, y vale para los dos lados (D-36)', () => {
   });
 });
 
+describe('cuando el blanco deja de servir', () => {
+  /*
+   * Las tres causas terminan en lo mismo: seguir disparandole seria tirar
+   * tiempo mientras otro zombi se acerca. En un juego donde la unica
+   * decision es cuanto quedarse quieto, eso no es un detalle.
+   */
+  it('si muere, pasa al siguiente sin que el jugador toque nada', () => {
+    /*
+     * Es textual del criterio de salida de la fase. Sin esto, Gus le
+     * seguiria disparando a un cadaver mientras otro lo muerde, y el
+     * jugador no tendria forma de corregirlo salvo moverse, que es
+     * justamente lo que no quiere hacer.
+     */
+    const primero = zombi(0, 4);
+    const segundo = zombi(0, 7);
+    const s = nuevo();
+    expect(s.update(true, ORIGEN, [primero, segundo])).toBe(primero);
+
+    primero.vivo = false;
+    expect(s.update(true, ORIGEN, [primero, segundo])).toBe(segundo);
+  });
+
+  it('si se aleja mas que el alcance del arma, busca otro', () => {
+    // Mas alla del alcance el tiro no llega: dispararle es solo hacer ruido.
+    // El elegido arranca siendo el mas cercano, y despues se va.
+    const elegido = zombi(0, 3);
+    const otro = zombi(8, 0);
+    const s = nuevo({ alcance: 10 });
+    expect(s.update(true, ORIGEN, [elegido, otro])).toBe(elegido);
+
+    elegido.posicion.z = 11;
+    expect(s.update(true, ORIGEN, [elegido, otro])).toBe(otro);
+  });
+
+  it('si se mete detras de algo, lo suelta EN EL ACTO', () => {
+    /*
+     * Sin gracia ni retardo. Un retardo haria que Gus siga disparandole al
+     * auto que lo tapa —justo lo que D-36 vino a impedir— y ademas seria
+     * invisible: el jugador veria los trazados pegarle a la chapa sin
+     * entender por que nadie se muere.
+     */
+    let tapado = false;
+    const z = zombi(0, 4);
+    const otro = zombi(0, -6);
+    const s = nuevo({ rayo: (ax, az, bx, bz) => (tapado && bz > 0 ? { t: 0.5 } : null) });
+    expect(s.update(true, ORIGEN, [z, otro])).toBe(z);
+
+    tapado = true;
+    expect(s.update(true, ORIGEN, [z, otro])).toBe(otro);
+  });
+
+  it('si no queda ninguno valido, no hay blanco y no revienta', () => {
+    const z = zombi(0, 4);
+    const s = nuevo();
+    s.update(true, ORIGEN, [z]);
+    z.vivo = false;
+    expect(s.update(true, ORIGEN, [z])).toBe(null);
+  });
+});
+
+describe('revalidar NO es reelegir', () => {
+  it('un blanco que sigue sirviendo se queda, aunque otro este a la mitad', () => {
+    /*
+     * ESTA es la distincion entera de la clase, y la que mas facil se
+     * rompe al implementar la revalidacion: revalidar cada cuadro se
+     * parece peligrosamente a ELEGIR cada cuadro.
+     *
+     * Se revalida al actual; no se lo compara contra los demas. Si eso se
+     * confunde, con cuatro tiros por zombi (D-31) ninguno llega nunca a
+     * los cuatro y el combate automatico no mata a nadie.
+     */
+    const elegido = zombi(0, 8);
+    const otro = zombi(0, 20);
+    const s = nuevo();
+    expect(s.update(true, ORIGEN, [elegido, otro])).toBe(elegido);
+
+    otro.posicion.z = 4; // la mitad de distancia
+    for (let i = 0; i < 10; i++) {
+      expect(s.update(true, ORIGEN, [elegido, otro])).toBe(elegido);
+    }
+  });
+
+  it('pero la POSICION del blanco si se refresca: el zombi camina', () => {
+    /*
+     * El blanco es una foto del momento en que se eligio; su posicion no.
+     * Lo que la 17.5 necesita para girar es hacia donde esta AHORA, no
+     * hacia donde estaba cuando lo eligieron.
+     */
+    const z = zombi(0, 10);
+    const s = nuevo();
+    s.update(true, ORIGEN, [z]);
+    expect(s.distancia).toBeCloseTo(10, 6);
+
+    z.posicion.z = 4;
+    s.update(true, ORIGEN, [z]);
+    expect(s.actual).toBe(z);
+    expect(s.distancia).toBeCloseTo(4, 6);
+  });
+
+  it('y el rumbo tambien, o Gus le dispararia a donde estaba', () => {
+    const z = zombi(0, 10);
+    const s = nuevo();
+    s.update(true, ORIGEN, [z]);
+    const rumboAntes = s.rumbo;
+
+    z.posicion.x = 10;
+    z.posicion.z = 0;
+    s.update(true, ORIGEN, [z]);
+    expect(s.rumbo).not.toBeCloseTo(rumboAntes, 1);
+  });
+});
+
 describe('reiniciar', () => {
   it('olvida el blanco y el estado de quieto', () => {
     /*

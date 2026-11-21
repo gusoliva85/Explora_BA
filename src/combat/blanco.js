@@ -1,4 +1,5 @@
 import { objetivoAutomatico } from './objetivo.js';
+import { rumboHacia } from '../core/rumbo.js';
 
 /**
  * ===========================================================================
@@ -82,17 +83,28 @@ export class SelectorDeBlanco {
     this.quietoAntes = true;
 
     /*
-     * El `|| !this.actual` no es un parche: es el caso de pararse donde no
-     * hay nadie. Si el jugador frena en una cuadra vacia y un zombi dobla
-     * la esquina tres segundos despues, tiene que empezar a dispararle sin
-     * necesidad de moverse y volver a frenar.
+     * Se REVALIDA al actual; no se lo compara contra los demas.
      *
-     * ⚠️ **Lo que todavia NO hace es soltar un blanco que dejo de servir**
-     * —que murio, que se alejo, que quedo tapado—. Eso es la 17.4, y hasta
-     * que exista un blanco muerto se queda elegido. No rompe nada porque
-     * la 17.3 todavia no dispara.
+     * Es la distincion entera de esta clase y conviene tenerla a la vista,
+     * porque revalidar cada cuadro se parece peligrosamente a **elegir**
+     * cada cuadro, que es justo lo que no hay que hacer:
+     *
+     *   - Si el actual sigue sirviendo, **se queda**, aunque haya otro a la
+     *     mitad de distancia.
+     *   - Recien cuando deja de servir se abre la busqueda.
+     *
+     * Si eso se confunde, vuelve el problema de la 17.3: con cuatro tiros
+     * por zombi (D-31), un blanco que cambia solo garantiza que ninguno
+     * llegue nunca a los cuatro, y el combate automatico no mata a nadie.
+     *
+     * El `|| !this.actual` tampoco es un parche: es el caso de pararse
+     * donde no hay nadie. Si el jugador frena en una cuadra vacia y un
+     * zombi dobla la esquina tres segundos despues, tiene que empezar a
+     * dispararle sin necesidad de moverse y volver a frenar.
      */
-    if (entroRecien || !this.actual) this.#elegir(origen, objetivos);
+    if (entroRecien || !this.#sigueSiendoValido(origen)) {
+      this.#elegir(origen, objetivos);
+    }
     return this.actual;
   }
 
@@ -102,6 +114,55 @@ export class SelectorDeBlanco {
     this.quietoAntes = false;
     this.distancia = 0;
     this.rumbo = 0;
+  }
+
+  /**
+   * ¿El blanco actual todavia sirve?
+   *
+   * Tres cosas lo invalidan, y las tres terminan en lo mismo: **seguir
+   * disparandole seria tirar tiempo mientras otro zombi se acerca.** En un
+   * juego donde la unica decision es cuanto tiempo quedarse quieto, eso no
+   * es un detalle.
+   *
+   * | Pasa esto | Por que invalida |
+   * |---|---|
+   * | Murio | Gus le seguiria disparando a un cadaver |
+   * | Salio del alcance | Mas alla de 28 m el tiro no llega: es solo ruido |
+   * | Se perdio de vista | Doblo una esquina o se metio detras de un auto (D-36) |
+   *
+   * **La perdida de vista es inmediata, sin gracia ni retardo.** Un retardo
+   * haria que Gus siga disparandole al auto que lo tapa, que es exactamente
+   * lo que D-36 vino a impedir. Y seria invisible: el jugador veria los
+   * trazados pegarle a la chapa sin entender por que nadie se muere.
+   */
+  #sigueSiendoValido(origen) {
+    const z = this.actual;
+    if (!z || !z.vivo) return false;
+
+    const q = z.posicion;
+    const dx = q.x - origen.x;
+    const dz = q.z - origen.z;
+    const d = Math.hypot(dx, dz);
+    if (d > this.alcance) return false;
+
+    if (this.rayo) {
+      const hit = this.rayo(origen.x, origen.z, q.x, q.z, this.altura ?? 0);
+      // `t` cerca de 1 es el propio cuerpo del blanco, no una pared. Es el
+      // mismo criterio que usa `objetivoAutomatico` al elegir: si los dos
+      // no coincidieran, un blanco recien elegido podria invalidarse en el
+      // cuadro siguiente y Gus cambiaria de objetivo sin parar.
+      if (hit && hit.t < 0.95) return false;
+    }
+
+    /*
+     * Y de paso se refrescan distancia y rumbo. **El blanco es una foto
+     * del momento en que se eligio, pero su POSICION no**: el zombi camina,
+     * y lo que la 17.5 necesita para girar es hacia donde esta ahora, no
+     * hacia donde estaba cuando lo eligieron.
+     */
+    this.distancia = d;
+    this.rumbo = rumboHacia(dx, dz);
+    return true;
   }
 
   #elegir(origen, objetivos) {
