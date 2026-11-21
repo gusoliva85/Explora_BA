@@ -385,15 +385,17 @@
  * El boton que lo provoco era el de la bazooka, que se borro en la Fase
  * 16.3. La regla queda, porque el error no era del boton.
  */
-.btn.btn-interact {
-  background: radial-gradient(circle at 50% 36%, rgba(255, 182, 39, 0.42), rgba(130, 84, 8, 0.5));
-  border-color: rgba(255, 182, 39, 0.6);
-  animation: respira 1.8s ease-in-out infinite;
-}
-@keyframes respira {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 182, 39, 0.35); }
-  50% { box-shadow: 0 0 0 10px rgba(255, 182, 39, 0); }
-}
+/* --- Interactuar: no hay ---------------------------------------------------
+   Aca vivian `.btn-interact` y la animacion `respira`, que era un halo que
+   latia cada 1,8 s. Era el unico boton del juego que aparecia y desaparecia
+   solo, y el latido existia para que se notara al aparecer sin tener que
+   mirarlo. Se fue en la 16.6 (ver la bitacora: ya estaba muerto desde la
+   16.1, nada lo mostraba nunca).
+
+   Lo que deja escrito, y vale para cualquier aviso futuro: **un elemento que
+   aparece en medio de la accion necesita movimiento, no color.** El color se
+   lee mirando; el movimiento se nota con el ojo en otro lado, que es donde
+   esta el ojo del jugador cuando el aviso importa. */
 
 /* --- Paneles de pantalla completa ----------------------------------------- */
 

@@ -4545,6 +4545,93 @@ lo que puede quedar huérfano es el que manda, no el mandado.
 
 ---
 
+## 16.6 — Interactuar, que estaba muerto hacía cinco tareas y nadie lo notó
+
+**20 de noviembre de 2026.**
+
+**Lo que se fue.** `PLAYER.interactRange`, el botón `btn-interact` con su
+CSS y su animación `respira`, la tecla `E`, el botón `interact` del gestor
+de entrada y el evento `EV.INTERACT_AVAILABLE`.
+
+Queda **un solo botón de acción**: DISPARAR. Había seis.
+
+### La tarea más corta de la fase, y el hallazgo más incómodo
+
+Abrí la tarea esperando desconectar un sistema. No había sistema. Al buscar
+quién usaba cada pieza, la cuenta dio esto:
+
+| Pieza | Quién la usaba |
+|---|---|
+| `EV.INTERACT_AVAILABLE` | **Nadie lo emite. Nadie lo escucha.** |
+| `btn-interact` | Nace con `hidden` y **ningún código se la saca nunca** |
+| `wasPressed('interact')` | **No existe en todo el proyecto** |
+| `PLAYER.interactRange` | **No lo lee nadie** |
+
+El sistema entero estaba muerto **desde la 16.1**, cuando se fueron los
+ítems del piso. Lo que quedó no fue un sistema a medias: fue **la cáscara
+completa, sin nada adentro**, en cinco archivos distintos.
+
+### Por qué sobrevivió cinco tareas, que es lo que importa
+
+Las tres tareas anteriores terminaron con un `grep` de los nombres que
+deberían haber desaparecido. Ninguna lo encontró, y la razón es simple y
+vale escribirla: **buscás lo que acabás de borrar.** La 16.1 borró ítems y
+buscó "item", "botiquin", "municion". Nadie buscó "interact", porque
+interactuar no se estaba borrando: se estaba quedando sin para qué.
+
+> **La regla que agrega esta tarea.** Después de borrar un sistema, el
+> `grep` no alcanza. Hay que preguntarse **quién le hablaba al que se fue**,
+> y revisar si a ése le queda alguien con quien hablar. Un sistema no muere
+> cuando se borra su código: muere cuando se borra el último que lo
+> necesitaba, y eso pasa en otro archivo y otro día.
+
+Y una segunda, más incómoda: **el botón se veía bien en todas las capturas**
+de las cinco tareas anteriores, justamente porque nunca se mostraba. Un
+elemento permanentemente invisible pasa cualquier revisión visual.
+
+### El evento que sí se queda, y con fecha
+
+En el mismo barrido apareció `EV.NOISE_EMITTED`: lo emite `spawnManager` en
+cada ruido, con posición, alcance y cuántos zombis alertó, y **no lo escucha
+nadie**. Por el criterio de la fase —no queda código muerto— se iba.
+
+Se queda, y el motivo está escrito en `events.js` al lado: **lo va a
+consumir la Fase 11, el audio**, que es exactamente un sistema que necesita
+enterarse de cada estruendo con su posición. La diferencia con
+`INTERACT_AVAILABLE` no es de forma sino de futuro: aquél no tenía a quién
+esperar, porque el sistema que lo iba a usar ya se había borrado; éste
+espera a una fase que está en el plan.
+
+**Y queda con vencimiento:** si la Fase 11 pasa y nadie lo escucha, se
+borra. Un hook sin fecha es código muerto con mejor prensa.
+
+### Lo que deja escrito el botón que latía
+
+`.btn-interact` tenía una animación, `respira`: un halo que crecía y se
+desvanecía cada 1,8 s. Era el único botón del juego que aparecía y
+desaparecía solo, y el latido estaba para que se notara al aparecer.
+
+El comentario quedó en el CSS aunque el botón no, igual que la regla de
+especificidad de la 16.3: **un elemento que aparece en medio de la acción
+necesita movimiento, no color.** El color se lee mirando; el movimiento se
+nota con el ojo en otro lado, que es donde está el ojo del jugador cuando el
+aviso importa. La 19A va a necesitar exactamente eso para el cartel de la
+esclusa.
+
+### Lo que la 16.6 deja planteado para la 16.7
+
+La 16.7 es la primera tarea de la fase que **no borra: mueve**. Y trae un
+choque que conviene ver antes de empezar: el joystick se va a la mitad
+derecha y **el botón de disparar ya está abajo a la derecha**. Se pisan.
+
+Las tres salidas son subir el botón, achicar la zona del joystick, o que el
+botón desaparezca y el arrastre del pulgar sea todo. **La tercera es la que
+se lleva mejor con la Fase 17**, donde el combate pasa a ser automático y el
+botón deja de existir igual. Conviene decidirlo sabiendo eso y no
+descubrirlo dos tareas después.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

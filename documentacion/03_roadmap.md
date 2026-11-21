@@ -24,34 +24,42 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.6 — Sacar interactuar** · sexta de la poda
+### **16.7 — El joystick a la derecha** · séptima de la poda
 
-**Qué se saca.** El botón `E` y todo el sistema de interacción. **Ya no hay
-nada con lo que interactuar**: los ítems del piso se fueron en la 16.1 y los
-controles se toman caminándolos.
+**Qué cambia.** El joystick pasa a la **mitad derecha** de la pantalla y la
+cámara a la izquierda (**D-27**). Es la primera tarea de la fase que **no
+borra nada**: mueve.
+
+**Por qué, y es la razón de que D-27 exista.** Con un solo botón de acción
+—DISPARAR, abajo a la derecha— el pulgar derecho hace dos cosas que no
+pueden convivir: mover y disparar. Hoy el pulgar derecho arrastra la cámara
+y el izquierdo mueve; el botón queda debajo del pulgar que ya está ocupado
+apuntando. Invertido, el derecho mueve **y** dispara con el mismo gesto —el
+botón es un joystick de apuntado al arrastrarlo— y el izquierdo sólo mira.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/config/balance.js` | se va `PLAYER.interactRange` |
-| `src/input/inputManager.js` | se van el botón `interact` y la tecla `E` |
-| `index.html` y `hud.css` | se va `btn-interact` con su animación `respira` |
-| `src/main.js` | se van el `bindHudButton` y lo que mire `wasPressed('interact')` |
-| `src/ui/hud.js` | lo que muestre y esconda el botón |
-| pruebas | lo que quede en `controles.spec.js` y `mobile.spec.js` |
+| `src/input/inputManager.js` | la mitad que escucha el joystick y la que escucha la cámara se intercambian |
+| `index.html` y `hud.css` | el joystick se dibuja a la derecha; el botón puede necesitar correrse |
+| pruebas | `controles.spec.js` toca coordenadas concretas: hay que darlas vuelta, no borrarlas |
 
-**Lo que hay que mirar con cuidado.** El botón de interactuar es el único
-que **aparece y desaparece solo**, y eso lo hace distinto de los otros tres:
-hay código que decide cuándo mostrarlo, y ese código es más fácil de olvidar
-que el botón. La 16.3 dejó escrita una regla de especificidad de CSS que nació
-precisamente de un botón que se escondía; hay que confirmar que la clase
-`.hidden` quede sin usuarios huérfanos.
+**Lo que hay que mirar con cuidado, y es distinto de todo lo anterior.**
+Esto no se valida con pruebas: se valida **con el pulgar, en el teléfono**.
+Una prueba de punta a punta puede confirmar que el toque llega al elemento
+correcto, y eso hay que mantenerlo; lo que no puede decir es si el pulgar
+derecho alcanza el joystick sin recolocar la mano. El criterio de salida de
+la fase lo pide explícitamente.
 
-**Y lo de siempre, que ya pasó cinco veces:** después de borrar, `grep` de
-los nombres que deberían haber desaparecido, **y también del que los pedía**.
+**Y hay una decisión que resolver mirando:** el botón de disparar está abajo
+a la derecha, que es donde va a estar el joystick. **Se van a pisar.** Hay
+tres salidas —subir el botón, achicar la zona del joystick, o que el botón
+desaparezca y el arrastre del pulgar sea todo— y la tercera es la que mejor
+se lleva con la Fase 17, donde el combate pasa a ser automático y el botón
+deja de existir. Conviene decidirlo sabiendo eso.
 
-**Cómo se sabe que está lista:** queda **un solo botón de acción** en
-pantalla —DISPARAR—, no hay tecla `E`, la consola está limpia y todo en
-verde. La 16.7 mueve ese botón y la 16.8 ordena lo que quede.
+**Cómo se sabe que está lista:** el joystick se alcanza con el pulgar
+derecho sin mover la mano, probado en el teléfono; la cámara responde en la
+mitad izquierda; el botón no se pisa con el joystick; todo en verde.
 
 ---
 
@@ -1055,8 +1063,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 - [x] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma, el cohete y la explosión ✅ *8/11/2026 — y `objetivoAutomatico()` rescatado a `combat/objetivo.js`*
 - [x] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola ✅ *20/11/2026 — 1.311 líneas borradas y 611 escritas, 20 archivos; `tests/arma.test.js` murió entero*
 - [x] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30) ✅ *20/11/2026 — se va `walkSpeed`, `isRunning`, `Pose.CAMINAR` y el botón CORRER; `runSpeed` pasa a llamarse `speed`*
-- [ ] **16.6 Interactuar.** Ya no hay nada con lo que interactuar ⬅️ *la que sigue*
-- [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27)
+- [x] **16.6 Interactuar.** Ya no hay nada con lo que interactuar ✅ *20/11/2026 — estaba muerto entero desde la 16.1: ni emisor, ni oyente, ni nada que lo mostrara*
+- [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27) ⬅️ *la que sigue*
 - [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick
 
 ### ⚠️ Lo que se rescata antes de borrar
@@ -1088,7 +1096,7 @@ uno recuerda — es el que quedó guardado en el lugar equivocado.
 
 **Criterio de salida**
 
-- [ ] No hay un solo botón de acción en pantalla
+- [ ] No hay un solo botón de acción en pantalla — *queda DISPARAR, y se va en la Fase 17 con el combate automático. Los otros cinco ya no están*
 - [ ] No queda código muerto de nada de lo borrado: ni import, ni rama, ni CSS
 - [ ] Ninguna constante huérfana en `balance.js`
 - [ ] El joystick se alcanza con el pulgar derecho, probado en el teléfono

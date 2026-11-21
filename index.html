@@ -35,12 +35,12 @@
           <!-- Cada esquema de ayuda se muestra segun el modo detectado. -->
           <p class="hint desktop-only">
             <b>WASD</b> mover &middot; <b>Mouse</b> camara &middot; <b>Shift</b> correr &middot;
-            <b>Click</b> disparar &middot; <b>E</b> interactuar &middot;
+            <b>Click</b> disparar &middot;
             <b>R</b> curarse &middot; <b>Esc</b> pausa &middot; <b>F1</b> diagnostico
           </p>
           <p class="hint touch-only">
             <b>Dedo izquierdo</b> mover &middot; <b>Dedo derecho</b> mirar &middot;
-            <b>Botones</b> atacar, correr e interactuar &middot; <b>Tres dedos</b> diagnostico
+            <b>Boton</b> disparar &middot; <b>Tres dedos</b> diagnostico
             <br />Conviene jugar con el telefono en horizontal.
           </p>
         </div>
@@ -100,17 +100,13 @@
           <!-- Botones de accion: solo en modo tactil. En escritorio estorban,
                porque la misma accion ya esta en el teclado. -->
           <div class="action-cluster touch-only">
-            <!-- Aca habia dos botones mas y una fila entera.
-                 La fila tenia recargar y cambiar de arma; el boton de al
-                 lado era CORRER, y se fue en la 16.5 con la segunda
-                 velocidad (D-30).
+            <!-- Aca habia tres botones mas y dos filas enteras: recargar y
+                 cambiar de arma (16.2 y 16.4), CORRER (16.5) y el de
+                 interactuar (16.6). Queda uno.
                  Lo que dejaron escrito, y vale para la 16.8: los botones NO
                  se corren hacia el centro de la pantalla, porque el tercio
                  central tiene que quedar libre: ahi pasa la accion, y una
                  mano tapandolo es el peor error posible en vertical. -->
-            <div class="action-row">
-              <button id="btn-interact" class="btn btn-action btn-interact hidden">E</button>
-            </div>
             <div class="action-row">
               <button id="btn-attack" class="btn btn-action btn-attack">DISPARAR</button>
             </div>

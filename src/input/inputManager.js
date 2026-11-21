@@ -47,9 +47,13 @@ export class InputManager {
     /** true mientras el arrastre pasa el umbral y hay direccion de apuntado. */
     this.apuntando = false;
 
+    /*
+     * Queda **un solo boton**. Habia seis: correr, atacar, interactuar,
+     * recargar, curarse y la bazooka. Se fueron cinco entre la 16.1 y la
+     * 16.6.
+     */
     this.buttons = {
-      attack: false,
-      interact: false
+      attack: false
     };
     /** Botones que se activaron en este frame (flanco de subida). */
     this.pressed = new Set();
@@ -118,11 +122,16 @@ export class InputManager {
 
   #bindKeyboard() {
     const KEYMAP = {
-      KeyE: 'interact',
-      // R (recargar), H (curarse), F (bazooka), Q (cambiar de arma) y
-      // Shift (correr) se fueron en la Fase 16 con la municion, los
-      // botiquines, el sistema de bomba, el cuchillo y la segunda
-      // velocidad. No queda nada que alternar ni que mantener apretado.
+      /*
+       * Una tecla. R (recargar), H (curarse), F (bazooka), Q (cambiar de
+       * arma), Shift (correr) y E (interactuar) se fueron en la Fase 16 con
+       * la municion, los botiquines, el sistema de bomba, el cuchillo, la
+       * segunda velocidad y los items del piso.
+       *
+       * No queda nada que alternar, nada que mantener apretado y nada con
+       * lo que interactuar: moverse es con WASD y lo unico que se aprieta
+       * es el gatillo.
+       */
       Space: 'attack'
     };
 

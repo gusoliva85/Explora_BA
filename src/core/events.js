@@ -49,6 +49,25 @@ export const EV = {
   CHECKPOINT_REACHED: 'mission:checkpoint',
   MISSION_COMPLETE: 'mission:complete',
   OBJECTIVE_CHANGED: 'mission:objective',
-  NOISE_EMITTED: 'world:noise',
-  INTERACT_AVAILABLE: 'player:interactAvailable'
+  /**
+   * Un ruido salio al mundo.
+   *
+   * ⚠️ **Lo emite `spawnManager`, y hoy NO lo escucha nadie.** Queda, y
+   * queda a proposito, con fecha: **lo va a consumir la Fase 11 (audio)**,
+   * que es exactamente un sistema que necesita enterarse de cada estruendo
+   * con su posicion y su alcance.
+   *
+   * Se revisa la 16.6, donde se borro `INTERACT_AVAILABLE` justamente por
+   * ser un evento sin emisor ni oyente. La diferencia es que aquel no tenia
+   * a quien esperar —el sistema que lo iba a usar se habia borrado— y este
+   * espera a una fase que esta en el plan. Si la 11 pasa y nadie lo
+   * escucha, se borra.
+   */
+  NOISE_EMITTED: 'world:noise'
+  /*
+   * Habia un `INTERACT_AVAILABLE: 'player:interactAvailable'`, y se fue en
+   * la Fase 16.6. No lo emitia nadie y no lo escuchaba nadie: era el aviso
+   * de "hay algo que podes levantar", y lo que podia levantarse se borro en
+   * la 16.1 con los items.
+   */
 };

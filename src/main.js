@@ -576,7 +576,6 @@ byId('btn-restart-lose').addEventListener('click', () => startMission({ fromChec
  * apuntado.
  */
 input.bindAimButton(byId('btn-attack'), 'attack');
-input.bindHudButton(byId('btn-interact'), 'interact');
 
 /*
  * Ajustes del menu de pausa.

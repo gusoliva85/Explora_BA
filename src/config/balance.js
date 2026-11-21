@@ -57,8 +57,6 @@ export const PLAYER = {
   turnSpeed: 720,
   /** Resistencia para correr, en segundos de carrera continua. 0 = sin limite. */
   staminaSeconds: 0,
-  /** Distancia a la que aparece el boton de interactuar. */
-  interactRange: 1.8,
   /** Segundos de invulnerabilidad despues de recibir un golpe. */
   damageInvulnerability: 0.6
 };
