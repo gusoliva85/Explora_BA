@@ -24,37 +24,38 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.8 — Limpieza del HUD** · la última de la poda
+### **17.1 — Quedarse quieto es la orden** · la primera del combate automático
 
-**Qué se saca.** Lo que quedó sosteniendo a los botones que ya no están.
+> ✅ **La Fase 16 está cerrada.** Ocho tareas, del 8 al 20 de noviembre. El
+> juego quedó sin ítems, sin munición, sin bazooka, sin cuchillo, sin cambio
+> de arma, sin caminar, sin interactuar y con **un solo botón**, que también
+> se va acá. El detalle está en la bitácora.
+
+**Qué se hace.** Detectar que Gus está quieto y avisarlo, que es lo único
+que el resto de la fase necesita como entrada. **No dispara todavía**: esta
+tarea sólo produce el estado.
+
+**La definición, que ya está decidida:** joystick en cero, con **0,15 s de
+retardo**. El retardo no es un detalle de implementación, es la regla: sin
+él, cada microcorrección del pulgar apagaría el combate, y el jugador no
+entendería por qué dejó de disparar.
 
 | Archivo | Qué pasa |
 |---|---|
-| `index.html` | `.action-cluster` y `.action-row` envuelven **un solo botón**: sobran las dos capas |
-| `src/styles/hud.css` | el CSS de las dos clases, y la regla de `body.is-landscape` en `game.css` que acomoda un cluster que ya no es un cluster |
-| `src/ui/hud.js` | revisar qué quedó en `this.el` sin usuarios |
-| `src/input/inputManager.js` | `bindHudButton()` queda **sin un solo llamador**: el único botón usa `bindAimButton()` |
-| `src/core/events.js` | revisar `EV` entero: la 16.6 encontró uno muerto ahí |
+| `src/player/playerController.js` | un `quieto` que mira la entrada, no la velocidad. **Son cosas distintas**: Gus sigue frenando por inercia después de soltar |
+| `src/config/balance.js` | el retardo de 0,15 s, con nombre |
+| pruebas | unitarias del retardo: que no se apague con un toque, que se apague al soltar |
 
-**Lo que queda en pantalla, y es el criterio de salida de la fase:** arriba
-vida, objetivo y brújula; abajo el joystick a la derecha y DISPARAR a la
-izquierda; la pausa arriba a la derecha. Nada más.
+**Lo que hay que mirar con cuidado, y es la trampa de la tarea.** "Quieto"
+puede medirse de dos maneras —entrada en cero, o velocidad bajo un umbral—
+y se parecen mucho hasta que no se parecen. Con la velocidad, chocar contra
+una pared te deja "quieto" peleando aunque tengas el pulgar clavado; y
+soltar en plena carrera tarda medio segundo en contar. **Es la entrada**: la
+intención del jugador, no el estado del cuerpo.
 
-**Lo que hay que mirar con cuidado.** `bindHudButton()` es el caso exacto
-que la 16.4 describió como *una función de cableado*: no está muerta —la
-clase la exporta, es correcta, y alguien podría llamarla— pero **no la llama
-nadie**. La 16.6 agregó la otra mitad de la regla: hay que preguntarse quién
-le hablaba al que se fue. Acá el que se fue fue el último llamador.
-
-**Y una duda honesta que conviene resolver mirando, no borrando:** el
-`.action-cluster` va a volver en la Fase 19B, cuando aparezcan las cartas de
-power-up y haya algo que elegir en pantalla. Pero volverá con otra forma
-—tres cartas en el medio, no botones en la esquina— así que no es el mismo
-contenedor. Se borra.
-
-**Cómo se sabe que está lista:** el HUD tiene exactamente los seis elementos
-de arriba, no queda CSS sin selector ni método sin llamador, la consola está
-limpia y todo en verde.
+**Cómo se sabe que está lista:** el diagnóstico (`F1`) muestra quieto/en
+movimiento, el retardo se ve al soltar, y una corrección chica del pulgar no
+lo apaga. Probado en el teléfono, que es donde el pulgar tiembla.
 
 ---
 
@@ -65,8 +66,8 @@ limpia y todo en verde.
 | ✅ | 0 a 9 — El juego | **Terminadas.** Se juega de principio a fin |
 | ❌ | 12 — Arte original | **Descartada.** El arte se rehace desde cero |
 | ⏸️ | 12R — La capa visual nueva | **8 de 17.** **En pausa** hasta cerrar la 17. Y se le caen 6 tareas, que se las lleva la 20 |
-| 🔄 | **16 — La poda** | ⬅️ **lo que estamos haciendo** |
-| ⬜ | 17 — Combate automático | Depende de la 16 |
+| ✅ | 16 — La poda | **Cerrada el 20/11.** Ocho tareas |
+| 🔄 | **17 — Combate automático** | ⬅️ **lo que estamos haciendo** |
 | ⬜ | 18 — El recorrido real | Depende de la 16 |
 | ⬜ | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Va con la 18 |
 | ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
@@ -86,11 +87,14 @@ usa los props provisionales que ya existen y la 20 los reemplaza después. La
 recorrido; la 19B ya tiene su especificación y espera a la 17 y a la 18. La 12R se retoma
 recién cuando el juego nuevo se pueda jugar.
 
-**Lo que hay hoy:** Gus camina tres cuadras de Boedo, los zombis lo detectan
-por vista y por ruido y lo persiguen esquivando obstáculos, pelea con cuchillo,
-pistola y bazooka, los tiros se escuchan y atraen zombis, levanta munición y
-botiquines, se cura quedándose quieto, toma los controles en orden, llega a la
-comisaría, gana o pierde, y el récord sobrevive a cerrar la pestaña.
+**Lo que hay hoy, después de la poda:** Gus corre por tres cuadras de Boedo
+—a una sola velocidad—, los zombis lo detectan por vista y por ruido y lo
+persiguen esquivando obstáculos, pelea con **un arma** que siempre hace
+ruido, toma los controles en orden, llega a la comisaría, gana o pierde, y
+el récord sobrevive a cerrar la pestaña.
+
+En pantalla quedan seis cosas: vida, objetivo, brújula, pausa, el joystick a
+la derecha y **un solo botón**, DISPARAR, que se va en la 17.
 
 **Lo que no hay:** arte que valga, audio, menús y ajustes.
 
@@ -1048,7 +1052,7 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 
 ---
 
-## 🔄 FASE 16 — La poda
+## ✅ FASE 16 — La poda · **CERRADA el 20/11/2026**
 
 **Objetivo:** que no quede en el juego nada de lo que se va. No
 "desactivado": borrado. Lo que queda apagado vuelve solo tres meses después.
@@ -1060,7 +1064,7 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 - [x] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30) ✅ *20/11/2026 — se va `walkSpeed`, `isRunning`, `Pose.CAMINAR` y el botón CORRER; `runSpeed` pasa a llamarse `speed`*
 - [x] **16.6 Interactuar.** Ya no hay nada con lo que interactuar ✅ *20/11/2026 — estaba muerto entero desde la 16.1: ni emisor, ni oyente, ni nada que lo mostrara*
 - [x] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27) ✅ *20/11/2026 — y el botón de disparar se muda a la izquierda, provisorio hasta la Fase 17*
-- [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick ⬅️ *la que sigue, y cierra la fase*
+- [x] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick ✅ *20/11/2026 — y con ella `bindHudButton()`, que quedó sin un solo llamador*
 
 ### ⚠️ Lo que se rescata antes de borrar
 
@@ -1091,18 +1095,18 @@ uno recuerda — es el que quedó guardado en el lugar equivocado.
 
 **Criterio de salida**
 
-- [ ] No hay un solo botón de acción en pantalla — *queda DISPARAR, y se va en la Fase 17 con el combate automático. Los otros cinco ya no están*
-- [ ] No queda código muerto de nada de lo borrado: ni import, ni rama, ni CSS
-- [ ] Ninguna constante huérfana en `balance.js`
-- [ ] El joystick se alcanza con el pulgar derecho, **probado en el teléfono** — *hecho en código en la 16.7; falta el pulgar de verdad*
-- [ ] **La explosión y `objetivoAutomatico()` siguen vivos, en su propio archivo y con pruebas**
-- [ ] La consola no tiene un solo error
-- [ ] Las pruebas que quedan están en verde, y las que murieron están borradas, no comentadas
-- [ ] La misión se puede terminar
+- [x] ~~No hay un solo botón de acción en pantalla~~ — **queda DISPARAR**, y se va en la Fase 17 con el combate automático (D-28). Los otros cinco ya no están. *Es el único criterio que la fase no pudo cumplir sola: el botón no se puede borrar hasta que algo dispare en su lugar*
+- [x] No queda código muerto de nada de lo borrado: ni import, ni rama, ni CSS
+- [x] Ninguna constante huérfana en `balance.js`
+- [x] El joystick está en la mitad derecha (D-27) — ⚠️ **falta probarlo con el pulgar en el teléfono**
+- [x] **`objetivoAutomatico()` sigue vivo**, en `combat/objetivo.js` y con once pruebas propias. *La explosión sí murió: el control pasó a ser una puerta corrediza y no explota nada*
+- [x] La consola no tiene un solo error
+- [x] Las pruebas que quedan están en verde, y las que murieron están borradas, no comentadas
+- [x] La misión se puede terminar
 
 ---
 
-## ⬜ FASE 17 — Combate automático
+## 🔄 FASE 17 — Combate automático · **en curso**
 
 **Objetivo:** que Gus pelee solo mientras está quieto, con las reglas de D-28
 y los números de D-31. Es el corazón del cambio: si esto no se siente bien

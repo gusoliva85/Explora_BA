@@ -88,10 +88,13 @@ html, body {
 body:not(.is-touch) .touch-only { display: none; }
 body:not(.is-desktop) .desktop-only { display: none; }
 
-/* En horizontal sobra ancho: las acciones vuelven a una sola fila y el
-   joystick se agranda. Vertical es la orientacion de diseño (D-15), asi que
-   los tamaños por defecto ya son los suyos y no hace falta tocarlos. */
-body.is-landscape .action-cluster { flex-direction: row; align-items: flex-end; }
+/* En horizontal sobra ancho, asi que el joystick se agranda. Vertical es la
+   orientacion de diseño (D-15), asi que los tamaños por defecto ya son los
+   suyos y no hace falta tocarlos.
+
+   Habia una regla mas, que en horizontal volvia las filas de botones a una
+   sola fila. Se fue en la 16.8 con `.action-cluster`: con un boton no hay
+   filas que reacomodar. */
 body.is-landscape .joystick { width: 148px; height: 148px; }
 body.is-landscape .objective { margin-top: 6px; }
 

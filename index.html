@@ -94,20 +94,23 @@
 
         <div class="hud-bottom">
 
-          <!-- Botones de accion: solo en modo tactil. En escritorio estorban,
-               porque la misma accion ya esta en el teclado. -->
-          <div class="action-cluster touch-only">
-            <!-- Aca habia tres botones mas y dos filas enteras: recargar y
-                 cambiar de arma (16.2 y 16.4), CORRER (16.5) y el de
-                 interactuar (16.6). Queda uno.
-                 Lo que dejaron escrito, y vale para la 16.8: los botones NO
-                 se corren hacia el centro de la pantalla, porque el tercio
-                 central tiene que quedar libre: ahi pasa la accion, y una
-                 mano tapandolo es el peor error posible en vertical. -->
-            <div class="action-row">
-              <button id="btn-attack" class="btn btn-action btn-attack">DISPARAR</button>
-            </div>
-          </div>
+          <!-- EL BOTON. Uno, y solo en modo tactil: en escritorio estorba,
+               porque la misma accion ya esta en el teclado.
+
+               Habia seis y dos capas de contenedor para ordenarlos:
+               `.action-cluster` apilaba las filas y `.action-row` ponia los
+               botones de cada fila. Se fueron en la 16.8 junto con el
+               penultimo boton: dos divs para centrar uno solo es andamio.
+
+               Lo que dejaron escrito, porque no era de los botones sino del
+               telefono: **el tercio central queda LIBRE.** Ahi pasa la
+               accion, y una mano tapandolo es el peor error posible en
+               vertical. Cuando la 19B traiga las cartas de power-up, van en
+               el medio y en pantalla quieta: es otra cosa, no vuelve esto.
+
+               Y el boton tambien es provisorio: se va en la Fase 17 con el
+               combate automatico (D-28). -->
+          <button id="btn-attack" class="btn btn-action btn-attack touch-only">DISPARAR</button>
 
           <!-- Joystick virtual: aparece donde el jugador apoya el dedo, y
                descansa ACA, abajo a la derecha.

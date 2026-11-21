@@ -306,21 +306,29 @@ export class InputManager {
     el.addEventListener('pointercancel', up);
   }
 
-  bindHudButton(el, name) {
-    if (!el) return;
-    const down = (e) => {
-      e.preventDefault();
-      this.#setButton(name, true);
-    };
-    const up = (e) => {
-      e.preventDefault();
-      this.#setButton(name, false);
-    };
-    el.addEventListener('pointerdown', down);
-    el.addEventListener('pointerup', up);
-    el.addEventListener('pointercancel', up);
-    el.addEventListener('pointerleave', up);
-  }
+  /*
+   * -------------------------------------------------------------------------
+   * ACA HABIA UN `bindHudButton()`, Y SE FUE EN LA 16.8
+   * -------------------------------------------------------------------------
+   * Conectaba un boton del HUD a un boton logico, con `pointerdown` y
+   * `pointerup` en vez de `click` para que la accion respondiera al apoyar
+   * el dedo y no al soltarlo. Lo usaban correr, interactuar, recargar,
+   * curarse y la bazooka.
+   *
+   * Los cinco se fueron entre la 16.1 y la 16.6, y el unico boton que queda
+   * —disparar— nunca lo uso: usa `bindAimButton()`, que ademas convierte el
+   * arrastre en apuntado.
+   *
+   * No estaba roto. Era correcto, estaba exportado, y cualquiera podria
+   * haberlo llamado. **No lo llamaba nadie**, que es el caso que la 16.4
+   * bautizo "funcion de cableado": codigo sano que existe para sostener a
+   * otro que ya no esta.
+   *
+   * Lo que enseñaba sigue vivo arriba, en `bindAimButton()`: `pointerdown`
+   * y no `click`, y `pointercancel` y `pointerleave` tratados como soltar,
+   * porque un dedo que se va del boton sin levantarse dejaria la accion
+   * apretada para siempre.
+   */
 
   /** Recalcula `move` a partir de teclado o joystick. Llamar antes del update. */
   sample() {

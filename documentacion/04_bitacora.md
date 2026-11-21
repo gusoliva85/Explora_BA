@@ -4721,6 +4721,140 @@ para **un botón**. Las dos se van en la 16.8, que cierra la fase.
 
 ---
 
+## 16.8 — El andamio, y el cierre de la Fase 16
+
+**20 de noviembre de 2026.**
+
+**Lo que se fue.** `.action-cluster` y `.action-row` con su CSS, la regla de
+`body.is-landscape` que las reacomodaba, `bindHudButton()` entero, y la
+referencia `btnAttack` del HUD.
+
+### Dos capas de contenedor para un botón
+
+`.action-cluster` apilaba las filas de botones y `.action-row` alineaba los
+botones de cada fila. Con seis botones y tres filas, eran estructura. Con
+uno, eran **andamio**: dos elementos flex para alinear un solo hijo, que es
+justo lo que el flex del padre ya hacía.
+
+El botón quedó colgando directo de `.hud-bottom`, que es el flex con
+`space-between` que lo manda a la izquierda y manda al joystick a la
+derecha.
+
+**Y hubo una decisión que podía ir para los dos lados.** En la 19B vuelven
+las cartas de power-up, y con ellas algo que elegir en pantalla: ¿no
+convenía dejar el contenedor? No, y la razón es de forma, no de prolijidad:
+las cartas van **tres en el medio, en pantalla quieta**, y esto era
+**botones apilados en una esquina durante la acción**. No es el mismo
+contenedor con otro contenido: es otra cosa que se va a escribir entera.
+
+### `bindHudButton()`, el tercer caso del mismo patrón
+
+Conectaba un botón del HUD a un botón lógico, con `pointerdown`/`pointerup`
+en vez de `click` para que respondiera al apoyar el dedo. Lo usaban correr,
+interactuar, recargar, curarse y la bazooka. **Los cinco se fueron, y el
+único botón que queda nunca lo usó**: disparar usa `bindAimButton()`, que
+además convierte el arrastre en apuntado.
+
+Es el mismo patrón que la 16.4 llamó *función de cableado* y que la 16.6
+encontró del otro lado. Van tres formas de lo mismo, y conviene tenerlas
+juntas porque se buscan distinto:
+
+| Forma | Ejemplo | Cómo se encuentra |
+|---|---|---|
+| El centro que sostiene cosas sanas | `actualizarHudArma()` (16.4) | Preguntándole *para qué sirve ahora* y aceptando "para nada" |
+| La cáscara sin nadie adentro | el sistema de interactuar (16.6) | Preguntándose *quién le hablaba al que se fue* |
+| **La función sin llamadores** | `bindHudButton()` (16.8) | Contando los llamadores, no los usos del nombre |
+
+Las tres son código correcto. Ninguna rompe nada. **Ninguna se encuentra con
+un `grep` del nombre**, porque el nombre está ahí y se lee perfecto.
+
+Lo que sí sobrevive es el detalle que la función enseñaba, y ahora vive en
+`bindAimButton()`: `pointercancel` y `pointerleave` cuentan como soltar,
+porque un dedo que se va del botón sin levantarse dejaría la acción apretada
+para siempre.
+
+### Y un `getElementById` a un botón que el HUD ya no toca
+
+`this.el.btnAttack` lo leía `setArma()`, para alternar el texto del botón
+entre ATACAR y DISPARAR. `setArma()` se borró en la 16.4 y la referencia
+quedó: un `document.getElementById` que se resolvía bien, apuntaba a un
+elemento que existe, y no lo usaba nadie. **El caso más silencioso de los
+cuatro**, porque ni siquiera es una función: es una línea en un objeto.
+
+---
+
+## La Fase 16, cerrada
+
+**Del 8 al 20 de noviembre de 2026. Ocho tareas.**
+
+| | Tarea | Qué se llevó |
+|---|---|---|
+| 16.1 | Los ítems | Munición y botiquines del piso y del sistema entero |
+| 16.2 | La munición | Cargador, reserva, recarga y el estado `RECARGANDO` |
+| 16.3 | La bazooka | El arma, el cohete, la explosión, la barra de 30 s |
+| 16.4 | El cuchillo | El cuerpo a cuerpo, el arco y el cambio de arma |
+| 16.5 | Caminar | La segunda velocidad y el botón CORRER |
+| 16.6 | Interactuar | Un sistema que ya estaba muerto hacía cinco tareas |
+| 16.7 | El joystick | *(no borró: movió)* a la mitad derecha, D-27 |
+| 16.8 | El HUD | El andamio de los botones que ya no estaban |
+
+**El juego quedó así:** una calle, un arma que no se elige, una velocidad
+que no se elige, un botón, y zombis. Arriba vida, objetivo y brújula; abajo
+el joystick a la derecha y DISPARAR a la izquierda.
+
+### Lo que aprendí, que es casi todo lo mismo dicho de cuatro formas
+
+Las ocho tareas borraron código y siete de las ocho encontraron **algo que
+el plan no había previsto**. En todos los casos era código sano que nadie
+usaba, y en ningún caso lo encontró una prueba o la consola.
+
+> **El código muerto no falla, y por eso no se encuentra solo.** Lo escribió
+> la 16.3 y lo confirmaron las cinco tareas siguientes. Lo que se agregó
+> después es *cómo* buscarlo, y son cuatro preguntas distintas:
+>
+> 1. ¿Hay nombres que deberían haber desaparecido? → `grep` (16.3)
+> 2. ¿Esta función del medio sirve para algo ahora? → (16.4)
+> 3. ¿A quién le hablaba el que se fue? → (16.6)
+> 4. ¿Cuántos llamadores tiene esto, no cuántas menciones? → (16.8)
+
+Y una quinta, que no es sobre código muerto sino sobre pruebas, y apareció
+tres veces seguidas:
+
+> **El nombre de un bloque de pruebas dice contra qué se escribió, no qué
+> mide.** `armas.test.js` (16.4), *"caminar se lee como caminar"* (16.5) y
+> las táctiles de la 16.7 iban a morir o quedar mal por el nombre. Cuando
+> una premisa se cae hay que leer prueba por prueba cuál dependía de ella,
+> porque las premisas no se reparten parejo dentro de un archivo.
+
+### Lo que la fase costó, y no está en las líneas borradas
+
+Tres cosas, y conviene que estén juntas porque **ninguna fue un accidente**
+pero las tres cambian el juego:
+
+1. **No hay forma silenciosa de matar** (16.4). Se fue con el cuchillo. Lo
+   confirmó Gus: el sigilo se va y no vuelve.
+2. **No hay forma silenciosa de moverse** (16.5). Se fue con caminar, y de
+   paso escapar dejó de costar: el margen contra el zombi pasó de +0,3 m/s a
+   +3,1.
+3. **El arma no se separa del asfalto** (16.4). Eso sí fue un accidente: el
+   cuchillo le venía tapando el agujero a la pistola, y quedó escrito con
+   `it.fails` para que la 20.8 no lo pase por alto.
+
+Las dos primeras son el diseño: la única decisión que le queda al jugador es
+**dónde pararse y cuánto tiempo**, y para que eso sea una decisión no puede
+haber una salida barata.
+
+### Lo único que la fase no pudo cerrar sola
+
+El criterio decía *"no hay un solo botón de acción en pantalla"*. **Queda
+uno**, DISPARAR, y no se podía borrar: hasta que algo dispare en su lugar,
+borrarlo deja al jugador sin forma de pelear.
+
+Se va en la 17, y por eso la 17 empieza por el estado de "quieto": es lo que
+tiene que existir antes de que el botón pueda desaparecer.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

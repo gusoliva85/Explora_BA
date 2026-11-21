@@ -255,39 +255,22 @@
 }
 
 /*
- * EL BOTON PASA A LA IZQUIERDA, Y ES PROVISORIO (Fase 16.7)
+ * EL BOTON, QUE ES UNO Y ESTA A LA IZQUIERDA, Y LAS DOS COSAS SON PROVISORIAS
  * ---------------------------------------------------------------------------
- * D-27 manda el joystick a la mitad derecha, y el unico boton que queda
- * —DISPARAR— vivia justo ahi. Se pisaban: el jugador apoyaba el pulgar para
- * moverse y encontraba el gatillo.
+ * Habia seis botones, `.action-cluster` para apilar las filas y
+ * `.action-row` para cada fila. Los dos contenedores se fueron en la 16.8:
+ * dos capas de flex para alinear un elemento es andamio, no estructura.
  *
- * D-27 esta escrita para un mundo SIN este boton: dice, textual, que "sin
- * botones de accion la mitad derecha quedaba vacia". Esa mitad no esta
- * vacia todavia, y no lo va a estar hasta la Fase 17, cuando el combate
- * pase a ser automatico (D-28) y el boton desaparezca.
+ * Y esta a la IZQUIERDA por la 16.7. D-27 manda el joystick a la mitad
+ * derecha, y el boton vivia justo ahi: se pisaban. D-27 esta escrita para
+ * un mundo SIN este boton —dice, textual, que "sin botones de accion la
+ * mitad derecha quedaba vacia"— y esa mitad no va a estar vacia hasta la
+ * Fase 17, cuando el combate pase a ser automatico (D-28).
  *
- * Asi que el boton se muda a la izquierda, y queda el esquema clasico de
- * dos pulgares dado vuelta: **el derecho mueve, el izquierdo dispara y
- * apunta.** No es la forma final de nada: es lo que mantiene el juego
- * jugable en el telefono durante las dos tareas que faltan.
- *
- * Cuando la Fase 17 borre el boton, esta regla se va con el y la mitad
- * izquierda vuelve a ser solo camara.
+ * Mientras tanto queda el esquema de dos pulgares dado vuelta: **el derecho
+ * mueve, el izquierdo dispara y apunta.** Cuando la 17 borre el boton, se
+ * va con el todo este bloque y la mitad izquierda vuelve a ser solo camara.
  */
-.action-cluster {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
-  margin-right: auto;
-}
-.action-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
-  gap: 14px;
-}
-
 .btn.btn-action {
   position: relative;
   width: 82px;

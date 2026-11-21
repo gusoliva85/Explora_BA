@@ -45,8 +45,13 @@ export class Hud {
       brujula: document.getElementById('brujula'),
       brujulaFlecha: document.getElementById('brujula-flecha'),
       brujulaTexto: document.getElementById('brujula-texto'),
-      dano: document.getElementById('dano'),
-      btnAttack: document.getElementById('btn-attack')
+      dano: document.getElementById('dano')
+      /*
+       * Habia un `btnAttack` y se fue en la 16.8. Lo leia `setArma()`, para
+       * cambiarle el texto entre ATACAR y DISPARAR segun el arma equipada.
+       * `setArma()` se borro en la 16.4 y la referencia quedo: tres meses
+       * de `document.getElementById` a un boton que el HUD ya no toca.
+       */
     };
 
     // Si el dispositivo cambia de modo (girar, conectar un mouse, forzarlo

@@ -240,7 +240,9 @@ test('arranca en modo tactil, aunque sea una computadora', async ({ page }) => {
 
   await page.locator('#btn-start').click();
   await expect(page.locator('#joystick')).toBeVisible();
-  await expect(page.locator('.action-cluster')).toBeVisible();
+  // Era `.action-cluster`, el contenedor de los seis botones. Se fue en la
+  // 16.8 junto con el penultimo boton: ahora se mira el boton directo.
+  await expect(page.locator('#btn-attack')).toBeVisible();
 });
 
 test('forzar el modo teclado por URL cambia el HUD', async ({ page }) => {
