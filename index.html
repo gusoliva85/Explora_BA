@@ -59,8 +59,9 @@
            Sigue el mockup 3, que es el elegido. Las reglas:
            - Arriba solo informacion. En vertical el borde de arriba queda
              lejos del pulgar, asi que no van botones importantes ahi.
-           - Abajo a la izquierda el joystick, abajo a la derecha las
-             acciones: es donde caen los dos pulgares solos.
+           - El joystick cae en la mitad DERECHA, donde llega el pulgar
+             dominante (D-27). La camara queda en la izquierda. Hasta la
+             16.7 era al reves, porque la derecha la ocupaban seis botones.
            - El tercio central queda LIBRE. Ahi pasa la accion, y una mano
              tapandolo seria el peor error posible.
            ==================================================================== -->
@@ -92,10 +93,6 @@
         </div>
 
         <div class="hud-bottom">
-          <!-- Joystick virtual: aparece donde el jugador apoya el dedo. -->
-          <div id="joystick" class="joystick hidden">
-            <div id="joystick-knob" class="joystick-knob"></div>
-          </div>
 
           <!-- Botones de accion: solo en modo tactil. En escritorio estorban,
                porque la misma accion ya esta en el teclado. -->
@@ -110,6 +107,15 @@
             <div class="action-row">
               <button id="btn-attack" class="btn btn-action btn-attack">DISPARAR</button>
             </div>
+          </div>
+
+          <!-- Joystick virtual: aparece donde el jugador apoya el dedo, y
+               descansa ACA, abajo a la derecha.
+               El orden del DOM es el orden visual: `.hud-bottom` es un flex
+               con space-between, asi que el primer hijo cae a la izquierda y
+               el ultimo a la derecha. Hasta la 16.7 estaban al reves. -->
+          <div id="joystick" class="joystick hidden">
+            <div id="joystick-knob" class="joystick-knob"></div>
           </div>
         </div>
       </section>

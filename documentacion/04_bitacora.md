@@ -4632,6 +4632,95 @@ descubrirlo dos tareas después.
 
 ---
 
+## 16.7 — El joystick a la derecha, y un control que se dibujaba donde no se escuchaba
+
+**20 de noviembre de 2026.**
+
+La primera tarea de la fase que **no borra: mueve**. El joystick pasa a la
+mitad derecha y la cámara a la izquierda (D-27), y el botón de disparar se
+muda a la esquina de abajo a la izquierda.
+
+### El cambio son dos caracteres, y ése fue el problema
+
+Dar vuelta el control es dar vuelta una comparación. El joystick no tiene
+posición fija —se dibuja donde cae el dedo— así que todo el reparto de
+pantalla vive en una línea:
+
+```js
+const enLadoDelJoystick = e.clientX > innerWidth * 0.55;   // antes: < 0.45
+```
+
+Lo cambié, espejé las coordenadas de las pruebas táctiles, y **las 41
+pruebas de punta a punta pasaron**. Incluidas las cinco que tocan el
+joystick con eventos CDP reales, con detección de impacto, que son las que
+el proyecto escribió específicamente para no volver a confiar en
+`dispatchEvent`.
+
+Estaba mal igual.
+
+### Lo que encontró la captura y no encontró ninguna prueba
+
+El **dibujo** del joystick seguía abajo a la izquierda. No se había movido
+porque su posición en reposo no la decide el código de entrada: la decide el
+orden del DOM dentro de `.hud-bottom`, que es un flex con `space-between`.
+
+O sea: **el jugador veía el control de un lado y el juego lo escuchaba del
+otro.** Apoyabas el pulgar sobre el dibujo del joystick y movías la cámara.
+
+Y nada fallaba. No hay error de consola para esto. Las pruebas pasaban
+porque **tocan coordenadas explícitas**, y yo había espejado las
+coordenadas junto con el código: le estaba preguntando al juego por el lugar
+correcto, no por el lugar donde el juego dice que está el control.
+
+> **La regla, que quedó escrita como prueba y no como comentario:** un
+> control se **dibuja donde se escucha**. Y el corolario sobre las pruebas:
+> una prueba que usa una coordenada literal está midiendo *el manejador*,
+> no *la interfaz*. Si el cambio mueve la interfaz, hay que preguntarle a la
+> interfaz dónde está.
+
+La prueba nueva compara el centro del joystick contra la mitad de la
+pantalla, le pregunta al DOM por la caja real, y hace lo mismo con el botón
+del otro lado. Si alguien da vuelta una sola de las dos cosas, falla.
+
+### El choque que la tarea anterior anticipó, y cómo se resolvió
+
+La 16.6 dejó anotado que el joystick y el botón de disparar se iban a pisar:
+los dos querían la esquina de abajo a la derecha. Las tres salidas eran
+subir el botón, achicar la zona del joystick, o que el botón desapareciera.
+
+**Ninguna de las tres.** Al leer D-27 entera apareció la frase que decide:
+
+> *"Sin botones de acción (D-28), la mitad derecha quedaba vacía."*
+
+**D-27 está escrita para un mundo que todavía no existe.** Supone que el
+botón ya se fue, y el botón se va en la Fase 17 con el combate automático.
+Aplicar D-27 hoy no crea un problema de diseño: crea un interinato de dos
+tareas.
+
+Así que el botón se muda a la izquierda y queda el esquema de dos pulgares
+dado vuelta: **el derecho mueve, el izquierdo dispara y apunta.** No es la
+forma final de nada, y está escrito como provisorio en el CSS, con la fase
+que lo borra. Cuando la 17 se lleve el botón, la mitad izquierda vuelve a
+ser sólo cámara.
+
+**Lo que aprendí de esto es sobre el orden de las tareas, no sobre el
+joystick.** Una decisión escrita para el estado final puede ser imposible de
+aplicar limpio en el estado intermedio, y eso no la invalida: obliga a
+decidir el interinato a propósito. Lo que no se puede hacer es aplicarla a
+medias y dejar el resultado roto porque *"la próxima fase lo arregla"*.
+
+### Lo que la 16.7 deja planteado para la 16.8
+
+`bindHudButton()` quedó **sin un solo llamador**. Era el método que conectaba
+correr, interactuar, recargar, curarse y la bazooka; el único botón que
+queda usa `bindAimButton()`, que es otro. Es el caso exacto que la 16.4
+llamó *función de cableado*: no está rota, nadie la llama, y nada se queja.
+
+Y `.action-cluster` con `.action-row` adentro son dos capas de contenedor
+para **un botón**. Las dos se van en la 16.8, que cierra la fase.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

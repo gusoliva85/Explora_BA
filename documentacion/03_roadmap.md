@@ -24,42 +24,37 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.7 — El joystick a la derecha** · séptima de la poda
+### **16.8 — Limpieza del HUD** · la última de la poda
 
-**Qué cambia.** El joystick pasa a la **mitad derecha** de la pantalla y la
-cámara a la izquierda (**D-27**). Es la primera tarea de la fase que **no
-borra nada**: mueve.
-
-**Por qué, y es la razón de que D-27 exista.** Con un solo botón de acción
-—DISPARAR, abajo a la derecha— el pulgar derecho hace dos cosas que no
-pueden convivir: mover y disparar. Hoy el pulgar derecho arrastra la cámara
-y el izquierdo mueve; el botón queda debajo del pulgar que ya está ocupado
-apuntando. Invertido, el derecho mueve **y** dispara con el mismo gesto —el
-botón es un joystick de apuntado al arrastrarlo— y el izquierdo sólo mira.
+**Qué se saca.** Lo que quedó sosteniendo a los botones que ya no están.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/input/inputManager.js` | la mitad que escucha el joystick y la que escucha la cámara se intercambian |
-| `index.html` y `hud.css` | el joystick se dibuja a la derecha; el botón puede necesitar correrse |
-| pruebas | `controles.spec.js` toca coordenadas concretas: hay que darlas vuelta, no borrarlas |
+| `index.html` | `.action-cluster` y `.action-row` envuelven **un solo botón**: sobran las dos capas |
+| `src/styles/hud.css` | el CSS de las dos clases, y la regla de `body.is-landscape` en `game.css` que acomoda un cluster que ya no es un cluster |
+| `src/ui/hud.js` | revisar qué quedó en `this.el` sin usuarios |
+| `src/input/inputManager.js` | `bindHudButton()` queda **sin un solo llamador**: el único botón usa `bindAimButton()` |
+| `src/core/events.js` | revisar `EV` entero: la 16.6 encontró uno muerto ahí |
 
-**Lo que hay que mirar con cuidado, y es distinto de todo lo anterior.**
-Esto no se valida con pruebas: se valida **con el pulgar, en el teléfono**.
-Una prueba de punta a punta puede confirmar que el toque llega al elemento
-correcto, y eso hay que mantenerlo; lo que no puede decir es si el pulgar
-derecho alcanza el joystick sin recolocar la mano. El criterio de salida de
-la fase lo pide explícitamente.
+**Lo que queda en pantalla, y es el criterio de salida de la fase:** arriba
+vida, objetivo y brújula; abajo el joystick a la derecha y DISPARAR a la
+izquierda; la pausa arriba a la derecha. Nada más.
 
-**Y hay una decisión que resolver mirando:** el botón de disparar está abajo
-a la derecha, que es donde va a estar el joystick. **Se van a pisar.** Hay
-tres salidas —subir el botón, achicar la zona del joystick, o que el botón
-desaparezca y el arrastre del pulgar sea todo— y la tercera es la que mejor
-se lleva con la Fase 17, donde el combate pasa a ser automático y el botón
-deja de existir. Conviene decidirlo sabiendo eso.
+**Lo que hay que mirar con cuidado.** `bindHudButton()` es el caso exacto
+que la 16.4 describió como *una función de cableado*: no está muerta —la
+clase la exporta, es correcta, y alguien podría llamarla— pero **no la llama
+nadie**. La 16.6 agregó la otra mitad de la regla: hay que preguntarse quién
+le hablaba al que se fue. Acá el que se fue fue el último llamador.
 
-**Cómo se sabe que está lista:** el joystick se alcanza con el pulgar
-derecho sin mover la mano, probado en el teléfono; la cámara responde en la
-mitad izquierda; el botón no se pisa con el joystick; todo en verde.
+**Y una duda honesta que conviene resolver mirando, no borrando:** el
+`.action-cluster` va a volver en la Fase 19B, cuando aparezcan las cartas de
+power-up y haya algo que elegir en pantalla. Pero volverá con otra forma
+—tres cartas en el medio, no botones en la esquina— así que no es el mismo
+contenedor. Se borra.
+
+**Cómo se sabe que está lista:** el HUD tiene exactamente los seis elementos
+de arriba, no queda CSS sin selector ni método sin llamador, la consola está
+limpia y todo en verde.
 
 ---
 
@@ -1064,8 +1059,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 - [x] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola ✅ *20/11/2026 — 1.311 líneas borradas y 611 escritas, 20 archivos; `tests/arma.test.js` murió entero*
 - [x] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30) ✅ *20/11/2026 — se va `walkSpeed`, `isRunning`, `Pose.CAMINAR` y el botón CORRER; `runSpeed` pasa a llamarse `speed`*
 - [x] **16.6 Interactuar.** Ya no hay nada con lo que interactuar ✅ *20/11/2026 — estaba muerto entero desde la 16.1: ni emisor, ni oyente, ni nada que lo mostrara*
-- [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27) ⬅️ *la que sigue*
-- [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick
+- [x] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27) ✅ *20/11/2026 — y el botón de disparar se muda a la izquierda, provisorio hasta la Fase 17*
+- [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick ⬅️ *la que sigue, y cierra la fase*
 
 ### ⚠️ Lo que se rescata antes de borrar
 
@@ -1099,7 +1094,7 @@ uno recuerda — es el que quedó guardado en el lugar equivocado.
 - [ ] No hay un solo botón de acción en pantalla — *queda DISPARAR, y se va en la Fase 17 con el combate automático. Los otros cinco ya no están*
 - [ ] No queda código muerto de nada de lo borrado: ni import, ni rama, ni CSS
 - [ ] Ninguna constante huérfana en `balance.js`
-- [ ] El joystick se alcanza con el pulgar derecho, probado en el teléfono
+- [ ] El joystick se alcanza con el pulgar derecho, **probado en el teléfono** — *hecho en código en la 16.7; falta el pulgar de verdad*
 - [ ] **La explosión y `objetivoAutomatico()` siguen vivos, en su propio archivo y con pruebas**
 - [ ] La consola no tiene un solo error
 - [ ] Las pruebas que quedan están en verde, y las que murieron están borradas, no comentadas

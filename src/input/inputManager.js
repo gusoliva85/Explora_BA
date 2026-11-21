@@ -169,8 +169,28 @@ export class InputManager {
         return;
       }
 
-      const isLeftHalf = e.clientX < innerWidth * 0.45;
-      if (isLeftHalf && !this.moveTouch) {
+      /*
+       * EL LADO DEL JOYSTICK (D-27)
+       * -------------------------------------------------------------------
+       * El movimiento vive en la mitad **DERECHA** y la camara en la
+       * izquierda. Hasta la Fase 16.7 era al reves, y esta linea era el
+       * unico lugar donde se decidia: el joystick no tiene posicion fija
+       * —se dibuja donde cae el dedo— asi que dar vuelta el control es dar
+       * vuelta esta comparacion.
+       *
+       * El motivo es que el pulgar dominante alcanza mejor la derecha, y
+       * **moverse es lo unico que el jugador hace a proposito**: la camara
+       * se acomoda sola a la calle y el combate pasa a ser automatico en la
+       * Fase 17. Lo que mas se usa va donde mejor se llega.
+       *
+       * El umbral NO esta en 0,5 sino en 0,55, y el reparto es deliberado:
+       * la mitad del movimiento se queda con el 45% y la de camara con el
+       * 55%. Es el espejo exacto del reparto anterior. La franja de mas se
+       * la lleva el gesto que se hace con el dedo extendido —arrastrar para
+       * mirar— y no el que se hace con el pulgar apoyado.
+       */
+      const enLadoDelJoystick = e.clientX > innerWidth * 0.55;
+      if (enLadoDelJoystick && !this.moveTouch) {
         this.moveTouch = { id: e.pointerId, startX: e.clientX, startY: e.clientY, x: e.clientX, y: e.clientY };
       } else if (!this.lookTouch) {
         this.lookTouch = { id: e.pointerId, x: e.clientX, y: e.clientY };

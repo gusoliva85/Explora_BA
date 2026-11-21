@@ -22,12 +22,20 @@ import { test, expect } from '@playwright/test';
  * gestos de Playwright, que hacen deteccion de impacto igual que un dedo.
  */
 
-/** Puntos de la zona de juego que tienen que llegar al canvas. */
+/**
+ * Puntos de la zona de juego que tienen que llegar al canvas.
+ *
+ * Los lados estan dados vuelta respecto de la version anterior: desde la
+ * Fase 16.7 el joystick vive en la mitad DERECHA y la camara en la
+ * izquierda (D-27). Las coordenadas se espejaron en vez de borrarse,
+ * porque lo que la prueba cuida no es el lado sino que el toque llegue al
+ * canvas y no a la capa de interfaz.
+ */
 const ZONAS_DE_JUEGO = [
-  { nombre: 'mitad izquierda, abajo (joystick)', x: 0.22, y: 0.75 },
-  { nombre: 'mitad derecha, arriba (camara)', x: 0.75, y: 0.35 },
+  { nombre: 'mitad derecha, abajo (joystick)', x: 0.72, y: 0.75 },
+  { nombre: 'mitad izquierda, arriba (camara)', x: 0.25, y: 0.35 },
   { nombre: 'centro', x: 0.5, y: 0.5 },
-  { nombre: 'izquierda, altura media', x: 0.15, y: 0.5 }
+  { nombre: 'derecha, altura media', x: 0.7, y: 0.5 }
 ];
 
 // El perfil de celular lo aplica el proyecto `celular` de la
@@ -70,6 +78,52 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     }
   });
 
+  test('el joystick se DIBUJA del mismo lado en el que se escucha', async ({ page }) => {
+    /*
+     * Esta prueba existe por un error que ninguna otra vio, y que apareció
+     * en una captura de la Fase 16.7.
+     *
+     * D-27 mandó el joystick a la mitad derecha, y eso se cambia en una
+     * sola línea de `inputManager`: cuál mitad abre el `moveTouch`. Las
+     * pruebas táctiles siguieron pasando, porque tocan coordenadas
+     * explícitas y las coordenadas se habían espejado con el cambio.
+     *
+     * Lo que quedó mal fue **el dibujo**: el joystick en reposo se seguía
+     * posicionando por el flujo del CSS, abajo a la IZQUIERDA. O sea que el
+     * jugador veía el control de un lado y el juego lo escuchaba del otro.
+     * Nada fallaba: el dedo apoyado sobre el dibujo movía la cámara.
+     *
+     * De ahí la regla que la prueba fija: **el control se dibuja donde se
+     * escucha.** Un control invisible se busca; uno dibujado en el lugar
+     * equivocado se usa mal y la culpa se la lleva el juego.
+     */
+    await page.goto('/');
+    await page.locator('#btn-start').click();
+    await expect(page.locator('#screen-hud')).toBeVisible();
+
+    const medio = await page.evaluate(() => innerWidth / 2);
+    const joystick = await page.locator('#joystick').boundingBox();
+    const boton = await page.locator('#btn-attack').boundingBox();
+
+    const centro = (c) => c.x + c.width / 2;
+
+    expect(
+      centro(joystick),
+      `el joystick descansa en ${centro(joystick).toFixed(0)} px y el medio esta en ${medio}`
+    ).toBeGreaterThan(medio);
+
+    /*
+     * Y el botón, del otro lado. Es provisorio: D-27 está escrita para un
+     * mundo sin botones de acción, y el de disparar se va en la Fase 17 con
+     * el combate automático (D-28). Hasta entonces no puede compartir el
+     * pulgar con el joystick.
+     */
+    expect(
+      centro(boton),
+      `el boton de disparar se pisa con el joystick`
+    ).toBeLessThan(medio);
+  });
+
   test('el joystick aparece al apoyar el dedo y mueve al jugador', async ({ page }) => {
     await page.goto('/');
     await page.locator('#btn-start').click();
@@ -85,8 +139,15 @@ test.describe('el toque llega a donde tiene que llegar', () => {
      * canvas, estos eventos no llegarian al manejador y el jugador no se
      * moveria. Es exactamente el caso que se escapo antes.
      */
+    /*
+     * El dedo va en la mitad derecha, que es donde vive el joystick desde
+     * la 16.7 (D-27). Se usa 0,68 y no algo mas pegado al borde a
+     * proposito: abajo a la derecha esta el boton de DISPARAR, y un toque
+     * ahi lo recibe el boton, no el canvas. Es correcto que sea asi —cada
+     * elemento recibe lo suyo— pero esta prueba mide el joystick.
+     */
     const caja = await page.locator('#game-canvas').boundingBox();
-    const x = caja.x + caja.width * 0.22;
+    const x = caja.x + caja.width * 0.68;
     const abajo = caja.y + caja.height * 0.78;
     const arriba = caja.y + caja.height * 0.58;
 
@@ -149,7 +210,7 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     await expect(page.locator('#screen-hud')).toBeVisible();
 
     const caja = await page.locator('#game-canvas').boundingBox();
-    const x = caja.x + caja.width * 0.25;
+    const x = caja.x + caja.width * 0.68;
     const abajo = caja.y + caja.height * 0.76;
     const arriba = caja.y + caja.height * 0.56;
 

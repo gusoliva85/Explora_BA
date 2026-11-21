@@ -75,8 +75,10 @@ test('el toque mueve al jugador con el joystick virtual', async ({ page }) => {
    * prueba falla, que es lo que tiene que hacer.
    */
   const cdp = await page.context().newCDPSession(page);
+  // Mitad DERECHA: ahi vive el joystick desde la Fase 16.7 (D-27). El 0,68
+  // deja afuera el boton de DISPARAR, que ocupa la esquina de abajo.
   const caja = await page.locator('#game-canvas').boundingBox();
-  const x = caja.x + caja.width * 0.2;
+  const x = caja.x + caja.width * 0.68;
   const abajo = caja.y + caja.height * 0.78;
   const arriba = caja.y + caja.height * 0.56;
 

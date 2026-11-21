@@ -5,8 +5,11 @@
 
    - Legible de un vistazo, con el telefono a medio brazo y en movimiento.
      Nada por debajo de 13 px, nada con menos de 4.5:1 de contraste.
-   - Los pulgares mandan: joystick abajo a la izquierda, acciones abajo a la
-     derecha, y el tercio central SIEMPRE libre.
+   - Los pulgares mandan: joystick en la mitad DERECHA (D-27, Fase 16.7) y
+     el tercio central SIEMPRE libre. Hasta la 16.7 el joystick estaba a la
+     izquierda y la derecha era de los botones de accion; al quedar un solo
+     boton, la mitad que mejor alcanza el pulgar dominante se la lleva lo
+     unico que el jugador hace a proposito, que es moverse.
    - Todo lo que cambia, cambia con una transicion. Un numero que salta de
      100 a 88 no se lee; uno que baja se siente.
    - El HUD no compite con la escena: paneles oscuros con desenfoque detras,
@@ -251,17 +254,37 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
+/*
+ * EL BOTON PASA A LA IZQUIERDA, Y ES PROVISORIO (Fase 16.7)
+ * ---------------------------------------------------------------------------
+ * D-27 manda el joystick a la mitad derecha, y el unico boton que queda
+ * —DISPARAR— vivia justo ahi. Se pisaban: el jugador apoyaba el pulgar para
+ * moverse y encontraba el gatillo.
+ *
+ * D-27 esta escrita para un mundo SIN este boton: dice, textual, que "sin
+ * botones de accion la mitad derecha quedaba vacia". Esa mitad no esta
+ * vacia todavia, y no lo va a estar hasta la Fase 17, cuando el combate
+ * pase a ser automatico (D-28) y el boton desaparezca.
+ *
+ * Asi que el boton se muda a la izquierda, y queda el esquema clasico de
+ * dos pulgares dado vuelta: **el derecho mueve, el izquierdo dispara y
+ * apunta.** No es la forma final de nada: es lo que mantiene el juego
+ * jugable en el telefono durante las dos tareas que faltan.
+ *
+ * Cuando la Fase 17 borre el boton, esta regla se va con el y la mitad
+ * izquierda vuelve a ser solo camara.
+ */
 .action-cluster {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 14px;
-  margin-left: auto;
+  margin-right: auto;
 }
 .action-row {
   display: flex;
   align-items: flex-end;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 14px;
 }
 
