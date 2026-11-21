@@ -84,12 +84,21 @@ const checkpoints = PUERTAS.map((p) => ({
  * escrito a mano es **la última**, porque no es una esquina más: es la casa
  * de Sergio, y el juego entero es ir a buscarlo (D-41).
  */
-const objectives = PUERTAS.map((p, i) => {
-  const calle = (p.calle ?? 'la calle').replace(/^Av\. /, 'la avenida ');
-  return i === 0
-    ? `Avanzá por ${calle} hasta ${p.hasta}.`
-    : `Seguí por ${calle} hasta ${p.hasta}.`;
-}).concat('Llegá a lo de Sergio: Billinghurst 250.');
+const objectives = PUERTAS.map((p, i) =>
+  /*
+   * Cortos, y sin repetir la calle.
+   *
+   * Decían "Avanzá por la avenida Independencia hasta Virrey Liniers" y en
+   * el teléfono se leía "Avanzá por la avenida Ind…": el nombre por el que
+   * vas ocupaba toda la línea y tapaba el único dato nuevo, que es **hasta
+   * dónde**.
+   *
+   * Por dónde vas ya lo dice la brújula, grande y de reojo (D-38, D-40).
+   * Acá va lo que la brújula no puede decir: el nombre de la esquina donde
+   * está el próximo control.
+   */
+  i === 0 ? `Avanzá hasta ${p.hasta}.` : `Seguí hasta ${p.hasta}.`
+).concat('Llegá a lo de Sergio: Billinghurst 250.');
 
 /**
  * El aspecto de cada cuadra. Una entrada por cuadra, dieciséis.

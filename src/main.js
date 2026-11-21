@@ -599,7 +599,7 @@ function actualizarBrujula() {
   const relativo = rumboDestino - camera.yaw - 90;
 
   hud.mostrarBrujula(true);
-  hud.setBrujula(relativo, distancia);
+  hud.setBrujula(relativo, distancia, mission.calleActual(p));
 }
 
 function pause() {

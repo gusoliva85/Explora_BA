@@ -6338,6 +6338,73 @@ tirando.**
 
 ---
 
+## 18.14 — La brújula deja de ser un adorno de la esquina
+
+**21 de noviembre de 2026.**
+
+La flecha pasa de **15 px a 30**, los metros de 13 a 17 en cifras tabulares,
+y abajo aparece **el nombre de la calle por la que vas**.
+
+### Era más chica que el texto de al lado
+
+El glifo medía quince píxeles: **menos que la letra del objetivo**. O sea
+que lo único que orienta era lo más chico de la pantalla.
+
+Y orientar es todo lo que queda. D-40 bajó los carteles de esquina a
+decorado —nadie frena a leer una chapa a veinte metros de cámara mientras lo
+persiguen— así que con dieciséis cuadras y cinco giros de 90°, **perderse es
+fácil y no hay nada más que mirar**.
+
+### Lo que manda es "de reojo", y eso ordena todo lo demás
+
+No al mirarla: **de reojo**, mientras se corre y con el ojo puesto en la
+calle. De ahí salen las tres decisiones:
+
+| | Por qué |
+|---|---|
+| La flecha pesa el doble que el texto | Una dirección es **una forma**, no una palabra: se lee sin enfocar |
+| Los metros en cifras tabulares | Para que no baile al pasar de 140 a 139 |
+| El nombre de la calle abajo y chico | No se lee corriendo **y no hace falta**: está para la mirada de medio segundo que uno pega al doblar |
+
+### El nombre sale del vértice de llegada, no del de salida
+
+Cada vértice del trazado guarda la calle **por la que se llegó a él**, así
+que el tramo i→i+1 se recorre por la calle de i+1. Con el de salida, el
+nombre cambiaría **una cuadra tarde en cada giro**: la brújula diría que vas
+por una calle que dejaste hace cien metros.
+
+Y se usa el tramo **más cercano**, el mismo que orienta la cámara, no el del
+próximo objetivo. Es lo que hace que el nombre cambie al doblar y no al
+tocar el control.
+
+### Y el "Av." se va
+
+Ocupa cuatro de los diecisiete caracteres que entran, y **no informa**: el
+jugador ve que es una avenida —es más ancha y tiene más edificios altos—
+mucho antes de leerlo. Lo que necesita es el nombre.
+
+### El objetivo cedió lugar, y es el orden correcto
+
+Con la brújula más grande, los dos no entran en 412 px. El objetivo decía
+*"Avanzá por la avenida Independencia hasta Virrey Liniers"* y en el
+teléfono se leía *"Avanzá por la avenida Ind…"*: **el nombre de la calle
+ocupaba toda la línea y tapaba el único dato nuevo, que es hasta dónde.**
+
+Ahora dice *"Avanzá hasta Virrey Liniers."* y entra entero.
+
+> **El que se achica es el que se lee con tiempo.** La brújula se mira de
+> reojo corriendo; el objetivo, cuando uno se detiene. Repetir la calle en
+> los dos lugares no era redundancia inofensiva: le estaba comiendo el
+> espacio al dato que sólo el objetivo puede dar.
+
+### Lo que falta es el pulgar, otra vez
+
+La brújula se ve bien en la captura. **Verla de reojo es otra cosa** y sólo
+se comprueba corriendo en el teléfono, igual que la cadencia (17.9) y el
+joystick de la derecha (16.7). Va a la lista.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

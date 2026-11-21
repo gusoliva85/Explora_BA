@@ -45,6 +45,7 @@ export class Hud {
       brujula: document.getElementById('brujula'),
       brujulaFlecha: document.getElementById('brujula-flecha'),
       brujulaTexto: document.getElementById('brujula-texto'),
+      brujulaCalle: document.getElementById('brujula-calle'),
       dano: document.getElementById('dano')
       /*
        * Habia un `btnAttack` y se fue en la 16.8. Lo leia `setArma()`, para
@@ -161,11 +162,26 @@ export class Hud {
    *
    * @param {number} anguloGrados 0 = hacia arriba de la pantalla
    * @param {number} distancia en metros
+   * @param {string} [calle] por donde va: lo informativo de D-40 vive aca
    */
-  setBrujula(anguloGrados, distancia) {
+  setBrujula(anguloGrados, distancia, calle) {
     if (!this.el.brujulaFlecha) return;
     this.el.brujulaFlecha.style.transform = `rotate(${anguloGrados.toFixed(1)}deg)`;
     this.el.brujulaTexto.textContent = `${Math.round(distancia)} m`;
+    if (this.el.brujulaCalle && calle !== undefined) {
+      /*
+       * El nombre se escribe solo cuando CAMBIA.
+       *
+       * Escribir en el DOM sesenta veces por segundo para un texto que
+       * cambia una vez por cuadra es tirar cuadros a la basura en un
+       * telefono, y es el mismo criterio que ya seguia el nombre del arma
+       * antes de borrarse.
+       */
+      const nuevo = calle || '';
+      if (this.el.brujulaCalle.textContent !== nuevo) {
+        this.el.brujulaCalle.textContent = nuevo;
+      }
+    }
   }
 
   mostrarBrujula(visible) {

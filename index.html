@@ -85,9 +85,18 @@
             <div id="objective" class="objective">Objetivo: llegar al primer control</div>
             <!-- Brujula: flecha al proximo objetivo y distancia. La flecha
                  gira respecto de la camara, no respecto del norte. -->
+            <!-- La brujula (D-38). Es LO UNICO que orienta: los carteles de
+                 esquina son decorado (D-40), y con dieciseis cuadras y
+                 cinco giros perderse es facil.
+                 Tiene que leerse de reojo mientras se corre, asi que la
+                 flecha pesa mas que el texto y el numero va en cifras
+                 tabulares para que no baile al cambiar. -->
             <div id="brujula" class="brujula hidden">
               <span id="brujula-flecha" class="brujula-flecha">&#10148;</span>
-              <span id="brujula-texto">--</span>
+              <span class="brujula-datos">
+                <span id="brujula-texto" class="brujula-metros">--</span>
+                <span id="brujula-calle" class="brujula-calle"></span>
+              </span>
             </div>
           </div>
         </div>

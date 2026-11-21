@@ -192,6 +192,53 @@ describe('rumbo de la calle y alineacion de camara', () => {
     }
   });
 
+  it('la calle que dice la brujula es la del tramo que se esta pisando', () => {
+    /*
+     * D-40 bajo los carteles de esquina a decorado y D-38 subio la brujula
+     * a protagonista: el nombre informativo vive ahi. Asi que esto no es
+     * un detalle de texto, **es la unica orientacion que queda** en un
+     * recorrido de dieciseis cuadras con cinco giros.
+     */
+    const m = new MissionManager(mission001, bus);
+    const r = mission001.route;
+
+    for (let i = 0; i < r.length - 1; i++) {
+      const medio = { x: (r[i].x + r[i + 1].x) / 2, z: (r[i].z + r[i + 1].z) / 2 };
+      const esperada = (r[i + 1].calle ?? '').replace(/^AV\.?\s+/i, '');
+      expect(m.calleActual(medio), `tramo ${i}`).toBe(esperada);
+    }
+  });
+
+  it('el nombre cambia al doblar, no al tocar el control', () => {
+    /*
+     * Se usa el tramo mas cercano, igual que el rumbo de la camara. Si
+     * saliera del proximo objetivo, el nombre cambiaria una cuadra tarde
+     * en cada giro y la brujula diria que vas por una calle que dejaste
+     * hace cien metros.
+     */
+    const m = new MissionManager(mission001, bus);
+    const r = mission001.route;
+    const nombres = r.slice(1).map((_, i) => {
+      const medio = { x: (r[i].x + r[i + 1].x) / 2, z: (r[i].z + r[i + 1].z) / 2 };
+      return m.calleActual(medio);
+    });
+    // En el recorrido real hay cinco giros, asi que el nombre tiene que
+    // cambiar varias veces a lo largo de las dieciseis cuadras.
+    expect(new Set(nombres).size).toBeGreaterThan(3);
+  });
+
+  it('saca el "Av." del nombre: ocupa lugar y no informa', () => {
+    const m = new MissionManager(mission001, bus);
+    const r = mission001.route;
+    const enAvenida = r.findIndex((p) => (p.calle ?? '').startsWith('AV.'));
+    if (enAvenida <= 0) return;
+    const medio = {
+      x: (r[enAvenida - 1].x + r[enAvenida].x) / 2,
+      z: (r[enAvenida - 1].z + r[enAvenida].z) / 2
+    };
+    expect(m.calleActual(medio).startsWith('AV')).toBe(false);
+  });
+
   it('el rumbo pone la camara detras del jugador, no delante', () => {
     const m = new MissionManager(mission001, bus);
     const r = mission001.route;

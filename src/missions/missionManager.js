@@ -76,6 +76,57 @@ export class MissionManager {
   }
 
   /**
+   * El nombre de la calle por la que va el jugador.
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUE ES INFORMACION Y NO DECORADO
+   * ---------------------------------------------------------------------------
+   * D-40 decidio que los carteles de esquina son **decorado**: estan para
+   * que el barrio se vea como un barrio, no para orientar. Nadie frena a
+   * leer una chapa a veinte metros de camara mientras lo persiguen.
+   *
+   * Pero el nombre sigue siendo util, y D-38 dice donde vive: en la
+   * brujula, que es lo unico que el jugador mira de reojo mientras corre.
+   * "Vas por Maza" y "faltan 140 m" contestan juntas la unica pregunta que
+   * importa: **¿voy bien?**
+   *
+   * Se usa el mismo tramo que `streetHeading`: el mas cercano, no el del
+   * proximo objetivo. Es lo que hace que el nombre cambie al doblar y no
+   * al tocar el control.
+   *
+   * @param {{x:number,z:number}} pos
+   * @returns {string}
+   */
+  calleActual(pos) {
+    const route = this.mission.route;
+    let mejor = route[0]?.calle ?? '';
+    let mejorDist = Infinity;
+
+    for (let i = 0; i < route.length - 1; i++) {
+      const d = distanceToSegment(pos, route[i], route[i + 1]);
+      if (d < mejorDist) {
+        mejorDist = d;
+        /*
+         * El nombre sale del vertice de LLEGADA del tramo.
+         *
+         * Cada vertice del trazado guarda la calle por la que se llego a
+         * el, asi que el tramo i→i+1 se recorre por la calle de i+1. Con
+         * el de salida, el nombre cambiaria una cuadra tarde en cada giro.
+         */
+        mejor = route[i + 1].calle ?? mejor;
+      }
+    }
+    /*
+     * Sin el "AV." adelante.
+     *
+     * Ocupa cuatro caracteres de los quince que entran, y no informa: el
+     * jugador ve que es una avenida —es mas ancha y tiene mas edificios
+     * altos— mucho antes de leerlo. Lo que necesita es el NOMBRE.
+     */
+    return mejor.replace(/^AV\.?\s+/i, '');
+  }
+
+  /**
    * El punto al que hay que ir ahora: el proximo control pendiente, o la
    * meta si ya estan todos tomados.
    *

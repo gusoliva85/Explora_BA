@@ -142,12 +142,16 @@
 .stat-value.critico { color: var(--hud-rojo); }
 
 /* Objetivo: una pastilla de vidrio, no texto suelto sobre la escena. */
+/* El objetivo cedio lugar a la brujula en la 18.14, y es el orden correcto:
+   la brujula se lee de reojo corriendo y el objetivo solo cuando uno se
+   detiene a mirarlo. En 412 px de ancho los dos no entran enteros, asi que
+   el que se achica es el que se lee con tiempo. */
 .objective {
   align-self: flex-start;
-  max-width: 100%;
-  padding: 7px 14px;
+  min-width: 0;
+  padding: 6px 12px;
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.3;
   color: var(--hud-ink);
   background: var(--hud-vidrio);
@@ -170,29 +174,74 @@
 
 /* Brujula al objetivo. Vive al lado del texto de objetivo porque las dos
    cosas responden a la misma pregunta: a donde voy. */
+/* --- Brujula (D-38) -------------------------------------------------------
+   Es LO UNICO que orienta. Los carteles de esquina son decorado (D-40), y
+   con dieciseis cuadras y cinco giros de 90 grados, perderse es facil.
+
+   TIENE QUE LEERSE DE REOJO. No al mirarla: de reojo, mientras se corre y
+   con el ojo puesto en la calle. Eso manda sobre todo lo demas:
+
+   - La FLECHA pesa el doble que el texto. Es lo que se lee sin enfocar:
+     una direccion es una forma, no una palabra.
+   - El numero va en cifras tabulares, para que no baile al cambiar de
+     140 a 139.
+   - El nombre de la calle va ABAJO y mas chico. No se lee corriendo y no
+     hace falta: esta para la mirada de medio segundo que uno pega cuando
+     dobla.
+
+   Hasta la 18.14 el glifo medía 15 px, mas chico que el texto de al lado.
+   Era una pastilla con una flecha adentro; ahora es una flecha con datos
+   al lado. */
+
 .brujula {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 9px;
   flex: 0 0 auto;
-  padding: 7px 12px 7px 10px;
+  padding: 7px 14px 7px 11px;
   border-radius: 999px;
-  font-size: 13px;
   font-weight: 750;
-  font-variant-numeric: tabular-nums;
   color: var(--hud-ambar);
   background: var(--hud-vidrio);
-  border: 1px solid rgba(255, 182, 39, 0.35);
+  border: 1.5px solid rgba(255, 182, 39, 0.45);
+  box-shadow: 0 0 18px rgba(255, 182, 39, 0.12);
   backdrop-filter: blur(10px) saturate(1.2);
 }
 .brujula-flecha {
   display: inline-block;
-  font-size: 15px;
+  font-size: 30px;
   line-height: 1;
   /* El glifo apunta a la derecha: se lo rota -90 para que el cero de
      setBrujula signifique "hacia arriba de la pantalla". */
   transform-origin: 50% 50%;
   transition: transform 0.12s linear;
+  /* Un halo corto: es lo que lo despega de una calle clara sin tener que
+     ponerle una caja propia. */
+  text-shadow: 0 0 10px rgba(255, 182, 39, 0.55);
+}
+.brujula-datos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+}
+.brujula-metros {
+  font-size: 17px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.brujula-calle {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--hud-dim);
+  /* Entra "INDEPENDENCIA", que es la mas larga de las quince calles del
+     recorrido salvo dos; esas dos se reconocen por la primera palabra. */
+  max-width: 17ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .brujula-flecha::before { content: ""; }
 
