@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { WeaponController, EstadoArma } from '../src/combat/weaponController.js';
-import { blancoDelRayo, dispersar, rumboAsistido } from '../src/combat/ballistics.js';
+import { blancoDelRayo } from '../src/combat/ballistics.js';
 import { WEAPONS, ZOMBIE_STANDARD, PLAYER } from '../src/config/balance.js';
 import { rumboHacia, dirDeRumbo } from '../src/core/rumbo.js';
 
@@ -198,104 +198,27 @@ describe('las paredes paran la bala', () => {
 });
 
 /* =========================================================================
-   DISPERSION
+   AQUI HABIA DOS BLOQUES ENTEROS, Y SE FUERON EN LA 17.3 bis (D-36)
+
+   DISPERSION — cuatro pruebas. Que con el azar en el centro no desviara
+   nada (que es lo que hacia repetibles a todas las demas), que nunca
+   desviara mas de lo declarado, que desviara a los dos lados y no siempre
+   al mismo, y la que explicaba su razon de ser en metros: el mismo desvio
+   angular que a tres metros es un roce, a veinticinco es un tiro perdido.
+
+   APUNTADO ASISTIDO — seis pruebas de la correccion para pantallas
+   tactiles.
+
+   Las diez murieron porque murio lo que probaban, y conviene decir que
+   **ninguna estaba mal**: median bien dos sistemas que el juego dejo de
+   tener. Es la diferencia con los casos de la Fase 16, donde lo que se
+   caia era la premisa de un bloque y las pruebas de adentro seguian
+   valiendo.
+
+   Lo que queda en su lugar es una sola linea, abajo, en el bloque de punta
+   a punta: **dos tiros identicos dan el mismo resultado**. Es lo que la
+   dispersion impedia y ahora es la regla.
    ========================================================================= */
-
-describe('dispersion', () => {
-  it('con el azar en el centro no desvia nada', () => {
-    // Es lo que hace repetibles a las demas pruebas.
-    expect(dispersar(FRENTE, P.spreadDegrees, () => 0.5)).toBeCloseTo(FRENTE, 6);
-  });
-
-  it('nunca desvia mas de lo declarado', () => {
-    for (const v of [0, 0.01, 0.25, 0.5, 0.75, 0.99, 1]) {
-      const d = Math.abs(dispersar(FRENTE, P.spreadDegrees, () => v) - FRENTE);
-      expect(d).toBeLessThanOrEqual(P.spreadDegrees + 1e-9);
-    }
-  });
-
-  it('desvia a los dos lados, no siempre al mismo', () => {
-    expect(dispersar(FRENTE, P.spreadDegrees, () => 0)).toBeLessThan(FRENTE);
-    expect(dispersar(FRENTE, P.spreadDegrees, () => 1)).toBeGreaterThan(FRENTE);
-  });
-
-  it('castiga el tiro largo y perdona el corto', () => {
-    /*
-     * Esta es la razon de existir de la dispersion, expresada en metros.
-     * El mismo desvio angular que a tres metros es un roce, a veinticinco
-     * es un tiro perdido.
-     */
-    const rad = (P.spreadDegrees * Math.PI) / 180;
-    const desvioCerca = Math.tan(rad) * 3;
-    const desvioLejos = Math.tan(rad) * 25;
-    expect(desvioCerca).toBeLessThan(P.targetRadius);
-    expect(desvioLejos).toBeGreaterThan(P.targetRadius);
-  });
-});
-
-/* =========================================================================
-   APUNTADO ASISTIDO
-   ========================================================================= */
-
-describe('apuntado asistido', () => {
-  const opt = { alcance: P.range, cono: P.aimAssist.cono, maxima: P.aimAssist.maxima };
-
-  it('sin nadie cerca del centro, no toca el rumbo', () => {
-    expect(rumboAsistido(ORIGEN, FRENTE, [], opt)).toBeCloseTo(FRENTE, 6);
-  });
-
-  it('corrige hacia un zombi apenas desviado', () => {
-    // Un zombi a 4 grados del centro: dentro del cono.
-    const z = blanco(10, FRENTE + 4);
-    const corregido = rumboAsistido(ORIGEN, FRENTE, [z], opt);
-    const r = blancoDelRayo(ORIGEN, corregido, [z], {
-      alcance: P.range,
-      radioBlanco: P.targetRadius
-    });
-    expect(r.objetivo).toBe(z);
-  });
-
-  it('NO corrige hacia un zombi que esta fuera del cono', () => {
-    const z = blanco(10, FRENTE + P.aimAssist.cono + 10);
-    expect(rumboAsistido(ORIGEN, FRENTE, [z], opt)).toBeCloseTo(FRENTE, 6);
-  });
-
-  it('nunca corrige mas de lo declarado', () => {
-    /*
-     * El tope es lo que separa "ayudar" de "apuntar solo". Un zombi en el
-     * borde del cono esta a 14 grados y la correccion maxima es 5: queda
-     * fuera de tiro igual, y eso esta bien.
-     */
-    const z = blanco(10, FRENTE + P.aimAssist.cono - 0.5);
-    const corregido = rumboAsistido(ORIGEN, FRENTE, [z], opt);
-    expect(Math.abs(corregido - FRENTE)).toBeLessThanOrEqual(P.aimAssist.maxima + 1e-9);
-  });
-
-  it('elige el mas cercano al centro, no el mas cercano en distancia', () => {
-    // El que esta justo adelante a 20 m gana contra uno a 3 m y 12 grados.
-    const centrado = blanco(20, FRENTE + 1);
-    const cercaDeCostado = blanco(3, FRENTE + 12);
-    const corregido = rumboAsistido(ORIGEN, FRENTE, [cercaDeCostado, centrado], opt);
-    // Tiene que haberse movido hacia el centrado, o sea casi nada.
-    expect(Math.abs(corregido - FRENTE)).toBeLessThan(2);
-  });
-
-  it('ignora a los muertos', () => {
-    const z = { ...blanco(10, FRENTE + 4), vivo: false };
-    expect(rumboAsistido(ORIGEN, FRENTE, [z], opt)).toBeCloseTo(FRENTE, 6);
-  });
-
-  it('corrige para los dos lados', () => {
-    const izq = rumboAsistido(ORIGEN, FRENTE, [blanco(10, FRENTE - 6)], opt);
-    const der = rumboAsistido(ORIGEN, FRENTE, [blanco(10, FRENTE + 6)], opt);
-    expect(izq).toBeLessThan(FRENTE);
-    expect(der).toBeGreaterThan(FRENTE);
-  });
-
-  it('la asistencia es mas chica que el cono: el jugador sigue eligiendo', () => {
-    expect(P.aimAssist.maxima).toBeLessThan(P.aimAssist.cono);
-  });
-});
 
 /* =========================================================================
    RUIDO
@@ -449,6 +372,65 @@ describe('la pistola de punta a punta', () => {
     // Y la espera entre tiros, por debajo del medio segundo: la cadencia
     // real se ajusta jugando, en la 17.9.
     expect(P.cooldown).toBeLessThan(0.5);
+  });
+
+  it('dos tiros identicos dan EXACTAMENTE el mismo resultado', () => {
+    /*
+     * Lo que reemplaza a las diez pruebas de dispersion y de apuntado
+     * asistido que murieron en la 17.3 bis (D-36).
+     *
+     * **El tiro no falla por azar.** Desde el mismo lugar, al mismo rumbo y
+     * con el mismo blanco, dos disparos tienen que ser indistinguibles: el
+     * mismo rumbo de salida, el mismo punto de impacto y el mismo acierto.
+     *
+     * Antes esto era falso a proposito, y lo que lo volvia repetible en las
+     * pruebas era pasarle un azar fijo. Ahora no hay azar que fijar: lo que
+     * era un truco de las pruebas es la regla del juego.
+     *
+     * Si alguien vuelve a meter una desviacion al azar en el camino del
+     * tiro, esto falla.
+     */
+    const z1 = blanco(12);
+    const a = armar();
+    disparar(a.w, [z1]);
+
+    const z2 = blanco(12);
+    const b = armar();
+    disparar(b.w, [z2]);
+
+    expect(a.ev.disparos[0].rumbo).toBe(b.ev.disparos[0].rumbo);
+    expect(a.ev.disparos[0].hasta).toEqual(b.ev.disparos[0].hasta);
+    expect(a.ev.disparos[0].acerto).toBe(b.ev.disparos[0].acerto);
+    expect(a.ev.golpes).toHaveLength(1);
+    expect(b.ev.golpes).toHaveLength(1);
+  });
+
+  it('el rumbo que entra es el que sale', () => {
+    /*
+     * La misma regla dicha de la forma mas directa posible, y a un rumbo
+     * que no sea el de las demas pruebas para que no se cuele un cero
+     * disfrazado.
+     */
+    const rumbo = 137;
+    const { w, ev } = armar();
+    disparar(w, [blanco(10, rumbo)], ORIGEN, rumbo);
+    expect(ev.disparos[0].rumbo).toBe(rumbo);
+  });
+
+  it('a maxima distancia tambien acierta: ya no hay castigo por tirar lejos', () => {
+    /*
+     * Era justamente lo que la dispersion hacia: a veinticinco metros el
+     * desvio superaba el ancho del cuerpo del zombi y el tiro se perdia.
+     *
+     * Dejo de tener sentido cuando el jugador dejo de elegir la distancia:
+     * no se para lejos para tener ventaja, se para donde puede.
+     */
+    const { ev } = (() => {
+      const r = armar();
+      disparar(r.w, [blanco(P.range - 0.5)]);
+      return r;
+    })();
+    expect(ev.golpes).toHaveLength(1);
   });
 
   it('un ciclo completo vuelve a dejar el arma lista', () => {

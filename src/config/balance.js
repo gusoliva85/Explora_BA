@@ -291,9 +291,21 @@ export const WEAPONS = {
     range: 28,
     cooldown: 0.4,
     windup: 0.05,
-    /** Dispersion en grados. Pequeña, pero castiga el tiro a maxima distancia. */
-    spreadDegrees: 2.5,
     noiseRadius: 22,
+    /*
+     * Habia un `spreadDegrees: 2.5` —dispersion en grados, chica pero
+     * suficiente para castigar el tiro a maxima distancia— y se fue en la
+     * Fase 17.3 bis con D-36.
+     *
+     * El motivo no es que fuera mucho o poco: es que **con el combate
+     * automatico, errar dejo de ser informacion**. El jugador no apunta,
+     * asi que un tiro que falla no le enseña nada ni le da nada que
+     * corregir. Un sistema que castiga con azar a quien no tomo la decision
+     * es solo ruido.
+     *
+     * Lo que SI sigue impidiendo un tiro es una barrera fisica, y eso lo
+     * resuelve el rayo, no el azar (D-36).
+     */
     /*
      * Sin municion, sin cargador y sin recarga (D-29, Fase 16.2).
      *
@@ -313,18 +325,20 @@ export const WEAPONS = {
      */
     shotHeight: 1.2,
     /** Medio ancho del cuerpo de un zombi para el rayo. */
-    targetRadius: 0.45,
+    targetRadius: 0.45
 
-    /**
-     * Apuntado asistido, SOLO en pantallas tactiles (tarea 6.3).
+    /*
+     * Y habia un `aimAssist: { cono: 14, maxima: 5 }`, el apuntado asistido
+     * de las pantallas tactiles. Se fue en la misma tarea, y se cayo solo:
+     * existia para **perdonarle el temblor del pulgar al jugador**, y ya no
+     * se apunta con el pulgar.
      *
-     * `cono` es cuanto busca alrededor del centro; `maxima`, cuanto puede
-     * corregir. La correccion es deliberadamente mas chica que el cono: el
-     * jugador decide a quien le tira, el juego solo le perdona el temblor
-     * del pulgar. Subir `maxima` por encima de unos 6 grados ya se siente
-     * como que el juego apunta solo, y acertar deja de tener merito.
+     * Lo que dejo escrito, por si alguna vez vuelve algo parecido: la
+     * correccion maxima era deliberadamente mas chica que el cono de
+     * busqueda, porque el jugador decidia a quien le tiraba y el juego solo
+     * le corregia la mano. Pasando los 6 grados ya se siente como que el
+     * juego apunta solo, y acertar deja de tener merito.
      */
-    aimAssist: { cono: 14, maxima: 5 }
   }
 };
 

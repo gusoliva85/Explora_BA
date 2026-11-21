@@ -5203,6 +5203,123 @@ verificar que se respetó antes de borrar nada.
 
 ---
 
+## 17.3 bis — El tiro deja de fallar, y un generador de azar que se fue entero
+
+**20 de noviembre de 2026.**
+
+**Lo que se fue.** `spreadDegrees`, `aimAssist`, las funciones `dispersar()`
+y `rumboAsistido()` de la balística, el parámetro `asistirApuntado`, y **el
+generador de azar del combate completo**.
+
+El tiro no falla nunca, salvo que haya una barrera física en el medio
+(D-36).
+
+### Errar dejó de ser información
+
+La dispersión eran dos grados y medio: chica a propósito, porque a tres
+metros no se nota y a veinticinco sí. Castigaba el tiro largo sin volver
+injusto el de cerca, que es donde se jugaba.
+
+Eso tenía sentido mientras el jugador apuntaba. **Un tiro que falla le
+enseña algo a quien eligió el ángulo**: el trazado le muestra por dónde pasó
+la bala y corrige el siguiente. Con el combate automático no eligió nada, así
+que fallar no le enseña nada ni le da nada que corregir.
+
+> **Un sistema que castiga con azar a quien no tomó la decisión es sólo
+> ruido.** No es dificultad: es que a veces el juego funciona y a veces no.
+
+El apuntado asistido se cayó solo, y de la forma más limpia: existía para
+perdonarle el temblor del pulgar al jugador, y ya no se apunta con el
+pulgar.
+
+### El generador de azar, y la trampa que valía la pena verificar
+
+La 17.3 dejó anotado el riesgo: el azar con semilla (D-12) lo consumía
+**una sola cosa**, la dispersión. Al sacarla, el generador quedaba sin
+usuarios. Y si el combate hubiera compartido el generador del mundo,
+**sacarle un consumidor habría corrido la secuencia y cambiado el mapa
+entero** sin que nadie lo pidiera.
+
+No pasó, y no por suerte. El combate tenía su propia semilla
+—`WORLD_SEED ^ 0x9e3779b9`— y el gestor de zombis la suya
+—`mission.seed ^ 0x5a5a`—. El comentario que justificaba esa separación
+hablaba del futuro: *"cualquier otra cosa que consuma azar en el futuro —el
+graznido de un pájaro, la variación de una textura— correría la secuencia
+del combate"*.
+
+Resultó servir para lo contrario de lo que anticipaba:
+
+> **Dos generadores separados no sólo se pueden razonar por separado:
+> también se pueden *borrar* por separado.** Lo que parecía prolijidad fue
+> lo que permitió sacar un sistema entero sin tocar el mapa.
+
+Es la misma familia de cosas que la 16.3 aprendió al revés, con
+`objetivoAutomatico()` guardado dentro de la bazooka: **lo que decide si un
+borrado es barato o carísimo es dónde estaba guardada cada cosa**, y eso se
+decide mucho antes de borrar.
+
+Con el azar se fueron también el `import` de `createRng` y el de
+`WORLD_SEED` en `main.js`. El combate ya no tiene una sola decisión al azar.
+
+### Diez pruebas murieron, y esta vez murieron bien
+
+Cuatro de dispersión y seis de apuntado asistido. Se borraron enteras.
+
+Y conviene marcar la diferencia con los tres casos de la Fase 16, donde
+estuve a punto de borrar pruebas que seguían valiendo:
+
+| Caso | Qué se cayó | Qué hice |
+|---|---|---|
+| `armas.test.js` (16.4) | La **premisa** del bloque (había varias armas) | Salvar las que no eran comparativas |
+| *"caminar se lee como caminar"* (16.5) | La **pose**, pero las pruebas medían el ciclo | Pasarlas a `CORRER` |
+| **Dispersión y apuntado (17.3 bis)** | **El sistema entero que medían** | Borrarlas |
+
+**Ninguna de las diez estaba mal.** Medían bien dos sistemas que el juego
+dejó de tener. Cuando lo que desaparece es el sujeto, y no la premisa del
+bloque, las pruebas se van con él.
+
+### Lo que queda en su lugar, que es menos y es mejor
+
+Tres pruebas, y la primera es la que importa:
+
+```js
+// Dos tiros identicos dan EXACTAMENTE el mismo resultado.
+expect(a.ev.disparos[0].rumbo).toBe(b.ev.disparos[0].rumbo);
+expect(a.ev.disparos[0].hasta).toEqual(b.ev.disparos[0].hasta);
+```
+
+Hay un detalle que me gustó encontrar. El `azar` por omisión del controlador
+devolvía siempre el centro —cero dispersión— para que **una prueba que no
+pasara generador obtuviera un disparo perfecto y repetible**. Era un truco
+para que las pruebas no fallaran por mala suerte.
+
+Ese truco es ahora la regla del juego. Lo que el código hacía para poder
+probarse resultó ser lo que el diseño quería.
+
+### Y una que no es de regresión sino de diseño
+
+*"A máxima distancia también acierta: ya no hay castigo por tirar lejos."*
+
+Era exactamente lo que la dispersión hacía: a veinticinco metros el desvío
+superaba el ancho del cuerpo del zombi y el tiro se perdía. Dejó de tener
+sentido cuando el jugador dejó de elegir la distancia: **no se para lejos
+para tener ventaja, se para donde puede.**
+
+### Lo que la 17.3 bis deja planteado para la 17.3 ter
+
+La 17.3 ter escribe el disparo como **ráfaga** aunque hoy la ráfaga sea de
+uno, y la prueba que vale es la de equivalencia: con `carriles = 1` y
+`repeticiones = 1`, el comportamiento tiene que ser **exactamente** el de
+hoy. No "parecido": si cambia el orden de los avisos, el ruido o el trazado,
+la refactorización se llevó puesto algo.
+
+Y hay una decisión chica que conviene cerrar ahí y no después: **el ruido es
+uno por ráfaga, no uno por proyectil.** Es un disparo, no diez. Con las
+cartas acumuladas de la 19B, uno por proyectil haría que una ráfaga tardía
+despertara literalmente a todo el mapa.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

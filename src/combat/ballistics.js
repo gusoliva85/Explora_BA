@@ -143,60 +143,32 @@ export function blancoDelRayo(origen, rumbo, objetivos, opt) {
   };
 }
 
-/**
- * Correccion de apuntado para pantallas tactiles (tarea 6.3).
+/*
+ * ---------------------------------------------------------------------------
+ * ACA HABIA UN `rumboAsistido()`, Y SE FUE EN LA 17.3 bis
+ * ---------------------------------------------------------------------------
+ * La correccion de apuntado de las pantallas tactiles. En el telefono no
+ * hay mira: el rumbo del disparo era hacia donde miraba el personaje, y el
+ * personaje miraba hacia donde lo llevaba el pulgar sobre un joystick de
+ * dos centimetros. Pedir precision de grados con eso era pedir que el
+ * jugador fallara por culpa del control y no por culpa suya.
  *
- * En el telefono no hay mira: el rumbo del disparo es hacia donde mira el
- * personaje, y el personaje mira hacia donde lo lleva el pulgar sobre un
- * joystick de dos centimetros. Pedir precision de grados con eso es pedir
- * que el jugador falle por culpa del control y no por culpa suya.
+ * Se cayo solo: existia para perdonar el temblor del pulgar, y **ya no se
+ * apunta con el pulgar** (D-28).
  *
- * La correccion es CHICA y acotada a proposito:
+ * Tres cosas que enseñaba y conviene no perder:
  *
- * - Solo mira objetivos que ya estan cerca del centro (`cono`). No busca
- *   blancos a los costados: el jugador sigue decidiendo a quien le tira.
- * - Corrige como maximo unos pocos grados (`maxima`). Si corrigiera todo
- *   seria apuntado automatico, y acertar dejaria de tener merito.
- * - Elige el mas cercano al centro, no el mas cercano en distancia: es lo
- *   que coincide con la intencion de quien esta mirando la pantalla.
- *
- * @param {{x:number,z:number}} origen
- * @param {number} rumbo grados
- * @param {Array} objetivos
- * @param {object} opt
- * @param {number} opt.alcance
- * @param {number} opt.cono semiangulo de busqueda, en grados
- * @param {number} opt.maxima correccion maxima, en grados
- * @returns {number} el rumbo corregido
+ * - Solo miraba objetivos que ya estaban cerca del centro, y corregia unos
+ *   pocos grados. Si corrigiera todo seria apuntado automatico, y acertar
+ *   dejaria de tener merito. **Eso dejo de importar el dia que acertar
+ *   dejo de ser merito del jugador.**
+ * - Elegia el mas cercano **al centro de la mira**, no el mas cercano en
+ *   distancia. Son cosas distintas, y aquella era la que coincidia con la
+ *   intencion de quien mira la pantalla. El blanco automatico de la 17.3
+ *   elige por distancia, y ahi SI corresponde: no hay mira que respetar,
+ *   hay un peligro que atender.
+ * - El giro usaba la diferencia **con signo**, no la comparacion de
+ *   angulos crudos: cerca del cruce de los 360 grados eso corrige para el
+ *   lado contrario. Es la misma familia de error que dejo al cuchillo
+ *   golpeando para atras toda una fase. Ver `core/rumbo.js`.
  */
-export function rumboAsistido(origen, rumbo, objetivos, opt) {
-  let mejor = null;
-  let mejorDesvio = Infinity;
-
-  for (const objetivo of objetivos) {
-    if (!objetivo.vivo) continue;
-    const q = objetivo.posicion;
-    const dx = q.x - origen.x;
-    const dz = q.z - origen.z;
-    if (Math.hypot(dx, dz) > opt.alcance) continue;
-
-    const desvio = difRumbos(rumboHacia(dx, dz), rumbo);
-    if (desvio > opt.cono) continue;
-    if (desvio < mejorDesvio) {
-      mejorDesvio = desvio;
-      mejor = { dx, dz };
-    }
-  }
-
-  if (!mejor) return rumbo;
-
-  /*
-   * Se gira HACIA el objetivo, como maximo `maxima` grados. El signo sale
-   * de la diferencia CON SIGNO, no de comparar los angulos crudos: cerca
-   * del cruce de los 360 grados eso corregiria para el lado contrario.
-   */
-  const deseado = rumboHacia(mejor.dx, mejor.dz);
-  const delta = ((deseado - rumbo + 540) % 360) - 180;
-  const paso = Math.max(-opt.maxima, Math.min(opt.maxima, delta));
-  return rumbo + paso;
-}

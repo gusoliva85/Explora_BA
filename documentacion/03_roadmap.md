@@ -24,44 +24,43 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.3 bis — Sacar la dispersión** · el tiro no falla por azar
+### **17.3 ter — Rayo y proyectil** · y la fórmula de D-44 desde el primer día
 
-**Qué se saca.** `spreadDegrees` y el apuntado asistido. **D-36**: lo único
-que impide el tiro es una barrera física; el azar no.
+**Qué se hace.** Escribir el disparo como **una ráfaga**, no como un tiro, y
+dejar que los proyectiles extra vuelen.
+
+**La decisión ya está tomada y escrita más abajo.** En corto:
+
+| | Qué es | ¿Puede fallar? |
+|---|---|---|
+| **El primer proyectil** | Rayo instantáneo al blanco elegido | **No** (D-36) |
+| **Los demás** | Proyectiles que viajan: segundo carril, diagonales, rebotes | **Sí** |
+
+Eso conserva las dos cosas a la vez: la promesa de que quedarse quieto
+**sirve**, y que el caos de proyectiles del final de la partida sea caos de
+verdad (D-44).
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/config/balance.js` | se va `spreadDegrees` y se va `aimAssist` entero |
-| `src/combat/weaponController.js` | se van la llamada a `dispersar()` y la de `rumboAsistido()`, y con ellas `asistirApuntado` |
-| `src/combat/ballistics.js` | `dispersar()` y `rumboAsistido()` quedan **sin llamadores** |
-| `src/main.js` | se va `asistirApuntado: () => device.isTouch` |
-| pruebas | `pistola.test.js` tiene un bloque entero de dispersión y otro de asistencia |
+| `src/combat/weaponController.js` | `#resolverDisparo` pasa a resolver **una ráfaga de N**, con N = carriles × repeticiones |
+| `src/config/balance.js` | `carriles: 1` y `repeticiones: 1`, con la fórmula escrita al lado |
+| pruebas | que con los multiplicadores en 1 el resultado sea **idéntico** al de hoy |
 
-**Por qué, y es más que un ajuste.** Con el combate automático, errar deja
-de ser información: el jugador no apuntó, así que un tiro que falla no le
-enseña nada ni le da nada que corregir. **Un sistema que castiga con azar a
-quien no tomó la decisión es sólo ruido.**
+**Por qué se escribe ahora, con todos los multiplicadores en 1.** Porque es
+gratis hoy y carísimo después. Si la 17 escribe *"un tiro"* en vez de *"una
+ráfaga de uno"*, la 19B no enchufa cartas: **rehace el disparo entero**, y
+lo rehace cuando ya hay números ajustados encima.
 
-Y la asistencia de apuntado se cae sola: existía para perdonar el temblor
-del pulgar al apuntar, y ya no se apunta con el pulgar.
+**Lo que hay que mirar con cuidado.** La prueba que vale es la de
+equivalencia: con `carriles = 1` y `repeticiones = 1`, el comportamiento
+tiene que ser **exactamente** el de hoy, no "parecido". Si cambia algo —el
+orden de los avisos, el ruido, el trazado— la refactorización se llevó
+puesto algo y conviene enterarse ahora y no en la 19B.
 
-**Lo que hay que mirar con cuidado, que es la trampa de la tarea.** El azar
-con semilla (D-12) lo usaba **sólo** la dispersión. Al sacarla, `azar` y
-`createRng(WORLD_SEED ^ …)` quedan sin usuarios en el combate. Antes de
-borrarlos hay que confirmar que ningún otro sistema los esté consumiendo:
-si el mundo se construye con el mismo generador, sacar un consumidor
-**corre la secuencia** y cambia el mapa entero sin que nadie lo pida. Ese es
-exactamente el motivo por el que el combate tiene su propia semilla, y hay
-que verificar que se respetó.
-
-**Y una pregunta honesta para resolver mirando:** sin dispersión, ¿el tiro
-sigue necesitando `targetRadius` y el rayo? Sí: el rayo es lo que hace que
-una pared pare la bala (D-36), y eso no se toca. Lo que se va es sólo la
-desviación al azar.
-
-**Cómo se sabe que está lista:** dos tiros al mismo blanco desde el mismo
-lugar dan exactamente el mismo resultado, no quedan funciones de azar sin
-llamadores, y el mapa sigue siendo el mismo de antes.
+**Y una decisión que la tarea tiene que cerrar:** ¿el ruido es **uno por
+ráfaga** o uno por proyectil? Propuesta: **uno por ráfaga**. Es un disparo,
+no diez; y con las cartas acumuladas, uno por proyectil haría que una ráfaga
+tardía despertara literalmente a todo el mapa.
 
 ---
 
@@ -1121,8 +1120,8 @@ jugándolo, no sirve nada de lo que viene después.
 - [x] **17.1 Las estadísticas nuevas.** Gus 120/25, zombi normal 100/10. Con una prueba que fije las cuentas: 4 tiros y 12 golpes, en números, no a ojo ✅ *20/11/2026 — y las cuentas quedaron fijadas con `toBe`, no con "alcanza o sobra"*
 - [x] **17.2 Definir "quieto".** El umbral y la demora ✅ *20/11/2026 — se mide la ENTRADA, no la velocidad; `avanzarQuieto()` es función pura con 10 pruebas; se ve en `F1`*
 - [x] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36) ✅ *20/11/2026 — `SelectorDeBlanco`, 13 pruebas unitarias y una de punta a punta. El blanco es una foto del momento en que frenó*
-- [ ] **17.3 bis Sacar la dispersión** (D-36). ⬅️ *la que sigue* `spreadDegrees` a 0 y el apuntado asistido afuera: el tiro no falla por azar
-- [ ] **17.3 ter Rayo y proyectil, las dos cosas.** ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
+- [x] **17.3 bis Sacar la dispersión** (D-36) ✅ *20/11/2026 — se fueron `spreadDegrees`, `aimAssist`, `dispersar()`, `rumboAsistido()` y el generador de azar del combate entero*
+- [ ] **17.3 ter Rayo y proyectil, las dos cosas.** ⬅️ *la que sigue* ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
   **Mi propuesta:** el **primer** proyectil de cada ráfaga va al blanco elegido y **no falla** (D-36); los demás —el segundo carril, las diagonales, los rebotes— **vuelan y sí pueden errar**. Eso conserva las dos cosas: la promesa de que quedarse quieto sirve, y que el caos de proyectiles del final de la partida sea caos de verdad.
   **Y hay que escribirlo con la fórmula de D-44 adentro desde el primer día**, aunque en la 17 todos los multiplicadores valgan 1: `proyectiles = carriles × repeticiones` con carriles = 1 y repeticiones = 1. Si la 17 escribe "un tiro" en vez de "una ráfaga de uno", la 19B rehace el disparo entero
 - [ ] **17.4 El blanco se mantiene.** No se recalcula cada frame. Sólo al entrar en quieto, cuando el blanco muere, o cuando sale del alcance o se pierde de vista

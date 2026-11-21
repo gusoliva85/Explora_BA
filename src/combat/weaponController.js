@@ -1,5 +1,5 @@
 import { WEAPONS } from '../config/balance.js';
-import { blancoDelRayo, dispersar, rumboAsistido } from './ballistics.js';
+import { blancoDelRayo } from './ballistics.js';
 
 /**
  * ===========================================================================
@@ -78,8 +78,6 @@ export class WeaponController {
    * @param {(info:object) => void} [opt.alHacerRuido] para el sistema de ruido (D-05)
    * @param {(info:object) => void} [opt.alDisparar] trazado y fogonazo
    * @param {Function} [opt.rayo] prueba del escenario, firma de CollisionWorld.raycast
-   * @param {() => number} [opt.azar] generador con semilla (D-12)
-   * @param {() => boolean} [opt.asistirApuntado] si corresponde ayudar a apuntar
    */
   constructor(opt = {}) {
     /*
@@ -96,17 +94,15 @@ export class WeaponController {
     this.restante = 0;
 
     /*
-     * El azar por omision NO es aleatorio.
+     * Habia dos cosas mas aca y se fueron en la 17.3 bis (D-36): `azar`, el
+     * generador con semilla, y `asistirApuntado`.
      *
-     * Devuelve siempre el centro, o sea cero dispersion. Es a proposito:
-     * una prueba que no le pase un generador obtiene un disparo perfecto y
-     * repetible, y nunca falla por mala suerte. El juego si le pasa el
-     * generador con semilla (D-12).
+     * El `azar` por omision devolvia siempre el centro —cero dispersion—
+     * para que una prueba que no pasara generador obtuviera un disparo
+     * perfecto y repetible. **Ahora todos los disparos son asi, siempre**,
+     * y el truco de las pruebas paso a ser la regla del juego.
      */
-
-    this.azar = opt.azar ?? (() => 0.5);
     this.rayo = opt.rayo;
-    this.asistirApuntado = opt.asistirApuntado ?? (() => false);
 
     this.alGolpear = opt.alGolpear;
     this.alFallar = opt.alFallar;
@@ -175,27 +171,25 @@ export class WeaponController {
   /**
    * El disparo instantaneo.
    *
-   * El orden de los tres pasos no es casual:
+   * ---------------------------------------------------------------------
+   * EL TIRO NO FALLA POR AZAR (D-36, Fase 17.3 bis)
+   * ---------------------------------------------------------------------
+   * Habia tres pasos y queda uno. El rumbo pasaba primero por el apuntado
+   * asistido —que corregia el temblor del pulgar— y despues por la
+   * dispersion, en ese orden y no al reves, porque si la asistencia venia
+   * segunda podia cancelar la dispersion y el arma se volvia un puntero
+   * perfecto en cuanto hubiera un zombi cerca del centro.
    *
-   * 1. **Asistencia** primero, sobre el rumbo limpio. Corrige el temblor
-   *    del pulgar antes de que intervenga el azar.
-   * 2. **Dispersion** despues. Si fuera al revés, la asistencia podria
-   *    cancelar la dispersion y el arma seria un puntero perfecto en
-   *    cuanto hubiera un zombi cerca del centro.
-   * 3. **El rayo** al final, con el rumbo ya definitivo.
+   * Los dos se fueron con el combate automatico. **El jugador ya no
+   * apunta**, asi que no hay temblor que perdonar ni merito que quitarle a
+   * un acierto: lo unico que decide es si hay algo fisico en el medio, y
+   * eso lo resuelve el rayo.
+   *
+   * El rumbo que entra es el que sale.
    */
   #resolverDisparo(pos, rumboGrados, objetivos = []) {
     const arma = this.arma;
-
-    let rumbo = rumboGrados;
-    if (this.asistirApuntado()) {
-      rumbo = rumboAsistido(pos, rumbo, objetivos, {
-        alcance: arma.range,
-        cono: arma.aimAssist.cono,
-        maxima: arma.aimAssist.maxima
-      });
-    }
-    rumbo = dispersar(rumbo, arma.spreadDegrees, this.azar);
+    const rumbo = rumboGrados;
 
     const impacto = blancoDelRayo(pos, rumbo, objetivos, {
       alcance: arma.range,

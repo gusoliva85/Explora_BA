@@ -26,7 +26,6 @@ import { precargar as precargarModelos } from './visual/modelos.js';
 import { HORIZONTE } from './visual/paleta.js';
 import { calidadElegida, aplicarCalidad, Calidad } from './render/postProcess.js';
 import { ajustes } from './core/settings.js';
-import { createRng } from './core/rng.js';
 import { Estadisticas, Progreso, formatearTiempo } from './core/progreso.js';
 import {
   rumboHacia,
@@ -42,8 +41,7 @@ import {
   UNITS,
   CAMERA,
   PLAYER,
-  ZOMBIE_STANDARD,
-  WORLD_SEED
+  ZOMBIE_STANDARD
 } from './config/balance.js';
 
 /**
@@ -242,18 +240,24 @@ const gus = new Gus(playerEntity, builder.mats);
 new ArmasEnMano(gus.anclaArma, builder.mats);
 
 /*
- * El azar del combate: su propio generador, con su propia semilla.
+ * ---------------------------------------------------------------------------
+ * ACA HABIA UN GENERADOR DE AZAR PROPIO DEL COMBATE, Y SE FUE EN LA 17.3 bis
+ * ---------------------------------------------------------------------------
+ * `createRng(WORLD_SEED ^ 0x9e3779b9)`. Lo consumia una sola cosa: la
+ * dispersion del tiro. Sin dispersion (D-36), **el combate no tiene una
+ * sola decision al azar**.
  *
- * No comparte el del mundo, y eso es a proposito. Si fuera el mismo, la
- * cantidad de tiros que diste cambiaria la dispersion del proximo, pero
- * tambien cualquier otra cosa que consuma azar en el futuro —el graznido de
- * un pajaro, la variacion de una textura— correria la secuencia del
- * combate. Dos generadores separados se pueden razonar por separado.
+ * Y aca estaba la trampa de la tarea, que valia la pena verificar ANTES de
+ * borrar: si el combate hubiera compartido el generador del mundo, sacarle
+ * un consumidor **habria corrido la secuencia** y cambiado el mapa entero
+ * sin que nadie lo pidiera.
  *
- * La semilla sale de la del mundo para que la partida siga siendo
- * reproducible entera con un solo numero (D-12).
+ * No paso, y no por suerte: el combate tenia su propia semilla justamente
+ * por eso, y el gestor de zombis tiene la suya (`mission.seed ^ 0x5a5a`).
+ * La separacion que parecia prolijidad resulto ser lo que permitio
+ * borrar esto sin tocar nada mas. **Dos generadores separados se pueden
+ * razonar por separado, y tambien borrar por separado.**
  */
-const azarCombate = createRng(WORLD_SEED ^ 0x9e3779b9);
 
 /** Lo que dura un intento, y lo que sobrevive a cerrar la pestaña (D-14). */
 const stats = new Estadisticas();
@@ -277,14 +281,6 @@ const arma = new WeaponController({
    * azar atado a la semilla de la partida (D-12).
    */
   rayo: (ax, az, bx, bz, altura) => collision.raycast(ax, az, bx, bz, altura),
-  azar: azarCombate,
-
-  /*
-   * El apuntado asistido se decide EN EL MOMENTO del disparo, no al
-   * arrancar. El modo de control se puede cambiar desde el menu de pausa
-   * sin recargar, asi que una decision tomada una vez quedaria vieja.
-   */
-  asistirApuntado: () => device.isTouch,
 
   alGolpear: ({ objetivo, daño, dirX, dirZ }) => {
     const vivoAntes = objetivo.vivo;
