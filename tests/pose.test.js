@@ -48,19 +48,34 @@ describe('la pose neutral', () => {
   });
 });
 
-describe('caminar se lee como caminar', () => {
+/*
+ * Este bloque se llamaba "caminar se lee como caminar" y medía `CAMINAR`.
+ * En la Fase 16.5 se fue esa pose con la segunda velocidad (D-30), y las
+ * cinco pruebas pasaron a `CORRER`.
+ *
+ * No es un reemplazo cosmético, y vale la pena decir por qué: **ninguna de
+ * las cinco era sobre caminar.** Todas miden `cicloDePasos()`, que es la
+ * función que las dos poses compartían y que `CORRER` sigue usando: que las
+ * piernas vayan en oposición, que los brazos vayan al revés que la pierna
+ * del mismo lado, que las rodillas no doblen para atrás, que el ciclo
+ * cierre y que la cadera rebote hacia abajo en cada apoyo.
+ *
+ * Si hubieran muerto con la pose, el único ciclo de pasos que le queda al
+ * juego se quedaba sin una sola prueba.
+ */
+describe('el paso se lee como un paso', () => {
   it('las piernas van en oposicion', () => {
     // Las dos piernas adelante a la vez es un salto, no un paso.
     for (const f of [0.1, 0.3, 0.6, 0.85]) {
-      const p = poseDe(Pose.CAMINAR, f);
+      const p = poseDe(Pose.CORRER, f);
       expect(Math.sign(p.piernaI), `fase ${f}`).toBe(-Math.sign(p.piernaD));
     }
   });
 
   it('los brazos van al reves que las piernas del mismo lado', () => {
-    // Es lo que separa un caminar de un muñeco arrastrado.
+    // Es lo que separa una zancada de un muñeco arrastrado.
     for (const f of [0.1, 0.35, 0.7]) {
-      const p = poseDe(Pose.CAMINAR, f);
+      const p = poseDe(Pose.CORRER, f);
       expect(Math.sign(p.brazoI), `fase ${f}`).toBe(-Math.sign(p.piernaI));
     }
   });
@@ -71,25 +86,23 @@ describe('caminar se lee como caminar', () => {
      * saltamontes. Es el error más fácil de cometer y el más difícil de
      * nombrar mirando la pantalla.
      */
-    for (const estado of [Pose.CAMINAR, Pose.CORRER]) {
-      for (let f = 0; f < 1; f += 0.02) {
-        const p = poseDe(estado, f);
-        expect(p.rodillaI, `${estado} fase ${f.toFixed(2)}`).toBeGreaterThanOrEqual(0);
-        expect(p.rodillaD, `${estado} fase ${f.toFixed(2)}`).toBeGreaterThanOrEqual(0);
-      }
+    for (let f = 0; f < 1; f += 0.02) {
+      const p = poseDe(Pose.CORRER, f);
+      expect(p.rodillaI, `fase ${f.toFixed(2)}`).toBeGreaterThanOrEqual(0);
+      expect(p.rodillaD, `fase ${f.toFixed(2)}`).toBeGreaterThanOrEqual(0);
     }
   });
 
   it('el ciclo cierra: la fase 0 y la 1 son la misma pose', () => {
     // Si no, hay un salto visible una vez por paso.
-    const a = poseDe(Pose.CAMINAR, 0);
-    const b = poseDe(Pose.CAMINAR, 1);
+    const a = poseDe(Pose.CORRER, 0);
+    const b = poseDe(Pose.CORRER, 1);
     for (const k of CLAVES) expect(b[k], k).toBeCloseTo(a[k], 6);
   });
 
   it('la cadera rebota dos veces por ciclo, una por paso', () => {
     const alturas = [];
-    for (let f = 0; f < 1; f += 0.05) alturas.push(poseDe(Pose.CAMINAR, f).cadera);
+    for (let f = 0; f < 1; f += 0.05) alturas.push(poseDe(Pose.CORRER, f).cadera);
     // Dos mínimos en el ciclo: la cadera baja en cada apoyo.
     let minimos = 0;
     for (let i = 1; i < alturas.length - 1; i++) {
@@ -101,26 +114,39 @@ describe('caminar se lee como caminar', () => {
   });
 });
 
-describe('correr no es caminar mas rapido', () => {
+describe('correr es una postura, no un ciclo acelerado', () => {
   /*
-   * Es otra postura. Si sólo se acelerara el ciclo, el personaje se vería
-   * como alguien caminando en cámara rápida, que es el efecto más barato y
-   * más obvio de un juego sin presupuesto de animación.
+   * Había tres pruebas acá y las tres comparaban contra `CAMINAR`: zancada
+   * más larga, torso más volcado, brazos más altos. Se fueron con la pose
+   * en la 16.5.
+   *
+   * Lo que cuidaban sí sobrevive, y es lo que impide el error más barato de
+   * un juego sin presupuesto de animación: reproducir un ciclo de caminar a
+   * más velocidad y llamarlo correr. Sin la segunda pose, la única forma de
+   * medirlo es en absoluto, contra lo que significa correr de verdad.
    */
-  it('la zancada es mas larga', () => {
-    const caminar = poseDe(Pose.CAMINAR, 0.25);
-    const correr = poseDe(Pose.CORRER, 0.25);
-    expect(Math.abs(correr.piernaI)).toBeGreaterThan(Math.abs(caminar.piernaI) * 1.4);
+  it('la zancada es de alguien que corre, no de alguien que camina', () => {
+    /*
+     * 42 grados de amplitud. Caminar eran 26, y una persona caminando a
+     * paso vivo no pasa de unos 30: por encima de eso la pierna sale de la
+     * vertical lo suficiente como para que el cuerpo tenga que caer hacia
+     * adelante, que es la definición mecánica de correr.
+     */
+    expect(Math.abs(poseDe(Pose.CORRER, 0.25).piernaI)).toBeGreaterThan(32);
   });
 
-  it('el torso va mas volcado hacia adelante', () => {
-    expect(poseDe(Pose.CORRER, 0.5).torso).toBeGreaterThan(poseDe(Pose.CAMINAR, 0.5).torso);
+  it('el torso va volcado hacia adelante, no erguido', () => {
+    // Alguien que camina va derecho. Correr es caerse hacia adelante y
+    // alcanzarse con la pierna.
+    expect(poseDe(Pose.CORRER, 0.5).torso).toBeGreaterThan(8);
   });
 
-  it('los brazos suben mas', () => {
-    const caminar = poseDe(Pose.CAMINAR, 0.25);
-    const correr = poseDe(Pose.CORRER, 0.25);
-    expect(Math.abs(correr.brazoD)).toBeGreaterThan(Math.abs(caminar.brazoD));
+  it('los brazos trabajan: no cuelgan', () => {
+    // Quieto, el brazo se mueve unos 6 grados. Corriendo tiene que ser
+    // otro orden de magnitud o el cuerpo se ve arrastrado por las piernas.
+    const correr = Math.abs(poseDe(Pose.CORRER, 0.25).brazoD);
+    const quieto = Math.abs(poseDe(Pose.QUIETO, 0.25).brazoD);
+    expect(correr).toBeGreaterThan(quieto * 3);
   });
 });
 
@@ -131,14 +157,21 @@ describe('los pasos no patinan', () => {
      * en vez de empujarse contra él. Es lo mismo que pasa en un juego
      * cuando alguien olvida atar la animación a la velocidad.
      */
-    const lento = velocidadDeCiclo(Pose.CAMINAR, 1.5);
+    /*
+     * Las dos medidas son de `CORRER`, y antes la lenta era de `CAMINAR`.
+     * El cambio no la debilita: lo que la prueba dice ahora es que **el
+     * ciclo sigue a la velocidad real**, que es exactamente lo que importa
+     * con una sola marcha. Gus pasa por 1,5 m/s cada vez que arranca y cada
+     * vez que frena, y con el joystick a medio camino se queda ahí.
+     */
+    const lento = velocidadDeCiclo(Pose.CORRER, 1.5);
     const rapido = velocidadDeCiclo(Pose.CORRER, 6);
     expect(rapido).toBeGreaterThan(lento);
   });
 
   it('nunca se queda en cero, aunque la velocidad sea cero', () => {
     // Un ciclo detenido en mitad del paso deja la pierna clavada en el aire.
-    expect(velocidadDeCiclo(Pose.CAMINAR, 0)).toBeGreaterThan(0);
+    expect(velocidadDeCiclo(Pose.CORRER, 0)).toBeGreaterThan(0);
   });
 
   it('quieto tiene su propio ritmo, lento', () => {
@@ -273,10 +306,10 @@ describe('el animador', () => {
 
   it('pedir el mismo ciclo dos veces no reinicia nada', () => {
     const a = new Animador();
-    a.pedir(Pose.CAMINAR);
+    a.pedir(Pose.CORRER);
     a.update(0.3, 3);
     const faseAntes = a.fase;
-    expect(a.pedir(Pose.CAMINAR)).toBe(false);
+    expect(a.pedir(Pose.CORRER)).toBe(false);
     expect(a.fase).toBe(faseAntes);
   });
 
@@ -357,7 +390,7 @@ describe('el animador', () => {
   });
 
   it('los ciclos NO son gestos', () => {
-    for (const ciclo of [Pose.QUIETO, Pose.CAMINAR, Pose.CORRER, Pose.MUERTO]) {
+    for (const ciclo of [Pose.QUIETO, Pose.CORRER, Pose.MUERTO]) {
       expect(esGesto(ciclo), ciclo).toBe(false);
     }
   });

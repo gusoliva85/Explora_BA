@@ -58,7 +58,8 @@ test.describe('el toque llega a donde tiene que llegar', () => {
     await expect(page.locator('#screen-hud')).toBeVisible();
 
     // El centro de cada boton tiene que devolver ese boton, no otra cosa.
-    for (const id of ['btn-attack', 'btn-run', 'btn-pause']) {
+    // Eran tres: `btn-run` se fue en la 16.5 con la segunda velocidad.
+    for (const id of ['btn-attack', 'btn-pause']) {
       const quien = await page.evaluate((idBoton) => {
         const b = document.getElementById(idBoton);
         const r = b.getBoundingClientRect();

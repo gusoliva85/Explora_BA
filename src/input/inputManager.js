@@ -48,7 +48,6 @@ export class InputManager {
     this.apuntando = false;
 
     this.buttons = {
-      run: false,
       attack: false,
       interact: false
     };
@@ -119,12 +118,11 @@ export class InputManager {
 
   #bindKeyboard() {
     const KEYMAP = {
-      ShiftLeft: 'run',
-      ShiftRight: 'run',
       KeyE: 'interact',
-      // R (recargar), H (curarse), F (bazooka) y Q (cambiar de arma) se
-      // fueron en la Fase 16 con la municion, los botiquines, el sistema de
-      // bomba y el cuchillo. Con un arma sola no hay nada que alternar.
+      // R (recargar), H (curarse), F (bazooka), Q (cambiar de arma) y
+      // Shift (correr) se fueron en la Fase 16 con la municion, los
+      // botiquines, el sistema de bomba, el cuchillo y la segunda
+      // velocidad. No queda nada que alternar ni que mantener apretado.
       Space: 'attack'
     };
 

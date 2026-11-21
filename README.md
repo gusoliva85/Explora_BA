@@ -24,8 +24,9 @@ angosto pero lo esquiva.
 > [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
 >
 > 📌 **Este archivo va atrás de la poda, y conviene saber cuánto.** Está al
-> día hasta la tarea **16.4** en lo que toca al arma: hay **una sola**, no se
-> cambia y no hay cuerpo a cuerpo. Lo que sigue describiendo abajo y **ya no
+> día hasta la tarea **16.5** en lo que toca al arma y al movimiento: hay
+> **un arma sola**, no se cambia, no hay cuerpo a cuerpo, y **Gus se mueve a
+> una sola velocidad** (6 m/s, corriendo). Lo que sigue describiendo abajo y **ya no
 > existe** son la munición y la recarga (se fueron en la 16.2), la bazooka
 > (16.3), y los botiquines, los objetos del piso y la curación (16.1). Se va
 > a reescribir entero cuando la fase cierre: arreglarlo tarea por tarea es
@@ -50,9 +51,9 @@ además muestra la dirección para abrirlo desde el celular.
 
 | | Teclado y mouse | Táctil |
 |---|---|---|
-| Mover | `WASD` o flechas | Dedo en la mitad izquierda |
+| Mover (siempre corriendo) | `WASD` o flechas | Dedo en la mitad izquierda |
 | Cámara | Arrastrar / rueda para acercar | Dedo en la mitad derecha |
-| Correr | `Shift` | Botón |
+| ~~Correr~~ | — | — (se fue en la 16.5: correr es la única velocidad) |
 | Disparar | Click o `Espacio` | Botón grande (**arrastralo para apuntar**) |
 | ~~Cambiar de arma~~ | — | — (se fue en la 16.4: hay un arma sola) |
 | ~~Recargar~~ | — | — (se fue en la 16.2: no hay munición) |

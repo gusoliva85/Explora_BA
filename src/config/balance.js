@@ -30,8 +30,26 @@ export const UNITS = {
 
 export const PLAYER = {
   maxHealth: 100,
-  walkSpeed: 3.2,
-  runSpeed: 6.0,
+  /**
+   * La velocidad. **Una sola** (D-30).
+   *
+   * Habia dos, `walkSpeed: 3.2` y `runSpeed: 6.0`, y un boton para
+   * alternarlas. Se fue la lenta en la Fase 16.5, y con ella el boton.
+   *
+   * ---------------------------------------------------------------------
+   * POR QUE SE LLAMA `speed` Y NO `runSpeed`
+   * ---------------------------------------------------------------------
+   * El numero es el de correr, asi que `runSpeed` seguiria siendo cierto.
+   * Pero un nombre que dice "correr" implica que hay otra cosa que no es
+   * correr, y no la hay: **Gus se mueve de una sola manera.** Un nombre que
+   * sugiere una alternativa inexistente es la misma clase de mentira que la
+   * funda del cuchillo en la bota, y cuesta lo mismo arreglarla: nada.
+   *
+   * El zombi SI conserva sus dos velocidades —`walkSpeed` y `chaseSpeed`,
+   * mas abajo— porque el zombi si cambia de marcha cuando te ve. La
+   * asimetria es a proposito: el jugador no tiene marchas, el zombi si.
+   */
+  speed: 6.0,
   /** Cuanto tarda en alcanzar la velocidad objetivo (m/s^2). Evita el arranque robotico. */
   acceleration: 28,
   deceleration: 34,

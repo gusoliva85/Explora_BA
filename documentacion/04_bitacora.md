@@ -4422,6 +4422,129 @@ Dos cosas, y la segunda no es de borrado:
 
 ---
 
+## 16.5 — Caminar, y cinco pruebas que no eran sobre caminar
+
+**20 de noviembre de 2026.**
+
+**Lo que se fue.** `PLAYER.walkSpeed`, `isRunning`, `Pose.CAMINAR` con su
+ciclo de pasos, el botón CORRER, las teclas `Shift`, y el parámetro
+`runHeld` de `PlayerController.update()`. `runSpeed` pasó a llamarse
+**`speed`**.
+
+Gus se mueve de una sola manera: **6 m/s, corriendo, siempre.**
+
+### El renombre no es cosmético
+
+`runSpeed: 6.0` seguía siendo verdad: el número es el de correr. Pero un
+nombre que dice "correr" **implica que hay otra cosa que no es correr**, y
+no la hay. Es la misma clase de mentira que la funda del cuchillo en la bota
+de la 16.4: no rompe nada, no la nota nadie, y le cuenta algo falso al
+próximo que lea el archivo.
+
+Lo que sí conserva sus dos velocidades es el zombi —`walkSpeed` y
+`chaseSpeed`—, y la asimetría quedó escrita en el balance porque es una
+decisión y no un descuido: **el jugador no tiene marchas, el zombi sí.** El
+zombi cambia de paso cuando te ve, y ese cambio es la señal de que te
+detectó.
+
+### Las cinco pruebas que casi se van por el nombre del bloque
+
+`pose.test.js` tenía un bloque llamado *"caminar se lee como caminar"* con
+cinco pruebas, todas sobre `Pose.CAMINAR`. Por el nombre y por el argumento
+—se borra la pose, se borran sus pruebas— se iban las cinco.
+
+**Ninguna de las cinco era sobre caminar.** Las cinco miden
+`cicloDePasos()`, la función que `CAMINAR` y `CORRER` compartían:
+
+| Prueba | Qué fija |
+|---|---|
+| Las piernas van en oposición | Las dos adelante a la vez es un salto, no un paso |
+| Los brazos al revés que la pierna del mismo lado | Lo que separa un paso de un muñeco arrastrado |
+| Las rodillas nunca doblan al revés | El error más fácil de cometer y el más difícil de nombrar mirando |
+| El ciclo cierra en la fase 1 | Si no, hay un salto visible una vez por paso |
+| La cadera rebota hacia abajo en cada apoyo | El peso del cuerpo cayendo sobre la pierna |
+
+Si morían con la pose, **el único ciclo de pasos que le queda al juego se
+quedaba sin una sola prueba.** Pasaron a `CORRER` y están todas en verde.
+
+> **Es la misma lección de la 16.4 con `armas.test.js`, y van dos seguidas.**
+> El nombre de un bloque de pruebas dice contra qué se escribieron, no qué
+> miden. Cuando una premisa se cae, hay que leer prueba por prueba cuál
+> dependía de ella. Las premisas no se reparten parejo dentro de un archivo.
+
+### Y tres que sí murieron, con un reemplazo peor pero honesto
+
+El bloque *"correr no es caminar más rápido"* tenía tres comparaciones
+contra `CAMINAR`: zancada más larga, torso más volcado, brazos más altos.
+Las tres se fueron: no hay segunda pose contra la cual comparar.
+
+Lo que cuidaban importa —es lo que impide el truco más barato de un juego
+sin presupuesto de animación, que es reproducir el ciclo de caminar más
+rápido y llamarlo correr— así que se reescribieron **en absoluto**, contra
+lo que significa correr de verdad:
+
+```js
+// 42 grados de zancada. Caminar eran 26, y una persona a paso vivo
+// no pasa de unos 30: por encima de eso el cuerpo tiene que caer hacia
+// adelante, que es la definición mecánica de correr.
+expect(Math.abs(poseDe(Pose.CORRER, 0.25).piernaI)).toBeGreaterThan(32);
+```
+
+**Son peores pruebas que las comparativas, y conviene admitirlo.** Un umbral
+absoluto es un número elegido; una comparación entre dos poses es una
+relación que se sostiene sola. Pero una comparación necesita dos cosas, y
+quedó una.
+
+### La duda que la 16.4 dejó planteada, resuelta: `velocidadDeCiclo()` se queda
+
+La pregunta era si, con una sola velocidad, multiplicar el ciclo de pasos
+por la velocidad real no queda siendo **una cuenta fija disfrazada de
+cálculo**. La respuesta es que no, y por dos motivos que se ven jugando:
+
+1. **La velocidad real casi nunca es la del tope.** Hay aceleración de 28
+   m/s² y frenado de 34: arrancar y parar pasan por todos los valores del
+   medio, y es ahí donde un ciclo fijo delata el truco — los pies patinan
+   durante el medio segundo que tarda en llegar a los 6 m/s.
+2. **El joystick a medio camino da media velocidad.** Eso no se fue con el
+   botón: `Math.min(inputMag, 1)` sigue ahí. Lo que se perdió es la
+   *marcha*, no la entrada analógica, y son dos cosas distintas que es fácil
+   confundir al borrar.
+
+O sea: hay movimiento lento sin que exista una velocidad lenta.
+
+### El sigilo, y lo que cuesta de verdad
+
+Gus confirmó la decisión antes de empezar: **el sigilo se va y no vuelve.**
+En dos tareas seguidas la poda se llevó las dos formas de ser silencioso —el
+cuchillo en la 16.4, caminar en la 16.5— y ahora está dicho que eso es el
+diseño, no un efecto colateral.
+
+Lo que sí apareció midiendo, y queda escrito en la prueba que lo toca:
+**escapar dejó de costar.** El margen contra el zombi era de medio metro por
+segundo caminando y es de más del doble corriendo:
+
+| | Velocidad | Margen contra el zombi que persigue (2,9 m/s) |
+|---|---|---|
+| Gus caminando (borrado) | 3,2 m/s | +0,3 m/s |
+| **Gus hoy** | **6,0 m/s** | **+3,1 m/s** |
+
+Antes, huir caminando te dejaba al zombi pegado y correr era la decisión.
+Hoy cualquier movimiento alcanza. Es coherente con el juego nuevo —la
+decisión es *dónde pararse*, no *cómo moverse*— pero **si en la 19A los
+tramos se sienten fáciles de atravesar sin pelear, el número a mirar es
+éste**, y está anotado en `zombis.spec.js` para que no haya que
+redescubrirlo.
+
+### Lo que la 16.5 deja planteado para la 16.6
+
+El botón de interactuar es el único de los que quedan que **aparece y
+desaparece solo**. Hay código que decide cuándo mostrarlo, y ese código es
+más fácil de olvidar que el botón: es exactamente la forma de resto que
+encontró la 16.4 —algo que sostiene a otra cosa— pero al revés, porque acá
+lo que puede quedar huérfano es el que manda, no el mandado.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

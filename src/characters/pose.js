@@ -35,15 +35,24 @@
 /** Los estados que puede tener un personaje. */
 export const Pose = {
   QUIETO: 'quieto',
-  CAMINAR: 'caminar',
   CORRER: 'correr',
   DISPARAR: 'disparar',
   GOLPEADO: 'golpeado',
   MUERTO: 'muerto'
 };
 /*
- * Habia una pose mas, `ATACAR`, y era el cuchillazo. Se fue con el cuchillo
- * en la Fase 16.4 (D-29).
+ * Se fueron dos poses, en dos tareas seguidas.
+ *
+ * `CAMINAR` se fue en la 16.5 con la segunda velocidad (D-30). Era el mismo
+ * ciclo de pasos que `CORRER` con otros cuatro numeros: zancada de 26
+ * grados en vez de 42, brazos de 20 en vez de 38, rebote de 0,035 y torso a
+ * 4 grados. **Lo que la distinguia no era la velocidad sino la postura**, y
+ * esa es justamente la razon por la que no alcanza con acelerar el ciclo:
+ * un personaje con la pose de caminar reproducida rapido se ve como alguien
+ * caminando en camara rapida, no como alguien corriendo. Si alguna vez
+ * vuelve una segunda marcha, tiene que volver con su postura propia.
+ *
+ * `ATACAR` se fue en la 16.4 con el cuchillo (D-29).
  *
  * Lo que enseñaba vale para las que quedan, asi que queda escrito: el gesto
  * era asimetrico —el brazo salia en la primera cuarta parte y volvia en las
@@ -197,20 +206,15 @@ export function poseDe(estado, fase) {
   const f = ((fase % 1) + 1) % 1;
 
   switch (estado) {
-    case Pose.CAMINAR:
-      return cicloDePasos(f, {
-        amplitud: 26,
-        amplitudBrazo: 20,
-        rebote: 0.035,
-        inclinacion: 4
-      });
-
     case Pose.CORRER:
       /*
        * Correr no es caminar más rápido: es otra postura. Zancada más
-       * larga, torso más volcado hacia adelante y brazos más altos. Si
-       * sólo se acelerara el ciclo, el personaje se vería como alguien
-       * caminando en cámara rápida.
+       * larga, torso más volcado hacia adelante y brazos más altos.
+       *
+       * Hasta la 16.5 había un `CAMINAR` al lado con otros números, y era
+       * la comparación la que hacía evidente el punto. Ahora que es la
+       * única, conviene decirlo solo: **estos cuatro números son los de
+       * alguien que corre**, no los de un ciclo acelerado.
        */
       return cicloDePasos(f, {
         amplitud: 42,
@@ -288,13 +292,27 @@ export function poseDe(estado, fase) {
 /**
  * Cuántos ciclos por segundo le corresponden a cada estado.
  *
- * Caminar y correr se multiplican por la velocidad real, para que los pies
- * no patinen: un ciclo fijo hace que el personaje parezca arrastrado por el
- * piso en vez de empujarse contra él.
+ * Correr se multiplica por la velocidad real, para que los pies no patinen:
+ * un ciclo fijo hace que el personaje parezca arrastrado por el piso en vez
+ * de empujarse contra él.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE SIGUE SIENDO UN CALCULO Y NO UN NUMERO FIJO
+ * ---------------------------------------------------------------------------
+ * La tarea 16.5 lo dejó planteado como una duda: con una sola velocidad,
+ * ¿no queda esto siendo una cuenta fija disfrazada de cálculo?
+ *
+ * No, y por dos motivos que se ven jugando. **La velocidad real casi nunca
+ * es la del tope**: hay aceleración (28 m/s²) y frenado (34), así que
+ * arrancar y parar pasan por todos los valores del medio, y es ahí donde un
+ * ciclo fijo delata el truco — los pies patinan durante el medio segundo
+ * que tarda en llegar a los 6 m/s. Y el joystick a medio camino da media
+ * velocidad, que es movimiento lento sin que exista una marcha lenta.
+ *
+ * El piso de 0,3 es lo que impide que el ciclo se congele al arrancar.
  */
 export function velocidadDeCiclo(estado, velocidad = 0) {
   switch (estado) {
-    case Pose.CAMINAR:
     case Pose.CORRER:
       // Un paso por cada 0,85 m recorridos, aproximadamente.
       return Math.max(0.3, velocidad / 1.7);

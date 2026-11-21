@@ -29,8 +29,13 @@ export class PlayerController {
     this.velocity = new pc.Vec3();
     /** Angulo al que mira el personaje, en grados. */
     this.yaw = 0;
-    this.isRunning = false;
     this.invulnerableFor = 0;
+    /*
+     * Habia un `isRunning`, y era el estado mas leido del jugador: elegia
+     * la velocidad, elegia la pose, y lo miraba el HUD. Se fue en la Fase
+     * 16.5 con la segunda velocidad (D-30). No se reemplaza por nada,
+     * porque no hay nada que preguntar: si Gus se mueve, corre.
+     */
 
     this._desired = new pc.Vec3();
     this._tmp = new pc.Vec3();
@@ -51,12 +56,11 @@ export class PlayerController {
   /**
    * @param {number} dt
    * @param {{x:number,y:number}} moveInput vector de entrada normalizado
-   * @param {boolean} runHeld
    * @param {number} cameraYaw orientacion horizontal de la camara, en grados
    * @param {number} [rumboForzado] si se pasa, el personaje MIRA hacia ahi
    *   aunque camine para otro lado. Lo usa el apuntado con el pulgar.
    */
-  update(dt, moveInput, runHeld, cameraYaw, rumboForzado = null) {
+  update(dt, moveInput, cameraYaw, rumboForzado = null) {
     if (this.invulnerableFor > 0) this.invulnerableFor -= dt;
 
     // 1. Entrada -> direccion en el mundo, relativa a la camara.
@@ -65,11 +69,21 @@ export class PlayerController {
     const dirZ = dir.z;
     const inputMag = Math.hypot(dirX, dirZ);
 
-    // 2. Velocidad objetivo con aceleracion, no instantanea.
-    this.isRunning = runHeld && inputMag > 0.6;
-    const topSpeed = this.isRunning ? PLAYER.runSpeed : PLAYER.walkSpeed;
-    const targetX = inputMag > 0 ? (dirX / inputMag) * topSpeed * Math.min(inputMag, 1) : 0;
-    const targetZ = inputMag > 0 ? (dirZ / inputMag) * topSpeed * Math.min(inputMag, 1) : 0;
+    /*
+     * 2. Velocidad objetivo con aceleracion, no instantanea.
+     *
+     * El tope es uno solo. Antes dependia de `runHeld && inputMag > 0.6`:
+     * correr pedia **las dos cosas**, el boton apretado y el joystick bien
+     * tirado, porque con el pulgar a medio camino un tope alto hacia que el
+     * personaje saliera disparado con un gesto chico.
+     *
+     * Eso ya no hace falta, pero el problema que resolvia sigue existiendo
+     * y lo sigue resolviendo `Math.min(inputMag, 1)`: **el joystick a medio
+     * camino da media velocidad.** La entrada analogica no se perdio con el
+     * boton; lo que se perdio es la marcha, que es otra cosa.
+     */
+    const targetX = inputMag > 0 ? (dirX / inputMag) * PLAYER.speed * Math.min(inputMag, 1) : 0;
+    const targetZ = inputMag > 0 ? (dirZ / inputMag) * PLAYER.speed * Math.min(inputMag, 1) : 0;
 
     const rate = inputMag > 0 ? PLAYER.acceleration : PLAYER.deceleration;
     this.velocity.x = approach(this.velocity.x, targetX, rate * dt);
@@ -94,12 +108,12 @@ export class PlayerController {
      *
      * Normalmente mira hacia donde camina. Pero si viene un rumbo forzado
      * —el pulgar derecho apuntando— MANDA ESE, y entonces se puede caminar
-     * para un lado y disparar para el otro. Es lo que separa "correr" de
+     * para un lado y disparar para el otro. Es lo que separa huir de
      * "retroceder tirando", que es la diferencia entre escapar y pelear.
      *
      * El giro hacia el rumbo apuntado es instantaneo y no suavizado: el
      * pulgar ya es el suavizado. Pasarlo por el mismo `turnSpeed` que el
-     * caminar haria que la mira vaya atras del dedo, que se siente como
+     * movimiento haria que la mira vaya atras del dedo, que se siente como
      * que el juego no responde.
      */
     if (rumboForzado !== null) {

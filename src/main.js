@@ -570,7 +570,6 @@ byId('btn-restart-win').addEventListener('click', () => startMission());
 // Al morir se reanuda desde el ultimo control, no desde cero.
 byId('btn-restart-lose').addEventListener('click', () => startMission({ fromCheckpoint: true }));
 
-input.bindHudButton(byId('btn-run'), 'run');
 /*
  * El de atacar no es un boton comun: ver `bindAimButton`. Un toque dispara
  * hacia adelante; mantenerlo y arrastrar lo convierte en joystick de
@@ -652,7 +651,7 @@ app.on('update', (rawDt) => {
         })()
       : null;
 
-    player.update(dt, input.move, input.buttons.run, camera.yaw, rumboApuntado);
+    player.update(dt, input.move, camera.yaw, rumboApuntado);
     mission.update(dt, player.position);
     // La calle manda: la camara se realinea al tramo que el jugador pisa.
     camera.setStreetHeading(mission.streetHeading(player.position));
@@ -695,13 +694,12 @@ app.on('update', (rawDt) => {
 
     /*
      * Gus se anima a partir de lo que YA paso en este cuadro: su velocidad
-     * real, si esta corriendo, si esta vivo y si se esta curando. No hay
+     * real y si esta vivo. No hay
      * una maquina de estados aparte que haya que mantener sincronizada con
      * la del juego; la animacion es una lectura del estado, no una copia.
      */
     gus.update(dt, {
       velocidad: player.velocidadActual,
-      corriendo: player.isRunning,
       vivo: player.health > 0
     });
 

@@ -402,14 +402,15 @@ export class Gus {
    * @param {number} dt
    * @param {object} situacion
    * @param {number} situacion.velocidad m/s
-   * @param {boolean} situacion.corriendo
+
    * @param {boolean} situacion.vivo
    */
   update(dt, situacion) {
-    const { velocidad = 0, corriendo = false, vivo = true } = situacion;
+    const { velocidad = 0, vivo = true } = situacion;
 
     if (!vivo) this.animador.pedir(Pose.MUERTO);
-    else if (velocidad > 0.35) this.animador.pedir(corriendo ? Pose.CORRER : Pose.CAMINAR);
+    // Moverse es correr: no hay segunda marcha que elegir (D-30).
+    else if (velocidad > 0.35) this.animador.pedir(Pose.CORRER);
     else this.animador.pedir(Pose.QUIETO);
 
     this.animador.update(dt, velocidad);

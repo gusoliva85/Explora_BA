@@ -95,28 +95,36 @@ test('un zombi detecta al jugador, lo persigue y lo muerde', async ({ page }) =>
   expect(info.mordio, 'el zombi nunca llego a hacer daño').toBe(true);
 });
 
-test('se puede escapar corriendo de un zombi', async ({ page }) => {
+test('se puede escapar de un zombi', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-start').click();
   await expect(page.locator('#screen-hud')).toBeVisible();
 
   /*
-   * Es la regla de diseño mas importante del combate: el zombi persiguiendo
-   * es mas lento que Gus caminando. Si alguna vez deja de serlo, el juego
-   * pasa de "decidir si pelear" a "pelear siempre", y eso contradice el
-   * pilar de decisiones rapidas del documento 01.
+   * Es la regla de diseño mas importante del combate: **el zombi
+   * persiguiendo es mas lento que Gus.** Si alguna vez deja de serlo, el
+   * juego pasa de "decidir si pelear" a "pelear siempre".
+   *
+   * La prueba comparaba contra las dos velocidades del jugador, y la
+   * interesante era la lenta: el margen mas chico, el que se rompe
+   * primero. Caminar se fue en la 16.5 (D-30), asi que ahora hay un solo
+   * margen y conviene mirarlo con numero: 6,0 contra 2,9 es mas del doble.
+   *
+   * **Y eso es mucho, no poco, y hay que tenerlo a la vista.** Escapar
+   * dejo de costar: antes, huir caminando dejaba al zombi a medio metro
+   * por segundo de distancia y correr era la decision. Hoy cualquier
+   * movimiento basta. Es coherente con el juego nuevo —la decision es
+   * donde pararse, no como moverse— pero si en la 19A los tramos se
+   * sienten faciles de atravesar sin pelear, el numero a mirar es este.
    */
   const info = await page.evaluate(() => {
     const { PLAYER, ZOMBIE_STANDARD } = globalThis.game.balance;
-    return {
-      caminar: PLAYER.walkSpeed,
-      correr: PLAYER.runSpeed,
-      perseguir: ZOMBIE_STANDARD.chaseSpeed
-    };
+    return { jugador: PLAYER.speed, perseguir: ZOMBIE_STANDARD.chaseSpeed };
   });
 
-  expect(info.perseguir).toBeLessThan(info.caminar);
-  expect(info.perseguir).toBeLessThan(info.correr);
+  expect(info.perseguir).toBeLessThan(info.jugador);
+  // El margen, escrito: hoy el jugador va al doble que el que lo persigue.
+  expect(info.jugador / info.perseguir).toBeGreaterThan(1.5);
 });
 
 /* =========================================================================

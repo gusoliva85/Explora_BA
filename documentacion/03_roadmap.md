@@ -24,42 +24,34 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.5 — Sacar caminar** · quinta de la poda
+### **16.6 — Sacar interactuar** · sexta de la poda
 
-**Qué se saca.** La velocidad lenta. **Correr pasa a ser la única forma de
-moverse** (**D-30**), y con eso se va el botón de CORRER, que es el segundo
-de los tres botones de acción que quedan.
+**Qué se saca.** El botón `E` y todo el sistema de interacción. **Ya no hay
+nada con lo que interactuar**: los ítems del piso se fueron en la 16.1 y los
+controles se toman caminándolos.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/config/balance.js` | se va `PLAYER.walkSpeed`. Queda `runSpeed` como la única velocidad, y hay que decidir si se renombra o se deja |
-| `src/player/playerController.js` | mueren `isRunning` y el `topSpeed` condicional de la línea 69 |
-| `src/characters/pose.js` | se va `Pose.CAMINAR` y su ciclo de pasos de amplitud 26 |
-| `src/characters/gus.js` | la línea 412 deja de elegir entre dos poses |
-| `index.html` y `hud.css` | se va `btn-run` |
-| `src/input/inputManager.js` | se van el botón `run` y las teclas `Shift` |
-| pruebas | lo de `CAMINAR` en `pose.test.js`, y la comparación de amplitudes contra el zombi en `zombiPose.test.js` |
+| `src/config/balance.js` | se va `PLAYER.interactRange` |
+| `src/input/inputManager.js` | se van el botón `interact` y la tecla `E` |
+| `index.html` y `hud.css` | se va `btn-interact` con su animación `respira` |
+| `src/main.js` | se van el `bindHudButton` y lo que mire `wasPressed('interact')` |
+| `src/ui/hud.js` | lo que muestre y esconda el botón |
+| pruebas | lo que quede en `controles.spec.js` y `mobile.spec.js` |
 
-**Lo que hay que mirar con cuidado, y ahora son cuatro avisos y no tres.** La
-16.2 enseñó que un aviso puede viajar colgado de otro; la 16.3, que una pose
-puede quedarse viva después de que muera quien la pedía; la 16.4, que **una
-función de cableado puede estar sosteniendo cuatro cosas sanas a la vez**.
-Acá la candidata es `velocidadDeCiclo()`: hoy multiplica el ciclo de pasos
-por la velocidad real para que los pies no patinen, y trata `CAMINAR` y
-`CORRER` juntos en el mismo `case`. Con una sola velocidad hay que ver si
-sigue teniendo sentido medir, o si queda una cuenta fija disfrazada de
-cálculo.
+**Lo que hay que mirar con cuidado.** El botón de interactuar es el único
+que **aparece y desaparece solo**, y eso lo hace distinto de los otros tres:
+hay código que decide cuándo mostrarlo, y ese código es más fácil de olvidar
+que el botón. La 16.3 dejó escrita una regla de especificidad de CSS que nació
+precisamente de un botón que se escondía; hay que confirmar que la clase
+`.hidden` quede sin usuarios huérfanos.
 
-**Y hay una que no es de borrado, es de diseño:** `isRunning` también decide
-el ruido que hace Gus al moverse y la amplitud del balanceo de cámara. Si
-correr es lo único que hay, **el sigilo por velocidad desaparece**, igual que
-desapareció el sigilo por arma en la 16.4. Hay que decidir si eso está bien
-—la respuesta probable es que sí, porque la decisión ahora es *dónde pararse*
-y no *cómo moverse*— pero decidirlo, no dejarlo pasar.
+**Y lo de siempre, que ya pasó cinco veces:** después de borrar, `grep` de
+los nombres que deberían haber desaparecido, **y también del que los pedía**.
 
-**Cómo se sabe que está lista:** no hay botón de correr, no queda una
-segunda velocidad en ningún lado, Gus tiene un solo ciclo de piernas, la
-consola está limpia y todo en verde.
+**Cómo se sabe que está lista:** queda **un solo botón de acción** en
+pantalla —DISPARAR—, no hay tecla `E`, la consola está limpia y todo en
+verde. La 16.7 mueve ese botón y la 16.8 ordena lo que quede.
 
 ---
 
@@ -1062,8 +1054,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 - [x] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga ✅ *8/11/2026*
 - [x] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma, el cohete y la explosión ✅ *8/11/2026 — y `objetivoAutomatico()` rescatado a `combat/objetivo.js`*
 - [x] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola ✅ *20/11/2026 — 1.311 líneas borradas y 611 escritas, 20 archivos; `tests/arma.test.js` murió entero*
-- [ ] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30) ⬅️ *la que sigue*
-- [ ] **16.6 Interactuar.** Ya no hay nada con lo que interactuar
+- [x] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30) ✅ *20/11/2026 — se va `walkSpeed`, `isRunning`, `Pose.CAMINAR` y el botón CORRER; `runSpeed` pasa a llamarse `speed`*
+- [ ] **16.6 Interactuar.** Ya no hay nada con lo que interactuar ⬅️ *la que sigue*
 - [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27)
 - [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick
 

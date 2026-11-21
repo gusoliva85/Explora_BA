@@ -143,9 +143,22 @@ describe('el caminar es asimetrico: arrastra una pierna', () => {
     const zPierna = amplitud(PoseZ.CAMINAR, 'piernaI', poseZombiDe);
     expect(zBrazo / zPierna, 'el zombi contrapesa como una persona').toBeLessThan(0.55);
 
-    const gBrazo = amplitud(Pose.CAMINAR, 'brazoI', poseDe);
-    const gPierna = amplitud(Pose.CAMINAR, 'piernaI', poseDe);
-    expect(gBrazo / gPierna, 'Gus deberia contrapesar bastante').toBeGreaterThan(0.6);
+    /*
+     * La mitad de Gus se medía contra `Pose.CAMINAR`, que se fue en la
+     * Fase 16.5 con la segunda velocidad (D-30). Se mide contra `CORRER`,
+     * que es el único ciclo de pasos que le queda, y el umbral baja de 0,6
+     * a 0,55: corriendo, la zancada crece más que el braceo, así que la
+     * proporción es naturalmente menor que caminando.
+     *
+     * Lo que la prueba dice sigue siendo lo mismo, y es lo único que
+     * importa: **Gus contrapesa con los brazos y el zombi no.** Es la
+     * diferencia que se lee desde la cámara cenital.
+     */
+    const gBrazo = amplitud(Pose.CORRER, 'brazoI', poseDe);
+    const gPierna = amplitud(Pose.CORRER, 'piernaI', poseDe);
+    expect(gBrazo / gPierna, 'Gus deberia contrapesar bastante').toBeGreaterThan(0.55);
+    // Y la comparacion directa, que es la que de verdad los separa.
+    expect(gBrazo / gPierna).toBeGreaterThan(zBrazo / zPierna);
   });
 });
 
