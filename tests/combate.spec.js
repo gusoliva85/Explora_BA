@@ -71,8 +71,13 @@ test.describe('direccion de lo que se ve en pantalla', () => {
           requestAnimationFrame(paso);
         });
 
+      /*
+       * Al centro de la zona, que esta SOBRE la calle. El `zona.z + 8` de
+       * antes caia en la calzada con el mapa de tres cuadras y cae adentro
+       * de un edificio desde la 18.3.
+       */
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
-      g.player.teleport(zona.x, zona.z + 8);
+      g.player.teleport(zona.x, zona.z);
       await esperar(20);
 
       /*
@@ -338,7 +343,7 @@ test.describe('direccion de lo que se ve en pantalla', () => {
         });
 
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
-      g.player.teleport(zona.x, zona.z + 10);
+      g.player.teleport(zona.x, zona.z);
       await esperar(20);
 
       /*
@@ -347,11 +352,32 @@ test.describe('direccion de lo que se ve en pantalla', () => {
        * juego ya los descarta bien, y lo que hay que probar aca es el
        * combate, no el descarte.
        */
+      /*
+       * En abanico **sobre el eje de la calle**, no desplazados en Z.
+       *
+       * Decia `p.z - 8`, que con el mapa de tres cuadras caia en la calzada
+       * y desde la 18.3 cae adentro de la hilera de edificios: Gus no los
+       * veia (D-36), no elegia blanco y no disparaba. La prueba decia "no
+       * disparo solo ni una vez" y tenia razon.
+       *
+       * Tercera prueba de la misma tanda. **Lo que no se puede suponer no
+       * es la coordenada, es la direccion.**
+       */
+      const r = g.mission.mission.route;
+      const largo = Math.hypot(r[1].x - r[0].x, r[1].z - r[0].z) || 1;
+      const eje = { x: (r[1].x - r[0].x) / largo, z: (r[1].z - r[0].z) / largo };
+      const lado = { x: -eje.z, z: eje.x };
+
       const p = g.player.position;
       const victimas = g.zombis.enJuego.filter((z) => z.vivo).slice(0, 3);
       if (victimas.length < 3) return { pocos: victimas.length };
       victimas.forEach((z, i) => {
-        z.entity.setPosition(p.x + (i - 1) * 3, 0, p.z - 8);
+        const off = (i - 1) * 3;
+        z.entity.setPosition(
+          p.x + eje.x * 8 + lado.x * off,
+          0,
+          p.z + eje.z * 8 + lado.z * off
+        );
         z.ai.estado = 'IDLE';
       });
       await esperar(10);
@@ -406,7 +432,7 @@ test.describe('direccion de lo que se ve en pantalla', () => {
         });
 
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
-      g.player.teleport(zona.x, zona.z + 14);
+      g.player.teleport(zona.x, zona.z);
       await esperar(40);
 
       /** Cuanto apunta una mano hacia el frente de su cuerpo. */

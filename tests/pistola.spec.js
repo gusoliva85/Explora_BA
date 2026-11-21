@@ -336,6 +336,20 @@ test.describe('el ruido es la mecanica de la fase', () => {
       const pos = { x: g.player.position.x, z: g.player.position.z };
 
       /*
+       * Y los que NO son testigos se van lejos.
+       *
+       * Con el arma acortada Gus no les llega a los testigos, pero si hay
+       * otro zombi a cuatro metros le dispara igual — y **el estruendo no
+       * se acorto**: 22 m de radio despiertan a los tres testigos antes de
+       * que la prueba apriete el gatillo. Los alertaba el juego, no la
+       * prueba, y el mensaje de error decia exactamente eso.
+       */
+      for (const z of g.zombis.enJuego) {
+        if (testigos.includes(z) || !z.vivo) continue;
+        z.entity.setPosition(pos.x + 400, 0, pos.z + 400);
+      }
+
+      /*
        * Mas lejos que el alcance de vista (16 m) y mirando para el otro
        * lado. Asi nada que no sea el ruido los puede despertar.
        */

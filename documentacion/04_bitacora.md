@@ -6230,6 +6230,114 @@ una nota al margen.
 
 ---
 
+## 18.7 — Treinta y seis cortes, y la medida que quedó obsoleta
+
+**21 de noviembre de 2026.**
+
+Cada esquina cruza cuatro calles: dos son el recorrido y **las otras dos se
+cierran**. Diecisiete esquinas, treinta y seis cortes de valla, con colisión
+y generados del trazado.
+
+### Valla y no auto cruzado, y la diferencia no es estética
+
+Un auto atravesado se lee como **un accidente**: algo que pasó ahí. Una
+valla de obra se lee como **alguien que cerró eso a propósito**.
+
+Y eso es exactamente lo que D-43 quiere que el jugador entienda: la ciudad
+se está sellando cuadra por cuadra, y las puertas de los controles son del
+mismo operativo visto de frente.
+
+> La diferencia importa porque el jugador va a ver treinta y seis de estos.
+> **Treinta y seis accidentes son un chiste; treinta y seis vallas son una
+> política.**
+
+El corte tapa el ancho completo —calzada más las dos veredas, dieciséis
+metros— y no sólo la calzada. Lo dejó escrito la prueba de los pasajes antes
+de borrarse: *una entrada que se ve y no lleva a ningún lado es peor que una
+pared*. Una valla que deja la vereda libre no es un corte: es un embudo.
+
+### Y se generan del trazado, por tercera vez el mismo criterio
+
+Treinta y seis props escritos a mano serían **copiar la ruta por tercera
+vez**. Salen de recorrer las esquinas y restarle al conjunto de los cuatro
+puntos cardinales los dos que son el recorrido.
+
+### Los props pasaron a pertenecer a su cuadra
+
+Esto no estaba en la tarea y la rompía en silencio. Los props puestos a mano
+se colocaban en la **raíz del mundo**, no adentro de una cuadra. Con la
+ventana (18.12) eso significa que los treinta y seis cortes de las dieciséis
+cuadras estarían en pie desde el primer segundo — justo lo que la ventana
+vino a evitar.
+
+Ahora cada prop pertenece a la cuadra **cuyo tramo tiene más cerca**, el
+reparto se calcula una vez por misión y se cachea. Un corte se va con su
+cuadra.
+
+### La medida del desvío quedó obsoleta, y no es lo mismo que rota
+
+La prueba del recorrido exigía que lo caminado fuera al menos **un 2 % más
+largo** que la línea recta: si el camino era recto, los obstáculos estaban
+de adorno.
+
+Con los cortes puestos, dio **1,006**. Prácticamente recto.
+
+Y está bien que lo sea. Esa medida tenía sentido con el mapa viejo, donde
+una barricada en medio de la calle obligaba a elegir entre bordearla o
+meterse en un pasaje. **D-34 cerró las rutas alternativas:** ahora hay una
+sola ruta y todo lo demás se bloquea, así que la ruta tiene que estar
+*limpia*. Pedirle que obligue a desviarse es pedirle lo contrario de lo que
+es.
+
+Lo que sí sigue importando es **que haya detrás de qué cubrirse**, y no es
+lo mismo:
+
+> Un obstáculo que obliga a rodear **interrumpe la corrida**. Uno que tapa
+> **deja elegir dónde pararse**, que es la única decisión que el juego nuevo
+> ofrece (D-28).
+
+Así que la prueba pasó a contar coberturas sobre la ruta: algo sólido, más
+alto que un cordón, a menos de nueve metros del eje — y **excluyendo los
+cortes**, porque cierran calles que no son la ruta y nadie se va a parar
+detrás de ellos. Dan 333 sobre el mapa construido.
+
+### El caminante aprendió a seguir la calle
+
+Con los cortes puestos, la prueba del recorrido se trabó contra una valla a
+la entrada de una bocacalle cerrada. No era la valla: era que el caminante
+iba **en diagonal de control a control**.
+
+Con tres cuadras funcionaba porque la recta entre dos controles caía sobre
+la calle. Con dieciséis cuadras y cinco giros de 90°, una recta entre dos
+controles **atraviesa manzanas enteras**: el caminante se iba en diagonal,
+daba contra la hilera de fachadas y terminaba metido en una calle cerrada,
+culpando a la valla que la cerraba.
+
+Un jugador tampoco camina en diagonal por adentro de una manzana: sigue la
+calle. Ahora la prueba va **esquina por esquina**. No es aflojarla: es dejar
+de pedirle algo que el nivel nunca prometió.
+
+### Y cuatro pruebas más de la misma tanda
+
+Van **diez** en dos tareas, todas con la misma forma:
+
+> **Lo que no se puede suponer no es la coordenada, es la dirección.**
+
+Las de hoy teleportaban al jugador o a los zombis con un `z + 8` o un
+`z - 19` que caía en la calzada con el mapa viejo y cae **adentro de la
+hilera de edificios** desde la 18.3. Los síntomas eran distintos y la causa
+una sola: "no disparó solo ni una vez" (no veía a nadie), "sólo había N
+zombis" (no se activaban), "el primer tiro no hizo daño" (la bala pegaba en
+una pared a dos metros).
+
+Y una destapó algo del juego que no sabía: con el arma acortada a propósito,
+los testigos **seguían despertándose**. El estruendo no se había acortado —
+22 m de radio— y un cuarto zombi a cuatro metros alcanzaba para que Gus
+disparara y los alertara a todos. **El ruido no distingue a quién le estabas
+tirando.**
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

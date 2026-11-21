@@ -193,6 +193,83 @@ const zonas = Array.from({ length: TRAMOS }, (_, t) => {
   };
 });
 
+/**
+ * ===========================================================================
+ * LOS CORTES — lo que cierra cada bocacalle que no es la ruta (18.7, D-34)
+ * ===========================================================================
+ * En cada esquina se cruzan cuatro calles. Dos son el recorrido —de dónde
+ * venís y a dónde vas— y **las otras dos se cierran**.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUÉ CON VALLA Y NO CON UN AUTO CRUZADO
+ * ---------------------------------------------------------------------------
+ * Un auto atravesado se lee como un accidente: algo que pasó ahí. Una valla
+ * de obra se lee como **alguien que cerró eso a propósito**, y eso es
+ * exactamente lo que D-43 quiere que el jugador entienda: la ciudad se está
+ * sellando, y las puertas de los controles son del mismo operativo.
+ *
+ * La diferencia importa porque el jugador va a ver treinta y pico de estos.
+ * Treinta accidentes son un chiste; treinta vallas son una política.
+ *
+ * ---------------------------------------------------------------------------
+ * TIENE QUE LEERSE CERRADO DESDE LEJOS
+ * ---------------------------------------------------------------------------
+ * Lo dejó escrito la prueba de los pasajes antes de borrarse: **una entrada
+ * que se ve y no lleva a ningún lado es peor que una pared.** El jugador se
+ * mete, pierde tiempo, y sale por donde entró.
+ *
+ * Por eso el corte tapa el ancho completo —calzada más las dos veredas— y
+ * no sólo la calzada. Una valla que deja la vereda libre no es un corte: es
+ * un embudo.
+ */
+const ANCHO_CALLE = 10; // UNITS.streetWidth
+const ANCHO_VEREDA = 3; // UNITS.sidewalkWidth
+const ANCHO_CORTE = ANCHO_CALLE + ANCHO_VEREDA * 2;
+/** A qué distancia de la esquina se planta el corte: justo pasando la vereda. */
+const RETIRO = ANCHO_CALLE / 2 + ANCHO_VEREDA;
+
+const CARDINALES = [
+  { x: 1, z: 0 },
+  { x: -1, z: 0 },
+  { x: 0, z: 1 },
+  { x: 0, z: -1 }
+];
+
+/** Los dos brazos de la esquina `i` que NO son el recorrido. */
+function brazosCerrados(i) {
+  const aqui = TRAZADO[i];
+  const abiertos = [];
+  for (const vecino of [TRAZADO[i - 1], TRAZADO[i + 1]]) {
+    if (!vecino) continue;
+    const dx = vecino.x - aqui.x;
+    const dz = vecino.z - aqui.z;
+    const largo = Math.hypot(dx, dz) || 1;
+    abiertos.push({ x: Math.round(dx / largo), z: Math.round(dz / largo) });
+  }
+  return CARDINALES.filter((c) => !abiertos.some((o) => o.x === c.x && o.z === c.z));
+}
+
+const cortes = TRAZADO.flatMap((esquina, i) =>
+  brazosCerrados(i).map((c) => {
+    const alongX = c.x !== 0;
+    return {
+      tipo: 'valla',
+      x: esquina.x + c.x * RETIRO,
+      z: esquina.z + c.z * RETIRO,
+      /*
+       * La valla corre a lo largo de su eje X local, así que se la gira
+       * para que quede ATRAVESADA en la boca de la calle que cierra.
+       */
+      rot: alongX ? 90 : 0,
+      tag: 'corte',
+      args: ANCHO_CORTE,
+      collide: alongX
+        ? { w: 1.2, d: ANCHO_CORTE, h: 1.9 }
+        : { w: ANCHO_CORTE, d: 1.2, h: 1.9 }
+    };
+  })
+);
+
 export const mission001 = {
   id: 'mission001',
   title: 'Ir a buscar a Sergio',
@@ -244,18 +321,25 @@ export const mission001 = {
    * =========================================================================
    * DISEÑO DE NIVEL — colocado a mano
    * =========================================================================
-   * Vacío a propósito, y es la parte que **falta**.
+   * Lo que cierra todo lo que no es la ruta (18.7, D-34 y D-43).
+   *
+   * No son obstáculos sueltos: son **el mismo operativo de contención que
+   * puso las puertas, visto de costado** (D-43). La misma valla de chapa, la
+   * misma idea — la ciudad se está sellando cuadra por cuadra, y el jugador
+   * avanza por el único corredor que quedó abierto.
+   *
+   * Se generan del trazado y no se escriben a mano. Son dos por esquina y
+   * hay diecisiete esquinas: escribirlos uno por uno sería copiar la ruta
+   * por tercera vez, y la copia que nadie mira es la que se desactualiza.
    *
    * El mapa viejo tenía treinta y pico de props puestos uno por uno:
    * barricadas, colectivos cruzados, contenedores, vallas. Estaban sobre un
    * trazado que ya no existe —el recorrido salía al sur y ahora sale al
    * oeste— así que ninguno caía donde tiene que caer.
    *
-   * Vuelven en la **18.7**, y con un criterio que antes no había: no son
-   * obstáculos sueltos, son **el mismo operativo de contención que puso las
-   * puertas, visto de costado** (D-43). Mismo tipo de valla, misma gama de
-   * pintura. Hay que tapar cada bocacalle y cada vereda lateral de las
-   * dieciséis cuadras, que con la cuadrícula son contables.
+   * Lo que **todavía falta** es el diseño fino: la 18.7 tapa, pero no
+   * decide dónde conviene cubrirse. Los autos abandonados que el generador
+   * reparte sirven de cobertura y por ahora alcanzan.
    */
-  props: []
+  props: cortes
 };

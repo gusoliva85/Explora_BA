@@ -93,6 +93,17 @@ export function semillaDeCuadra(semillaMision, indice) {
   return (semillaMision ^ ((indice + 1) * 0x9e3779b9)) >>> 0;
 }
 
+/** Distancia de un punto a un segmento, en el plano XZ. */
+function distanciaASegmento(p, a, b) {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const largo2 = dx * dx + dz * dz;
+  if (largo2 === 0) return Math.hypot(p.x - a.x, p.z - a.z);
+  let t = ((p.x - a.x) * dx + (p.z - a.z) * dz) / largo2;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(p.x - (a.x + dx * t), p.z - (a.z + dz * t));
+}
+
 export class WorldBuilder {
   /**
    * @param {pc.Application} app
@@ -188,6 +199,10 @@ export class WorldBuilder {
 
     this.stats = { piezas: 0, colliders: 0, props: 0, luces: 0, desvios: 0 };
   }
+
+  /** Cache del reparto de props por cuadra. Ver `#propsDeCuadra`. */
+  #reparto = null;
+  #repartoDe = null;
 
   /**
    * Empieza a construir una cuadra: lo que se agregue a partir de aca le
@@ -428,15 +443,6 @@ export class WorldBuilder {
 
     this.#buildDesvios(mission, rng);
 
-    // Lo colocado a mano va despues de lo generado, para que pueda pisarlo.
-    for (const item of mission.props ?? []) {
-      this.addProp(item.tipo, item, item.rot ?? 0, rng, {
-        collide: item.collide,
-        tag: item.tag,
-        args: item.args
-      });
-    }
-
     for (const cp of mission.checkpoints) {
       const p = mission.route[cp.atRouteIndex];
       markers.push(this.#addMarker(`Control_${cp.atRouteIndex}`, p, cp.radius, COLORS.checkpoint));
@@ -506,8 +512,55 @@ export class WorldBuilder {
      */
     if (esquinas.b) this.#buildEsquina(mission, i + 1, rng);
 
+    /*
+     * Lo colocado a mano, al final: va despues de lo generado para que
+     * pueda pisarlo.
+     *
+     * Y va **adentro de la cuadra a la que pertenece**, no en la raiz del
+     * mundo. Con la ventana (18.12) eso es lo que hace que un corte de
+     * bocacalle se vaya con su cuadra: si los props colgaran de la raiz,
+     * quedarian en pie los treinta y pico de las dieciseis cuadras desde el
+     * primer segundo, que es justo lo que la ventana vino a evitar.
+     */
+    for (const item of this.#propsDeCuadra(mission, i)) {
+      this.addProp(item.tipo, item, item.rot ?? 0, rng, {
+        collide: item.collide,
+        tag: item.tag,
+        args: item.args
+      });
+    }
+
     this.cerrarCuadra();
     return cuadra;
+  }
+
+  /**
+   * Los props puestos a mano que le tocan a la cuadra `i`.
+   *
+   * Un prop pertenece a la cuadra **cuyo tramo tiene mas cerca**. Se
+   * calcula una sola vez por mision y se cachea: con dieciseis cuadras y
+   * treinta y pico de props, recorrerlo en cada construccion seria hacer la
+   * misma cuenta una y otra vez mientras el jugador corre.
+   */
+  #propsDeCuadra(mission, i) {
+    if (!this.#reparto || this.#repartoDe !== mission) {
+      this.#reparto = new Map();
+      this.#repartoDe = mission;
+      for (const item of mission.props ?? []) {
+        let mejor = 0;
+        let mejorD = Infinity;
+        for (let k = 0; k < mission.route.length - 1; k++) {
+          const d = distanciaASegmento(item, mission.route[k], mission.route[k + 1]);
+          if (d < mejorD) {
+            mejorD = d;
+            mejor = k;
+          }
+        }
+        if (!this.#reparto.has(mejor)) this.#reparto.set(mejor, []);
+        this.#reparto.get(mejor).push(item);
+      }
+    }
+    return this.#reparto.get(i) ?? [];
   }
 
   /** Una cuadra: calzada, veredas, cordones, pintura, edificios y props. */

@@ -24,43 +24,29 @@
 
 ## ▶️ La tarea que sigue
 
-### **18.7 — Bloquear todo lo que no sea la ruta** (D-34, D-43)
+### **18.14 — La brújula, más grande y protagonista** (D-38)
 
-> ✅ **El recorrido real ya está.** Dieciséis cuadras, 1.600 m, diecisiete
-> esquinas con nombre de OpenStreetMap, siete controles y ocho tramos de
-> zombis. Se importa de `src/config/recorrido.js`, no se copia.
+> ✅ **La ruta ya está cerrada.** 36 cortes de valla, dos por esquina, con
+> colisión y pertenecientes a su cuadra. El recorrido entero se camina de
+> punta a punta sin trabarse.
 
-**Qué se hace.** Tapar **cada bocacalle y cada vereda lateral** de las
-dieciséis cuadras. Con colisión, no decorado.
+**Qué se hace.** La brújula existe —una pastilla con flecha que rota y los
+metros al objetivo, y ya se muestra siempre— pero es chica: **el glifo mide
+15 px y es más chico que el texto de al lado.**
 
-**Y con D-43 dejan de ser obstáculos arbitrarios:** son **el mismo operativo
-de contención que puso las puertas, visto de costado**. Mismo tipo de valla,
-misma gama de pintura. El jugador tiene que leer que la ciudad se está
-sellando cuadra por cuadra, no que el diseñador puso un auto cruzado.
-
-| | Cuántas |
+| Qué falta | Por qué |
 |---|---|
-| Cuadras | 16 |
-| Bocacalles a tapar | las dos puntas de cada cuadra, menos las de la ruta |
-| Esquinas con giro | 5 — ahí la bocacalle de enfrente queda a la vista |
+| **Tamaño** | Es la única guía que queda. Con dieciséis cuadras y cinco giros, perderse es fácil |
+| **Presencia** | Tiene que verse **de reojo mientras se corre**, no al mirarla |
+| **El nombre de la calle** | D-40 dice que los carteles son decorado; el nombre informativo vive acá |
 
-**Lo que hay que mirar con cuidado, y lo dejó escrito la prueba que se
-borró:** *una entrada que se ve y no lleva a ningún lado es peor que una
-pared*. Si una bocacalle queda a medio tapar, el jugador se mete, pierde
-tiempo y sale por donde entró. **Tiene que leerse como cerrada desde lejos.**
+**Y una cosa que no es de la 18.14 pero la condiciona:** la 19A.6 le cambia
+el blanco al zombi más cercano cuando el tramo está sin limpiar. O sea que
+la brújula va a apuntar a dos cosas distintas según el momento, y **tiene
+que leerse cuál de las dos** sin explicación.
 
-**Y hay una prueba esperando:** `recorrido.spec.js` tiene el piso de desvío
-—que los obstáculos obliguen a desviarse algo— **saltado hasta que haya
-props**. Se reactiva solo en cuanto `mission.props` deje de estar vacío.
-
-| Archivo | Qué pasa |
-|---|---|
-| `src/config/mission001.js` | `props` deja de estar vacío |
-| — | se genera del trazado: cada cuadra sabe sus dos puntas y cuál es la de la ruta |
-
-**Cómo se sabe que está lista:** no se puede salir de la ruta por ningún
-lado, probado intentándolo en las diecisiete esquinas; y hay autos y
-obstáculos detrás de los que cubrirse, no sólo para cortar.
+**Cómo se sabe que está lista:** se ve de reojo mientras se corre, en el
+teléfono, y dice cuánto falta.
 
 ---
 
@@ -1190,7 +1176,7 @@ reemplaza por modelos.
 - [x] **18.4 Siete controles** en vez de dos, y la meta en Billinghurst 250 ✅ *21/11/2026 — salen de `puertas()`, uno cada dos cuadras*
 - [x] **18.5 Los ocho textos de objetivo**, en voseo, uno por tramo ✅ *21/11/2026 — se arman del trazado; el último está a mano porque no es una esquina más: es la casa de Sergio*
 - [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más una flecha en cada uno de los cinco giros. Con la cuadrícula esto es más fácil: la flecha siempre apunta a 90°
-- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). ⬅️ *la que sigue* Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en dieciséis cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
+- [x] **18.7 Bloquear todo lo que no sea la ruta** (D-34) ✅ *21/11/2026 — 36 cortes de valla generados del trazado, dos por esquina. Y los props puestos a mano pasaron a pertenecer a su cuadra, así se van con ella* Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en dieciséis cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
 - [x] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js` ✅ *21/11/2026 — y con ellos su prueba de punta a punta*
 - [x] **18.9 Las zonas de zombis, una por tramo.** ✅ *21/11/2026 — ocho, y **dejaron de ser círculos**: una zona es el corredor de calle del tramo. Y cada una declara su `cantidad`, que es la perilla de 19A.11* **Ocho zonas de dos cuadras** (D-46), con dificultad creciente y la primera floja: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
 - [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, las siete puertas y la casa de Sergio. **Y ya no falta ninguna dirección** (D-46): las diecisiete esquinas tienen nombre real de OpenStreetMap, y las cuatro ubicaciones de Gus que caen en medio de un tramo —Maza 379, Av. Boedo 120, Mario Bravo 90— son carteles de paso
@@ -1198,20 +1184,20 @@ reemplaza por modelos.
 - [x] **18.12 La construcción por tramos** (D-42, D-47) ✅ *21/11/2026 — ventana de cuadras, disparada por el control y no por una distancia. El mapa de hoy pasa de 1.419 piezas a 923, y liberar baja las cajas de colisión de 130 a 92* ⚠️ **Primera de la fase, no última.** Ya no es "es probable que haga falta" ni siquiera "está medido y hace falta": con las 16 cuadras de D-46 el juego **no abre** en un teléfono sin esto. La ciudad es el 86 % de las mallas y lo único que crece con los metros; 16 cuadras proyectan ~12.700 entidades y ~1.100 llamadas de dibujo contra un presupuesto de 150. **Ventana de cuatro cuadras** —la última del tramo anterior, las dos del actual y la primera del siguiente, porque con tramos de 2 cuadras la ventana de tres ya no alcanza—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
 - [x] **18.12 bis Liberar de verdad.** ✅ *21/11/2026 — entidades, grupo de agrupado y **cajas de colisión**, medido en el juego: 130 → 92 al soltar una cuadra. `CollisionWorld.remove()` tiene seis pruebas, incluida la del ciclo de cien* Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
-- [ ] **18.14 La brújula, más grande y protagonista** (D-38). Hoy existe —una pastilla con flecha que rota y los metros al objetivo— y ya se muestra siempre que haya objetivo, así que lo de "siempre" está. Lo que falta: **tamaño**, porque el glifo mide 15 px y es más chico que el texto de al lado; **presencia**, que se vea de reojo mientras se corre; y **el nombre de la calle** por la que se va, que es donde D-40 dice que puede vivir. Y tiene que seguir funcionando cuando la 19A.6 le cambie el blanco al zombi más cercano
+- [ ] **18.14 La brújula, más grande y protagonista** (D-38). ⬅️ *la que sigue* Hoy existe —una pastilla con flecha que rota y los metros al objetivo— y ya se muestra siempre que haya objetivo, así que lo de "siempre" está. Lo que falta: **tamaño**, porque el glifo mide 15 px y es más chico que el texto de al lado; **presencia**, que se vea de reojo mientras se corre; y **el nombre de la calle** por la que se va, que es donde D-40 dice que puede vivir. Y tiene que seguir funcionando cuando la 19A.6 le cambie el blanco al zombi más cercano
 
 **Criterio de salida**
 
-- [ ] Todos los giros del mapa construido son de 90°, verificado por `tests/trazado.test.js`
-- [ ] Los siete tramos miden lo mismo, y los controles quedan a distancia pareja
+- [x] Todos los giros del mapa construido son de 90°, verificado por `tests/trazado.test.js`
+- [x] Los ocho tramos miden lo mismo —200 m— y los siete controles quedan a distancia pareja
 - [ ] Las seis direcciones de Gus están en orden y coinciden con los carteles
 - [ ] Billinghurst 250 se lee como una casa, y se distingue de sus vecinas
-- [ ] No se puede salir de la ruta por ningún lado: probado intentándolo en las diecisiete esquinas
+- [x] No se puede salir de la ruta por ningún lado — *36 cortes con colisión, dos por esquina; el caminante recorre las 16 cuadras sin salirse*
 - [ ] Un jugador que nunca lo vio entiende para dónde ir sin que nadie le diga
-- [ ] Ningún obstáculo bloquea la ruta que debería dejar pasar
-- [ ] Se puede llegar de Independencia 3250 a Billinghurst 250 sin trabarse
+- [x] Ningún obstáculo bloquea la ruta que debería dejar pasar — *el recorrido completo da 1,006 veces la línea recta: prácticamente derecho*
+- [x] Se puede llegar de Independencia 3250 a Billinghurst 250 sin trabarse — *verificado esquina por esquina en `recorrido.spec.js`*
 - [ ] Las llamadas de dibujo del peor caso están medidas y anotadas
-- [ ] Hay autos y obstáculos detrás de los que se puede cubrir, no sólo para cortar
+- [x] Hay autos y obstáculos detrás de los que se puede cubrir, no sólo para cortar — *333 coberturas sobre la ruta construida, medidas; la prueba las cuenta y excluye los cortes*
 - [ ] La brújula se ve de reojo mientras se corre, en el teléfono, y dice cuánto falta
 
 ---

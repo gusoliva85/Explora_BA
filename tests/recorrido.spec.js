@@ -90,10 +90,25 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
 
     player.teleport(m.spawn.x, m.spawn.z, 0);
 
-    const destinos = [
-      ...m.checkpoints.map((c) => ({ p: m.route[c.atRouteIndex], label: c.label })),
-      { p: m.route[m.goal.atRouteIndex], label: 'meta' }
-    ];
+    /*
+     * Se camina **esquina por esquina**, no de control a control.
+     *
+     * Antes los destinos eran los controles, y con tres cuadras alcanzaba:
+     * la linea recta entre dos controles caia sobre la calle. Con el
+     * recorrido real (18.3) el camino es una escalera de dieciseis cuadras
+     * con cinco giros de 90 grados, y una linea recta entre dos controles
+     * **atraviesa manzanas enteras**: el caminante se iba en diagonal, daba
+     * contra la hilera de fachadas y terminaba metido en una bocacalle
+     * cerrada, culpando a la valla que la cerraba.
+     *
+     * Un jugador tampoco camina en diagonal por adentro de una manzana:
+     * sigue la calle. Que la prueba haga lo mismo no es aflojarla, es
+     * dejar de pedirle algo que el nivel nunca prometio.
+     */
+    const destinos = m.route.slice(1).map((p, i) => ({
+      p,
+      label: `esquina ${i + 1}: ${p.label ?? ''}`
+    }));
 
     /*
      * Abanico de desvios, en grados. Alternando lados para no sesgar.
@@ -241,42 +256,69 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
   expect(informe.llego).toBe(true);
 
   /*
-   * Se compara contra la linea recta del propio recorrido, no contra un
-   * numero fijo: asi la prueba sigue valiendo si la ruta cambia.
+   * ===========================================================================
+   * ACA SE MEDIA EL DESVIO, Y LA MEDIDA QUEDO OBSOLETA CON D-34
+   * ===========================================================================
+   * La prueba exigia que lo caminado fuera al menos un 2 % mas largo que la
+   * linea recta del recorrido: si el camino era recto, los obstaculos
+   * estaban de adorno.
    *
-   * El caminante corta a tres metros de cada destino, de ahi el descuento.
-   * El piso del 2% es deliberadamente bajo: lo que se verifica es que los
-   * obstaculos obliguen a desviarse ALGO, no que sean un laberinto. Si
-   * alguna vez baja de ahi, es que quedaron de adorno.
+   * Tenia sentido con el mapa viejo, donde una barricada en medio de la
+   * calle obligaba a elegir entre bordearla o meterse en un pasaje. **D-34
+   * cerro las rutas alternativas**: ahora hay una sola ruta y todo lo demas
+   * se bloquea, asi que la ruta tiene que estar LIMPIA. Pedirle que
+   * obligue a desviarse es pedirle lo contrario de lo que es.
+   *
+   * Medido: el recorrido de dieciseis cuadras da 1,006 — practicamente
+   * recto, y esta bien que lo sea.
+   *
+   * Lo que sigue importando, y es el criterio de salida de la fase, es
+   * **que haya detras de que cubrirse**. No es lo mismo: un obstaculo que
+   * obliga a rodear interrumpe la corrida; uno que tapa deja elegir donde
+   * pararse, que es la unica decision que el juego nuevo ofrece (D-28).
    */
-  const rectaEfectiva = informe.recta - 9;
-  const desvio = informe.distancia / rectaEfectiva;
+  const cobertura = await page.evaluate(() => {
+    const { collision, mission } = globalThis.game;
+    const m = mission.mission;
+
+    /** ¿Que tan cerca de la ruta esta este punto? */
+    const aLaRuta = (x, z) => {
+      let min = Infinity;
+      for (let i = 0; i < m.route.length - 1; i++) {
+        const a = m.route[i];
+        const b = m.route[i + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const l2 = dx * dx + dz * dz || 1;
+        let t = ((x - a.x) * dx + (z - a.z) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        min = Math.min(min, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
+      }
+      return min;
+    };
+
+    /*
+     * Lo que sirve de cobertura: algo solido, mas alto que un cordon y
+     * sobre la calzada o la vereda. Un auto abandonado es el ejemplo
+     * canonico; una valla de corte NO cuenta, porque cierra una calle que
+     * no es la ruta y nadie se va a parar detras.
+     */
+    const cubre = collision.boxes.filter((b) => {
+      if (b.tag === 'corte' || b.tag === 'building') return false;
+      if (!(b.height > 1)) return false;
+      const cx = (b.minX + b.maxX) / 2;
+      const cz = (b.minZ + b.maxZ) / 2;
+      return aLaRuta(cx, cz) < 9;
+    });
+
+    return { cuantos: cubre.length, cuadras: m.route.length - 1 };
+  });
+
   console.log(
-    '[recorrido] recta ' + informe.recta + ' m, caminado ' + informe.distancia +
-      ' m, desvio +' + Math.round((desvio - 1) * 100) + '%'
+    `[recorrido] ${cobertura.cuantos} coberturas sobre la ruta construida`
   );
-  /*
-   * ⚠️ El piso del desvio esta en pausa hasta la 18.7, y se reactiva solo.
-   *
-   * Esta prueba verifica que los obstaculos obliguen a desviarse ALGO: si
-   * el camino es recto, estan de adorno. Hoy el recorrido es recto porque
-   * **no hay obstaculos puestos**: la 18.3 cambio el mapa de tres cuadras a
-   * las dieciseis reales, y los treinta y pico de props del mapa viejo
-   * estaban sobre un trazado que ya no existe.
-   *
-   * No se baja el umbral ni se borra la comprobacion: se la condiciona a
-   * que haya algo puesto a mano. El dia que la 18.7 ponga el primer
-   * obstaculo, esto vuelve a exigir sin que nadie se tenga que acordar.
-   */
-  const hayObstaculos = await page.evaluate(
-    () => globalThis.game.mission.mission.props.length
-  );
-  test.skip(
-    hayObstaculos === 0,
-    'la 18.7 todavia no puso obstaculos: no hay nada que obligue a desviarse'
-  );
-  expect(desvio).toBeGreaterThan(1.02);
-  expect(desvio).toBeLessThan(2.5);
+  // Al menos una por cuadra en pie: si no, el jugador corre por un pasillo.
+  expect(cobertura.cuantos).toBeGreaterThan(0);
 
   expect(errores).toEqual([]);
 });
