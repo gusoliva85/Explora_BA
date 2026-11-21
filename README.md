@@ -24,8 +24,10 @@ angosto pero lo esquiva.
 > [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
 >
 > 📌 **Este archivo va atrás de la poda, y conviene saber cuánto.** Está al
-> día hasta la tarea **17.10** en lo que toca al arma, al movimiento, a los
-> botones, al balance y al combate: hay **un arma sola**, no se cambia, no
+> día hasta la tarea **18.11** en lo que toca al arma, al movimiento, a los
+> botones, al balance, al combate y **al mapa**: el recorrido ya es el real
+> de dieciséis cuadras, de Av. Independencia 3250 a Billinghurst 250.
+> En lo demás: hay **un arma sola**, no se cambia, no
 > hay cuerpo a cuerpo, **Gus se mueve a una sola velocidad** (6 m/s,
 > corriendo), queda **un solo botón de acción** — y **el combate es
 > automático al quedarse quieto**, así que ni ése hace falta. Lo que sigue describiendo abajo y **ya no

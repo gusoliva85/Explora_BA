@@ -6492,6 +6492,135 @@ texto.
 
 ---
 
+## 18.11 — La casa de Sergio, y una pared que iba a quedar adentro de otra
+
+**21 de noviembre de 2026.** Última de la Fase 18.
+
+Billinghurst 250. El final de los 1.600 m, y el motivo del juego entero:
+**Gus no va a un refugio, va a buscar a un amigo** (D-41).
+
+### El problema era distinguirse sin dejar de pertenecer
+
+| Si se pasa de | Pasa esto |
+|---|---|
+| Distinta | Se lee como un objeto de videojuego apoyado encima del barrio |
+| Igual | El jugador camina 1.600 m para no reconocer el final |
+
+El error fácil es resolverlo con **color**: un frente que brilla se ve desde
+lejos. Pero este proyecto ya tiene una regla sobre eso —nada decorado puede
+ser más llamativo que lo de misión— y una casa que la rompe no se siente
+como un lugar: se siente como un marcador.
+
+### Así que se resolvió con la forma
+
+El recorrido entero pasa por edificios de siete a veintidós metros con
+planta baja comercial: persianas, toldos, vidrieras. Ésta es **una casa baja
+de dos plantas**, con:
+
+- **Zaguán retirado**: la puerta está dos metros adentro de la línea
+  municipal. Ninguna otra fachada del juego hace eso.
+- **Reja y jardincito** al frente, que es lo que distingue una casa de un
+  local.
+- **Balcón corrido** en el primer piso.
+- **Tanque de agua** arriba, que remata la silueta a una altura que no tiene
+  ningún vecino.
+
+Desde la cámara cenital, de todo eso llega **un hueco en la línea de
+fachadas y una silueta más baja**. Eso se reconoce de lejos sin que nada
+brille, y lo anuncian el cartel de "Billinghurst 250" —a diez metros— y la
+brújula.
+
+### Y acá apareció lo que casi arruina todo
+
+La casa es una fachada puesta a mano, pero **el generador levanta la hilera
+igual**: la reserva de zonas (`estaReservado`) la consultan los props de
+vereda y los vehículos, **no la hilera de fachadas**.
+
+O sea que la casa iba a quedar **adentro de un edificio de veinte metros**.
+
+Y lo peor no es eso: es que **no se ve**. Desde la cámara cenital, una casa
+baja metida dentro de una fachada alta se lee exactamente como una fachada
+alta. El final del recorrido simplemente dejaba de reconocerse, y nada en
+pantalla lo decía.
+
+La salida ya existía: **el mecanismo de huecos** que abría la boca de un
+pasaje. Un prop que declara `hueco` se queda con su pedazo de hilera. Lo que
+cambió es quién lo pide: antes una ruta, ahora un edificio.
+
+> Es la tercera vez en la Fase 18 que **la herramienta que hacía falta ya
+> estaba escrita para otra cosa**: `objetivoAutomatico` venía de la bazooka,
+> los huecos venían de los pasajes, y `rumboForzado` venía del pulgar. Las
+> tres sobrevivieron a lo que las había pedido.
+
+Y el hueco es **más ancho que la casa**, a propósito: una casa baja con
+medianeras de veinte metros pegadas a los dos lados se lee como un pozo, no
+como una casa.
+
+### Lo que se prueba, y lo que no
+
+Se puede medir que la casa esté sobre la línea municipal, que sea **más baja
+que cualquier vecina de su cuadra**, que se quede con su hueco y que tenga
+su cartel cerca pero no encima.
+
+Lo que ninguna prueba contesta es si **se lee como una casa**. Eso lo
+contesta alguien mirándola en el teléfono, y va a la lista con todo lo demás.
+
+---
+
+## La Fase 18, hecha en código
+
+**21 de noviembre de 2026. Once tareas de catorce** — dos se habían
+cancelado antes de empezar (D-35) y una es de teléfono.
+
+| | Qué dejó |
+|---|---|
+| 18.12 | La ciudad se construye por **ventana de cuadras**. Sin esto, dieciséis cuadras no abren |
+| 18.3 | El recorrido **real**: 1.600 m, 17 esquinas con nombre de OpenStreetMap |
+| 18.4 / 18.5 | Siete controles y ocho objetivos, **importados del trazado** |
+| 18.7 | 36 cortes de valla: no se sale de la ruta por ningún lado |
+| 18.8 | Se fueron los pasajes (D-34) |
+| 18.9 | Ocho zonas de zombis, una por tramo, **con su cantidad declarada** |
+| 18.10 | Doce carteles de dirección |
+| 18.11 | La casa de Sergio |
+| 18.14 | La brújula, protagonista |
+
+### Lo que aprendí, y es distinto de las dos fases anteriores
+
+La 16 fue sobre **borrar**. La 17 fue sobre **medir**. La 18 fue sobre
+**suponer**, y el patrón apareció catorce veces:
+
+> **Lo que no se puede suponer no es la coordenada: es la dirección.**
+
+El mapa viejo salía al sur; el nuevo sale al oeste. Catorce pruebas y dos
+sistemas tenían esa dirección metida adentro sin decirlo, y los síntomas
+nunca se parecían entre sí: *"no disparó solo ni una vez"*, *"sólo había N
+zombis"*, *"el primer tiro no hizo daño"*, *"se trabó contra una valla"*.
+Todos eran lo mismo.
+
+Y hay un corolario que me costó tres tareas aprender:
+
+> **Cuando el síntoma es "no aparece", la captura no alcanza**, porque una
+> captura no distingue entre *no existe* y *está en otro lado*. Los tres
+> errores de los carteles eran invisibles; los encontró una prueba que mide
+> distancias.
+
+### Y tres veces la mecánica le simplificó la vida a la técnica
+
+Van juntas porque es el mismo fenómeno:
+
+1. La puerta corrediza le avisó a la Fase 16 que la explosión podía morir.
+2. La esclusa le avisó al streaming que **no necesita histéresis**: con el
+   recorrido de ida, no hay borde que titile.
+3. D-34 —una sola ruta— le avisó a la prueba del recorrido que **medir el
+   desvío ya no tiene sentido**: la ruta tiene que estar limpia.
+
+**Cada vez que la mecánica se simplificó, el código se achicó.** La 16.3 lo
+anotó como advertencia: *si la próxima vuelta de diseño agranda la lista,
+conviene desconfiar de la mecánica, no del plan*. Tres vueltas después, la
+regla sigue dando.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

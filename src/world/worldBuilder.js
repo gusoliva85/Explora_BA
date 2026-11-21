@@ -984,6 +984,31 @@ export class WorldBuilder {
    * dos lugares donde no puede haber fachada.
    */
   #registrarHuecos(mission) {
+    /*
+     * Un prop que declara `hueco` se queda con su pedazo de hilera.
+     *
+     * Lo usa la casa de Sergio (18.11): es una fachada puesta a mano, asi
+     * que el generador **no puede levantar la suya encima**. Sin esto
+     * quedan dos paredes en el mismo lugar — la casa adentro de un edificio
+     * de veinte metros— y lo peor es que no se ve: desde la camara cenital
+     * se lee como una fachada mas, y el final del recorrido deja de
+     * reconocerse.
+     *
+     * Es el mismo mecanismo que abria la boca de un pasaje. Lo que cambia
+     * es quien lo pide: antes una ruta, ahora un edificio.
+     */
+    for (const item of mission.props ?? []) {
+      if (!item.hueco) continue;
+      const w = item.hueco.w ?? item.collide?.w ?? 8;
+      const d = item.hueco.d ?? item.collide?.d ?? 8;
+      this.huecos.push({
+        minX: item.x - w / 2,
+        minZ: item.z - d / 2,
+        maxX: item.x + w / 2,
+        maxZ: item.z + d / 2
+      });
+    }
+
     for (const d of mission.desvios ?? []) {
       const ancho = d.ancho ?? 5;
       // Se abre generoso: la boca tiene que leerse como entrada desde la

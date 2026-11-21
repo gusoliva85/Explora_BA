@@ -455,6 +455,97 @@ export function colectivo(mats, rng) {
  * Comisaria: el destino final. Edificio bajo con cartel y garita.
  * Tiene que verse distinto a todo lo demas desde lejos.
  */
+/**
+ * La casa de Sergio: Billinghurst 250 (D-41, 18.11).
+ *
+ * ===========================================================================
+ * TIENE QUE DISTINGUIRSE SIN DEJAR DE PERTENECER
+ * ===========================================================================
+ * Es el final de mil seiscientos metros, asi que el jugador tiene que
+ * reconocerla. Y es una casa de Almagro, asi que no puede parecer un objeto
+ * de videojuego apoyado encima del barrio.
+ *
+ * Las dos cosas se pelean, y el error facil es resolverlo con **color**: un
+ * frente que brilla se ve desde lejos y se lee como un cartel de "meta
+ * aqui". Este proyecto ya tiene una regla sobre eso —nada decorado puede
+ * ser mas llamativo que lo de mision— y una casa que la rompe no se siente
+ * como un lugar, se siente como un marcador.
+ *
+ * ---------------------------------------------------------------------------
+ * ASI QUE SE RESUELVE CON LA FORMA
+ * ---------------------------------------------------------------------------
+ * El recorrido entero pasa por edificios de siete a veintidos metros con
+ * planta baja comercial: persianas, toldos, vidrieras. **Esta es una casa
+ * baja de dos plantas**, con:
+ *
+ *  - **Zaguan retirado**: la puerta no esta sobre la linea municipal, esta
+ *    dos metros adentro. Ninguna otra fachada del juego hace eso.
+ *  - **Reja y vereda propia**: un jardincito de un metro con su reja al
+ *    frente, que es lo que distingue una casa de un local.
+ *  - **Balcon corrido** en el primer piso, con baranda de hierro.
+ *  - **Tanque de agua** arriba, que remata la silueta a una altura que no
+ *    tiene ningun vecino.
+ *
+ * Desde la camara cenital, lo que llega de todo eso es **un hueco en la
+ * linea de fachadas y una silueta mas baja**. Eso se reconoce de lejos sin
+ * que nada brille, y lo anuncian el cartel de "Billinghurst 250" —a diez
+ * metros— y la brujula.
+ */
+export function casaDeSergio(mats) {
+  const a = new Armador('CasaDeSergio', mats);
+  const ANCHO = 9;
+  const FONDO = 10;
+
+  // El cuerpo: dos plantas y nada mas. Es la mitad de lo que mide un vecino.
+  a.add('box', [0, 0, 0], [ANCHO, 6.4, FONDO], COLORS.facade[2], {
+    acabado: ACABADO.revoque,
+    sombra: true
+  });
+
+  /*
+   * El zaguan: un hueco de dos metros en la linea municipal.
+   *
+   * Es lo que mas trabaja desde arriba. La hilera de fachadas del juego es
+   * una pared continua de esquina a esquina —asi es una cuadra de Boedo— y
+   * un entrante rompe esa linea donde no hay otro.
+   */
+  a.add('box', [-1.2, 0, -FONDO / 2 - 1.0], [3.4, 3.2, 2.2], COLORS.plinth, {
+    acabado: ACABADO.revoque
+  });
+  a.add('box', [-1.2, 0, -FONDO / 2 - 0.1], [1.5, 2.5, 0.25], COLORS.wood, {
+    acabado: ACABADO.madera
+  });
+
+  // Jardincito al frente con su reja: lo que separa una casa de un local.
+  a.add('box', [1.8, 0, -FONDO / 2 - 1.5], [4.6, 0.25, 3.0], COLORS.plinth, {
+    acabado: ACABADO.revoque
+  });
+  for (let i = 0; i < 9; i++) {
+    a.add('cylinder', [-0.3 + i * 0.55, 0.25, -FONDO / 2 - 2.9], [0.07, 1.3, 0.07], COLORS.metalDark, {
+      acabado: ACABADO.metal
+    });
+  }
+  a.add('box', [1.8, 1.5, -FONDO / 2 - 2.9], [4.8, 0.12, 0.12], COLORS.metalDark, {
+    acabado: ACABADO.metal
+  });
+
+  // Balcon corrido del primer piso.
+  a.add('box', [0, 3.4, -FONDO / 2 - 0.6], [ANCHO * 0.8, 0.22, 1.3], COLORS.balcony, {
+    acabado: ACABADO.revoque
+  });
+  a.add('box', [0, 3.6, -FONDO / 2 - 1.2], [ANCHO * 0.8, 1.0, 0.1], COLORS.metalDark, {
+    acabado: ACABADO.metal
+  });
+
+  // Tanque de agua: remata la silueta donde ningun vecino tiene nada.
+  a.add('cylinder', [2.6, 6.4, 1.0], [1.7, 1.5, 1.7], COLORS.metal, {
+    acabado: ACABADO.chapa,
+    sombra: true
+  });
+
+  return a.fin();
+}
+
 export function comisaria(mats) {
   const a = new Armador('Comisaria', mats);
   a.add('box', [0, 0, 0], [12, 7, 10], COLORS.facade[5], { acabado: ACABADO.revoque });
@@ -490,5 +581,6 @@ export const PROPS = {
   valla,
   auto,
   colectivo,
-  comisaria
+  comisaria,
+  casaDeSergio
 };

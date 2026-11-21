@@ -1,4 +1,5 @@
 import { trazadoOrtogonal, puertas, CUADRA, CUADRAS_POR_TRAMO } from './recorrido.js';
+import { UNITS } from './balance.js';
 
 /**
  * ===========================================================================
@@ -388,6 +389,72 @@ const carteles = TRAZADO.filter((p, i) => p.real || p.puerta > 0 || i === 0).map
   };
 });
 
+/**
+ * ===========================================================================
+ * LA CASA DE SERGIO — Billinghurst 250 (D-41, 18.11)
+ * ===========================================================================
+ * El final de los 1.600 m, y el motivo del juego entero: Gus no va a un
+ * refugio, va a buscar a un amigo.
+ *
+ * ---------------------------------------------------------------------------
+ * DÓNDE VA, Y POR QUÉ NO EN EL VÉRTICE
+ * ---------------------------------------------------------------------------
+ * La meta del recorrido es el último vértice del trazado, que es una
+ * **esquina**. Una casa no está en la esquina: está sobre la línea de
+ * fachadas, a un costado de la calle. Así que se la planta sobre la vereda
+ * del último tramo, del mismo lado que su cartel.
+ *
+ * El marcador de meta —el anillo en el piso— se queda en el vértice, que es
+ * donde el jugador tiene que llegar. La casa es **lo que ve**; el vértice es
+ * dónde termina.
+ */
+const FINAL = TRAZADO[TRAZADO.length - 1];
+const PREVIO = TRAZADO[TRAZADO.length - 2];
+const casa = (() => {
+  const dx = FINAL.x - PREVIO.x;
+  const dz = FINAL.z - PREVIO.z;
+  const largo = Math.hypot(dx, dz) || 1;
+  const eje = { x: dx / largo, z: dz / largo };
+  // Misma vereda que el cartel: a la derecha del sentido de avance.
+  const der = { x: -eje.z, z: eje.x };
+  /*
+   * El frente de la casa cae EXACTO sobre la línea municipal.
+   *
+   * Media calzada (5) + vereda (3) = 8 m del eje, que es donde arranca la
+   * hilera de fachadas. Más el medio fondo de la casa (5) para pasar del
+   * frente al centro. La primera versión usaba 18 y dejaba a la casa cinco
+   * metros adentro de la manzana: un diente en la cuadra que se lee como un
+   * error de construcción, no como un zaguán.
+   */
+  const LINEA = UNITS.streetWidth / 2 + UNITS.sidewalkWidth + 5;
+
+  return {
+    tipo: 'casaDeSergio',
+    x: FINAL.x + der.x * LINEA - eje.x * 6,
+    z: FINAL.z + der.z * LINEA - eje.z * 6,
+    /*
+     * La casa mira a la calle. El modelo tiene el frente en −Z, igual que
+     * todo en el proyecto (ver `core/rumbo.js`), así que se la gira para
+     * que ese frente apunte hacia el eje de la calzada.
+     */
+    rot: Math.abs(der.x) > Math.abs(der.z) ? (der.x > 0 ? 90 : 270) : der.z > 0 ? 180 : 0,
+    tag: 'building',
+    collide: { w: 9, d: 10, h: 6.4 },
+    /*
+     * Se queda con su pedazo de hilera: el generador no levanta fachada
+     * acá. Sin esto quedan dos paredes en el mismo lugar —la casa adentro
+     * de un edificio de veinte metros— y no se ve: desde la cámara cenital
+     * se lee como una fachada más, y el final del recorrido deja de
+     * reconocerse.
+     *
+     * El hueco es más ancho que la casa para que tampoco quede pegada a
+     * sus vecinas: una casa baja con medianeras de veinte metros a los dos
+     * lados se lee como un pozo, no como una casa.
+     */
+    hueco: { w: 16, d: 16 }
+  };
+})();
+
 export const mission001 = {
   id: 'mission001',
   title: 'Ir a buscar a Sergio',
@@ -459,5 +526,5 @@ export const mission001 = {
    * decide dónde conviene cubrirse. Los autos abandonados que el generador
    * reparte sirven de cobertura y por ahora alcanzan.
    */
-  props: [...cortes, ...carteles]
+  props: [...cortes, ...carteles, casa]
 };

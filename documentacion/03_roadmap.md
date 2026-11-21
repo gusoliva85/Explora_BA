@@ -24,35 +24,30 @@
 
 ## ▶️ La tarea que sigue
 
-### **18.11 — La casa de Sergio** · lo último de la Fase 18
+### ⛔ **Lo que sigue necesita un pulgar, y después viene la 19A**
 
-> ✅ **Los carteles ya están.** Doce en 1.600 m: el arranque, las cuatro
-> direcciones que dio Gus, las siete puertas y Billinghurst 250. Siempre a
-> la derecha del sentido de avance, retirados de la bocacalle, con fierro y
-> colisión.
+**Las fases 16, 17 y 18 están hechas en código.** El juego va de
+Av. Independencia 3250 a Billinghurst 250 —dieciséis cuadras, 1.600 m— por
+una ruta cerrada a los costados, con siete controles, carteles de dirección,
+la casa de Sergio al final, y **pelea solo**.
 
-**Qué se hace.** Billinghurst 250 (D-41). Una **fachada que se lea como una
-casa**, no como una comisaría, y que se distinga de la hilera a la que
-pertenece.
+**Lo que no se puede hacer desde acá**, por orden de importancia:
 
-**Lo difícil, y conviene nombrarlo antes de empezar:** la meta tiene que
-distinguirse **sin dejar de pertenecer**.
+| Qué | De qué fase | La pregunta concreta |
+|---|---|---|
+| **La cadencia** | 17.9 | *¿Dudás antes de pararte?* Si nunca dudás, es muy rápida; si nunca te parás, muy lenta |
+| **Borrar el botón DISPARAR** | 17 | Quedó redundante en la 17.5. Se dejó a propósito para comparar las dos formas jugando |
+| **El joystick a la derecha** | 16.7 | ¿Cae bajo el pulgar sin recolocar la mano? |
+| **La brújula de reojo** | 18.14 | ¿Se lee **sin mirarla**, corriendo? |
+| **La marca del blanco** | 17.8 | Con cuatro zombis encima, ¿se distingue a cuál le dispara? |
+| **La misión entera** | 18 | 1.600 m sin tocar nada más que el joystick |
+| **Cuántos zombis por tramo** | 19A.11 | Hoy de 3 a 10. Es la perilla principal |
 
-| Si se pasa de | Pasa esto |
-|---|---|
-| Distinta | Se lee como un objeto de videojuego puesto encima del barrio |
-| Igual | No se encuentra, y el jugador camina 1.600 m para no reconocer el final |
-
-**La respuesta probable no es el color: es la forma.** Una casa **baja**
-entre edificios, con reja y zaguán, donde todo lo demás es planta baja
-comercial. Eso se reconoce de lejos sin que nada brille.
-
-**Y ya tiene quien la anuncie:** el cartel de "Billinghurst 250" está puesto
-a diez metros de la puerta, y la brújula marca la distancia. La fachada no
-tiene que gritar.
-
-**Cómo se sabe que está lista:** se reconoce como una casa, se distingue de
-sus vecinas, y **cierra la Fase 18 salvo el teléfono**.
+**Y lo que sí se puede hacer sin teléfono es la 19A: la esclusa.** Es el
+corazón del juego nuevo (D-37) y no depende de ningún ajuste: la puerta no
+abre hasta que no quede un zombi vivo en el tramo, y se cierra a tus
+espaldas. Todo lo que necesita ya está —los siete controles, las zonas con
+su tramo declarado y su cantidad— salvo la puerta.
 
 ---
 
@@ -65,7 +60,7 @@ sus vecinas, y **cierra la Fase 18 salvo el teléfono**.
 | ⏸️ | 12R — La capa visual nueva | **8 de 17.** **En pausa** hasta cerrar la 17. Y se le caen 6 tareas, que se las lleva la 20 |
 | ✅ | 16 — La poda | **Cerrada el 20/11.** Ocho tareas |
 | 🔄 | **17 — Combate automático** | **Hecha en código.** Falta jugarla en el teléfono: la cadencia (17.9) no se puede ajustar de otra manera |
-| ⬜ | 18 — El recorrido real | Depende de la 16 |
+| 🔄 | 18 — El recorrido real | **Hecha en código.** Falta jugarla |
 | ⬜ | 19A — **La esclusa** | **El corazón del juego nuevo** (D-37). Va con la 18 |
 | ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
@@ -1164,7 +1159,7 @@ Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
 
 ---
 
-## ⬜ FASE 18 — El recorrido real
+## 🔄 FASE 18 — El recorrido real · **hecha en código; falta el teléfono**
 
 **Objetivo:** el trazado de **D-46** —las 16 cuadras reales—, con la ruta marcada y todo lo
 demás bloqueado. Usa los props provisionales que ya existen; la Fase 20 los
@@ -1186,7 +1181,7 @@ reemplaza por modelos.
 - [x] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js` ✅ *21/11/2026 — y con ellos su prueba de punta a punta*
 - [x] **18.9 Las zonas de zombis, una por tramo.** ✅ *21/11/2026 — ocho, y **dejaron de ser círculos**: una zona es el corredor de calle del tramo. Y cada una declara su `cantidad`, que es la perilla de 19A.11* **Ocho zonas de dos cuadras** (D-46), con dificultad creciente y la primera floja: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
 - [x] **18.10 Los carteles.** ✅ *21/11/2026 — doce, generados del trazado. Dos errores de geometría que no se veían mirando y los encontró una prueba* Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, las siete puertas y la casa de Sergio. **Y ya no falta ninguna dirección** (D-46): las diecisiete esquinas tienen nombre real de OpenStreetMap, y las cuatro ubicaciones de Gus que caen en medio de un tramo —Maza 379, Av. Boedo 120, Mario Bravo 90— son carteles de paso
-- [ ] **18.11 La casa de Sergio** ⬅️ *la que sigue* ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
+- [x] **18.11 La casa de Sergio** ✅ *21/11/2026 — casa baja de dos plantas con zaguán retirado, reja y tanque, donde todo lo demás es planta baja comercial. Y se queda con su pedazo de hilera para que el generador no la tape*. ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
 - [x] **18.12 La construcción por tramos** (D-42, D-47) ✅ *21/11/2026 — ventana de cuadras, disparada por el control y no por una distancia. El mapa de hoy pasa de 1.419 piezas a 923, y liberar baja las cajas de colisión de 130 a 92* ⚠️ **Primera de la fase, no última.** Ya no es "es probable que haga falta" ni siquiera "está medido y hace falta": con las 16 cuadras de D-46 el juego **no abre** en un teléfono sin esto. La ciudad es el 86 % de las mallas y lo único que crece con los metros; 16 cuadras proyectan ~12.700 entidades y ~1.100 llamadas de dibujo contra un presupuesto de 150. **Ventana de cuatro cuadras** —la última del tramo anterior, las dos del actual y la primera del siguiente, porque con tramos de 2 cuadras la ventana de tres ya no alcanza—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada
 - [x] **18.12 bis Liberar de verdad.** ✅ *21/11/2026 — entidades, grupo de agrupado y **cajas de colisión**, medido en el juego: 130 → 92 al soltar una cuadra. `CollisionWorld.remove()` tiene seis pruebas, incluida la del ciclo de cien* Entidades, materiales, mallas **y cajas de colisión**. Una caja que sobrevive a su fachada es una pared invisible, que es el peor error posible porque no se ve. Se mide con `node tools/medir-memoria.mjs` antes y después de cada cuadra
 - [ ] **18.13 Reescribir `recorrido.spec.js` y `mision.spec.js`**
@@ -1197,12 +1192,12 @@ reemplaza por modelos.
 - [x] Todos los giros del mapa construido son de 90°, verificado por `tests/trazado.test.js`
 - [x] Los ocho tramos miden lo mismo —200 m— y los siete controles quedan a distancia pareja
 - [x] Las seis direcciones de Gus están en orden y coinciden con los carteles — *salen del mismo trazado, así que no pueden discrepar*
-- [ ] Billinghurst 250 se lee como una casa, y se distingue de sus vecinas
+- [x] Billinghurst 250 se lee como una casa, y se distingue de sus vecinas — *por la forma, no por el color: más baja que cualquier vecina, con zaguán y reja. ⚠️ Falta confirmarlo jugando*
 - [x] No se puede salir de la ruta por ningún lado — *36 cortes con colisión, dos por esquina; el caminante recorre las 16 cuadras sin salirse*
-- [ ] Un jugador que nunca lo vio entiende para dónde ir sin que nadie le diga
+- [ ] Un jugador que nunca lo vio entiende para dónde ir sin que nadie le diga — *la brújula y los cortes están; sólo lo contesta alguien que no lo vio antes*
 - [x] Ningún obstáculo bloquea la ruta que debería dejar pasar — *el recorrido completo da 1,006 veces la línea recta: prácticamente derecho*
 - [x] Se puede llegar de Independencia 3250 a Billinghurst 250 sin trabarse — *verificado esquina por esquina en `recorrido.spec.js`*
-- [ ] Las llamadas de dibujo del peor caso están medidas y anotadas
+- [x] Las llamadas de dibujo están medidas: **229-236** con la ventana de cuadras puesta, contra las 274 de construir todo el mapa de tres cuadras de antes. ⚠️ *El peor caso real —una esquina del tramo más cargado— falta medirlo en el teléfono*
 - [x] Hay autos y obstáculos detrás de los que se puede cubrir, no sólo para cortar — *333 coberturas sobre la ruta construida, medidas; la prueba las cuenta y excluye los cortes*
 - [x] La brújula dice cuánto falta y por dónde vas — ⚠️ *falta verla de reojo **en el teléfono***
 
