@@ -28,22 +28,45 @@
  * los de `core/rumbo.js`: rumbo 0 mira a -Z y crece en sentido horario.
  */
 
+import {
+  UBICACIONES
+} from '../src/config/ubicaciones.js';
+import {
+  CUADRA,
+  CUADRAS_POR_TRAMO,
+  ESCALERA,
+  trazadoOrtogonal,
+  puertas,
+  largoOrtogonal,
+  girosValidos
+} from '../src/config/recorrido.js';
+
+/*
+ * ---------------------------------------------------------------------------
+ * LA GEOMETRIA NO VIVE ACA, Y ANTES SI
+ * ---------------------------------------------------------------------------
+ * `ESCALERA`, `trazadoOrtogonal()`, `puertas()` y las ubicaciones se mudaron
+ * a `src/config/` en la Fase 18.3, cuando el juego empezo a construir el
+ * recorrido de verdad.
+ *
+ * El motivo es el de siempre en este proyecto: **el dato se le pide a su
+ * dueño.** Copiar el trazado dentro de la mision habria dejado dos
+ * versiones del recorrido, y la que vale es la que nadie mira.
+ *
+ * Lo que se quedo aca es lo que necesita Node o los datos crudos de
+ * OpenStreetMap: la conversion de grados a metros y la medicion del
+ * recorrido real. Este script sigue siendo el que imprime la tabla, que es
+ * para lo que se escribio.
+ *
+ * Se reexporta todo para no romper a quien ya lo importaba desde aca.
+ */
+export { UBICACIONES, CUADRA, CUADRAS_POR_TRAMO, ESCALERA, trazadoOrtogonal, puertas, largoOrtogonal, girosValidos };
+
+
 // ===========================================================================
 // 1. EL RECORRIDO REAL — el dato de entrada
 // ===========================================================================
 
-/**
- * Las seis ubicaciones, tal como las dio Gus el 7 de noviembre de 2026.
- * No se tocan: son el dato, no un resultado.
- */
-export const UBICACIONES = [
-  { clave: 'inicio', dir: 'Av. Independencia 3250', calle: 'INDEPENDENCIA', lat: -34.620511, lon: -58.411406 },
-  { clave: 'agrelo', dir: 'Agrelo 3400', calle: 'AGRELO', lat: -34.618206, lon: -58.413928 },
-  { clave: 'maza', dir: 'Maza 379', calle: 'MAZA', lat: -34.615399, lon: -58.415827 },
-  { clave: 'boedo', dir: 'Av. Boedo 120', calle: 'BOEDO', lat: -34.612672, lon: -58.417772 },
-  { clave: 'mariobravo', dir: 'Mario Bravo 90', calle: 'MARIO BRAVO', lat: -34.609881, lon: -58.417396 },
-  { clave: 'fin', dir: 'Billinghurst 250', calle: 'BILLINGHURST', lat: -34.607771, lon: -58.416173 }
-];
 
 /**
  * Metros por grado de latitud y de longitud en un punto dado.
@@ -69,6 +92,9 @@ const redondear = (n) => Math.round(n * 10) / 10;
  * El recorrido real medido, en metros, con el inicio en el cero.
  * Esto es la REFERENCIA: no es lo que se construye.
  */
+/** Largo total del recorrido real, en metros. Se quedo aca: usa los datos de OSM. */
+export const largoReal = () => redondear(recorridoReal().reduce((s, p) => s + p.tramo, 0));
+
 export function recorridoReal() {
   const origen = UBICACIONES[0];
   const m = metrosPorGrado(origen.lat);
@@ -93,179 +119,6 @@ export function recorridoReal() {
 // ===========================================================================
 // 2. EL TRAZADO ORTOGONAL — lo que se construye
 // ===========================================================================
-
-/**
- * El largo de una cuadra. Es el mismo numero que `UNITS.blockLength` del
- * balance, y no es casualidad: todo el kit modular de la 12R esta medido
- * contra una cuadra de 100 m.
- */
-export const CUADRA = 100;
-
-/**
- * Cuantas cuadras hay entre dos puertas. Lo pidio Gus el 8/11: siete
- * controles repartidos parejo sobre el recorrido entero.
- */
-export const CUADRAS_POR_TRAMO = 2;
-
-/**
- * ===========================================================================
- * LA ESCALERA — el recorrido real, caminado sobre la cuadricula real
- * ===========================================================================
- * Cada entrada es UNA cuadra. No es una traza inventada que copia la
- * proporcion del recorrido: es el recorrido de Gus **caminado por las calles
- * que existen**, con los nombres que existen.
- *
- * DE DONDE SALEN LOS NOMBRES. De OpenStreetMap, consultado el 8/11/2026 con
- * la API de Overpass sobre el corredor completo. Para cada calle con nombre
- * de la zona se pidio el centro de sus tramos, y la orientacion sale de
- * mirar como se reparten: si los centros comparten longitud y cambian de
- * latitud, la calle corre norte-sur. Es el metodo mas tonto que funciona, y
- * funciona porque un tramo de calle va de esquina a esquina.
- *
- * DOS COSAS QUE APARECIERON MIRANDO LOS DATOS, Y NO ESTABAN EN NINGUN LADO:
- *
- *   1. **Maza y Billinghurst son la misma calle.** Al norte de Av.
- *      Rivadavia, Maza pasa a llamarse Billinghurst: los tramos de las dos
- *      caen sobre la misma longitud, Maza siempre al sur de Rivadavia y
- *      Billinghurst siempre al norte. O sea que "Maza 379" y "Billinghurst
- *      250" estan sobre la misma linea.
- *
- *   2. **Av. Boedo y Mario Bravo tambien.** Mismo caso y misma avenida de
- *      por medio. Y Mario Bravo, que yo tenia anotada como calle este-oeste
- *      porque el numero 90 suena a eso, **corre norte-sur**: sus tramos
- *      estan todos sobre la longitud -58,4174.
- *
- * Eso explica la unica parte del recorrido real que no se entendia: por que
- * las dos ultimas patas vuelven un poco al **este** en lugar de seguir al
- * noroeste. No vuelven: el recorrido sube por la linea Boedo/Mario Bravo y
- * al final cruza una cuadra al este para caer en la linea Maza/Billinghurst,
- * que es donde vive Sergio.
- *
- * EL LARGO SALE SOLO. Caminado por las calles reales, el recorrido de Gus
- * son 4 cuadras al oeste + 1 al este + 11 al norte = **16 cuadras**. A 100 m
- * la cuadra, **1.600 m**, que es exactamente el numero que dijo Gus. No se
- * ajusto nada para que diera: se contaron las esquinas.
- *
- * `hasta` es la calle que se cruza al final de esa cuadra, o sea donde cae
- * la esquina. `punto` marca las ubicaciones que dio Gus.
- */
-export const ESCALERA = [
-  { dir: 'O', calle: 'Av. Independencia', hasta: 'Sánchez de Loria' },
-  { dir: 'O', calle: 'Av. Independencia', hasta: 'Virrey Liniers' },
-  { dir: 'N', calle: 'Virrey Liniers', hasta: 'México' },
-  { dir: 'N', calle: 'Virrey Liniers', hasta: 'Agrelo', punto: 'agrelo' },
-  { dir: 'O', calle: 'Agrelo', hasta: 'Maza' },
-  { dir: 'N', calle: 'Maza', hasta: 'Venezuela' },
-  { dir: 'N', calle: 'Maza', hasta: 'Av. Belgrano', punto: 'maza' },
-  { dir: 'N', calle: 'Maza', hasta: 'Moreno' },
-  { dir: 'N', calle: 'Maza', hasta: 'Av. Hipólito Yrigoyen' },
-  { dir: 'N', calle: 'Maza', hasta: 'Don Bosco' },
-  { dir: 'O', calle: 'Don Bosco', hasta: 'Av. Boedo', punto: 'boedo' },
-  { dir: 'N', calle: 'Av. Boedo', hasta: 'Av. Rivadavia' },
-  { dir: 'N', calle: 'Mario Bravo', hasta: 'Bartolomé Mitre', punto: 'mariobravo' },
-  { dir: 'N', calle: 'Mario Bravo', hasta: 'Av. Díaz Vélez' },
-  { dir: 'E', calle: 'Av. Díaz Vélez', hasta: 'Billinghurst' },
-  { dir: 'N', calle: 'Billinghurst', hasta: 'Billinghurst 250', punto: 'fin' }
-];
-
-/** Cuanto mueve cada letra, en cuadras. */
-const PASO = {
-  N: { x: 0, z: -1 },
-  S: { x: 0, z: 1 },
-  E: { x: 1, z: 0 },
-  O: { x: -1, z: 0 }
-};
-
-/** El rumbo de cada letra, en el convenio de `core/rumbo.js`. */
-const RUMBO = { N: 0, E: 90, S: 180, O: 270 };
-
-/**
- * El trazado que se construye: una esquina por cuadra, diecisiete vertices.
- *
- * Cada vertice lleva el giro que hay que hacer ahi —para que la 18.6 sepa
- * donde poner una flecha y la 18.7 sepa que bocacalle tapar— y si ahi va una
- * **puerta** de la esclusa (D-37), que es cada `CUADRAS_POR_TRAMO` cuadras.
- */
-export function trazadoOrtogonal(cuadra = CUADRA) {
-  const inicio = UBICACIONES[0];
-  const puntos = [
-    {
-      clave: 'inicio',
-      dir: inicio.dir,
-      calle: inicio.calle,
-      x: 0,
-      z: 0,
-      cuadra: 0,
-      tramo: 0,
-      rumbo: RUMBO[ESCALERA[0].dir],
-      giro: 0,
-      puerta: 0
-    }
-  ];
-
-  let x = 0;
-  let z = 0;
-  let rumboAnterior = RUMBO[ESCALERA[0].dir];
-  let puertas = 0;
-
-  for (const [i, paso] of ESCALERA.entries()) {
-    x += PASO[paso.dir].x * cuadra;
-    z += PASO[paso.dir].z * cuadra;
-    const rumbo = RUMBO[paso.dir];
-
-    // El giro, normalizado a (-180, 180]. Siempre va a dar 0, 90 o -90:
-    // si alguna vez da otra cosa, la escalera esta mal escrita y el
-    // generador —que exige tramos alineados a un eje— no va a poder
-    // construirla.
-    let giro = rumbo - rumboAnterior;
-    while (giro > 180) giro -= 360;
-    while (giro <= -180) giro += 360;
-
-    const nCuadra = i + 1;
-    const esFinal = nCuadra === ESCALERA.length;
-    const hayPuerta = !esFinal && nCuadra % CUADRAS_POR_TRAMO === 0;
-    if (hayPuerta) puertas += 1;
-
-    const original = paso.punto ? UBICACIONES.find((u) => u.clave === paso.punto) : null;
-    puntos.push({
-      clave: paso.punto ?? `esquina-${nCuadra}`,
-      dir: original?.dir ?? `${paso.calle} y ${paso.hasta}`,
-      calle: paso.calle,
-      hasta: paso.hasta,
-      real: Boolean(original),
-      x,
-      z,
-      cuadra: nCuadra,
-      tramo: cuadra,
-      rumbo,
-      giro,
-      // 0 = no hay puerta aca; 1..7 = el numero de control
-      puerta: hayPuerta ? puertas : 0,
-      fin: esFinal
-    });
-    rumboAnterior = rumbo;
-  }
-
-  return puntos;
-}
-
-/** Solo los vertices donde hay una puerta de la esclusa. */
-export const puertas = (cuadra = CUADRA) => trazadoOrtogonal(cuadra).filter((p) => p.puerta > 0);
-
-/** Largo total caminado, en metros. */
-export const largoOrtogonal = (cuadra = CUADRA) => ESCALERA.length * cuadra;
-
-/** Largo total del recorrido real, en metros. */
-export const largoReal = () => redondear(recorridoReal().reduce((s, p) => s + p.tramo, 0));
-
-/**
- * Comprobacion que tiene que valer siempre: todos los giros son de 90
- * grados o derecho. Si esto falla, el generador no puede construir la
- * traza. Lo verifica una prueba, no solo este archivo.
- */
-export function girosValidos(cuadra = CUADRA) {
-  return trazadoOrtogonal(cuadra).every((p) => [0, 90, -90].includes(p.giro));
-}
 
 // --- Cuando se corre a mano ------------------------------------------------
 

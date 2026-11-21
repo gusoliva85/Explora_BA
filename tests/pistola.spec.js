@@ -39,15 +39,32 @@ async function prepararTiro(page, distancia) {
       const esperar = eval(cuadrosSrc);
       const g = globalThis.game;
 
+      /*
+       * El jugador se para **sobre el eje de la calle**, no desplazado en Z.
+       *
+       * Decia `z + 18` y `z + distancia`, dando por sentado que la calle
+       * corria norte-sur. Era cierto con el mapa de tres cuadras; desde la
+       * 18.3 el primer tramo corre **este-oeste**, asi que ese
+       * desplazamiento dejaba al jugador adentro de la hilera de edificios
+       * y el tiro chocaba contra una pared a dos metros.
+       *
+       * Es la tercera prueba de la misma tanda que suponia la direccion de
+       * la calle. **Lo que no se puede suponer no es la coordenada, es la
+       * direccion.**
+       */
+      const r = g.mission.mission.route;
+      const largo = Math.hypot(r[1].x - r[0].x, r[1].z - r[0].z) || 1;
+      const eje = { x: (r[1].x - r[0].x) / largo, z: (r[1].z - r[0].z) / largo };
+
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
-      g.player.teleport(zona.x, zona.z + 18);
+      g.player.teleport(zona.x - eje.x * 18, zona.z - eje.z * 18);
       await esperar(30);
 
       const victima = g.zombis.enJuego.find((z) => z.vivo);
       if (!victima) return { sinZombis: true };
 
       const q = victima.posicion;
-      const parado = { x: q.x, z: q.z + distancia };
+      const parado = { x: q.x - eje.x * distancia, z: q.z - eje.z * distancia };
       const rumbo = g.rumbo.rumboEntre(parado, q);
       g.player.teleport(parado.x, parado.z, rumbo);
       g.player.yaw = rumbo;
@@ -66,6 +83,26 @@ async function prepararTiro(page, distancia) {
        * si el jugador no lo pide.
        */
       victima.health.actual = victima.health.maximo;
+
+      /*
+       * Y la victima queda como **unico candidato**: los demas se van
+       * lejos.
+       *
+       * Desde la 17.5 el tiro sale hacia `blanco.rumbo` —el combate elige a
+       * quien le dispara— y no hacia `player.yaw`. Esta prueba apuntaba a
+       * mano y daba por sentado que el arma le hacia caso, asi que medía el
+       * daño de un tiro que iba hacia otro zombi.
+       *
+       * Forzar el blanco entre dos cuadros no alcanza: el bucle del juego
+       * vuelve a elegir con la lista entera antes de que el tiro se
+       * resuelva. Sacando a los demas del alcance, el juego elige a la
+       * victima por su cuenta y la prueba vuelve a medir lo suyo: que a
+       * diez metros el rayo llega y el daño se aplica.
+       */
+      for (const z of g.zombis.enJuego) {
+        if (z === victima || !z.vivo) continue;
+        z.entity.setPosition(parado.x + 400, 0, parado.z + 400);
+      }
 
       // Se guarda para las llamadas siguientes de la misma prueba.
       globalThis.__tiro = { parado, rumbo, victima };
@@ -97,6 +134,21 @@ async function tirar(page) {
       // Mantener la pose: el zombi empuja y la IA mueve al jugador.
       g.player.entity.setPosition(parado.x, 0, parado.z);
       g.player.yaw = rumbo;
+
+      /*
+       * El blanco se fija EN LA VICTIMA, cuadro a cuadro.
+       *
+       * Desde la 17.5 el tiro sale hacia `blanco.rumbo`, no hacia
+       * `player.yaw`: el combate automatico elige a quien le dispara. Esta
+       * prueba apuntaba a mano y daba por sentado que el arma le hacia
+       * caso, asi que medía el daño de un tiro que iba hacia **otro
+       * zombi**.
+       *
+       * Forzando la eleccion sobre una lista de uno, la prueba vuelve a
+       * medir lo que vino a medir: que a diez metros el rayo llega y el
+       * daño se aplica. A quien le dispara el juego tiene sus propias
+       * pruebas en `blanco.test.js` y `combate.spec.js`.
+       */
       if (g.arma.puedeAtacar) g.arma.atacar();
       await esperar(1);
     }
@@ -249,8 +301,33 @@ test.describe('el ruido es la mecanica de la fase', () => {
       const esperar = eval(cuadrosSrc);
       const g = globalThis.game;
 
+      /*
+       * Al centro de la zona, que esta SOBRE la calle.
+       *
+       * Decia `zona.z + 18`, que con el mapa de tres cuadras caia en la
+       * calzada y desde la 18.3 cae adentro de la hilera de edificios: los
+       * zombis quedaban del otro lado de una pared, no se activaban, y la
+       * prueba se salteaba sola. **Una prueba salteada es una prueba que no
+       * corre**, y encima no se nota en el resumen.
+       */
+      /*
+       * Y se le ACORTA EL ALCANCE AL ARMA mientras dura la prueba.
+       *
+       * Es feo y es necesario, y el motivo dice algo del juego: el ruido
+       * llega a 22 m y el tiro a 28, asi que **todo zombi que puede
+       * escuchar un disparo tambien puede recibirlo**. Con el combate
+       * automatico (D-28), pararse cerca de alguien es dispararle.
+       *
+       * O sea que "tres zombis que no te vieron, quietos, a tiro de oido"
+       * es una situacion que el juego ya no permite tener por accidente.
+       * Para medir el ruido hay que impedir que los mate, y la unica forma
+       * honesta es quitarle alcance: el estruendo no cambia.
+       */
+      const armaReal = g.arma.arma;
+      g.arma.arma = { ...armaReal, range: 4 };
+
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
-      g.player.teleport(zona.x, zona.z + 18);
+      g.player.teleport(zona.x, zona.z);
       await esperar(30);
 
       const testigos = g.zombis.enJuego.filter((z) => z.vivo).slice(0, 3);
@@ -298,6 +375,7 @@ test.describe('el ruido es la mecanica de la fase', () => {
         await esperar(1);
       }
 
+      g.arma.arma = armaReal;
       const despues = testigos.map((z) => z.ai.estado);
       const radio = g.balance.ZOMBIE_STANDARD.sightRange;
 

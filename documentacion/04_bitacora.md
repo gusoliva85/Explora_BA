@@ -6109,6 +6109,127 @@ alcance del blanco al arma—: **el dato se le pide a su dueño.**
 
 ---
 
+## 18.3 — El recorrido real, y por qué una zona no puede ser un círculo
+
+**21 de noviembre de 2026.** Con ella entran la 18.4, la 18.5, la 18.8 y la
+18.9: son inseparables. Cambiar el trazado sin los controles, los textos y
+las zonas deja la misión apuntando al vacío.
+
+**El juego pasa de tres cuadras inventadas a las dieciséis reales:**
+Av. Independencia 3250 → Billinghurst 250, 1.600 m, diecisiete esquinas con
+nombre de OpenStreetMap, siete controles y ocho tramos.
+
+### El trazado se importa, no se copia
+
+`route` sale de `trazadoOrtogonal()` y los controles de `puertas()`. No hay
+una lista de diecisiete esquinas pegada a mano.
+
+Para que eso fuera posible hubo que **mudar la geometría de `tools/` a
+`src/`**: el script que imprime la tabla tenía el dato adentro, y un script
+de consola no puede ser la fuente de verdad de algo que el juego construye.
+Ahora `src/config/recorrido.js` tiene la escalera y el trazado, y el script
+lo importa. Lo que se quedó en `tools/` es lo que necesita Node o los datos
+crudos de OpenStreetMap.
+
+> **El dato se le pide a su dueño.** Van cuatro veces: los ángulos al
+> convenio de rumbos, los números del balance al balance, el alcance del
+> blanco al arma, y ahora el trazado al recorrido.
+
+### Lo que encontré midiendo: una zona circular es casi toda pared
+
+Puse las ocho zonas de zombis, una por tramo, como círculos centrados en el
+medio del tramo. Al medir, **los sesenta zombis estaban todos a más de 140
+metros del jugador** y las primeras cuadras vacías.
+
+La cuenta explica todo. Un tramo son doscientos metros, así que el círculo
+que lo cubre tiene cien de radio: **31.400 m², de los cuales la calle son
+3.200**. El 90 % de los intentos de colocación caía adentro de un edificio
+y se descartaba.
+
+Y acá se cruzó con la 18.12 de una manera que no había previsto: **las
+cuadras que todavía no se construyeron no tienen cajas de colisión.** O sea
+que ahí ningún punto se descartaba nunca. El sorteo, al rechazar lo que caía
+en edificios *de las cuadras construidas*, empujaba sistemáticamente a todos
+los zombis hacia la parte del mapa que no existía todavía.
+
+> **Dos sistemas correctos, cada uno con su razón, produciendo juntos algo
+> que ninguno de los dos quería.** El generador de puestos rechazaba
+> paredes; la ventana no construía lo lejano. Nadie escribió "poné los
+> zombis donde no hay mapa".
+
+La salida: una zona con `a` y `b` es **el corredor de calle entre esos dos
+puntos**, y se sortea a lo largo con un desvío lateral de medio ancho de
+calzada. Las redondas siguen andando para lo que se ponga a mano.
+
+### Y una perilla que ahora tiene nombre
+
+Las zonas declaran `cantidad`: de 3 a 10 zombis por tramo, siguiendo una
+curva que arranca floja y afloja al final —llegar a lo de Sergio tiene que
+sentirse como llegar, no como una pared—.
+
+No es un número cosmético. **Con la esclusa, la puerta no abre hasta que no
+quede uno vivo en el tramo** (D-37), así que `cantidad × 1,6 s` —lo que
+cuesta matar uno (D-31)— es el piso del tiempo que el jugador pasa ahí: de
+5 a 16 segundos de combate puro por tramo. Es la perilla principal de 19A.11
+y se ajusta jugando.
+
+### Seis pruebas se cayeron, y todas por lo mismo
+
+Y esta vez el patrón es tan claro que vale escribirlo arriba de todo:
+
+> **Lo que no se puede suponer no es la coordenada: es la dirección.**
+
+El mapa viejo salía al **sur**; el nuevo sale al **oeste**. Seis pruebas
+tenían esa dirección metida adentro sin decirlo:
+
+| Prueba | Qué suponía |
+|---|---|
+| `gameLogic` · rumbo de la calle | Tres tramos con sus coordenadas escritas |
+| `gameLogic` · cámara detrás | Que avanzar es ir hacia −Z |
+| `smoke` · no atraviesa edificios | Que empujar "a la derecha" encuentra una fachada |
+| `smoke` · reaparece en el control | Que el control está en `z < −50` |
+| `pistola` · cuatro tiros matan | Que pararse a `z + 10` del zombi es pararse en la calle |
+| `pistola` · el disparo atrae | Lo mismo, a `z + 18` |
+
+Las dos de `pistola` son las más feas: el jugador quedaba **adentro de la
+hilera de edificios** y el tiro chocaba contra una pared a dos metros. La
+prueba decía "el primer tiro no hizo daño" y tenía razón.
+
+Ninguna de las seis marcaba un error del juego. Todas ahora le preguntan a
+la ruta hacia dónde va.
+
+### Una prueba que se salteaba sola, que es peor que fallar
+
+La del ruido se saltaba con *"sólo había N zombis"*, porque el teleport caía
+adentro de un edificio y los zombis no se activaban. **Una prueba salteada
+es una prueba que no corre**, y en el resumen aparece como un número chiquito
+al lado de los verdes.
+
+Y al arreglarla apareció algo que es del juego y no de la prueba:
+
+> **El ruido llega a 22 m y el tiro a 28.** O sea que todo zombi que puede
+> escuchar un disparo también puede recibirlo. Con el combate automático,
+> *"tres zombis que no te vieron, quietos, a tiro de oído"* **es una
+> situación que el juego ya no permite tener por accidente**: pararse cerca
+> de alguien es dispararle.
+
+Para medir el ruido hay que impedir que los mate, y la única forma honesta
+es quitarle alcance al arma durante la prueba. El estruendo no cambia.
+
+### Lo que falta, y está anotado donde se nota
+
+`props` quedó **vacío a propósito**. Los treinta y pico de obstáculos del
+mapa viejo estaban sobre un trazado que ya no existe.
+
+Y la prueba que los cuida —que los obstáculos obliguen a desviarse algo— no
+se borró ni se le bajó el umbral: **se saltea mientras `props` esté vacío**,
+y se reactiva sola en cuanto la 18.7 ponga el primero. Es lo mismo que se
+hizo en la 16.4 con la separación del arma contra el asfalto: cuando algo
+queda pendiente, el recordatorio va con número y adentro de la prueba, no en
+una nota al margen.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

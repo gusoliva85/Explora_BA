@@ -255,137 +255,50 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
     '[recorrido] recta ' + informe.recta + ' m, caminado ' + informe.distancia +
       ' m, desvio +' + Math.round((desvio - 1) * 100) + '%'
   );
+  /*
+   * ⚠️ El piso del desvio esta en pausa hasta la 18.7, y se reactiva solo.
+   *
+   * Esta prueba verifica que los obstaculos obliguen a desviarse ALGO: si
+   * el camino es recto, estan de adorno. Hoy el recorrido es recto porque
+   * **no hay obstaculos puestos**: la 18.3 cambio el mapa de tres cuadras a
+   * las dieciseis reales, y los treinta y pico de props del mapa viejo
+   * estaban sobre un trazado que ya no existe.
+   *
+   * No se baja el umbral ni se borra la comprobacion: se la condiciona a
+   * que haya algo puesto a mano. El dia que la 18.7 ponga el primer
+   * obstaculo, esto vuelve a exigir sin que nadie se tenga que acordar.
+   */
+  const hayObstaculos = await page.evaluate(
+    () => globalThis.game.mission.mission.props.length
+  );
+  test.skip(
+    hayObstaculos === 0,
+    'la 18.7 todavia no puso obstaculos: no hay nada que obligue a desviarse'
+  );
   expect(desvio).toBeGreaterThan(1.02);
   expect(desvio).toBeLessThan(2.5);
 
   expect(errores).toEqual([]);
 });
 
-/**
- * Los pasajes tienen que ser transitables de punta a punta.
+/*
+ * ===========================================================================
+ * ACA HABIA UNA PRUEBA DE LOS PASAJES, Y SE FUE CON ELLOS (D-34, 18.8)
+ * ===========================================================================
+ * "Cada pasaje se puede recorrer de punta a punta". Entraba por la boca,
+ * caminaba hasta el otro extremo y exigia llegar.
  *
- * Un pasaje tapiado es peor que no tenerlo: el jugador ve la boca, se mete,
- * pierde tiempo y sale por donde entro. Y como las bocas dependen de que el
- * generador deje un hueco en la hilera de fachadas, es justo el tipo de
- * cosa que se rompe sola cuando se toca la semilla o el ancho de la calle.
+ * Existia porque **un pasaje tapiado es peor que no tenerlo**: el jugador
+ * ve la boca, se mete, pierde tiempo y sale por donde entro. Y las bocas
+ * dependian de que el generador dejara un hueco en la hilera de fachadas,
+ * que es justo el tipo de cosa que se rompe sola al tocar la semilla.
+ *
+ * Los pasajes se fueron con D-34: hay una sola ruta y todo lo demas se
+ * bloquea, porque la decision del jugador dejo de ser *por donde ir* y paso
+ * a ser *donde pararse*.
+ *
+ * Lo que la prueba enseñaba y conviene no perder: **una entrada que se ve y
+ * no lleva a ningun lado es peor que una pared**. La 18.7 va a tapar cada
+ * bocacalle de las dieciseis cuadras, y lo que no puede pasar es que alguna
+ * quede a medio tapar: tiene que leerse como cerrada desde lejos.
  */
-test('cada pasaje se puede recorrer de punta a punta', async ({ page }) => {
-  await page.goto('/');
-  await page.locator('#btn-start').click();
-  await expect(page.locator('#screen-hud')).toBeVisible();
-
-  const informe = await page.evaluate(async () => {
-    const { player, mission, collision, builder, ventana } = globalThis.game;
-
-    /*
-     * El mapa entero, a proposito.
-     *
-     * Desde la 18.12 la ciudad se construye por ventana de cuadras, y este
-     * caminante corre dentro de un `page.evaluate` que bloquea el cuadro:
-     * la ventana no llegaria a mover nada y el caminante atravesaria
-     * cuadras vacias. **Una prueba de obstaculos sin obstaculos pasa
-     * siempre**, que es la peor forma de verde.
-     *
-     * Lo que esta prueba verifica es el diseño del nivel; el streaming
-     * tiene las suyas en `ventana.test.js`.
-     */
-    builder.construirTodo(mission.mission);
-    for (let i = 0; i < mission.mission.route.length - 1; i++) ventana.enPie.add(i);
-    const m = mission.mission;
-    const radio = player.radius;
-    const PASO = 0.3;
-
-    const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
-
-    const mover = (dx, dz) => {
-      const p = player.position;
-      const d = Math.hypot(dx, dz) || 1;
-      const r = collision.moveCircle({ x: p.x, z: p.z }, (dx / d) * PASO, (dz / d) * PASO, radio);
-      player.entity.setPosition(r.x, 0, r.z);
-      return Math.hypot(r.x - p.x, r.z - p.z);
-    };
-
-    // Dentro de un pasaje de cinco metros no hay lugar para rodear nada,
-    // asi que el abanico es mas cerrado que el del recorrido principal.
-    const DESVIOS = [0, 25, -25, 50, -50, 80, -80];
-
-    const resultados = [];
-
-    for (const d of m.desvios ?? []) {
-      // Se entra desde la calle, no desde adentro: asi tambien se verifica
-      // que la boca este abierta.
-      const boca = d.puntos[0];
-      const haciaAdentro = d.puntos[1];
-      const dx = boca.x - haciaAdentro.x;
-      const dz = boca.z - haciaAdentro.z;
-      const len = Math.hypot(dx, dz) || 1;
-      player.teleport(boca.x + (dx / len) * 4, boca.z + (dz / len) * 4, 0);
-
-      let ok = true;
-      let traba = null;
-      let recorrido = 0;
-
-      for (const destino of d.puntos) {
-        let ultimo = 0;
-        let mejor = dist(player.position, destino);
-        let sinMejorar = 0;
-
-        for (let i = 0; i < 2500; i++) {
-          const p = player.position;
-          const actual = dist(p, destino);
-          if (actual < 2) break;
-
-          const base = Math.atan2(destino.x - p.x, destino.z - p.z);
-          const orden = [ultimo, ...DESVIOS.filter((g) => g !== ultimo)];
-
-          let avance = 0;
-          for (const grados of orden) {
-            const a = base + (grados * Math.PI) / 180;
-            avance = mover(Math.sin(a), Math.cos(a));
-            if (avance > PASO * 0.4) {
-              ultimo = grados;
-              break;
-            }
-          }
-
-          if (avance <= PASO * 0.4 || ++sinMejorar > 700) {
-            if (actual < mejor - 0.3) {
-              mejor = actual;
-              sinMejorar = 0;
-              continue;
-            }
-            ok = false;
-            traba = { x: +p.x.toFixed(1), z: +p.z.toFixed(1), hacia: destino };
-            break;
-          }
-          if (actual < mejor - 0.3) {
-            mejor = actual;
-            sinMejorar = 0;
-          }
-          recorrido += avance;
-        }
-        if (!ok) break;
-      }
-
-      const fin = player.position;
-      const salida = d.puntos[d.puntos.length - 1];
-      resultados.push({
-        nombre: d.nombre,
-        atraveso: ok && dist(fin, salida) < 4,
-        metros: Math.round(recorrido),
-        traba
-      });
-    }
-
-    return resultados;
-  });
-
-  console.log('[pasajes]', JSON.stringify(informe, null, 2));
-
-  expect(informe.length).toBeGreaterThan(0);
-  for (const r of informe) {
-    expect(r.atraveso, `${r.nombre} no se pudo atravesar: ${JSON.stringify(r.traba)}`).toBe(true);
-    // Un pasaje que mide menos que la calle que evita no es un desvio.
-    expect(r.metros, `${r.nombre} es sospechosamente corto`).toBeGreaterThan(25);
-  }
-});

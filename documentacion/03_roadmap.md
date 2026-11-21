@@ -24,38 +24,43 @@
 
 ## ▶️ La tarea que sigue
 
-### **18.3 — El trazado nuevo en `mission001.js`** · las 16 cuadras reales
+### **18.7 — Bloquear todo lo que no sea la ruta** (D-34, D-43)
 
-> ✅ **La 18.12 está hecha, y por eso esto se puede hacer.** La ciudad se
-> construye por ventana de cuadras: con el mapa de hoy bajó de 1.419 piezas
-> a **923**, y al cruzar un control libera la cuadra de atrás de verdad —las
-> cajas de colisión bajan de 130 a 92—. Sin esto, dieciséis cuadras no
-> abrirían.
+> ✅ **El recorrido real ya está.** Dieciséis cuadras, 1.600 m, diecisiete
+> esquinas con nombre de OpenStreetMap, siete controles y ocho tramos de
+> zombis. Se importa de `src/config/recorrido.js`, no se copia.
 
-**Qué se hace.** Reemplazar las 3 cuadras de prueba por **las 16 de D-46**,
-importando las diecisiete esquinas de `tools/recorrido-real.mjs` para que no
-haya dos fuentes de verdad.
+**Qué se hace.** Tapar **cada bocacalle y cada vereda lateral** de las
+dieciséis cuadras. Con colisión, no decorado.
+
+**Y con D-43 dejan de ser obstáculos arbitrarios:** son **el mismo operativo
+de contención que puso las puertas, visto de costado**. Mismo tipo de valla,
+misma gama de pintura. El jugador tiene que leer que la ciudad se está
+sellando cuadra por cuadra, no que el diseñador puso un auto cruzado.
+
+| | Cuántas |
+|---|---|
+| Cuadras | 16 |
+| Bocacalles a tapar | las dos puntas de cada cuadra, menos las de la ruta |
+| Esquinas con giro | 5 — ahí la bocacalle de enfrente queda a la vista |
+
+**Lo que hay que mirar con cuidado, y lo dejó escrito la prueba que se
+borró:** *una entrada que se ve y no lleva a ningún lado es peor que una
+pared*. Si una bocacalle queda a medio tapar, el jugador se mete, pierde
+tiempo y sale por donde entró. **Tiene que leerse como cerrada desde lejos.**
+
+**Y hay una prueba esperando:** `recorrido.spec.js` tiene el piso de desvío
+—que los obstáculos obliguen a desviarse algo— **saltado hasta que haya
+props**. Se reactiva solo en cuanto `mission.props` deje de estar vacío.
 
 | Archivo | Qué pasa |
 |---|---|
-| `tools/recorrido-real.mjs` | ya existe y ya imprime el trazado con `--json` |
-| `src/config/mission001.js` | `route` pasa a tener 17 puntos; `blocks`, uno por cuadra |
-| — | las **siete puertas** salen de `puertas()`, no se escriben a mano |
+| `src/config/mission001.js` | `props` deja de estar vacío |
+| — | se genera del trazado: cada cuadra sabe sus dos puntas y cuál es la de la ruta |
 
-**Lo que hay que mirar con cuidado.** El trazado tiene que **importarse**,
-no copiarse. Si se pega el resultado del script, al día siguiente hay dos
-versiones del recorrido y la que vale es la que nadie mira. Es el mismo
-criterio que ya se aplicó con los ángulos y con los números de balance:
-**el dato se le pide a su dueño.**
-
-**Y una cuenta para tener a mano antes de empezar:** con 16 cuadras y la
-ventana de 4, en pantalla hay como mucho la cuarta parte del mapa. Lo que
-crece sin ventana es el costo de **construir**, no el de dibujar: cada
-cuadra cuesta unos milisegundos y eso ya está repartido de a una por cuadro.
-
-**Cómo se sabe que está lista:** se puede recorrer de Independencia 3250 a
-Billinghurst 250, los giros son todos de 90°, y `trazado.test.js` lo
-verifica contra el script.
+**Cómo se sabe que está lista:** no se puede salir de la ruta por ningún
+lado, probado intentándolo en las diecisiete esquinas; y hay autos y
+obstáculos detrás de los que cubrirse, no sólo para cortar.
 
 ---
 
@@ -1181,13 +1186,13 @@ reemplaza por modelos.
 
 - [x] ~~18.1 El generador, abierto a ángulos arbitrarios~~ — **cancelada por D-35**
 - [x] ~~18.2 Las esquinas que no son esquinas~~ — **cancelada por D-35**
-- [ ] **18.3 El trazado nuevo en `mission001.js`.** ⬅️ *la que sigue* Las **diecisiete esquinas de D-46**, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad. Las siete puertas salen de `puertas()`, no se escriben a mano
-- [ ] **18.4 Seis controles** en vez de dos, y la meta en Billinghurst 250
-- [ ] **18.5 Los siete textos de objetivo**, en voseo, uno por tramo
+- [x] **18.3 El trazado nuevo en `mission001.js`.** ✅ *21/11/2026 — se importa de `src/config/recorrido.js`, no se copia. 17 esquinas, 7 puertas* Las **diecisiete esquinas de D-46**, importadas de `tools/recorrido-real.mjs` para que no haya dos fuentes de verdad. Las siete puertas salen de `puertas()`, no se escriben a mano
+- [x] **18.4 Siete controles** en vez de dos, y la meta en Billinghurst 250 ✅ *21/11/2026 — salen de `puertas()`, uno cada dos cuadras*
+- [x] **18.5 Los ocho textos de objetivo**, en voseo, uno por tramo ✅ *21/11/2026 — se arman del trazado; el último está a mano porque no es una esquina más: es la casa de Sergio*
 - [ ] **18.6 Marcar la ruta.** Que se lea desde la cámara a 48°. Propuesta: una franja de pintura gastada sobre la calzada, más una flecha en cada uno de los cinco giros. Con la cuadrícula esto es más fácil: la flecha siempre apunta a 90°
-- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en dieciséis cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
-- [ ] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js`
-- [ ] **18.9 Las zonas de zombis, una por tramo.** **Ocho zonas de dos cuadras** (D-46), con dificultad creciente y la primera floja: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
+- [ ] **18.7 Bloquear todo lo que no sea la ruta** (D-34). ⬅️ *la que sigue* Cada bocacalle y cada vereda lateral, con autos cruzados, contenedores, vallas, escombros y bolsas. **Con colisión**, no decorado. Con la cuadrícula las bocacalles son contables: en dieciséis cuadras hay un número fijo y se tapa cada una. **Y con D-43 dejan de ser arbitrarias**: son el mismo operativo de contención que puso las puertas, visto de costado. Mismo tipo de valla, misma gama de pintura
+- [x] **18.8 Borrar los pasajes** y las zonas de objetos de `mission001.js` ✅ *21/11/2026 — y con ellos su prueba de punta a punta*
+- [x] **18.9 Las zonas de zombis, una por tramo.** ✅ *21/11/2026 — ocho, y **dejaron de ser círculos**: una zona es el corredor de calle del tramo. Y cada una declara su `cantidad`, que es la perilla de 19A.11* **Ocho zonas de dos cuadras** (D-46), con dificultad creciente y la primera floja: hay que dejar aprender a moverse. ⚠️ **Ahora cada zona declara su tramo**, porque la esclusa cuenta por tramo (19A.1), y la cantidad por zona es la perilla que decide cuánto dura cada cuadra (19A.11)
 - [ ] **18.10 Los carteles.** Reusando la 12R.5. **Simplificada por D-40:** importan el inicio, las siete puertas y la casa de Sergio. **Y ya no falta ninguna dirección** (D-46): las diecisiete esquinas tienen nombre real de OpenStreetMap, y las cuatro ubicaciones de Gus que caen en medio de un tramo —Maza 379, Av. Boedo 120, Mario Bravo 90— son carteles de paso
 - [ ] **18.11 La casa de Sergio** ✅ *decidido por D-41*. Billinghurst 250 es la casa del amigo al que Gus va a buscar. Hay que modelar una **fachada que se lea como una casa**, no como una comisaría, y que se distinga de la hilera a la que pertenece
 - [x] **18.12 La construcción por tramos** (D-42, D-47) ✅ *21/11/2026 — ventana de cuadras, disparada por el control y no por una distancia. El mapa de hoy pasa de 1.419 piezas a 923, y liberar baja las cajas de colisión de 130 a 92* ⚠️ **Primera de la fase, no última.** Ya no es "es probable que haga falta" ni siquiera "está medido y hace falta": con las 16 cuadras de D-46 el juego **no abre** en un teléfono sin esto. La ciudad es el 86 % de las mallas y lo único que crece con los metros; 16 cuadras proyectan ~12.700 entidades y ~1.100 llamadas de dibujo contra un presupuesto de 150. **Ventana de cuatro cuadras** —la última del tramo anterior, las dos del actual y la primera del siguiente, porque con tramos de 2 cuadras la ventana de tres ya no alcanza—, construyendo la siguiente repartida en varios frames mientras se juega la actual, y liberando dos cuadras atrás. Con la puerta el recorrido es de ida, así que no hace falta histéresis, y el disparador es un evento y no una distancia adivinada

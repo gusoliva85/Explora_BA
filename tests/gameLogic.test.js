@@ -5,6 +5,7 @@ import { MissionManager, within, distanceToSegment } from '../src/missions/missi
 import { approach, approachAngle } from '../src/player/playerController.js';
 import { normalizarAngulo, diferenciaAngular } from '../src/player/cameraController.js';
 import { createRng } from '../src/core/rng.js';
+import { rumboHacia } from '../src/core/rumbo.js';
 import { mission001 } from '../src/config/mission001.js';
 
 describe('GameStateMachine', () => {
@@ -94,7 +95,9 @@ describe('MissionManager', () => {
     m.update(0.1, { x: p.x, z: p.z });
     m.reset();
     expect(m.nextCheckpoint).toBe(0);
-    expect(m.respawn).toEqual({ x: 0, z: 0, yaw: 0 });
+    // El punto de aparicion se le pide a la mision: desde la 18.3 el
+    // recorrido arranca hacia el oeste, asi que el `yaw` no es cero.
+    expect(m.respawn).toEqual(mission001.spawn);
   });
 });
 
@@ -166,23 +169,43 @@ describe('rumbo de la calle y alineacion de camara', () => {
   const bus = new EventBus();
 
   it('devuelve el rumbo del tramo donde esta parado el jugador', () => {
+    /*
+     * Los tramos se le piden a la mision y no se escriben a mano.
+     *
+     * Esta prueba tenia las coordenadas del mapa de tres cuadras metidas
+     * adentro, con un comentario que explicaba cada una. Al entrar el
+     * recorrido real de dieciseis cuadras (18.3) las tres quedaron falsas
+     * de golpe, y el comentario tambien.
+     *
+     * Lo que la prueba mide no es *ese* trazado: es que, parado en medio
+     * de cualquier tramo, el rumbo que devuelve sea el de ese tramo.
+     */
     const m = new MissionManager(mission001, bus);
-    // Primer tramo: de (0,0) a (0,-110), es decir hacia -Z.
-    expect(m.streetHeading({ x: 0, z: -20 })).toBeCloseTo(0, 4);
-    // Segundo tramo: de (0,-110) a (-90,-110), hacia -X.
-    expect(m.streetHeading({ x: -40, z: -110 })).toBeCloseTo(90, 4);
-    // Tercer tramo: de (-90,-110) a (-90,-230), otra vez hacia -Z.
-    expect(m.streetHeading({ x: -90, z: -180 })).toBeCloseTo(0, 4);
+    const r = mission001.route;
+
+    for (let i = 0; i < r.length - 1; i++) {
+      const a = r[i];
+      const b = r[i + 1];
+      const medio = { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 };
+      const esperado = rumboHacia(b.x - a.x, b.z - a.z);
+      expect(m.streetHeading(medio), `tramo ${i}`).toBeCloseTo(esperado, 4);
+    }
   });
 
   it('el rumbo pone la camara detras del jugador, no delante', () => {
     const m = new MissionManager(mission001, bus);
-    const yaw = m.streetHeading({ x: 0, z: -20 });
-    // Con la convencion de la camara, el frente del jugador es
-    // (-sin yaw, -cos yaw). Avanzar por el primer tramo es ir hacia -Z.
+    const r = mission001.route;
+    const yaw = m.streetHeading({ x: (r[0].x + r[1].x) / 2, z: (r[0].z + r[1].z) / 2 });
+    /*
+     * Con la convencion de la camara, el frente del jugador es
+     * (-sin yaw, -cos yaw). Tiene que coincidir con la direccion en la que
+     * avanza el primer tramo, sea cual sea esa direccion: desde la 18.3 el
+     * recorrido arranca hacia el OESTE y antes arrancaba hacia el norte.
+     */
     const rad = (yaw * Math.PI) / 180;
-    expect(-Math.sin(rad)).toBeCloseTo(0, 4);
-    expect(-Math.cos(rad)).toBeCloseTo(-1, 4);
+    const largo = Math.hypot(r[1].x - r[0].x, r[1].z - r[0].z);
+    expect(-Math.sin(rad)).toBeCloseTo((r[1].x - r[0].x) / largo, 4);
+    expect(-Math.cos(rad)).toBeCloseTo((r[1].z - r[0].z) / largo, 4);
   });
 
   it('se queda con el tramo mas cercano, no con el proximo objetivo', () => {

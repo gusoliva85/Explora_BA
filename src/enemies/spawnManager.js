@@ -116,8 +116,19 @@ export class SpawnManager {
     const puestos = [];
 
     for (const zona of zonas) {
-      // El peso se traduce a cantidad: una zona de peso 1 pone cinco.
-      const cuantos = Math.max(1, Math.round(zona.peso * 5));
+      /*
+       * Cuantos zombis pone la zona.
+       *
+       * Si la zona lo declara, manda ella. Es **la perilla que decide
+       * cuanto dura cada cuadra** (19A.11), y con la esclusa pasa a ser lo
+       * mas sensible del juego: la puerta no abre hasta que no quede uno
+       * vivo en el tramo, asi que este numero por 1,6 s —lo que cuesta
+       * matar uno (D-31)— es el piso del tiempo que el jugador pasa ahi.
+       *
+       * El `peso * 5` queda de respaldo para las zonas sueltas puestas a
+       * mano, que no declaran cantidad.
+       */
+      const cuantos = zona.cantidad ?? Math.max(1, Math.round(zona.peso * 5));
       for (let i = 0; i < cuantos; i++) {
         const p = this.#puntoLibre(zona);
         if (p) puestos.push({ ...p, zona: zona.nota });
@@ -126,13 +137,51 @@ export class SpawnManager {
     return puestos;
   }
 
-  /** Busca una posicion dentro de la zona que no caiga sobre un obstaculo. */
+  /**
+   * Busca una posicion dentro de la zona que no caiga sobre un obstaculo.
+   *
+   * ---------------------------------------------------------------------------
+   * UNA ZONA ES UN CORREDOR DE CALLE, NO UN CIRCULO
+   * ---------------------------------------------------------------------------
+   * Hasta la Fase 18.9 las zonas eran circulos y funcionaban de casualidad:
+   * eran chicas y estaban puestas a mano encima de la calzada.
+   *
+   * Con una zona por tramo (D-46) el circulo se rompe. Un tramo son
+   * doscientos metros, asi que el circulo tiene cien de radio: **31.400 m²,
+   * de los cuales la calle son 3.200**. El 90 % de los intentos cae adentro
+   * de un edificio y se descarta.
+   *
+   * Y con la ciudad por tramos (18.12) eso dejo de ser solo ineficiente y
+   * paso a ser un error visible: **las cuadras que todavia no se
+   * construyeron no tienen cajas de colision**, asi que ahi ningun punto se
+   * descarta. El resultado era que los veintisiete zombis se juntaban todos
+   * en la parte del mapa que no existia todavia, a ciento cuarenta metros
+   * del jugador, y las primeras cuadras quedaban vacias.
+   *
+   * Asi que una zona con `a` y `b` es **el tramo de calle entre esos dos
+   * puntos**: se sortea a lo largo y se desvia de costado como mucho medio
+   * ancho de calzada. Las redondas siguen andando para lo colocado a mano.
+   */
   #puntoLibre(zona) {
     for (let intento = 0; intento < 24; intento++) {
-      const a = this.rng() * Math.PI * 2;
-      const r = Math.sqrt(this.rng()) * zona.radio;
-      const x = zona.x + Math.cos(a) * r;
-      const z = zona.z + Math.sin(a) * r;
+      let x;
+      let z;
+
+      if (zona.a && zona.b) {
+        const t = this.rng();
+        const largo = Math.hypot(zona.b.x - zona.a.x, zona.b.z - zona.a.z) || 1;
+        const dx = (zona.b.x - zona.a.x) / largo;
+        const dz = (zona.b.z - zona.a.z) / largo;
+        // Perpendicular a la calle, para el desvio de costado.
+        const lateral = (this.rng() * 2 - 1) * (zona.ancho ?? 6) * 0.5;
+        x = zona.a.x + dx * largo * t - dz * lateral;
+        z = zona.a.z + dz * largo * t + dx * lateral;
+      } else {
+        const ang = this.rng() * Math.PI * 2;
+        const r = Math.sqrt(this.rng()) * zona.radio;
+        x = zona.x + Math.cos(ang) * r;
+        z = zona.z + Math.sin(ang) * r;
+      }
 
       // El radio de prueba es mayor que el del zombi: si nace pegado a una
       // pared, el primer paso lo traba.

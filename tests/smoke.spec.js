@@ -93,55 +93,74 @@ test('el jugador no atraviesa los edificios', async ({ page }) => {
   await expect(page.locator('#screen-hud')).toBeVisible();
 
   /*
-   * La pared contra la que se empuja se BUSCA en el mundo, no se asume.
+   * No se empuja hacia "la derecha": se empuja **de costado a la calle**.
    *
-   * Antes la prueba empujaba al jugador desde una coordenada fija hacia la
-   * derecha, dando por sentado que ahi habia una fachada. Al abrir las
-   * bocas de los pasajes, esa fachada dejo de existir y la prueba empezo a
-   * fallar sin que nada estuviera roto. Buscando una pared de verdad, la
-   * prueba sigue valiendo aunque el mapa cambie.
+   * Esta prueba ya habia aprendido una vez a no suponer donde estaba la
+   * pared —buscaba una fachada en vez de usar una coordenada fija— y se
+   * volvio a romper en la 18.3, cuando el recorrido paso de salir al sur a
+   * salir al oeste: el filtro miraba `minX` y `minZ` como si la calle
+   * corriera siempre en Z.
+   *
+   * La leccion, otra vez y mas fuerte: **lo que no se puede suponer no es
+   * la coordenada, es la direccion**. Ahora la prueba le pregunta a la ruta
+   * hacia donde va el primer tramo, empuja perpendicular a eso, y exige que
+   * el jugador frene antes del ancho de la calle. Da igual hacia donde
+   * salga el recorrido.
    */
   const result = await page.evaluate(() => {
-    const { player, collision } = globalThis.game;
+    const { player, collision, mission, balance } = globalThis.game;
+    const r = mission.mission.route;
 
-    // Una fachada del lado derecho del primer tramo, lejos de los pasajes.
-    const pared = collision.boxes
-      .filter(
-        (b) =>
-          b.tag === 'building' &&
-          b.minX > 6 &&
-          b.minX < 26 &&
-          b.minZ < -14 &&
-          b.maxZ > -34
-      )
-      .sort((a, b) => a.minX - b.minX)[0];
+    // Direccion del primer tramo, y su perpendicular.
+    const dx = r[1].x - r[0].x;
+    const dz = r[1].z - r[0].z;
+    const largo = Math.hypot(dx, dz);
+    const perp = { x: -dz / largo, z: dx / largo };
 
-    if (!pared) return { sinPared: true };
-
-    // Arrancar enfrente de esa pared, en el medio de la calzada.
-    const z = Math.max(pared.minZ, -32);
-    player.teleport(0, z);
+    // En el medio del primer tramo, en el eje de la calzada.
+    const medio = { x: (r[0].x + r[1].x) / 2, z: (r[0].z + r[1].z) / 2 };
+    player.teleport(medio.x, medio.z);
 
     for (let i = 0; i < 200; i++) {
       const p = player.position;
-      const r = collision.moveCircle({ x: p.x, z: p.z }, 0.5, 0, player.radius);
-      player.entity.setPosition(r.x, 0, r.z);
+      const paso = collision.moveCircle(
+        { x: p.x, z: p.z },
+        perp.x * 0.5,
+        perp.z * 0.5,
+        player.radius
+      );
+      player.entity.setPosition(paso.x, 0, paso.z);
     }
 
     const p = player.position;
+    /*
+     * Cuanto se corrio de costado. El tope es media calzada mas la vereda:
+     * mas que eso significa que atraveso la fachada.
+     */
+    const corrimiento =
+      (p.x - medio.x) * perp.x + (p.z - medio.z) * perp.z;
+    const tope = balance.UNITS.streetWidth / 2 + balance.UNITS.sidewalkWidth;
+
     return {
+      corrimiento,
+      tope,
       x: p.x,
       z: p.z,
-      limite: pared.minX,
       dentro: collision.boxes.some((b) => b.contains(p.x, p.z))
     };
   });
 
-  expect(result.sinPared, 'no se encontro ninguna fachada contra la que probar').toBeFalsy();
   // Nunca puede quedar dentro de una caja solida.
   expect(result.dentro).toBe(false);
-  // Y tiene que haberse frenado contra la pared, no haberla atravesado.
-  expect(result.x).toBeLessThan(result.limite + 0.5);
+  /*
+   * Y tiene que haberse frenado contra la fachada, no haberla atravesado.
+   * Cien metros de empuje lateral contra un tope de ocho: si lo pasa, no
+   * es que resbalo, es que la pared no estaba.
+   */
+  expect(
+    Math.abs(result.corrimiento),
+    `se corrio ${result.corrimiento.toFixed(1)} m de costado, tope ${result.tope}`
+  ).toBeLessThan(result.tope + 0.5);
 });
 
 test('la mision se completa al recorrer los controles y llegar a la meta', async ({ page }) => {
@@ -210,11 +229,25 @@ test('morir lleva a la pantalla de derrota y se reanuda en el ultimo control', a
       x: p.x,
       z: p.z,
       health: globalThis.game.player.health,
-      vidaLlena: globalThis.game.balance.PLAYER.maxHealth
+      vidaLlena: globalThis.game.balance.PLAYER.maxHealth,
+      control: (() => {
+        const m = globalThis.game.mission.mission;
+        const cp = m.checkpoints[0];
+        const q = m.route[cp.atRouteIndex];
+        return { x: q.x, z: q.z, radius: cp.radius };
+      })()
     };
   });
-  // Reaparece en el control, no en el origen.
-  expect(pos.z).toBeLessThan(-50);
+  /*
+   * Reaparece EN EL CONTROL, no en el origen.
+   *
+   * El numero se le pide a la mision. Decia `z < -50`, que era cierto
+   * mientras el primer control cayera al sur; desde la 18.3 el recorrido
+   * sale al oeste y el primer control esta en (-200, 0).
+   */
+  expect(Math.hypot(pos.x - pos.control.x, pos.z - pos.control.z)).toBeLessThan(
+    pos.control.radius + 2
+  );
   // Y entero: lo que se prueba es que cure del todo, no que cure a 120.
   expect(pos.health).toBe(pos.vidaLlena);
 });

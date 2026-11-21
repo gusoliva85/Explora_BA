@@ -1,293 +1,261 @@
+import { trazadoOrtogonal, puertas, CUADRA, CUADRAS_POR_TRAMO } from './recorrido.js';
+
 /**
  * ===========================================================================
- * MISION 001 - "Llegar al refugio"
+ * MISION 001 — "Ir a buscar a Sergio"
  * ===========================================================================
- * Boedo -> comisaria. El recorrido real (Av. Independencia 3250 a
- * Billinghurst 240) son varios kilometros; aca esta COMPRIMIDO a un pasillo
- * jugable de ~350 m en tres tramos, uno por checkpoint. No es un mapa a
- * escala 1:1 de Buenos Aires, es una ruta legible que evoca el recorrido.
- * Ver doc 02, decision D-04.
+ * De **Av. Independencia 3250 a Billinghurst 250**: el recorrido real de
+ * Gus, caminado por las calles que existen, **entero** (D-46).
  *
- * El trazado es una polilinea de esquinas. Cada par de puntos consecutivos
- * genera una cuadra con calzada, veredas y una hilera de edificios a cada
- * lado. Para agregar o acortar el recorrido alcanza con tocar `route`.
+ * Dieciséis cuadras de cien metros, 1.600 m, diecisiete esquinas y siete
+ * puertas repartidas una cada dos cuadras. No es una evocación ni una
+ * compresión: es el recorrido, con los nombres que figuran en
+ * OpenStreetMap.
  *
- * Convencion de ejes: X = este/oeste, Z = norte/sur (−Z es "al norte"),
+ * ---------------------------------------------------------------------------
+ * EL TRAZADO NO ESTÁ ESCRITO ACÁ: SE IMPORTA
+ * ---------------------------------------------------------------------------
+ * `route` sale de `trazadoOrtogonal()` y los controles de `puertas()`. No
+ * hay una lista de diecisiete esquinas copiada a mano, y es deliberado:
+ * **copiarla dejaría dos versiones del recorrido, y la que vale sería la que
+ * nadie mira.** El día que se corrija una esquina en `recorrido.js`, el
+ * juego construye la corregida sin que nadie tenga que acordarse.
+ *
+ * Es el mismo criterio que el proyecto ya aplicó con los ángulos, con los
+ * números del balance y con el alcance del blanco: **el dato se le pide a su
+ * dueño.**
+ *
+ * ---------------------------------------------------------------------------
+ * QUÉ SE FUE AL PASAR DE TRES CUADRAS A DIECISÉIS
+ * ---------------------------------------------------------------------------
+ * - **Los dos pasajes.** D-34 cerró las rutas alternativas: hay una sola
+ *   ruta y todo lo demás se bloquea. Un pasaje es una decisión de "por
+ *   dónde", y el juego nuevo decide *dónde pararse*, no por dónde ir.
+ * - **El diseño a mano del mapa viejo.** Cada barricada, cada colectivo
+ *   cruzado y cada zona estaban puestos sobre un trazado que ya no existe:
+ *   el recorrido salía al sur y ahora sale al oeste. Vuelven en la 18.7,
+ *   sobre las esquinas de verdad y con el criterio de D-43 —son el mismo
+ *   operativo de contención que puso las puertas, visto de costado—.
+ *
+ * Convención de ejes: X = este/oeste, Z = norte/sur (−Z es "al norte"),
  * Y = arriba. 1 unidad = 1 metro.
  */
 
+const TRAZADO = trazadoOrtogonal();
+const PUERTAS = puertas();
+
+/**
+ * Las esquinas, tal como las construye el generador.
+ *
+ * `calle` es el nombre que va en la chapa (12R.7) y sale del trazado, que
+ * lo sacó de OpenStreetMap. Se pasa a mayúsculas acá porque es cosa del
+ * cartel, no del dato.
+ */
+const route = TRAZADO.map((p) => ({
+  x: p.x,
+  z: p.z,
+  label: p.dir,
+  calle: (p.calle ?? 'CALLE').toUpperCase(),
+  cuadra: p.cuadra,
+  giro: p.giro,
+  puerta: p.puerta
+}));
+
+/**
+ * Los siete controles: uno por puerta, cada dos cuadras (D-46).
+ *
+ * Eran dos y ahora son siete, y la diferencia no es de cantidad: cada uno
+ * es **una esclusa** que no abre hasta que no quede un zombi vivo en el
+ * tramo (D-37), y que se cierra a tus espaldas. La 19A les pone la puerta;
+ * acá son todavía el punto de guardado de siempre.
+ */
+const checkpoints = PUERTAS.map((p) => ({
+  atRouteIndex: p.cuadra,
+  radius: 5,
+  label: `Control ${p.puerta}: ${p.dir}`,
+  puerta: p.puerta
+}));
+
+/**
+ * Los textos de objetivo, uno por tramo, en voseo (18.5).
+ *
+ * Se arman del trazado en vez de escribirse a mano por el mismo motivo que
+ * la ruta: si una esquina cambia, el texto cambia con ella. Lo que sí está
+ * escrito a mano es **la última**, porque no es una esquina más: es la casa
+ * de Sergio, y el juego entero es ir a buscarlo (D-41).
+ */
+const objectives = PUERTAS.map((p, i) => {
+  const calle = (p.calle ?? 'la calle').replace(/^Av\. /, 'la avenida ');
+  return i === 0
+    ? `Avanzá por ${calle} hasta ${p.hasta}.`
+    : `Seguí por ${calle} hasta ${p.hasta}.`;
+}).concat('Llegá a lo de Sergio: Billinghurst 250.');
+
+/**
+ * El aspecto de cada cuadra. Una entrada por cuadra, dieciséis.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUÉ VARÍA, Y POR QUÉ NO AL AZAR
+ * ---------------------------------------------------------------------------
+ * Dieciséis cuadras iguales son un pasillo. Pero el barrio tampoco es
+ * aleatorio: Boedo cambia de carácter a medida que uno sube, y el recorrido
+ * lo atraviesa de sur a norte cruzando tres avenidas —Rivadavia, Hipólito
+ * Yrigoyen, Díaz Vélez—.
+ *
+ * Así que la altura y la densidad siguen el recorrido: arranca bajo y
+ * residencial, se levanta al cruzar las avenidas, y vuelve a bajar en
+ * Billinghurst, que es residencial otra vez. **La forma de la calle cuenta
+ * dónde está parado el jugador** sin que haga falta un cartel.
+ */
+const blocks = TRAZADO.slice(1).map((p) => {
+  const esAvenida = (p.calle ?? '').startsWith('Av.');
+  return esAvenida
+    ? { buildingHeight: [11, 22], density: 0.92, mood: 'comercial' }
+    : { buildingHeight: [7, 14], density: 0.84, mood: 'residencial' };
+});
+
+/**
+ * Las zonas de zombis: **una por tramo**, ocho en total (18.9, D-46).
+ *
+ * ---------------------------------------------------------------------------
+ * CADA ZONA DECLARA SU TRAMO, Y ESO ES NUEVO
+ * ---------------------------------------------------------------------------
+ * Antes las zonas eran lugares sueltos del mapa. Ahora cada una pertenece a
+ * un tramo, porque **la esclusa cuenta por tramo** (19A.1): la puerta no
+ * abre hasta que no quede un zombi vivo *en ese tramo*, así que el sistema
+ * tiene que poder preguntar "¿cuántos quedan acá?".
+ *
+ * `peso` es cuánta presión pone la zona, de 0 a 1, y es **la perilla que
+ * decide cuánto dura cada cuadra** (19A.11). Arranca flojo a propósito: hay
+ * que dejar aprender a moverse antes de exigir nada, y con el combate
+ * automático lo que se aprende es *cuándo frenar*, que es más sutil que
+ * apretar un botón.
+ */
+const TRAMOS = PUERTAS.length + 1;
+const zonas = Array.from({ length: TRAMOS }, (_, t) => {
+  /*
+   * La zona es **el corredor de calle del tramo**, no un círculo.
+   *
+   * Un tramo son doscientos metros; un círculo que los cubra tiene cien de
+   * radio y abarca 31.400 m², de los cuales la calle son 3.200. El resto es
+   * adentro de los edificios. Con `a` y `b` la zona sigue la calle, que es
+   * donde el jugador va a estar.
+   */
+  const desde = TRAZADO[Math.min(t * CUADRAS_POR_TRAMO, TRAZADO.length - 1)];
+  const hasta = TRAZADO[Math.min((t + 1) * CUADRAS_POR_TRAMO, TRAZADO.length - 1)];
+  const i = Math.min(t * CUADRAS_POR_TRAMO + 1, TRAZADO.length - 1);
+  const p = TRAZADO[i];
+
+  /*
+   * La curva de dificultad. El primero flojo, y de ahí para arriba sin
+   * saltos: cada tramo pide un poco más que el anterior. El último no es el
+   * más duro —llegar a lo de Sergio tiene que sentirse como llegar, no como
+   * una pared— sino el anteúltimo.
+   */
+  const curva = [0.25, 0.45, 0.6, 0.7, 0.8, 0.88, 0.95, 0.75];
+
+  return {
+    tipo: 'zombis',
+    tramo: t,
+    x: p.x,
+    z: p.z,
+    a: { x: desde.x, z: desde.z },
+    b: { x: hasta.x, z: hasta.z },
+    /** Ancho del corredor: la calzada, sin subirse a la vereda. */
+    ancho: 8,
+    /*
+     * El radio cubre **el tramo entero**, no un pedacito del medio.
+     *
+     * Con `CUADRA * 0.42` la zona del primer tramo quedaba centrada a cien
+     * metros del arranque con cuarenta y dos de radio: los zombis mas
+     * cercanos nacian a cincuenta y ocho metros, fuera del corte de
+     * activacion, y el jugador caminaba media cuadra sin ver a nadie.
+     *
+     * Un tramo son dos cuadras, asi que el radio es una cuadra: la zona va
+     * de punta a punta del tramo. Es coherente con lo que la esclusa
+     * necesita (19A.1), que es poder contar **los zombis de este tramo**.
+     */
+    radio: CUADRA,
+    peso: curva[t] ?? 0.8,
+
+    /*
+     * Cuántos zombis pone el tramo. **Es la perilla principal del juego**
+     * (19A.11): con la esclusa, la puerta no abre hasta que no quede uno
+     * vivo, así que esto por 1,6 s —lo que cuesta matar uno (D-31)— es el
+     * piso del tiempo que el jugador pasa en el tramo.
+     *
+     * Van de 3 a 10, o sea de unos 5 s a unos 16 s de combate puro por
+     * tramo, sin contar moverse ni esperar a estar encarado. Se ajusta
+     * jugando en el teléfono, igual que la cadencia.
+     */
+    cantidad: Math.max(3, Math.round((curva[t] ?? 0.8) * 11)),
+    nota: `Tramo ${t + 1} de ${TRAMOS}: ${p.calle ?? ''}`
+  };
+});
+
 export const mission001 = {
   id: 'mission001',
-  title: 'Llegar al refugio',
+  title: 'Ir a buscar a Sergio',
   summary:
-    'Gus tiene que cruzar Boedo hasta la comisaria. Dos controles en el camino ' +
-    'sirven de punto de guardado.',
+    'Gus cruza dieciséis cuadras de Boedo hasta Billinghurst 250, la casa de ' +
+    'Sergio. Siete controles en el camino: ninguno abre hasta que el tramo ' +
+    'esté limpio.',
 
   seed: 20261024,
 
   /** Punto de aparicion del jugador y hacia donde mira al empezar. */
-  spawn: { x: 0, z: 0, yaw: 0 },
+  spawn: { x: 0, z: 0, yaw: route[1] ? (route[1].x < 0 ? 270 : 90) : 0 },
 
-  /**
-   * Esquinas del recorrido. El primer punto es el spawn.
-   * Cada tramo es recto y alineado a un eje (asi lo exige el generador).
-   */
-  /*
-   * `calle` es el nombre que va en la chapa de la esquina (12R.7). Es dato
-   * de la mision y no del generador: el nombre de una calle no se deduce.
-   */
-  route: [
-    { x: 0, z: 0, label: 'Independencia al 3250', calle: 'INDEPENDENCIA' },
-    { x: 0, z: -110, label: 'Esquina de Carlos Calvo', calle: 'CARLOS CALVO' },
-    { x: -90, z: -110, label: 'Av. Boedo al 900', calle: 'BOEDO' },
-    { x: -90, z: -230, label: 'Comisaria de Carlos Calvo', calle: 'CARLOS CALVO' }
-  ],
+  route,
+  checkpoints,
 
-  /**
-   * Controles intermedios. `atRouteIndex` apunta a un vertice de `route`.
-   * Al tocarlos se guarda el progreso y se reaparece ahi al reintentar.
-   */
-  checkpoints: [
-    { atRouteIndex: 1, radius: 5, label: 'Control 1: la esquina despejada' },
-    { atRouteIndex: 2, radius: 5, label: 'Control 2: kiosco de Boedo' }
-  ],
-
-  /** Destino final. Completa la mision al entrar en el radio. */
+  /** Destino final: la casa de Sergio (D-41). */
   goal: {
-    atRouteIndex: 3,
+    atRouteIndex: route.length - 1,
     radius: 6,
-    label: 'Comisaria - punto de extraccion'
+    label: 'Billinghurst 250 — la casa de Sergio'
   },
 
-  /*
-   * NOTA SOBRE LAS CALLES (decision D-04)
-   *
-   * El documento 01 propone ir de Av. Independencia 3250 a Billinghurst
-   * 240. Son varios kilometros y Billinghurst no queda en Boedo sino del
-   * lado de Almagro, asi que el cartel diria una cosa y el barrio seria
-   * otra. El destino pasa a ser una comisaria sobre Carlos Calvo, que si
-   * cae dentro del recorrido y mantiene la idea original: llegar a un
-   * lugar seguro que cierra el nivel.
-   *
-   * Las direcciones siguen siendo evocativas, no cartograficas: el
-   * recorrido real esta comprimido a unos 350 m jugables.
-   */
-
-  /** Texto de objetivo que muestra el HUD en cada etapa. */
-  objectives: [
-    'Avanzá por Independencia hasta Carlos Calvo.',
-    'Seguí por Boedo hasta el kiosco de la esquina.',
-    'Llegá a la comisaria.'
-  ],
-
-  /** Aspecto del tramo. Pensado para que cada cuadra se distinga de la anterior. */
-  blocks: [
-    { buildingHeight: [7, 13], density: 0.82, mood: 'residencial' },
-    { buildingHeight: [10, 20], density: 0.9, mood: 'comercial' },
-    { buildingHeight: [8, 16], density: 0.86, mood: 'mixto' }
-  ],
+  objectives,
+  blocks,
 
   /*
    * =========================================================================
-   * RUTAS ALTERNATIVAS
+   * RUTAS ALTERNATIVAS: NO HAY (D-34)
    * =========================================================================
-   * Cada desvio es un pasaje: una calle angosta que se mete entre dos
-   * edificios, corre por el fondo de la manzana y vuelve a salir mas
-   * adelante. El generador abre un hueco en la hilera de fachadas donde el
-   * pasaje toca la calle, asi que las bocas se ven como entradas.
+   * Había dos pasajes —calles angostas que se metían entre dos edificios,
+   * corrían por el fondo de la manzana y volvían a salir— y cada uno creaba
+   * la decisión de "por la calle o por el pasaje".
    *
-   * Los dos estan puestos para rodear un corte, y cada uno crea la misma
-   * decision, que es el pilar de "decisiones rapidas" del documento 01:
+   * Se fueron con D-34. El juego nuevo tiene **una sola ruta** y todo lo
+   * demás bloqueado, porque la decisión del jugador dejó de ser *por dónde
+   * ir* y pasó a ser *dónde pararse y cuánto tiempo*. Dos decisiones de
+   * navegación compitiendo con la de combate hacen que ninguna de las dos
+   * se sienta.
    *
-   *   POR LA CALLE   es mas corto, pero hay que pasar por el hueco de la
-   *                  barricada, que es donde va a estar el peligro.
-   *   POR EL PASAJE  es mas largo y mas angosto —no se puede esquivar a
-   *                  nadie ahi adentro— pero se evita el corte.
-   *
-   * El primer punto y el ultimo tienen que caer sobre la linea de fachada
-   * de la calle principal: ahi es donde se abre la boca. En el tramo 1 esa
-   * linea esta en x = +8; en el tramo 2, en z = -118.
+   * Lo que sí sobrevive de esa idea es la cobertura: un auto detrás del cual
+   * pararse es la misma elección en chico, y esa la trae la 18.7.
    */
-  desvios: [
-    {
-      // TRAMO 1: rodea la barricada de Independencia por el fondo de la
-      // manzana de la derecha. Entra antes del corte y sale despues.
-      nombre: 'Pasaje Independencia',
-      ancho: 5,
-      puntos: [
-        { x: 8, z: -50 },
-        { x: 17, z: -50 },
-        { x: 17, z: -76 },
-        { x: 8, z: -76 }
-      ]
-    },
-    {
-      // TRAMO 2: rodea el corte de Av. Boedo por el lado de abajo.
-      nombre: 'Pasaje Boedo',
-      ancho: 5,
-      puntos: [
-        { x: -56, z: -118 },
-        { x: -56, z: -129 },
-        { x: -73, z: -129 },
-        { x: -73, z: -118 }
-      ]
-    }
-  ],
+  desvios: [],
 
-  /*
-   * =========================================================================
-   * ZONAS DE JUEGO
-   * =========================================================================
-   * Donde van a aparecer los zombis.
-   *
-   * Hasta la Fase 16 habia tambien zonas de `municion` y `curacion`. Se
-   * fueron con los objetos. Lo que va a venir aca es el reparto por tramo
-   * de la Fase 19A: cada tramo declara cuantos zombis y de que tipo, porque
-   * la esclusa de D-37 necesita poder contarlos para saber cuando abrir.
-   *
-   * La logica que las ordena:
-   *
-   *   - Los zombis se concentran en los cuellos de botella y en la boca de
-   *     los pasajes. Son los lugares donde el jugador tiene que frenar, y
-   *     un zombi solo da miedo si aparece donde uno no puede correr.
-   *   - El primer tramo arranca flojo: hay que dejar que el jugador
-   *     aprenda a moverse antes de exigirle nada.
-   *
-   * `peso` es cuanta presion pone la zona, de 0 a 1. Lo usara el
-   * SpawnManager de la Fase 4 para repartir la cantidad de zombis.
-   */
-  zonas: [
-    // --- Zombis -------------------------------------------------------------
-    { tipo: 'zombis', x: 0, z: -36, radio: 9, peso: 0.25,
-      nota: 'Primer encuentro. Suave y en campo abierto: hay lugar para correr.' },
-    { tipo: 'zombis', x: 0, z: -62, radio: 11, peso: 0.9,
-      nota: 'El corte de Independencia. Es el que empuja hacia el pasaje.' },
-    { tipo: 'zombis', x: 17, z: -63, radio: 7, peso: 0.5,
-      nota: 'Dentro del pasaje. Menos, pero sin lugar para esquivar.' },
-    { tipo: 'zombis', x: 0.5, z: -92, radio: 9, peso: 0.6,
-      nota: 'Detras del colectivo, fuera de la vista hasta que lo rodeas.' },
-    { tipo: 'zombis', x: -46, z: -110, radio: 10, peso: 0.7,
-      nota: 'Mitad de la avenida, entre vehiculos abandonados.' },
-    { tipo: 'zombis', x: -64, z: -112, radio: 11, peso: 0.95,
-      nota: 'El corte de Boedo. El mas duro del recorrido.' },
-    { tipo: 'zombis', x: -90, z: -190, radio: 12, peso: 0.8,
-      nota: 'Ultimo tramo. Presion sostenida hasta la comisaria.' },
-
-  ],
+  zonas,
 
   /*
    * =========================================================================
    * DISEÑO DE NIVEL — colocado a mano
    * =========================================================================
-   * Todo lo que esta aca cambia como se JUEGA el tramo, no solo como se ve.
-   * Por eso vive en el archivo de la mision y no en el generador: el
-   * generador puede variar lo que quiera entre semillas, pero una
-   * barricada que obliga a desviarse tiene que estar siempre en el mismo
-   * lugar.
+   * Vacío a propósito, y es la parte que **falta**.
    *
-   * Cada entrada lleva `collide` cuando bloquea el paso. Sin eso es
-   * decorado, y el jugador aprende enseguida a ignorarlo.
+   * El mapa viejo tenía treinta y pico de props puestos uno por uno:
+   * barricadas, colectivos cruzados, contenedores, vallas. Estaban sobre un
+   * trazado que ya no existe —el recorrido salía al sur y ahora sale al
+   * oeste— así que ninguno caía donde tiene que caer.
    *
-   * El eje de la calle es X = 0 en el primer tramo y Z = -110 en el
-   * segundo. La calzada va de -5 a +5 respecto del eje.
+   * Vuelven en la **18.7**, y con un criterio que antes no había: no son
+   * obstáculos sueltos, son **el mismo operativo de contención que puso las
+   * puertas, visto de costado** (D-43). Mismo tipo de valla, misma gama de
+   * pintura. Hay que tapar cada bocacalle y cada vereda lateral de las
+   * dieciséis cuadras, que con la cuadrícula son contables.
    */
-  props: [
-    // --- TRAMO 1: Independencia ---------------------------------------------
-
-    // Choque de dos autos cruzados, a mitad de cuadra. No bloquea del
-    // todo: deja pasar por la izquierda, pero obliga a frenar y a elegir.
-    { tipo: 'auto', x: 1.6, z: -34, rot: 108, tag: 'vehicle',
-      collide: { w: 4.4, d: 4.4, h: 1.7 }, args: { esTaxi: true } },
-    { tipo: 'auto', x: -2.2, z: -37, rot: 72, tag: 'vehicle',
-      collide: { w: 4.4, d: 4.4, h: 1.7 } },
-    { tipo: 'escombros', x: -0.4, z: -35.5, rot: 20 },
-
-    /*
-     * EL CUELLO DE BOTELLA.
-     *
-     * Barricada que cruza la calzada entera a la altura del 3100. Es el
-     * punto donde el tramo 1 se decide: o se pasa por la vereda de la
-     * izquierda, que es angosta y tiene un contenedor en el medio, o se
-     * rodea por el baldio de la derecha, que es mas largo.
-     *
-     * Dos barricadas en vez de una sola larga: asi queda un hueco en el
-     * centro por el que se ve lo que hay del otro lado, que es lo que
-     * hace que el jugador decida en vez de simplemente chocar.
-     */
-    { tipo: 'barricada', x: -2.6, z: -62, rot: 90,
-      collide: { w: 1.2, d: 4.2, h: 1.1 } },
-    { tipo: 'barricada', x: 2.6, z: -62, rot: 90,
-      collide: { w: 1.2, d: 4.2, h: 1.1 } },
-    { tipo: 'valla', x: 0, z: -62, rot: 90, args: 2.4,
-      collide: { w: 0.4, d: 2.4, h: 1.9 } },
-    { tipo: 'contenedor', x: -6.4, z: -58, rot: 90,
-      collide: { w: 1.2, d: 2.1, h: 1.4 } },
-    { tipo: 'bolsas', x: -6.8, z: -66, rot: 0 },
-
-    // Colectivo atravesado cerca de la esquina: tapa la vista de lo que
-    // viene y obliga a bordearlo.
-    // Corrido hacia la derecha: deja un paso de casi tres metros contra el
-    // cordon izquierdo. Mas angosto que esto y el jugador se traba, porque
-    // ademas tiene que entrar en diagonal.
-    { tipo: 'colectivo', x: 1.8, z: -92, rot: 24, tag: 'vehicle',
-      collide: { w: 6.6, d: 9, h: 3.2 } },
-
-    // --- ESQUINA: Independencia y Carlos Calvo ------------------------------
-
-    // El kiosco de la esquina, que es la referencia visual del control 1.
-    { tipo: 'kiosco', x: 8.2, z: -118.5, rot: 180,
-      collide: { w: 3.4, d: 2.6, h: 2.8 } },
-    { tipo: 'paradaColectivo', x: -8.5, z: -120, rot: 90,
-      collide: { w: 1.6, d: 3.8, h: 2.7 } },
-    { tipo: 'banco', x: 8.4, z: -104, rot: 180 },
-
-    // --- TRAMO 2: Av. Boedo --------------------------------------------------
-
-    // Avenida: mas transito abandonado y mas obstaculos sueltos.
-    { tipo: 'auto', x: -24, z: -106.5, rot: 0, tag: 'vehicle',
-      collide: { w: 4.4, d: 2, h: 1.7 } },
-    { tipo: 'auto', x: -31, z: -113.5, rot: 180, tag: 'vehicle',
-      collide: { w: 4.4, d: 2, h: 1.7 }, args: { esTaxi: true } },
-    { tipo: 'colectivo', x: -46, z: -107, rot: 0, tag: 'vehicle',
-      collide: { w: 11, d: 2.6, h: 3.2 } },
-
-    // Segundo cuello de botella, con un hueco distinto: aca el paso libre
-    // esta contra la vereda de arriba, no en el centro.
-    { tipo: 'barricada', x: -62, z: -112.6, rot: 0,
-      collide: { w: 4.2, d: 1.2, h: 1.1 } },
-    { tipo: 'barricada', x: -66.5, z: -112.6, rot: 0,
-      collide: { w: 4.2, d: 1.2, h: 1.1 } },
-    { tipo: 'escombros', x: -64, z: -111, rot: 50 },
-    { tipo: 'contenedor', x: -70, z: -113.8, rot: 0,
-      collide: { w: 2.1, d: 1.2, h: 1.4 } },
-
-    // --- ESQUINA: Boedo y la comisaria --------------------------------------
-
-    { tipo: 'cesto', x: -82, z: -118, rot: 0 },
-    { tipo: 'paradaColectivo', x: -78, z: -104, rot: 180,
-      collide: { w: 3.8, d: 1.6, h: 2.7 } },
-
-    // --- TRAMO 3: hasta la comisaria ----------------------------------------
-
-    { tipo: 'auto', x: -86, z: -150, rot: 0, tag: 'vehicle',
-      collide: { w: 2, d: 4.4, h: 1.7 } },
-    { tipo: 'escombros', x: -92, z: -168, rot: 10 },
-    { tipo: 'auto', x: -93.5, z: -186, rot: 194, tag: 'vehicle',
-      collide: { w: 2, d: 4.4, h: 1.7 } },
-
-    // Ultimo obstaculo antes de la meta: dos vallas que dejan un paso
-    // justo, para que llegar se sienta como pasar por el ojo de una aguja.
-    { tipo: 'valla', x: -94.5, z: -206, rot: 0, args: 5,
-      collide: { w: 5, d: 0.4, h: 1.9 } },
-    { tipo: 'valla', x: -85.5, z: -206, rot: 0, args: 5,
-      collide: { w: 5, d: 0.4, h: 1.9 } },
-
-    /*
-     * La comisaria. Es el unico edificio colocado a mano de toda la
-     * mision, y esta corrido del eje para que el jugador la vea de frente
-     * al llegar, no de costado.
-     */
-    { tipo: 'comisaria', x: -90, z: -241, rot: 0,
-      collide: { w: 12, d: 10, h: 7 }, tag: 'building' }
-  ]
+  props: []
 };

@@ -464,8 +464,22 @@ test.describe('direccion de lo que se ve en pantalla', () => {
      */
     const partida = await page.evaluate(() => {
       const g = globalThis.game;
-      const z = g.zombis.enJuego[0];
+      const z = g.zombis.enJuego.find((x) => x.vivo);
       if (!z) return { sinZombis: true };
+
+      /*
+       * El zombi se pone FUERA del alcance del arma, y los demas tambien.
+       *
+       * Desde la 17.5 Gus dispara solo a todo lo que entra en veintiocho
+       * metros, asi que el zombi que esta prueba quiere ver caminar se
+       * moria antes de dar dos pasos. A cuarenta metros esta fuera de tiro
+       * y dentro del corte de activacion (55 m): camina tranquilo.
+       */
+      const jug = g.player.position;
+      z.entity.setPosition(jug.x, 0, jug.z - 40);
+      for (const otro of g.zombis.enJuego) {
+        if (otro !== z && otro.vivo) otro.entity.setPosition(jug.x + 400, 0, jug.z + 400);
+      }
 
       /*
        * El ruido se pone donde esta el JUGADOR, no donde esta el zombi: lo
