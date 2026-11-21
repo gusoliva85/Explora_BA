@@ -37,11 +37,20 @@ export const Pose = {
   QUIETO: 'quieto',
   CAMINAR: 'caminar',
   CORRER: 'correr',
-  ATACAR: 'atacar',
   DISPARAR: 'disparar',
   GOLPEADO: 'golpeado',
   MUERTO: 'muerto'
 };
+/*
+ * Habia una pose mas, `ATACAR`, y era el cuchillazo. Se fue con el cuchillo
+ * en la Fase 16.4 (D-29).
+ *
+ * Lo que enseñaba vale para las que quedan, asi que queda escrito: el gesto
+ * era asimetrico —el brazo salia en la primera cuarta parte y volvia en las
+ * tres restantes— y **la asimetria era el gesto**. Un ida y vuelta
+ * simetrico se lee como saludar, no como golpear. `DISPARAR` usa la misma
+ * idea con el culatazo: fuerte al principio, estabilizandose despues.
+ */
 
 /**
  * Cuánto tarda en mezclarse un cambio de pose, en segundos.
@@ -181,7 +190,7 @@ function cicloDePasos(fase, { amplitud, amplitudBrazo, rebote, inclinacion }) {
  *
  * @param {string} estado una clave de `Pose`
  * @param {number} fase 0..1 para los ciclos; 0..1 de progreso para los
- *   gestos de una sola vez (atacar, recargar)
+ *   gestos de una sola vez (disparar, ser golpeado)
  * @returns {object}
  */
 export function poseDe(estado, fase) {
@@ -209,25 +218,6 @@ export function poseDe(estado, fase) {
         rebote: 0.07,
         inclinacion: 13
       });
-
-    case Pose.ATACAR: {
-      /*
-       * El cuchillazo: el brazo sale rápido y vuelve despacio.
-       *
-       * La asimetría es el gesto. Un ida y vuelta simétrico se ve como
-       * saludar; con la salida en la primera cuarta parte y la vuelta en
-       * las tres restantes, se lee como un golpe.
-       */
-      const p = poseNeutral();
-      const golpe = f < 0.25 ? f / 0.25 : 1 - (f - 0.25) / 0.75;
-      p.brazoD = 40 + golpe * 95;
-      p.codoD = 70 - golpe * 60;
-      p.torsoGiro = -golpe * 26;
-      p.torso = golpe * 10;
-      p.brazoI = -golpe * 22;
-      p.codoI = 30;
-      return p;
-    }
 
     case Pose.DISPARAR: {
       // Brazo extendido al frente y un retroceso corto hacia atrás.
@@ -322,7 +312,6 @@ export function velocidadDeCiclo(estado, velocidad = 0) {
  * dure la situación.
  */
 export const GESTOS = {
-  [Pose.ATACAR]: 0.45,
   [Pose.DISPARAR]: 0.3,
   [Pose.GOLPEADO]: 0.5
 };
@@ -390,8 +379,8 @@ export class Animador {
 
   pedir(estado) {
     if (this.esGesto(estado)) {
-      // Un gesto nuevo reinicia el gesto en curso: apretar atacar dos veces
-      // tiene que dar dos golpes, no uno largo.
+      // Un gesto nuevo reinicia el gesto en curso: dos tiros seguidos
+      // tienen que dar dos culatazos, no uno largo.
       this.#cambiarA(estado);
       this.gesto = 0;
       /*
@@ -400,13 +389,14 @@ export class Animador {
        * `#cambiarA` solo la reinicia si el estado cambia, y pedir el mismo
        * gesto dos veces no lo cambia. Sin esta linea, entre el `pedir` y
        * el siguiente `update` quedaba la fase del golpe anterior: quien
-       * leyera `pose()` en el medio veia el cuchillazo a mitad de camino.
+       * leyera `pose()` en el medio veia el gesto anterior a mitad de
+       * camino.
        */
       this.fase = 0;
       return true;
     }
     if (this.estado === estado) return false;
-    // Un ciclo no interrumpe un gesto en curso: el cuchillazo se termina.
+    // Un ciclo no interrumpe un gesto en curso: el disparo se termina.
     if (this.gesto !== null) {
       this.estadoDeFondo = estado;
       return false;

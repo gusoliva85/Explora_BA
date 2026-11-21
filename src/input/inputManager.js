@@ -50,8 +50,7 @@ export class InputManager {
     this.buttons = {
       run: false,
       attack: false,
-      interact: false,
-      swap: false
+      interact: false
     };
     /** Botones que se activaron en este frame (flanco de subida). */
     this.pressed = new Set();
@@ -123,9 +122,9 @@ export class InputManager {
       ShiftLeft: 'run',
       ShiftRight: 'run',
       KeyE: 'interact',
-      KeyQ: 'swap',
-      // R (recargar), H (curarse) y F (bazooka) se fueron en la Fase 16
-      // con la municion, los botiquines y el sistema de bomba.
+      // R (recargar), H (curarse), F (bazooka) y Q (cambiar de arma) se
+      // fueron en la Fase 16 con la municion, los botiquines, el sistema de
+      // bomba y el cuchillo. Con un arma sola no hay nada que alternar.
       Space: 'attack'
     };
 

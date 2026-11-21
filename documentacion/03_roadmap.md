@@ -1,7 +1,7 @@
 # Documento 03 — Plan de trabajo
 
 **Proyecto:** Explorar BA — supervivencia zombi en Buenos Aires para navegador móvil
-**Actualizado:** 7 de noviembre de 2026
+**Actualizado:** 20 de noviembre de 2026
 
 > 📖 **El porqué de cada cosa está en [`04_bitacora.md`](04_bitacora.md).**
 > Este documento es sólo el plan: qué está hecho, qué falta y qué sigue.
@@ -24,38 +24,42 @@
 
 ## ▶️ La tarea que sigue
 
-### **16.4 — Sacar el cuchillo** · cuarta de la poda
+### **16.5 — Sacar caminar** · quinta de la poda
 
-**Qué se saca.** El cuchillo y, con él, todo el cuerpo a cuerpo y el cambio
-de arma: queda **una sola arma** (**D-29**).
+**Qué se saca.** La velocidad lenta. **Correr pasa a ser la única forma de
+moverse** (**D-30**), y con eso se va el botón de CORRER, que es el segundo
+de los tres botones de acción que quedan.
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/config/balance.js` | se va `WEAPONS.knife`. **`WEAPONS` pasa a tener una sola entrada** |
-| `src/combat/weaponController.js` | mueren `#resolverGolpe()`, `#resolverArco()`, `equipar()`, `cambiarA()`, `yaGolpeados` y `swing` |
-| `src/combat/combatFx.js` | se va el arco del cuchillo |
-| `src/characters/armas.js` | se va `construirCuchillo()`; `ArmasEnMano` queda con un modelo |
-| `src/characters/pose.js` | se va `Pose.ATACAR`, que es el cuchillazo |
-| `index.html` y `hud.css` | se van `btn-swap` y `arma-caja` entera: con un arma, el nombre no informa nada |
-| `src/input/inputManager.js` | se va el botón `swap` y la tecla `Q` |
-| `src/ui/hud.js` | se va `setArma()` completo |
-| pruebas | `tests/armas.test.js` **muere entero** (una silueta no se confunde con nada si es la única), y `tests/pistola.test.js` pierde lo que compara contra el cuchillo |
+| `src/config/balance.js` | se va `PLAYER.walkSpeed`. Queda `runSpeed` como la única velocidad, y hay que decidir si se renombra o se deja |
+| `src/player/playerController.js` | mueren `isRunning` y el `topSpeed` condicional de la línea 69 |
+| `src/characters/pose.js` | se va `Pose.CAMINAR` y su ciclo de pasos de amplitud 26 |
+| `src/characters/gus.js` | la línea 412 deja de elegir entre dos poses |
+| `index.html` y `hud.css` | se va `btn-run` |
+| `src/input/inputManager.js` | se van el botón `run` y las teclas `Shift` |
+| pruebas | lo de `CAMINAR` en `pose.test.js`, y la comparación de amplitudes contra el zombi en `zombiPose.test.js` |
 
-**La tarea deja el HUD casi vacío**, y eso es correcto: después de la 16.4
-arriba quedan vida, objetivo y brújula, y abajo el joystick y la pausa. Es
-lo que la 16.8 va a terminar de ordenar.
+**Lo que hay que mirar con cuidado, y ahora son cuatro avisos y no tres.** La
+16.2 enseñó que un aviso puede viajar colgado de otro; la 16.3, que una pose
+puede quedarse viva después de que muera quien la pedía; la 16.4, que **una
+función de cableado puede estar sosteniendo cuatro cosas sanas a la vez**.
+Acá la candidata es `velocidadDeCiclo()`: hoy multiplica el ciclo de pasos
+por la velocidad real para que los pies no patinen, y trata `CAMINAR` y
+`CORRER` juntos en el mismo `case`. Con una sola velocidad hay que ver si
+sigue teniendo sentido medir, o si queda una cuenta fija disfrazada de
+cálculo.
 
-**Lo que hay que mirar con cuidado, que ya pasó dos veces.** La 16.2 me
-enseñó que un aviso puede viajar colgado de otro, y la 16.3 que una pose
-puede quedarse viva después de que muera quien la pedía. Acá hay tres cosas
-del mismo tipo: `alCambiarArma` deja de tener sentido con un arma sola,
-`actualizarHudArma()` queda sin nada que actualizar, y `armasEnMano.equipar()`
-queda eligiendo entre un solo elemento. **Hay que seguir cada una hasta el
-final en vez de dejarlas apuntando a la nada.**
+**Y hay una que no es de borrado, es de diseño:** `isRunning` también decide
+el ruido que hace Gus al moverse y la amplitud del balanceo de cámara. Si
+correr es lo único que hay, **el sigilo por velocidad desaparece**, igual que
+desapareció el sigilo por arma en la 16.4. Hay que decidir si eso está bien
+—la respuesta probable es que sí, porque la decisión ahora es *dónde pararse*
+y no *cómo moverse*— pero decidirlo, no dejarlo pasar.
 
-**Cómo se sabe que está lista:** no hay botón de cambiar arma, no hay caja de
-arma en el HUD, no queda nada de cuerpo a cuerpo en el código, la consola
-está limpia y todo en verde.
+**Cómo se sabe que está lista:** no hay botón de correr, no queda una
+segunda velocidad en ningún lado, Gus tiene un solo ciclo de piernas, la
+consola está limpia y todo en verde.
 
 ---
 
@@ -1057,8 +1061,8 @@ lista cambió de tamaño dos veces en un día— está en la Fase 16.
 - [x] **16.1 Los ítems.** Munición y botiquines, de la vista y del sistema entero ✅ *8/11/2026 — 2.223 líneas menos, 25 archivos*
 - [x] **16.2 La munición de la pistola.** Sin cargador, sin reserva, sin recarga ✅ *8/11/2026*
 - [x] **16.3 El sistema de bomba.** El contador, la barra, el botón, el arma, el cohete y la explosión ✅ *8/11/2026 — y `objetivoAutomatico()` rescatado a `combat/objetivo.js`*
-- [ ] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola ⬅️ *la que sigue*
-- [ ] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30)
+- [x] **16.4 El cuchillo.** Y con él el cambio de arma: queda un arma sola ✅ *20/11/2026 — 1.311 líneas borradas y 611 escritas, 20 archivos; `tests/arma.test.js` murió entero*
+- [ ] **16.5 Caminar.** Correr pasa a ser la única velocidad (D-30) ⬅️ *la que sigue*
 - [ ] **16.6 Interactuar.** Ya no hay nada con lo que interactuar
 - [ ] **16.7 El joystick a la derecha** y la cámara a la izquierda (D-27)
 - [ ] **16.8 Limpieza del HUD.** Borrar el `action-cluster` entero y su CSS. Lo que queda: vida, objetivo, brújula, pausa y joystick

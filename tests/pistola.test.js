@@ -16,6 +16,13 @@ import { rumboHacia, dirDeRumbo } from '../src/core/rumbo.js';
  * Como en el resto del combate, los rumbos NO se escriben como numeros: se
  * le piden al convenio del proyecto. Un `0` escrito a mano fue lo que dejo
  * pasar que el cuchillo golpeara para atras durante toda una fase.
+ *
+ * Desde la Fase 16.4 esta es **la unica arma del juego** (D-29), asi que
+ * este archivo dejo de ser "las pruebas de una de las tres armas" y paso a
+ * ser las del combate entero. Las comparaciones contra el cuchillo —que
+ * hacia menos ruido, que esperaba mas entre golpes— se fueron con el, y
+ * donde decian algo que importa quedo medido contra el zombi, que es lo que
+ * sigue existiendo.
  */
 
 const P = WEAPONS.pistol;
@@ -36,11 +43,15 @@ const blanco = (d, rumbo = FRENTE) => {
   return objetivo(p.x, p.z);
 };
 
-/** Pistola lista para disparar, con los callbacks capturados. */
+/**
+ * El arma lista para disparar, con los callbacks capturados.
+ *
+ * Habia un `armaInicial: 'pistol'` y se fue en la 16.4: con una sola arma,
+ * el controlador la lee de la tabla y no hay nada que pedirle.
+ */
 const armar = (opt = {}) => {
   const ev = { disparos: [], golpes: [], fallos: [], ruidos: [] };
   const w = new WeaponController({
-    armaInicial: 'pistol',
     alDisparar: (i) => ev.disparos.push(i),
     alGolpear: (i) => ev.golpes.push(i),
     alFallar: (i) => ev.fallos.push(i),
@@ -287,12 +298,26 @@ describe('apuntado asistido', () => {
 });
 
 /* =========================================================================
-   CARGADOR Y RECARGA
+   RUIDO
    ========================================================================= */
 
 describe('ruido', () => {
-  it('el disparo hace mucho mas ruido que el cuchillo', () => {
-    expect(P.noiseRadius).toBeGreaterThan(WEAPONS.knife.noiseRadius * 5);
+  it('el disparo se escucha mas lejos de lo que el zombi puede ver', () => {
+    /*
+     * Esto decia "el disparo hace mucho mas ruido que el cuchillo", y se
+     * medía contra `WEAPONS.knife.noiseRadius`. Con el cuchillo borrado en
+     * la 16.4 la comparacion se quedo sin la mitad, y la tentacion era
+     * borrarla: es la unica arma, contra quien va a hacer mas ruido.
+     *
+     * Pero lo que la prueba cuidaba no era el cuchillo: era que **disparar
+     * tenga costo** (D-05). Y ese costo tiene una medida propia y mejor:
+     * el estruendo llega mas lejos que la vista del zombi. Mientras eso sea
+     * cierto, un tiro puede traerte a alguien que no te habia visto, que es
+     * exactamente la decision que el juego quiere que el jugador tome.
+     */
+    expect(P.noiseRadius).toBeGreaterThan(ZOMBIE_STANDARD.sightRange);
+    // Y mucho mas lejos de lo que te escucha caminando.
+    expect(P.noiseRadius).toBeGreaterThan(ZOMBIE_STANDARD.hearRange * 4);
   });
 
   it('un disparo que falla hace el mismo ruido que uno que acierta', () => {
@@ -335,7 +360,9 @@ describe('ruido', () => {
 
 describe('la pistola de punta a punta', () => {
   it('dos tiros matan a un zombi estandar, y uno no', () => {
-    // Igual que el cuchillo: leido del balance real, no copiado.
+    // Leido del balance real, no copiado. Es el criterio del combate: si
+    // alguien sube la vida del zombi o baja el daño, esto lo avisa antes
+    // de que se note jugando.
     expect(P.damage * 2).toBeGreaterThanOrEqual(ZOMBIE_STANDARD.maxHealth);
     expect(P.damage).toBeLessThan(ZOMBIE_STANDARD.maxHealth);
   });
@@ -361,14 +388,29 @@ describe('la pistola de punta a punta', () => {
     expect(ev.golpes[0].dirZ).toBeCloseTo(dir.z, 3);
   });
 
-  it('el arco del cuchillo no existe para la pistola', () => {
-    const { w } = armar();
-    expect(w.alcanzados(ORIGEN, FRENTE, [blanco(1)])).toHaveLength(0);
-  });
+  /*
+   * Aca habia dos pruebas mas, y las dos eran comparaciones con el
+   * cuchillo: que `alcanzados()` —el arco— devolviera vacio para la
+   * pistola, y que el disparo fuera mas rapido de repetir que el
+   * cuchillazo. Se fueron en la 16.4: `alcanzados()` ya no existe, y no
+   * queda segunda arma con la que comparar cadencias.
+   *
+   * Lo que si queda medido es la cadencia en absoluto, abajo.
+   */
 
-  it('el disparo es mas lento de repetir que el cuchillo pero no mucho', () => {
-    expect(P.cooldown).toBeLessThan(WEAPONS.knife.cooldown);
-    expect(P.windup).toBeLessThan(WEAPONS.knife.windup);
+  it('la demora del tiro es corta, pero no cero', () => {
+    /*
+     * Reemplaza a la comparacion con el cuchillo. Los dos extremos
+     * importan: en cero, el zombi muere en el mismo cuadro en que empieza
+     * la animacion y el tiro se despega del personaje; pasado un decimo, el
+     * arma se siente con retardo, y esta es un arma que se dispara parado y
+     * con zombis encima.
+     */
+    expect(P.windup).toBeGreaterThan(0);
+    expect(P.windup).toBeLessThan(0.1);
+    // Y la espera entre tiros, por debajo del medio segundo: la cadencia
+    // real se ajusta jugando, en la 17.9.
+    expect(P.cooldown).toBeLessThan(0.5);
   });
 
   it('un ciclo completo vuelve a dejar el arma lista', () => {

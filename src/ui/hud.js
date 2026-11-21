@@ -46,8 +46,6 @@ export class Hud {
       brujulaFlecha: document.getElementById('brujula-flecha'),
       brujulaTexto: document.getElementById('brujula-texto'),
       dano: document.getElementById('dano'),
-      armaCaja: document.getElementById('arma-caja'),
-      armaNombre: document.getElementById('arma-nombre'),
       btnAttack: document.getElementById('btn-attack')
     };
 
@@ -100,34 +98,24 @@ export class Hud {
     return device.isTouch;
   }
 
-  /**
-   * Arma equipada.
+  /*
+   * ---------------------------------------------------------------------
+   * ACA HABIA UN `setArma()`, Y SE FUE ENTERO EN LA 16.4
+   * ---------------------------------------------------------------------
+   * Escribia el nombre del arma en una caja del HUD y cambiaba el texto y
+   * el color del boton grande entre ATACAR y DISPARAR.
    *
-   * Hasta la Fase 16.2 mostraba tambien el cargador y la reserva, con tres
-   * niveles de aviso: lleno, poca y vacio. El momento interesante era el de
-   * "me quedan tres balas", cuando se podia elegir entre tirar o guardar y
-   * pasar al cuchillo. Ya no hay municion que contar (D-29) ni cuchillo al
-   * que pasar, asi que lo unico que queda es el nombre.
+   * Hasta la 16.2 mostraba tambien el cargador y la reserva, con tres
+   * niveles de aviso. El momento interesante era el de "me quedan tres
+   * balas", cuando se podia elegir entre tirar o pasar al cuchillo.
    *
-   * @param {{nombre:string, gastaMunicion:boolean}} info
+   * Se murio en dos pasos, y el segundo enseña mas que el primero. Primero
+   * se fue la municion y quedo mostrando solo el nombre; despues se fue el
+   * cambio de arma, **y un nombre que no puede cambiar no es informacion**:
+   * es una etiqueta que ocupa lugar arriba de la pantalla y que el jugador
+   * deja de leer en el primer minuto. Lo mismo con el boton: con un arma
+   * sola, siempre dice lo mismo, asi que lo dice el HTML y nadie lo toca.
    */
-  setArma(info) {
-    if (!this.el.armaCaja) return;
-    this.el.armaNombre.textContent = info.nombre.toUpperCase();
-
-    /*
-     * El boton grande dice lo que hace AHORA.
-     *
-     * Con la pistola en la mano, un boton que dice ATACAR sugiere cuerpo a
-     * cuerpo, que es justo la decision contraria. El boton es lo unico que
-     * se mira antes de apretar, asi que tiene que decir cual de las dos
-     * cosas va a pasar.
-     */
-    if (this.el.btnAttack) {
-      this.el.btnAttack.textContent = info.gastaMunicion ? 'DISPARAR' : 'ATACAR';
-      this.el.btnAttack.classList.toggle('btn-disparar', info.gastaMunicion);
-    }
-  }
 
   setHealth(value) {
     const pct = Math.max(0, Math.min(100, (value / PLAYER.maxHealth) * 100));

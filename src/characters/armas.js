@@ -3,71 +3,73 @@ import { ACABADO } from '../world/palette.js';
 
 /**
  * ===========================================================================
- * ARMAS Y OBJETOS — FASE 12.D
+ * EL ARMA EN LA MANO — FASE 12.D
  * ===========================================================================
- * El cuchillo y la pistola en la mano de Gus.
+ * La pistola en la mano de Gus. **Una, y nada más.**
  *
- * Tenia tambien la bazooka, el botiquin y la caja de municion. Los tres se
- * fueron en la Fase 16 (D-29, D-32).
- *
- * ---------------------------------------------------------------------------
- * LA SILUETA ES TODO
- * ---------------------------------------------------------------------------
- * Un arma en la mano de un personaje de cuarenta píxeles ocupa unos ocho.
- * A esa escala no existe el detalle: lo único que llega es **el contorno
- * contra el fondo**. Así que cada arma está diseñada alrededor de una sola
- * pregunta: ¿se distingue de las otras dos de un vistazo?
- *
- * | Arma | Lo que la identifica |
- * |---|---|
- * | Cuchillo | Corto y fino. Casi no sobresale de la mano |
- * | Pistola | Corta pero con guardamonte: una L |
- *
- * El largo es lo que hace el trabajo. Dos armas del mismo largo con formas
- * distintas son la misma mancha; una corta y una larga se distinguen aunque
- * sean dos palos.
+ * Tenía además el cuchillo, la bazooka, el botiquín y la caja de munición.
+ * Se fueron todos en la Fase 16 (D-29, D-32); el cuchillo, el último, en la
+ * 16.4.
  *
  * ---------------------------------------------------------------------------
- * Y EN EL PISO, LO MISMO AL REVES
+ * LA SILUETA ERA TODO, Y AHORA NO ES NADA
  * ---------------------------------------------------------------------------
- * Los objetos recogibles tienen el problema contrario: tienen que
- * distinguirse **del decorado**, no entre sí. La calle ya está llena de
- * cajas chicas —escombros, bolsas, cordones— así que lo que los separa no
- * es la forma sino que **se mueven**: flotan y giran, y nada más en la
- * escena lo hace.
+ * Este archivo se escribió alrededor de una sola pregunta: a cuarenta
+ * píxeles, un arma ocupa ocho, y a esa escala no existe el detalle, sólo el
+ * contorno. Así que cada arma estaba diseñada para **no confundirse con las
+ * otras dos**: el cuchillo corto y fino, la pistola en L por el
+ * guardamonte, la bazooka larguísima. El largo hacía el trabajo.
  *
- * Lo que agrega esta fase es que además tengan una silueta propia: una cruz
- * para el botiquín y una tapa para la caja de munición, para que el jugador
- * sepa qué va a levantar antes de pisarlo.
+ * Con un arma sola la pregunta se cae, y conviene decirlo en vez de dejar
+ * el razonamiento colgado: **ya no hay contra qué distinguirse**. Lo que
+ * sigue valiendo del criterio es la otra mitad, la que no era comparativa:
+ * el arma tiene que separarse **del fondo** —de la mano que la sostiene y
+ * del asfalto— y eso sí se mide, en `armas.test.js`.
+ *
+ * Lo que viene después de esto no es un modelo mejor hecho a mano: en la
+ * 20.8 Gus elige entre once armas renderizadas del banco y esta pistola de
+ * cuatro cajas se reemplaza entera.
  */
 
-/** Colores de las armas. Metal y madera oscuros, nunca brillantes. */
+/**
+ * Colores del arma. Metal oscuro, nunca brillante.
+ *
+ * Eran seis y quedan dos. `filo` y `madera` eran la hoja y el mango del
+ * cuchillo; `tubo` y `boca`, el caño de la bazooka, y sobrevivieron por
+ * descuido a la 16.3 porque nadie vuelve a mirar una tabla de colores
+ * despues de borrar quien la usaba. Es el mismo tipo de resto que
+ * `objetivoAutomatico()`, al reves: codigo que quedo en el lugar correcto
+ * sin que nada lo necesite.
+ */
 export const COLOR_ARMA = {
   metal: [0.3, 0.31, 0.34],
-  metalOscuro: [0.17, 0.18, 0.2],
-  filo: [0.62, 0.64, 0.68],
-  madera: [0.3, 0.22, 0.14],
-  tubo: [0.26, 0.3, 0.24],
-  boca: [0.12, 0.12, 0.13]
+  metalOscuro: [0.17, 0.18, 0.2]
 };
 
 /**
- * Largo de cada arma, en metros. Es el dato que define la silueta.
+ * Largo del arma, en metros.
  *
- * Están exagerados respecto de lo real —una pistola de 9 mm mide 19 cm, no
- * 26— por la misma razón que el pelo de Gus: a cuarenta píxeles, lo real
- * no se ve. Lo que tiene que leerse es la diferencia entre las tres.
+ * Está exagerado respecto de lo real —una pistola de 9 mm mide 19 cm, no
+ * 26— por la misma razón que el pelo de Gus: a cuarenta píxeles, lo real no
+ * se ve.
+ *
+ * Sigue siendo una tabla por el mismo motivo que `WEAPONS` en el balance:
+ * lo que va a cambiar en la 20.8 es el contenido, no la forma.
  */
 export const LARGO = {
-  cuchillo: 0.26,
   pistola: 0.26
 };
 
-function pieza(mats, padre, nombre, color, escala, pos, rot = null, acabado = ACABADO.metal) {
+/*
+ * El acabado era un parametro con `ACABADO.metal` por omision, y el unico
+ * que lo pasaba distinto era el mango de madera del cuchillo. Sin cuchillo
+ * no hay madera, asi que es una constante y no una opcion.
+ */
+function pieza(mats, padre, nombre, color, escala, pos, rot = null) {
   const e = new pc.Entity(nombre);
   e.addComponent('render', {
     type: 'box',
-    material: mats.get(color, acabado),
+    material: mats.get(color, ACABADO.metal),
     // Las armas NO proyectan sombra: son chicas, están en movimiento y su
     // sombra cae dentro de la del brazo. Es una llamada de dibujo por
     // pieza que no cambia nada en pantalla.
@@ -81,24 +83,15 @@ function pieza(mats, padre, nombre, color, escala, pos, rot = null, acabado = AC
 }
 
 /**
- * El cuchillo: mango y hoja.
+ * La pistola: una L.
+ *
+ * El guardamonte y la culata hacia abajo eran lo que la separaba del
+ * cuchillo en silueta. Hoy no la separan de nada, pero son lo que hace que
+ * se lea como una pistola y no como un palito corto, que es el otro motivo
+ * por el que estaban.
  *
  * Apunta hacia adelante (`-Z`), que es el frente de todos los modelos del
  * proyecto. Ver `core/rumbo.js`.
- */
-export function construirCuchillo(mats) {
-  const raiz = new pc.Entity('Cuchillo');
-  pieza(mats, raiz, 'Mango', COLOR_ARMA.madera, [0.035, 0.035, 0.09], [0, 0, 0.03], null, ACABADO.madera);
-  pieza(mats, raiz, 'Guarda', COLOR_ARMA.metalOscuro, [0.07, 0.02, 0.02], [0, 0, -0.02]);
-  pieza(mats, raiz, 'Hoja', COLOR_ARMA.filo, [0.022, 0.012, 0.17], [0, 0, -0.11]);
-  return raiz;
-}
-
-/**
- * La pistola: una L.
- *
- * El guardamonte y la culata hacia abajo son lo que la separa del cuchillo
- * en silueta. Sin ellos, las dos son un palito corto.
  */
 export function construirPistola(mats) {
   const raiz = new pc.Entity('Pistola');
@@ -111,12 +104,25 @@ export function construirPistola(mats) {
 }
 
 /**
- * Cuelga las armas del anclaje y deja visible sólo la equipada.
+ * Cuelga el arma del anclaje de la mano.
  *
- * Se construyen una vez y se encienden y apagan, igual que todo lo demás
- * en el juego: crear y destruir mallas en pleno combate produce tirones
- * por recolección de basura, y cambiar de arma es justo algo que se hace
- * con zombis encima.
+ * ---------------------------------------------------------------------------
+ * POR QUE YA NO HAY `equipar()`
+ * ---------------------------------------------------------------------------
+ * Esta clase existía para tener las tres armas construidas y encender sólo
+ * la equipada: crear y destruir mallas en pleno combate produce tirones por
+ * recolección de basura, y cambiar de arma era justo algo que se hacía con
+ * zombis encima.
+ *
+ * Con una sola arma, ese `equipar()` quedaba **eligiendo entre un elemento**
+ * —se encendía siempre el mismo y se apagaban cero—, y el `main` tenía que
+ * llamarlo igual para que la pistola apareciera. Era una ceremonia que no
+ * decidía nada. Ahora el arma se construye, se cuelga y se ve.
+ *
+ * Lo que la clase sigue haciendo, y es la razón de que no sea una función
+ * suelta, es sostener **el agarre**: dónde y con qué inclinación esta mano
+ * en particular toma el arma. El modelo describe el arma; el anclaje
+ * describe cómo se la agarra.
  */
 export class ArmasEnMano {
   /**
@@ -124,32 +130,9 @@ export class ArmasEnMano {
    * @param {import('../world/palette.js').Materiales} mats
    */
   constructor(ancla, mats) {
-    this.modelos = {
-      knife: construirCuchillo(mats),
-      pistol: construirPistola(mats)
-    };
-
-    for (const modelo of Object.values(this.modelos)) {
-      /*
-       * Cada arma se agarra distinto, y eso se ajusta acá y no dentro del
-       * modelo: el modelo describe el arma, el anclaje describe cómo la
-       * sostiene esta mano en particular.
-       */
-      modelo.setLocalPosition(0, -0.02, -0.06);
-      modelo.setLocalEulerAngles(-8, 0, 0);
-      modelo.enabled = false;
-      ancla.addChild(modelo);
-    }
-
-    this.equipada = null;
-  }
-
-  /** @param {string|null} clave */
-  equipar(clave) {
-    if (this.equipada === clave) return;
-    for (const [k, modelo] of Object.entries(this.modelos)) {
-      modelo.enabled = k === clave;
-    }
-    this.equipada = clave;
+    this.modelo = construirPistola(mats);
+    this.modelo.setLocalPosition(0, -0.02, -0.06);
+    this.modelo.setLocalEulerAngles(-8, 0, 0);
+    ancla.addChild(this.modelo);
   }
 }

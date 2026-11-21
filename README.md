@@ -22,6 +22,14 @@ angosto pero lo esquiva.
 > **Todo lo que este archivo describe más abajo es el juego de HOY, y buena
 > parte está por desaparecer.** El plan está en
 > [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
+>
+> 📌 **Este archivo va atrás de la poda, y conviene saber cuánto.** Está al
+> día hasta la tarea **16.4** en lo que toca al arma: hay **una sola**, no se
+> cambia y no hay cuerpo a cuerpo. Lo que sigue describiendo abajo y **ya no
+> existe** son la munición y la recarga (se fueron en la 16.2), la bazooka
+> (16.3), y los botiquines, los objetos del piso y la curación (16.1). Se va
+> a reescribir entero cuando la fase cierre: arreglarlo tarea por tarea es
+> reescribir seis veces el mismo párrafo.
 
 ---
 
@@ -45,9 +53,9 @@ además muestra la dirección para abrirlo desde el celular.
 | Mover | `WASD` o flechas | Dedo en la mitad izquierda |
 | Cámara | Arrastrar / rueda para acercar | Dedo en la mitad derecha |
 | Correr | `Shift` | Botón |
-| Atacar / disparar | Click o `Espacio` | Botón grande (**arrastralo para apuntar**) |
-| Cambiar de arma | `Q` | Botón `⇄` |
-| Recargar | `R` | Botón `R` |
+| Disparar | Click o `Espacio` | Botón grande (**arrastralo para apuntar**) |
+| ~~Cambiar de arma~~ | — | — (se fue en la 16.4: hay un arma sola) |
+| ~~Recargar~~ | — | — (se fue en la 16.2: no hay munición) |
 | Bazooka | `F` | Botón naranja (sólo cuando está lista) |
 | Curarse | `H` | Botón verde (sólo si tenés botiquines) |
 | Pausa | `Esc` | Botón |
@@ -181,14 +189,22 @@ juego funciona igual: lo único que se pierde es el récord.
 
 ## El ruido, que es la mecánica central
 
-Hay tres armas y la elección entre ellas no es "mejor o peor": es **callado
-o rápido**.
+Hubo tres armas, y la elección entre ellas era **callado o rápido**: el
+cuchillo mataba a dos metros y se escuchaba a dos; la pistola, a veintiocho y
+se escuchaba a veintidós.
+
+Desde la 16.4 hay **una sola arma**, así que esa elección ya no existe:
 
 | | Alcance | Se escucha a |
 |---|---|---|
-| Cuchillo | 2,1 m | **2 m** |
-| Pistola | 28 m | **22 m** |
-| Bazooka | 40 m | **45 m**, dos veces |
+| El arma | 28 m | **22 m** |
+
+Y eso es a propósito, no una pérdida accidental. **No hay forma silenciosa de
+matar.** Lo único que el jugador elige ahora es *dónde pararse y cuánto
+tiempo*, y lo que lo convierte en una elección es que el tiro siempre suena.
+La medida que lo sostiene está en las pruebas: **el estruendo llega más lejos
+que la vista del zombi** (22 m contra 16 m), así que un tiro siempre puede
+traerte a alguien que no te había visto.
 
 Todo zombi vivo dentro del radio del ruido pasa a `ALERT` y va a investigar
 el lugar donde sonó. No va directo a perseguirte: **va al punto del ruido**,
@@ -199,7 +215,7 @@ Con `F1` se ve el anillo del ruido expandiéndose desde el origen. Conviene
 mirarlo antes de tocar los números: el radio es la regla principal del
 juego y es completamente invisible.
 
-Las perillas están en `src/config/balance.js`: `noiseRadius` por arma, y
+Las perillas están en `src/config/balance.js`: `noiseRadius` del arma, y
 `NOISE.rangeMultiplier` para subir la tensión de todo el juego de una vez.
 
 ### Apuntar con el pulgar
@@ -212,12 +228,12 @@ El botón de disparar hace dos cosas según cómo se lo toque:
   izquierdo sigue manejando el movimiento. Eso es lo que permite
   **retroceder disparando** en vez de sólo correr.
 
-Mientras apuntás se ve una línea en el piso con el **alcance real del arma**
-— dos metros con el cuchillo, veintiocho con la pistola.
+Mientras apuntás se ve una línea en el piso con el **alcance real del arma**:
+veintiocho metros.
 
-Apuntar implica disparar: no hay forma de "mirar" sin tirar, y con la
-pistola eso sale caro en ruido. Apuntar sin tirar es para lo que están el
-cuchillo y las piernas.
+Apuntar implica disparar: no hay forma de "mirar" sin tirar, y eso sale caro
+en ruido. Lo único que queda para moverse sin hacerse escuchar son las
+piernas.
 
 ### Los objetos
 

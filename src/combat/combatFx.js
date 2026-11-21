@@ -1,5 +1,5 @@
 import * as pc from 'playcanvas';
-import { WEAPONS, UNITS } from '../config/balance.js';
+import { UNITS } from '../config/balance.js';
 import { dirDeRumbo } from '../core/rumbo.js';
 
 /* Vectores reutilizados para dibujar: no se crean dentro del bucle. */
@@ -10,13 +10,24 @@ const _p2 = new pc.Vec3();
  * ===========================================================================
  * EFECTOS DE COMBATE
  * ===========================================================================
- * El arco del golpe, el destello del impacto y el parpadeo del zombi
- * herido.
+ * El fogonazo, el trazado de la bala, el destello del impacto y la mira.
  *
- * Esto NO es decoracion. El criterio de salida de la fase es que el jugador
- * entienda sin dudar cuando acerto y cuando fallo, y eso no se consigue con
- * numeros: se consigue mostrando el arco que barrio el cuchillo y marcando
- * al que recibio.
+ * Esto NO es decoracion. El criterio es que el jugador entienda sin dudar
+ * cuando acerto y cuando fallo, y eso no se consigue con numeros: se
+ * consigue mostrando por donde paso la bala y marcando al que recibio.
+ *
+ * ---------------------------------------------------------------------------
+ * LO QUE SE FUE CON EL CUCHILLO (Fase 16.4, D-29)
+ * ---------------------------------------------------------------------------
+ * Habia un efecto mas, y era el primero del archivo: **el arco**, un sector
+ * de disco a los pies del jugador que mostraba que barria el cuchillazo, en
+ * calido si conectaba y en frio si iba al aire. Se fue entero con el arma.
+ *
+ * Vale la pena dejar escrito que el arco se construia a mano, vertice por
+ * vertice, leyendo el semiangulo y el alcance del balance para no quedar
+ * desfasado del golpe real. Esa es la unica parte que sobrevive como
+ * criterio: **ningun efecto inventa sus medidas**. El trazado y la mira
+ * siguen midiendose del arma.
  *
  * ---------------------------------------------------------------------------
  * POR QUE SE REUTILIZA TODO
@@ -27,8 +38,6 @@ const _p2 = new pc.Vec3();
  * provocar tirones por recoleccion de basura en un telefono.
  */
 
-/** Cuanto dura el arco en pantalla. Corto: es un destello, no un dibujo. */
-const DURACION_ARCO = 0.18;
 const DURACION_IMPACTO = 0.25;
 /** Cuantos impactos pueden verse a la vez. */
 const MAX_IMPACTOS = 6;
@@ -81,9 +90,6 @@ export class CombatFx {
     this.raiz = new pc.Entity('EfectosCombate');
     this.app.root.addChild(this.raiz);
 
-    this.arco = this.#crearArco();
-    this.arcoRestante = 0;
-
     this.impactos = [];
     for (let i = 0; i < MAX_IMPACTOS; i++) {
       this.impactos.push({ entidad: this.#crearImpacto(i), restante: 0 });
@@ -112,66 +118,6 @@ export class CombatFx {
     this.ruidos = [];
   }
 
-  /**
-   * El arco del cuchillo: un sector de disco plano a los pies del jugador.
-   *
-   * Se construye a mano en vez de usar una primitiva porque ninguna tiene
-   * la forma de un sector. Son pocos triangulos y se arma una sola vez.
-   */
-  #crearArco() {
-    /*
-     * El arco se mide del arma, no se copia a mano.
-     *
-     * Antes el semiangulo y el radio estaban escritos aca como numeros
-     * sueltos, con un comentario que decia "coincide con WEAPONS.knife".
-     * Un comentario no mantiene nada sincronizado: al ampliar el alcance
-     * del cuchillo, el dibujo se habria quedado corto y el jugador habria
-     * visto un arco mas chico que el que golpea de verdad.
-     */
-    const semi = WEAPONS.knife.arcDegrees;
-    const radio = WEAPONS.knife.range;
-    const pasos = 14;
-
-    /*
-     * La malla se construye con `dirDeRumbo`, igual que la deteccion de
-     * golpe. Antes se armaba con `sin/cos` directos, que es el convenio
-     * contrario: el sector apuntaba a la espalda del jugador. Ver
-     * core/rumbo.js.
-     */
-    const positions = [0, 0, 0];
-    const indices = [];
-    for (let i = 0; i <= pasos; i++) {
-      const d = dirDeRumbo(-semi + (semi * 2 * i) / pasos);
-      positions.push(d.x * radio, 0, d.z * radio);
-      if (i > 0) indices.push(0, i, i + 1);
-    }
-
-    const mesh = new pc.Mesh(this.app.graphicsDevice);
-    mesh.setPositions(positions);
-    mesh.setIndices(indices);
-    mesh.update(pc.PRIMITIVE_TRIANGLES);
-
-    const material = new pc.StandardMaterial();
-    material.diffuse = new pc.Color(0, 0, 0);
-    material.emissive = new pc.Color(1, 0.95, 0.85);
-    material.useLighting = false;
-    material.blendType = pc.BLEND_ADDITIVE;
-    material.depthWrite = false;
-    material.cull = pc.CULLFACE_NONE;
-    material.update();
-
-    const e = new pc.Entity('ArcoGolpe');
-    e.addComponent('render', {
-      meshInstances: [new pc.MeshInstance(mesh, material)],
-      castShadows: false
-    });
-    e.enabled = false;
-    this.raiz.addChild(e);
-
-    this.materialArco = material;
-    return e;
-  }
-
   /** Destello de impacto: una esfera chica y brillante. */
   #crearImpacto(i) {
     const material = new pc.StandardMaterial();
@@ -189,35 +135,6 @@ export class CombatFx {
     this.raiz.addChild(e);
     e.material = material;
     return e;
-  }
-
-  /**
-   * Muestra el arco del golpe.
-   *
-   * @param {{x:number,y:number,z:number}} pos
-   * @param {number} rumboGrados
-   * @param {boolean} conecto si el golpe alcanzo a alguien
-   */
-  mostrarArco(pos, rumboGrados, conecto) {
-    this.arco.setPosition(pos.x, 0.12, pos.z);
-    this.arco.setEulerAngles(0, rumboGrados, 0);
-    this.arco.enabled = true;
-    this.arcoRestante = DURACION_ARCO;
-
-    /*
-     * El color dice el resultado. Un golpe que conecta se ve calido y
-     * fuerte; uno al aire, apenas un trazo frio. Es la diferencia entre
-     * "fallaste" y "el arma no hizo nada", que son dos cosas muy distintas
-     * para quien esta jugando.
-     */
-    if (conecto) {
-      this.materialArco.emissive.set(1, 0.92, 0.8);
-      this.arcoIntensidad = 0.55;
-    } else {
-      this.materialArco.emissive.set(0.55, 0.65, 0.8);
-      this.arcoIntensidad = 0.22;
-    }
-    this.materialArco.update();
   }
 
   /**
@@ -424,20 +341,6 @@ export class CombatFx {
   }
 
   update(dt) {
-    if (this.arcoRestante > 0) {
-      this.arcoRestante -= dt;
-      // Acotado a [0,1]: un dt enorme —o una herramienta de captura que
-      // congela el efecto— dejaria la escala negativa y el arco se daria
-      // vuelta hasta desaparecer.
-      const k = Math.min(1, Math.max(0, this.arcoRestante / DURACION_ARCO));
-      // Se desvanece y se agranda un poco: lee como un barrido.
-      this.materialArco.opacity = k * this.arcoIntensidad;
-      this.materialArco.update();
-      const escala = 1 + (1 - k) * 0.15;
-      this.arco.setLocalScale(escala, 1, escala);
-      if (this.arcoRestante <= 0) this.arco.enabled = false;
-    }
-
     for (const t of this.trazados) {
       if (t.restante <= 0) continue;
       t.restante -= dt;

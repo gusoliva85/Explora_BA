@@ -4213,6 +4213,215 @@ deja de ser cierta. Queda anotado en la tarea.
 
 ---
 
+## 16.4 — El cuchillo, y una función de cableado que sostenía cuatro cosas sanas
+
+**20 de noviembre de 2026.**
+
+**Lo que se fue.** `WEAPONS.knife`, el arco de ataque entero —detección y
+dibujo—, el cambio de arma con su botón, su tecla `Q` y su fila de HUD, la
+caja del nombre del arma, `Pose.ATACAR`, el modelo del cuchillo, y
+`tests/arma.test.js` completo.
+
+| | Antes | Después |
+|---|---|---|
+| Pruebas unitarias | 376 | **333 en verde**, más 1 marcada para fallar a propósito |
+| Pruebas de punta a punta | 48 | **41 en verde** |
+| Líneas | — | **1.311 borradas, 611 escritas** en 20 archivos |
+| Llamadas de dibujo (celular, caminando) | — | 235 |
+
+Las reglas de combate quedan en una sola frase: **hay un arma, dispara
+siempre, hace ruido siempre, y para usarla hay que apuntar.**
+
+### La función de cableado, que es lo que aprendí hoy
+
+El roadmap me avisaba de tres cosas que podían quedar apuntando a la nada:
+`alCambiarArma`, `actualizarHudArma()` y `armasEnMano.equipar()`. Las tres
+existían. Pero la relación entre ellas no era la que yo esperaba.
+
+Yo buscaba **tres restos sueltos**. Lo que había era **un centro y sus
+radios**. `actualizarHudArma()`, catorce líneas en `main.js`, hacía tres
+cosas cada vez que el arma cambiaba: escondía la pistola del cinto, encendía
+el modelo de la equipada y escribía el nombre en el HUD. Y de ella colgaban
+cinco piezas que, **mirada cada una por separado, estaba perfectamente
+sana**:
+
+| Pieza | Por qué parecía viva |
+|---|---|
+| `Gus.mostrarPistolaAlCinto()` | Un método de dos líneas que hace exactamente lo que dice |
+| `ArmasEnMano.equipar()` | Enciende una y apaga el resto. Correcto |
+| `Hud.setArma()` | Escribe un nombre y ajusta un botón. Correcto |
+| `WeaponController.alCambiarArma` | Un aviso que la 16.2 había arreglado hacía dos semanas |
+| `WEAPONS.pistol.name` y `.type` | Dos campos de datos. No hacen nada malo |
+
+Ninguna de las cinco se delata sola. Ninguna rompe nada. Si yo hubiera
+borrado el cuchillo y dejado `actualizarHudArma()` en pie —llamándose una
+vez al arrancar, para encender la única arma—, **las cinco habrían
+sobrevivido**, y el `grep` del final no habría encontrado nada: todas
+seguían usadas.
+
+Lo que las mató fue borrar **el centro** y aceptar que no quedaba nada que
+poner en su lugar. Recién ahí los cinco radios quedaron colgando y se
+vieron.
+
+> **La regla, que no es la misma que la de la 16.3.** La 16.3 enseñó a
+> buscar código que ya nadie llama. Esto es lo contrario y es más difícil:
+> **código que sí se llama, desde un solo lugar, que existe únicamente para
+> que ese lugar exista.** No se encuentra con un `grep` de nombres muertos.
+> Se encuentra preguntándole a la función del medio *para qué sirve ahora*,
+> y aceptando la respuesta cuando es "para nada".
+
+### Tres restos de la 16.3 que aparecieron de rebote
+
+Buscando a quién le pertenecía cada cosa salieron tres que no eran del
+cuchillo:
+
+- **`COLOR_ARMA.tubo` y `COLOR_ARMA.boca`** eran los colores del caño de la
+  bazooka. Sobrevivieron a su arma. Nadie vuelve a mirar una tabla de
+  colores después de borrar quien la usaba.
+- **`progresoEspera`**, un getter del controlador que devolvía la fracción
+  de espera para dibujar la barra de la bazooka. Muerto desde la 16.3.
+- **El parámetro `acabado` de `pieza()`** en `armas.js`, con `ACABADO.metal`
+  por omisión. El único que lo pasaba distinto era el mango de madera del
+  cuchillo. Sin cuchillo, no es una opción: es una constante.
+
+La diferencia con las poses huérfanas de la 16.3 es que estas tres son
+**datos y parámetros**, no funciones. Una pose muerta al menos tiene pruebas
+que la nombran. Una entrada en una tabla de colores no tiene nada: está ahí,
+cuesta una línea, y no hay forma de que algo se queje.
+
+### `armas.test.js` no murió entero, y creo que el plan estaba mal
+
+La tarea decía, textual, que el archivo **muere entero**: *una silueta no se
+confunde con nada si es la única que hay*. El argumento es correcto y las
+pruebas comparativas se fueron: el largo relativo, el filo contra el mango,
+el alcance de la pistola contra el del cuchillo.
+
+Pero el archivo tenía dos tipos de prueba mezclados, y sólo uno era
+comparativo. El otro medía **el arma contra el fondo**: que no sea más
+llamativa que lo de misión, que se separe del asfalto, que entre en su
+presupuesto de triángulos, y que haya un modelo por cada arma del balance.
+Nada de eso necesita una segunda arma.
+
+Esa última, además, **pasó a ser la prueba más valiosa del archivo**: hoy
+dice `expect(Object.keys(WEAPONS)).toEqual(['pistol'])`. Es D-29 escrito
+como número. Si alguna vez vuelve a haber dos entradas, alguien reabrió el
+cambio de arma y se va a enterar acá.
+
+**Lo que esto me corrige del método:** cuando digo "este archivo de pruebas
+deja de tener sentido", lo que casi siempre pasa es que *una premisa* del
+archivo dejó de valer. Vale la pena leer qué prueba cada bloque antes de
+borrarlo entero, porque las premisas no se reparten parejo.
+
+### Y midiendo lo que quedaba apareció un problema de verdad
+
+La prueba que medía la separación contra el asfalto usaba `COLOR_ARMA.filo`
+—la hoja clara del cuchillo— y pasaba con holgura. Al borrar el cuchillo
+desapareció `filo`, y medí lo que queda:
+
+| | Color | Separación contra el asfalto |
+|---|---|---|
+| Hoja del cuchillo (borrada) | 0,62 0,64 0,68 | 0,15 ✅ |
+| **Cuerpo de la pistola** | **0,30 0,31 0,34** | **0,015** ❌ |
+| Asfalto | 0,33 0,325 0,315 | — |
+
+**Son el mismo gris.** Y no es teórico: el brazo se estira hacia adelante al
+disparar, y desde la cámara cenital el arma queda sobre la calzada justo en
+el momento en que el jugador la mira. La única arma del juego desaparece
+contra el piso cuando se usa.
+
+El cuchillo le venía tapando el agujero a la pistola desde que existían los
+dos.
+
+**No lo arreglé, y quiero dejar escrito por qué.** En la 20.8 Gus elige su
+arma entre once modelos renderizados del banco, y esta pistola de cuatro
+cajas se reemplaza entera: retocar un gris que se va a borrar es trabajo
+tirado, y además el arte viejo está descartado. Lo que no podía pasar es que
+el dato se perdiera. Así que la prueba está escrita con `it.fails`: **falla
+a propósito, con el número adentro**, y la 20.8 tiene que medir el arma
+nueva contra el asfalto y no sólo contra la mano.
+
+### Dos cosas de Gus que se fueron sin que la tarea las pidiera
+
+Gus tenía dos armas guardadas en el modelo: una pistola al cinto y un
+cuchillo en la bota. Ocho triángulos cada una, puro volumen para romper la
+línea recta de la cadera y de la pierna.
+
+Se fueron las dos, por motivos distintos:
+
+- **El cuchillo de la bota** era la funda de un arma que el juego ya no
+  tiene. No molestaba a nadie y nadie lo habría notado nunca, y eso es
+  exactamente lo que lo hacía peligroso: **un modelo que cuenta algo falso
+  sobre las reglas.**
+- **La pistola del cinto** se escondía cuando el arma estaba en la mano. Con
+  un arma sola, el arma está siempre en la mano: la del cinto quedaba
+  apagada toda la partida. Una pieza que no se ve nunca, y un método que
+  sólo podía recibir `false`.
+
+Lo que se pierde es silueta en la cadera, y queda anotado en el código: si
+Gus se ve demasiado liso de perfil, la respuesta **no** es devolver la funda
+—no hay qué guardar ahí— sino resolverlo en la 20.4, cuando Gus pase a ser
+un `.glb` del banco.
+
+### Lo que se perdió de verdad, y no es código
+
+Había una prueba de punta a punta que se llamaba *"matar con el cuchillo al
+lado de otros NO los despierta"*: tres zombis dormidos a diecinueve metros,
+un cuchillazo, y los tres seguían durmiendo. Era la mitad silenciosa de
+D-05, y **la que hacía que disparar fuera una decisión**: si el cuerpo a
+cuerpo sonara igual que el tiro, la pistola sería siempre mejor y no habría
+nada que elegir.
+
+Hoy **no hay forma silenciosa de matar.** Conviene decirlo derecho, porque
+es el costo real de la poda y no un detalle de pruebas. La elección que le
+queda al jugador es *dónde pararse y cuánto tiempo*, y lo que la convierte
+en elección es que el tiro siempre suena.
+
+Y eso obligó a reescribir, no a borrar, la prueba unitaria que lo medía.
+Decía "el disparo hace mucho más ruido que el cuchillo" y comparaba contra
+un arma que ya no existe. Lo que cuidaba no era el cuchillo: era que
+disparar tenga costo. Y eso tiene una medida propia, y mejor:
+
+```js
+expect(P.noiseRadius).toBeGreaterThan(ZOMBIE_STANDARD.sightRange);
+```
+
+**El estruendo llega más lejos que la vista del zombi.** Mientras eso sea
+cierto, un tiro puede traerte a alguien que no te había visto. Es la misma
+regla sin la muleta de la comparación.
+
+### Cuatro pruebas que cambiaron en vez de morir
+
+Es el mismo criterio de la 16.3, y esta vez hubo que aplicarlo cuatro veces:
+
+| Prueba | Medía contra el cuchillo | Mide ahora |
+|---|---|---|
+| El ruido del disparo | El radio del cuchillo | El alcance de vista del zombi |
+| La cadencia del tiro | La espera del cuchillazo | Los dos extremos en absoluto: ni cero ni más de un décimo |
+| El ataque del zombi | Que Gus golpeara con un brazo | Que el zombi use los dos, simétricos |
+| El Animador | `Pose.ATACAR` de ejemplo | `Pose.DISPARAR`, que es el gesto que queda |
+
+La del Animador es la que más fácil se habría perdido. Usaba `ATACAR` como
+gesto de ejemplo para probar que **un gesto no se interrumpe a la mitad** y
+que **dos seguidos no se fusionan en uno largo**. Eso no es del cuchillazo:
+es del mecanismo. Si moría con la pose, el Animador se quedaba sin la única
+prueba de su regla central.
+
+### Lo que la 16.4 deja planteado para la 16.5
+
+Dos cosas, y la segunda no es de borrado:
+
+1. **`velocidadDeCiclo()`** trata `CAMINAR` y `CORRER` en el mismo `case`,
+   multiplicando por la velocidad real para que los pies no patinen. Con una
+   sola velocidad hay que ver si sigue siendo un cálculo o si queda una
+   cuenta fija disfrazada.
+2. **`isRunning` no sólo elige la velocidad**: también decide el ruido al
+   moverse y el balanceo de cámara. Sacar caminar saca **el sigilo por
+   velocidad**, igual que esta tarea sacó el sigilo por arma. Es la segunda
+   vez en dos tareas que la poda se lleva una forma de ser silencioso. Vale
+   la pena decidirlo mirando, y no descubrirlo después.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

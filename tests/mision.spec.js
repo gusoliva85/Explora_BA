@@ -400,11 +400,16 @@ test.describe('reinicio limpio', () => {
     const primera = await foto();
 
     for (let i = 0; i < 5; i++) {
-      // Ensuciar el estado antes de reiniciar: cambiar de arma y avanzar
-      // controles.
+      /*
+       * Ensuciar el estado antes de reiniciar.
+       *
+       * Eran dos cosas: cambiar de arma y avanzar controles. El cambio de
+       * arma se fue en la 16.4 (D-29) y no se reemplaza por otra suciedad:
+       * lo que esta prueba cuida es que **el mundo** salga identico tras
+       * cinco reinicios, y avanzar controles es lo que de verdad lo mueve.
+       */
       await page.evaluate(async () => {
         const g = globalThis.game;
-        g.arma.cambiarA('pistol');
         await globalThis.__ir(
           g.mission.mission.route[g.mission.mission.checkpoints[0].atRouteIndex]
         );

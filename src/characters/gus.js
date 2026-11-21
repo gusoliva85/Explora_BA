@@ -36,8 +36,8 @@ import { Animador, Pose } from './pose.js';
  * |---|---|---|
  * | ¿Mochila? | **No** | Redondea la espalda y mata el trapecio de los hombros, que es el rasgo que lo identifica desde arriba |
  * | ¿Guantes? | **Sí, oscuros** | Las manos son lo único de piel que se mueve rápido; con guantes la silueta del brazo queda limpia |
- * | ¿Dónde van las armas? | **Pistola al cinto, cuchillo en la bota** | Se ven, suman silueta y cuentan que está preparado |
- * | ¿La bazooka a la espalda? | **No** | Cambiaría la silueta por completo y la bazooka aparece dos veces por partida |
+ * | ¿Dónde van las armas? | **En la mano, y nada más** | Eran dos volúmenes guardados —pistola al cinto, cuchillo en la bota— y los dos se fueron en la 16.4; ver abajo |
+ * | ¿La bazooka a la espalda? | **No** | Cambiaría la silueta por completo, y además la bazooka ya no existe (16.3) |
  * | ¿Detalle facial? | **Ninguno** | A esa distancia la cara son tres píxeles. El pelo hace todo el trabajo |
  *
  * ---------------------------------------------------------------------------
@@ -77,8 +77,12 @@ const COLOR = {
   piel: [0.72, 0.56, 0.44],
   pelo: [0.1, 0.09, 0.09],
   bota: [0.13, 0.11, 0.1],
-  guante: [0.12, 0.12, 0.14],
-  metal: [0.3, 0.31, 0.33]
+  guante: [0.12, 0.12, 0.14]
+  /*
+   * Habia un `metal`, y era el de las dos armas guardadas —la del cinto y
+   * la de la bota—. Se fue con ellas en la 16.4. El metal del arma que SI
+   * se ve vive en `characters/armas.js`, que es de donde sale el modelo.
+   */
 };
 
 /**
@@ -280,28 +284,31 @@ export class Gus {
     this.#pie(this.rodillaI, 'PieI', M.pantorrilla);
     this.#pie(this.rodillaD, 'PieD', M.pantorrilla);
 
-    // --- Armas guardadas, que suman silueta ---------------------------------
     /*
-     * La pistola al cinto y el cuchillo en la bota.
+     * ---------------------------------------------------------------------
+     * ACA HABIA DOS ARMAS GUARDADAS, Y LAS DOS SE FUERON EN LA 16.4
+     * ---------------------------------------------------------------------
+     * Una pistola al cinto y un cuchillo en la bota. No eran interactivos:
+     * eran dos volúmenes que rompían la línea recta de la cadera y la
+     * pierna, y que contaban que el personaje estaba preparado. Ocho
+     * triángulos cada uno.
      *
-     * No son interactivos: son dos volúmenes que cuentan que el personaje
-     * está preparado, y que rompen la línea recta de la cadera y la pierna.
-     * Cuestan ocho triángulos cada uno.
+     * Se fueron por dos motivos distintos, y conviene separarlos:
+     *
+     * - **El cuchillo de la bota** era una funda de un arma que el juego ya
+     *   no tiene. No molestaba a nadie y nadie lo habría notado, y eso es
+     *   exactamente lo que lo hace peligroso: un modelo que cuenta algo
+     *   falso sobre las reglas.
+     * - **La pistola del cinto** se escondía cuando estaba en la mano, con
+     *   `mostrarPistolaAlCinto()`. Con un arma sola, el arma está SIEMPRE en
+     *   la mano, así que la del cinto quedaba apagada toda la partida: una
+     *   pieza que no se ve nunca y un método que recibía siempre `false`.
+     *
+     * Lo que se pierde es silueta en la cadera, y está anotado a propósito:
+     * si Gus se ve demasiado liso de perfil, la respuesta NO es devolver la
+     * funda —no hay qué guardar ahí— sino resolverlo en la 20.4, donde Gus
+     * pasa a ser un `.glb` del banco.
      */
-    this.pistolaAlCinto = this.#pieza(
-      this.cadera,
-      'PistolaCinto',
-      'box',
-      COLOR.metal,
-      [0.07, 0.14, 0.1],
-      [0.19, -0.06, 0.02],
-      [0, 0, 8]
-    );
-    this.#pieza(this.rodillaI, 'CuchilloBota', 'box', COLOR.metal, [0.04, 0.16, 0.05], [
-      -0.09,
-      -M.pantorrilla * 0.55,
-      0.02
-    ]);
   }
 
   // =========================================================================
@@ -433,11 +440,6 @@ export class Gus {
     this.piernaD.setLocalEulerAngles(p.piernaD, 0, 0);
     this.rodillaI.setLocalEulerAngles(-p.rodillaI, 0, 0);
     this.rodillaD.setLocalEulerAngles(-p.rodillaD, 0, 0);
-  }
-
-  /** La pistola al cinto se esconde cuando está en la mano. */
-  mostrarPistolaAlCinto(visible) {
-    this.pistolaAlCinto.enabled = visible;
   }
 
   /** Alto del modelo, de la suela a la punta del pelo. */

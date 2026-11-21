@@ -293,37 +293,31 @@
   height: 112px;
   font-size: 13px;
   color: #fff;
-  background: radial-gradient(circle at 50% 36%, rgba(255, 92, 80, 0.4), rgba(120, 20, 16, 0.5));
-  border-color: rgba(255, 92, 80, 0.5);
+  /*
+   * Ambar, no rojo.
+   *
+   * El boton era rojo cuando era ATACAR, y una clase aparte,
+   * `.btn-disparar`, lo pasaba a ambar cuando el arma equipada era la
+   * pistola: mismo tamano y mismo lugar —la mano no tiene que volver a
+   * buscarlo— pero otro color, para que el jugador supiera de un vistazo
+   * cual de las dos cosas iba a hacer.
+   *
+   * Con un arma sola siempre va a hacer la misma, asi que las dos clases se
+   * fusionaron en esta y el color que quedo es el del disparo. El rojo era
+   * el del cuerpo a cuerpo, y el cuerpo a cuerpo no existe.
+   */
+  background: radial-gradient(circle at 50% 36%, rgba(255, 182, 39, 0.42), rgba(120, 76, 8, 0.52));
+  border-color: rgba(255, 182, 39, 0.6);
 }
 .btn.btn-attack:active {
-  box-shadow: 0 0 0 8px rgba(255, 77, 68, 0.18), 0 0 30px rgba(255, 77, 68, 0.5);
+  box-shadow: 0 0 0 8px rgba(255, 182, 39, 0.18), 0 0 30px rgba(255, 182, 39, 0.5);
 }
 
-/* --- Arma ----------------------------------------------------------------
-   Hasta la Fase 16.2 esta caja llevaba el contador de balas con tres
-   niveles de aviso. Se fue con la municion: queda el nombre del arma. */
-
-.fila-arma { justify-content: space-between; margin-top: 10px; }
-
-.arma-caja {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 6px 12px;
-  border-radius: 12px;
-  background: var(--hud-vidrio);
-  border: 1.5px solid var(--hud-borde);
-  backdrop-filter: blur(10px) saturate(1.2);
-  transition: border-color 0.2s linear, box-shadow 0.2s linear;
-}
-
-.arma-nombre {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  color: var(--hud-dim);
-}
+/* --- Arma: no hay ---------------------------------------------------------
+   Aca vivian `.fila-arma`, `.arma-caja` y `.arma-nombre`: la caja que
+   mostraba el nombre del arma y, hasta la 16.2, el contador de balas con
+   tres niveles de aviso. Se fue entera en la 16.4 junto con el cambio de
+   arma (D-29). */
 
 /* --- Marcador de fin de partida ------------------------------------------
    Dos columnas: etiqueta a la izquierda, número a la derecha. Los números
@@ -391,31 +385,6 @@
  * El boton que lo provoco era el de la bazooka, que se borro en la Fase
  * 16.3. La regla queda, porque el error no era del boton.
  */
-/* --- Botones chicos de accion --------------------------------------------
-   Cambiar de arma. Mas chico que ATACAR a proposito: es una accion de
-   entre peleas. Pero no mas chico de 56 px, que es el minimo que un pulgar
-   encuentra sin mirar. */
-
-.action-row-chica { gap: 10px; }
-
-.btn.btn-action.btn-small {
-  width: 58px;
-  height: 58px;
-  font-size: 16px;
-  align-self: center;
-}
-
-/* Disparar se ve distinto de atacar. Mismo tamano y mismo lugar —la mano
-   no tiene que volver a buscarlo— pero otro color, para que el jugador sepa
-   de un vistazo cual de las dos cosas va a hacer. */
-.btn.btn-attack.btn-disparar {
-  background: radial-gradient(circle at 50% 36%, rgba(255, 182, 39, 0.42), rgba(120, 76, 8, 0.52));
-  border-color: rgba(255, 182, 39, 0.6);
-}
-.btn.btn-attack.btn-disparar:active {
-  box-shadow: 0 0 0 8px rgba(255, 182, 39, 0.18), 0 0 30px rgba(255, 182, 39, 0.5);
-}
-
 .btn.btn-interact {
   background: radial-gradient(circle at 50% 36%, rgba(255, 182, 39, 0.42), rgba(130, 84, 8, 0.5));
   border-color: rgba(255, 182, 39, 0.6);

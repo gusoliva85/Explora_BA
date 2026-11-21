@@ -169,33 +169,31 @@ export const ZOMBIE_STANDARD = {
   collisionRadius: 0.4
 };
 
+/**
+ * El arma. **Una sola, y por eso es un diccionario de una entrada** (D-29).
+ *
+ * Hasta la Fase 16.4 habia tres —cuchillo, pistola y bazooka— y el juego
+ * tenia un boton para alternarlas. Las tres se fueron: la bazooka en la
+ * 16.3, el cuchillo y el cambio de arma en la 16.4. Lo que queda no es
+ * "la pistola de antes": es **el arma**, y el jugador no elige nada.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE SIGUE SIENDO UNA TABLA
+ * ---------------------------------------------------------------------------
+ * Un diccionario de una entrada parece de mas, y se podria haber escrito
+ * `export const ARMA = { ... }`. No se hizo por una razon concreta: en la
+ * 20.8 Gus elige cual de las once armas renderizadas es la suya, y lo que
+ * va a cambiar es el contenido de esta entrada, no su forma. Dejarla como
+ * tabla mantiene el cambio en un solo lugar.
+ *
+ * Lo que SI se fueron son `name` y `type`. `name` lo leia la caja del HUD,
+ * que se borro con el cambio de arma; `type` separaba `melee` de `hitscan`,
+ * y sin cuerpo a cuerpo no hay nada que separar. Quedaron huerfanos y el
+ * criterio de la fase no admite constantes huerfanas.
+ */
 export const WEAPONS = {
-  knife: {
-    id: 'knife',
-    name: 'Cuchillo',
-    type: 'melee',
-    damage: 45,
-    /**
-     * Alcance del golpe, en metros.
-     *
-     * Subido de 1,7 a 2,1 despues de probarlo en el telefono: con 1,7
-     * habia que quedar practicamente encima del zombi, y a la distancia de
-     * camara del juego —veinte metros— esa diferencia no se ve, asi que el
-     * golpe fallaba sin que se entendiera por que. El arco que se dibuja
-     * sale de este mismo numero, ver combatFx.
-     */
-    range: 2.1,
-    /** Semiangulo del arco de golpe, en grados. */
-    arcDegrees: 55,
-    cooldown: 0.55,
-    /** Demora entre apretar y aplicar el daño: sincroniza con la animacion. */
-    windup: 0.12,
-    noiseRadius: 2
-  },
   pistol: {
     id: 'pistol',
-    name: 'Pistola',
-    type: 'hitscan',
     damage: 34,
     range: 28,
     cooldown: 0.4,

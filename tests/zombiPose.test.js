@@ -166,19 +166,26 @@ describe('correr: se tira hacia adelante', () => {
 });
 
 describe('atacar: se abalanza con los dos brazos', () => {
-  it('usa LOS DOS brazos, al reves que el cuchillazo de Gus', () => {
-    // Gus golpea con uno; el zombi se tira encima. Es otra manera de
-    // separarlos.
+  it('usa LOS DOS brazos, simetricos y pasados de la horizontal', () => {
+    /*
+     * La comparacion era contra el cuchillazo de Gus: el zombi se tira
+     * encima con los dos brazos y Gus golpeaba con uno, y eso era otra
+     * manera de separarlos en silueta. Gus perdio el cuchillazo en la Fase
+     * 16.4 (D-29), asi que la mitad de la comparacion ya no existe.
+     *
+     * Lo que queda es lo que de verdad define el ataque del zombi, y no
+     * necesitaba a Gus para medirse: los dos brazos adelante, simetricos, y
+     * los dos pasados de la horizontal. **Un zombi que ataca con un brazo
+     * se lee como una persona pegando**, y eso es lo que la prueba cuida.
+     */
     const z = poseZombiDe(PoseZ.ATACAR, 0.3);
     expect(apuntaAdelante(z.brazoI)).toBe(true);
     expect(apuntaAdelante(z.brazoD)).toBe(true);
     // Los dos pasan de la horizontal: se tira encima.
     expect(z.brazoI).toBeGreaterThan(100);
     expect(z.brazoD).toBeGreaterThan(100);
-
-    const g = poseDe(Pose.ATACAR, 0.25);
-    // En Gus, un brazo va muy lejos y el otro no.
-    expect(Math.abs(g.brazoD)).toBeGreaterThan(Math.abs(g.brazoI) * 3);
+    // Y lo hacen casi igual: la asimetria del zombi esta en caminar, no acá.
+    expect(Math.abs(z.brazoI - z.brazoD)).toBeLessThan(20);
   });
 
   it('el cuerpo entero acompaña', () => {

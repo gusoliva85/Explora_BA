@@ -1,47 +1,65 @@
 import { WEAPONS } from '../config/balance.js';
-import { rumboHacia, difRumbos } from '../core/rumbo.js';
 import { blancoDelRayo, dispersar, rumboAsistido } from './ballistics.js';
 
 /**
  * ===========================================================================
- * ARMAS
+ * EL ARMA
  * ===========================================================================
- * Controla el arma equipada: cuando se puede atacar, cuanto tarda el golpe
- * en salir y a quien alcanza.
+ * Cuando se puede disparar, cuanto tarda el tiro en salir y a quien
+ * alcanza.
  *
  * Como el cerebro del zombi, es logica pura: no conoce PlayCanvas ni
  * entidades. Recibe la posicion del jugador, hacia donde mira y una lista
- * de objetivos con posicion; devuelve a quienes golpeo. Eso permite probar
- * el arco de ataque con numeros en vez de a ojo.
+ * de objetivos con posicion; devuelve a quienes alcanzo. Eso permite
+ * probar la balistica entera con numeros en vez de a ojo.
  *
  * ---------------------------------------------------------------------------
- * POR QUE EL GOLPE TIENE DEMORA
+ * UNA SOLA ARMA (D-29)
  * ---------------------------------------------------------------------------
- * Entre apretar el boton y aplicar el daño pasan unos centesimos. No es un
+ * Hasta la Fase 16.4 esta clase manejaba tres armas y el cambio entre
+ * ellas: tenia `equipar()`, `cambiarA()`, un aviso `alCambiarArma`, y dos
+ * formas distintas de resolver el golpe —el arco del cuchillo y el rayo de
+ * la pistola—. Se fue todo. Lo que queda es **el arma**, en singular, y
+ * por eso ya no hay nada que elegir ni estado que sincronizar.
+ *
+ * Con el cuerpo a cuerpo se fueron tres cosas mas que solo existian para
+ * el arco, y conviene decir por que, porque son del tipo de resto que
+ * sobrevive a un borrado:
+ *
+ * - **`yaGolpeados`**, el conjunto de a quienes ya alcanzo este swing.
+ *   Existia porque un arco puede barrer al mismo zombi dos veces si entra
+ *   y sale durante el golpe. Un rayo le pega a UNO y se termina.
+ * - **`swing`**, desde donde y hacia donde iba el golpe en curso. Lo leia
+ *   el dibujo del arco, y el arco ya no se dibuja.
+ * - **`alIniciarAtaque`**, el aviso de que el golpe arrancaba. Servia para
+ *   mostrar el arco al apretar, antes de que saliera el daño, y para pedir
+ *   la pose del cuchillazo. Las dos cosas se borraron: lo que el jugador ve
+ *   ahora al disparar lo avisa `alDisparar`, que sale en el mismo momento
+ *   en que el tiro se resuelve.
+ *
+ * ---------------------------------------------------------------------------
+ * POR QUE EL TIRO TIENE DEMORA
+ * ---------------------------------------------------------------------------
+ * Entre apretar y aplicar el daño pasan unos centesimos. No es un
  * capricho: es lo que hace que el combate se pueda leer.
  *
  * Con daño instantaneo, el jugador aprieta y el zombi muere en el mismo
- * cuadro en que empieza la animacion. No hay nada que anticipar, nada que
- * esquivar, y el golpe se siente despegado del personaje. Con la demora,
- * el swing empieza, el jugador ve el movimiento, y recien ahi conecta.
- * Ademas abre la puerta a que un zombi alcance a interrumpirte, que es de
- * donde sale la tension del cuerpo a cuerpo.
+ * cuadro en que empieza la animacion. No hay nada que anticipar y el tiro
+ * se siente despegado del personaje. Con la demora, el gesto empieza, el
+ * jugador ve el movimiento, y recien ahi conecta. Ademas abre la puerta a
+ * que un zombi alcance a interrumpirte, que es de donde sale la tension.
  *
- * ---------------------------------------------------------------------------
- * EL ARCO
- * ---------------------------------------------------------------------------
- * El cuchillo no golpea en un punto: barre un arco de 55 grados a cada
- * lado, hasta 1,7 m. Un golpe puede alcanzar a varios zombis, pero a cada
- * uno UNA sola vez. Si no se lleva esa cuenta, un zombi que entra y sale
- * del arco durante el mismo swing recibe daño dos veces.
+ * Son cinco centesimas, mucho menos que las doce del cuchillazo: un tiro
+ * no tiene recorrido que anticipar, y lo que en el cuerpo a cuerpo se
+ * sentia como peso, en la pistola se sentiria como retardo.
  */
 
 /** Estados del arma. */
 export const EstadoArma = {
   LISTA: 'LISTA',
-  /** Se apreto, el golpe todavia no salio. */
+  /** Se apreto, el tiro todavia no salio. */
   PREPARANDO: 'PREPARANDO',
-  /** Golpe aplicado, esperando para poder volver a atacar. */
+  /** Daño aplicado, esperando para poder volver a disparar. */
   ESPERANDO: 'ESPERANDO'
   /*
    * Hubo un cuarto estado, RECARGANDO, y se fue en la Fase 16.2 con la
@@ -55,11 +73,8 @@ export const EstadoArma = {
 export class WeaponController {
   /**
    * @param {object} [opt]
-   * @param {string} [opt.armaInicial] clave de WEAPONS
-   * @param {(info:object) => void} [opt.alCambiarArma] el arma equipada cambio
-   * @param {(info:object) => void} [opt.alIniciarAtaque] al arrancar el swing
-   * @param {(info:object) => void} [opt.alGolpear] se llama cuando el golpe conecta
-   * @param {(info:object) => void} [opt.alFallar] se llama cuando el golpe no alcanza a nadie
+   * @param {(info:object) => void} [opt.alGolpear] se llama cuando el tiro conecta
+   * @param {(info:object) => void} [opt.alFallar] se llama cuando el tiro no alcanza a nadie
    * @param {(info:object) => void} [opt.alHacerRuido] para el sistema de ruido (D-05)
    * @param {(info:object) => void} [opt.alDisparar] trazado y fogonazo
    * @param {Function} [opt.rayo] prueba del escenario, firma de CollisionWorld.raycast
@@ -67,15 +82,18 @@ export class WeaponController {
    * @param {() => boolean} [opt.asistirApuntado] si corresponde ayudar a apuntar
    */
   constructor(opt = {}) {
-    this.armas = WEAPONS;
-    this.equipada = opt.armaInicial ?? 'knife';
+    /*
+     * El arma se lee de la tabla y no se recibe por parametro.
+     *
+     * Habia un `armaInicial`, que era con cual de las tres arrancaba la
+     * mision. Con una sola, un parametro para elegirla seria exactamente
+     * el tipo de cosa que la Fase 16 vino a borrar: una perilla que solo
+     * puede estar en una posicion.
+     */
+    this.arma = WEAPONS.pistol;
 
     this.estado = EstadoArma.LISTA;
     this.restante = 0;
-    /** Golpes de este swing, para no pegarle dos veces al mismo. */
-    this.yaGolpeados = new Set();
-    /** Datos del swing en curso: desde donde y hacia donde. */
-    this.swing = null;
 
     /*
      * El azar por omision NO es aleatorio.
@@ -90,101 +108,43 @@ export class WeaponController {
     this.rayo = opt.rayo;
     this.asistirApuntado = opt.asistirApuntado ?? (() => false);
 
-    this.alCambiarArma = opt.alCambiarArma;
-    this.alIniciarAtaque = opt.alIniciarAtaque;
     this.alGolpear = opt.alGolpear;
     this.alFallar = opt.alFallar;
     this.alHacerRuido = opt.alHacerRuido;
     this.alDisparar = opt.alDisparar;
   }
 
-  get arma() {
-    return this.armas[this.equipada];
-  }
-
   get puedeAtacar() {
     return this.estado === EstadoArma.LISTA;
   }
 
-  /** Fraccion de 0 a 1 de lo que falta para poder volver a atacar. */
-  get progresoEspera() {
-    if (this.estado !== EstadoArma.ESPERANDO) return 1;
-    return 1 - this.restante / this.arma.cooldown;
-  }
-
-  equipar(clave) {
-    if (!this.armas[clave]) return false;
-    this.equipada = clave;
+  /** Vuelve al estado de arranque de mision. */
+  reiniciar() {
     this.estado = EstadoArma.LISTA;
     this.restante = 0;
-    this.swing = null;
-    /*
-     * El arma avisa que cambio, y el aviso sale de ACA.
-     *
-     * Hasta la Fase 16.2 esto lo hacia de rebote `#avisarMunicion()`, que
-     * se llamaba al equipar y de paso refrescaba el HUD entero. Al sacar la
-     * municion se fue el aviso con ella, y el nombre del arma dejo de
-     * actualizarse cuando el cambio no venia del boton. Lo agarraron las
-     * pruebas de punta a punta.
-     *
-     * Es el mismo criterio que ya seguia `alIniciarAtaque`: el arma es la
-     * unica que sabe que cambio, asi que es la que tiene que avisarlo. Un
-     * aviso que viaja colgado de otro desaparece cuando el otro se borra.
-     */
-    this.alCambiarArma?.({ arma: this.arma.id, nombre: this.arma.name });
-    return true;
-  }
-
-  /** Alterna entre las armas que el jugador tiene encima. */
-  cambiarA(clave) {
-    return this.equipar(clave);
-  }
-
-  /** Vuelve al estado de arranque de mision. */
-  reiniciar(armaInicial = 'knife') {
-    this.yaGolpeados.clear();
-    this.equipar(armaInicial);
   }
 
   /**
-   * Intenta atacar.
+   * Aprieta el gatillo.
    *
-   * No aplica daño todavia: arranca el swing. El daño sale en `update`
+   * No aplica daño todavia: arranca el tiro. El daño sale en `update`
    * cuando se cumple la demora.
    *
-   * El aviso de que el swing arranco sale de ACA y no de quien llama. Es
-   * deliberado: antes el arco del cuchillo se dibujaba desde el bucle
-   * principal, junto al chequeo del boton, y entonces un ataque que no
-   * viniera del boton —una prueba, una captura, un ataque automatico mas
-   * adelante— no mostraba nada. El arma es la unica que sabe que ataco,
-   * asi que es la que tiene que avisarlo.
+   * **No recibe nada, y antes recibia tres cosas.** Tomaba la posicion, el
+   * rumbo y la lista de objetivos para guardar el swing y para avisar si el
+   * golpe iba a conectar. Las dos cosas se fueron con el arco: el tiro se
+   * resuelve en `update` con la posicion y el rumbo del momento en que
+   * sale, que es justamente el motivo por el que girar durante la demora
+   * sirve. Dejar los parametros habria sido dejar tres argumentos que nadie
+   * lee, que es la forma mas facil de que alguien crea que importan.
    *
-   * @param {{x:number,z:number}} pos
-   * @param {number} rumboGrados hacia donde mira el jugador
-   * @param {Array} [objetivos] para saber si el golpe conectaria
-   * @returns {boolean} true si el ataque arranco
+   * @returns {boolean} true si el tiro arranco
    */
-  atacar(pos, rumboGrados, objetivos = []) {
+  atacar() {
     if (!this.puedeAtacar) return false;
 
     this.estado = EstadoArma.PREPARANDO;
     this.restante = this.arma.windup;
-    this.yaGolpeados.clear();
-    this.swing = { x: pos.x, z: pos.z, rumbo: rumboGrados };
-
-    /*
-     * Se avisa si el golpe CONECTARIA, mirando el estado actual. Es una
-     * prediccion: el daño real se resuelve cuando se cumple la demora y
-     * para entonces los zombis se movieron. Sirve igual, porque lo que
-     * decide es el momento en que el jugador aprieta.
-     */
-    this.alIniciarAtaque?.({
-      x: pos.x,
-      z: pos.z,
-      rumbo: rumboGrados,
-      arma: this.arma.id,
-      conectaria: this.alcanzados(pos, rumboGrados, objetivos).length > 0
-    });
     return true;
   }
 
@@ -198,10 +158,10 @@ export class WeaponController {
     if (this.restante > 0) this.restante -= dt;
 
     if (this.estado === EstadoArma.PREPARANDO && this.restante <= 0) {
-      // El golpe sale desde donde esta el jugador AHORA, no desde donde
-      // estaba al apretar: si no, girar durante el swing no serviria de
+      // El tiro sale desde donde esta el jugador AHORA, no desde donde
+      // estaba al apretar: si no, girar durante la demora no serviria de
       // nada y el combate se sentiria rigido.
-      this.#resolverGolpe(pos, rumboGrados, objetivos);
+      this.#resolverDisparo(pos, rumboGrados, objetivos);
       this.estado = EstadoArma.ESPERANDO;
       this.restante = this.arma.cooldown;
       return;
@@ -209,17 +169,7 @@ export class WeaponController {
 
     if (this.estado === EstadoArma.ESPERANDO && this.restante <= 0) {
       this.estado = EstadoArma.LISTA;
-      this.swing = null;
     }
-  }
-
-  /** Resuelve el ataque segun el tipo de arma. */
-  #resolverGolpe(pos, rumboGrados, objetivos) {
-    if (this.arma.type === 'hitscan') {
-      this.#resolverDisparo(pos, rumboGrados, objetivos);
-      return;
-    }
-    this.#resolverArco(pos, rumboGrados, objetivos);
   }
 
   /**
@@ -234,7 +184,7 @@ export class WeaponController {
    *    cuanto hubiera un zombi cerca del centro.
    * 3. **El rayo** al final, con el rumbo ya definitivo.
    */
-  #resolverDisparo(pos, rumboGrados, objetivos) {
+  #resolverDisparo(pos, rumboGrados, objetivos = []) {
     const arma = this.arma;
 
     let rumbo = rumboGrados;
@@ -275,7 +225,6 @@ export class WeaponController {
       const dx = q.x - pos.x;
       const dz = q.z - pos.z;
       const d = Math.hypot(dx, dz) || 1;
-      this.yaGolpeados.add(impacto.objetivo);
       this.alGolpear?.({
         objetivo: impacto.objetivo,
         daño: arma.damage,
@@ -288,82 +237,13 @@ export class WeaponController {
     }
 
     /*
-     * El ruido sale IGUAL si el tiro falla. Es el corazon de la fase: lo
-     * que atrae a los zombis es el estruendo, no el acierto. Un jugador
+     * El ruido sale IGUAL si el tiro falla. Es el corazon de la mecanica:
+     * lo que atrae a los zombis es el estruendo, no el acierto. Un jugador
      * que erra y se queda sin saber por que vino la horda aprendio algo
      * importante sobre disparar.
      */
     if (arma.noiseRadius > 0) {
       this.alHacerRuido?.({ x: pos.x, z: pos.z, radio: arma.noiseRadius, arma: arma.id });
     }
-  }
-
-  /** Aplica el daño del swing a todo lo que caiga dentro del arco. */
-  #resolverArco(pos, rumboGrados, objetivos) {
-    const arma = this.arma;
-    const alcanzados = this.alcanzados(pos, rumboGrados, objetivos);
-
-    for (const objetivo of alcanzados) {
-      this.yaGolpeados.add(objetivo);
-      const q = objetivo.posicion;
-      const dx = q.x - pos.x;
-      const dz = q.z - pos.z;
-      const d = Math.hypot(dx, dz) || 1;
-      this.alGolpear?.({
-        objetivo,
-        daño: arma.damage,
-        arma: arma.id,
-        // Direccion del empuje, para que el zombi retroceda.
-        dirX: dx / d,
-        dirZ: dz / d
-      });
-    }
-
-    if (alcanzados.length === 0) {
-      // Fallar tiene que notarse. Sin aviso, el jugador no sabe si erro el
-      // golpe o si el arma no hizo nada, y deja de confiar en el combate.
-      this.alFallar?.({ arma: arma.id, x: pos.x, z: pos.z, rumbo: rumboGrados });
-    }
-
-    if (arma.noiseRadius > 0) {
-      this.alHacerRuido?.({ x: pos.x, z: pos.z, radio: arma.noiseRadius, arma: arma.id });
-    }
-  }
-
-  /**
-   * Quienes caen dentro del arco del arma.
-   *
-   * Separado del golpe para poder probarlo solo, y para que el diagnostico
-   * pueda dibujar a quien alcanzaria sin tener que atacar.
-   *
-   * @returns {Array} los objetivos alcanzados
-   */
-  alcanzados(pos, rumboGrados, objetivos) {
-    const arma = this.arma;
-    if (arma.type !== 'melee') return [];
-
-    const out = [];
-    for (const objetivo of objetivos) {
-      if (!objetivo.vivo) continue;
-      if (this.yaGolpeados.has(objetivo)) continue;
-
-      const q = objetivo.posicion;
-      const dx = q.x - pos.x;
-      const dz = q.z - pos.z;
-      const d = Math.hypot(dx, dz);
-      if (d > arma.range) continue;
-
-      // Pegado encima, el angulo deja de importar: a medio metro uno
-      // alcanza para cualquier lado.
-      if (d > 0.6) {
-        // `rumboHacia` y el rumbo del jugador tienen que estar en el MISMO
-        // convenio. Aca habia un `atan2(dx, dz)` suelto, que es el convenio
-        // contrario, y el cuchillo golpeaba para atras. Ver core/rumbo.js.
-        if (difRumbos(rumboHacia(dx, dz), rumboGrados) > arma.arcDegrees) continue;
-      }
-
-      out.push(objetivo);
-    }
-    return out;
   }
 }

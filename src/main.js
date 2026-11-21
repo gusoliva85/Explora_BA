@@ -230,11 +230,15 @@ const efectos = new CombatFx(app, builder.mats);
 const gus = new Gus(playerEntity, builder.mats);
 
 /*
- * Las armas cuelgan del anclaje de la mano derecha de Gus, asi que se
- * mueven solas con la animacion: el arma no sabe nada del personaje y el
- * personaje no sabe nada del arma.
+ * El arma cuelga del anclaje de la mano derecha de Gus, asi que se mueve
+ * sola con la animacion: el arma no sabe nada del personaje y el personaje
+ * no sabe nada del arma.
+ *
+ * No se guarda en una variable, y antes si: era `armasEnMano` y el `main`
+ * le pedia `equipar()` en cada cambio de arma. Sin cambio de arma, lo unico
+ * que hace es colgarse del anclaje al arrancar y quedarse ahi.
  */
-const armasEnMano = new ArmasEnMano(gus.anclaArma, builder.mats);
+new ArmasEnMano(gus.anclaArma, builder.mats);
 
 /*
  * El azar del combate: su propio generador, con su propia semilla.
@@ -258,13 +262,11 @@ const progreso = new Progreso();
 const COLOR_RUIDO = new pc.Color(1, 0.72, 0.15);
 
 /*
- * El arma. Resuelve el arco y el daño; los efectos y el ruido se enganchan
+ * El arma. Resuelve el rayo y el daño; los efectos y el ruido se enganchan
  * por callbacks, para que el controlador no tenga que conocer ni la escena
  * ni el gestor de zombis.
  */
 const arma = new WeaponController({
-  armaInicial: 'knife',
-
   /*
    * El escenario y el azar entran por aca.
    *
@@ -282,22 +284,6 @@ const arma = new WeaponController({
    * sin recargar, asi que una decision tomada una vez quedaria vieja.
    */
   asistirApuntado: () => device.isTouch,
-
-  alIniciarAtaque: ({ x, z, rumbo, conectaria, arma: id }) => {
-    /*
-     * El arco se muestra al APRETAR, no al conectar. Es lo que hace que el
-     * golpe se sienta inmediato aunque el daño salga unas centesimas
-     * despues: el jugador ve que su orden se registro.
-     *
-     * Solo para el cuerpo a cuerpo. Un disparo tiene su propio efecto —el
-     * fogonazo y el trazado— y dibujarle encima el abanico del cuchillo
-     * diria que la pistola alcanza dos metros en noventa grados, que es
-     * exactamente lo contrario de lo que hace.
-     */
-    gus.gesto(Pose.ATACAR);
-    if (id !== 'knife') return;
-    efectos.mostrarArco({ x, y: 0, z }, rumbo, conectaria);
-  },
 
   alGolpear: ({ objetivo, daño, dirX, dirZ }) => {
     const vivoAntes = objetivo.vivo;
@@ -345,28 +331,26 @@ const arma = new WeaponController({
      * segundo se acumularia hasta marear.
      */
     camera.sacudir(0.1, 0.08);
-  },
-
-  alCambiarArma: () => actualizarHudArma(),
-
+  }
 });
 
-/**
- * Pasa el estado del arma al HUD.
+/*
+ * ---------------------------------------------------------------------------
+ * ACA HABIA UN `actualizarHudArma()`, Y SE FUE ENTERO EN LA 16.4
+ * ---------------------------------------------------------------------------
+ * Hacia tres cosas cada vez que el arma cambiaba: esconder la pistola del
+ * cinto, encender el modelo de la equipada y escribir el nombre en el HUD.
+ * Se llamaba desde `alCambiarArma`, desde el boton de cambiar y desde el
+ * arranque de cada mision.
  *
- * Se llama al cambiar de arma, no en cada cuadro: escribir en el DOM
- * sesenta veces por segundo para algo que cambia una vez cada tanto es
- * tirar cuadros a la basura en un telefono.
+ * Con un arma sola las tres se cayeron solas —no hay cinto, no hay
+ * eleccion y el HUD no muestra el nombre— y lo que importa es que **se
+ * cayeron en cadena**: el metodo del cinto, el `equipar()` de
+ * `ArmasEnMano`, el `setArma()` del HUD y el aviso `alCambiarArma` no
+ * tenian nada de malo cada uno por su lado; estaban todos sostenidos por
+ * esta funcion. Dejarla como una funcion vacia habria mantenido los cuatro
+ * vivos y sin usar.
  */
-function actualizarHudArma() {
-  // Lo que esta en la mano no puede estar tambien en el cinto.
-  gus.mostrarPistolaAlCinto(arma.equipada !== 'pistol');
-  armasEnMano.equipar(arma.equipada);
-  hud.setArma({
-    nombre: arma.arma.name,
-    gastaMunicion: arma.arma.type !== 'melee'
-  });
-}
 
 console.info(
   `[mundo] ${built.stats.boxes} cajas, ${built.stats.colliders} colisionadores, ` +
@@ -400,8 +384,7 @@ function startMission({ fromCheckpoint = false } = {}) {
 
   player.reset(sp.x, sp.z, sp.yaw ?? 0);
   zombis.reiniciar();
-  arma.reiniciar('knife');
-  actualizarHudArma();
+  arma.reiniciar();
   input.reset();
 
   // La camara arranca ya puesta en la diagonal de la calle, sin que se vea
@@ -595,7 +578,6 @@ input.bindHudButton(byId('btn-run'), 'run');
  */
 input.bindAimButton(byId('btn-attack'), 'attack');
 input.bindHudButton(byId('btn-interact'), 'interact');
-input.bindHudButton(byId('btn-swap'), 'swap');
 
 /*
  * Ajustes del menu de pausa.
@@ -679,15 +661,6 @@ app.on('update', (rawDt) => {
     // --- Ataque del jugador ------------------------------------------------
     const pos2d = { x: player.position.x, z: player.position.z };
 
-    // Cambio de arma. Con dos armas alternar alcanza; cuando haya tres
-    // habra que elegir, pero inventar un selector ahora seria de mas.
-    if (input.wasPressed('swap')) {
-      arma.cambiarA(arma.equipada === 'knife' ? 'pistol' : 'knife');
-      actualizarHudArma();
-      hud.flash(arma.arma.name.toUpperCase(), 900);
-    }
-
-
     /*
      * Disparar.
      *
@@ -695,21 +668,22 @@ app.on('update', (rawDt) => {
      * personaje. Con el pulgar arrastrado, el arma dispara SEGUIDO hacia
      * donde apunta, respetando su propia cadencia.
      *
-     * Que apuntar implique disparar es deliberado y tiene costo: la
-     * pistola hace ruido, asi que mantener apretado para "mirar" sale
-     * caro. Apuntar sin tirar es para lo que estan el cuchillo y las
-     * piernas.
+     * Que apuntar implique disparar es deliberado y tiene costo: el arma
+     * hace ruido, asi que mantener apretado para "mirar" sale caro.
+     * Apuntar sin tirar era para lo que estaba el cuchillo; ahora lo unico
+     * que queda son las piernas.
      */
     if (input.wasPressed('attack') || (input.buttons.attack && input.apuntando)) {
-      arma.atacar(pos2d, player.yaw, zombis.enJuego);
+      arma.atacar();
     }
     arma.update(dt, pos2d, player.yaw, zombis.enJuego);
 
     /*
-     * La mira muestra el alcance REAL del arma equipada, no un largo
-     * decorativo: con el cuchillo son dos metros y con la pistola
-     * veintiocho. Es la forma mas barata de que el jugador entienda la
-     * diferencia entre las dos armas sin leer nada.
+     * La mira muestra el alcance REAL del arma, no un largo decorativo:
+     * veintiocho metros. Antes servia para que se entendiera la diferencia
+     * entre las dos armas sin leer nada; ahora lo que dice es hasta donde
+     * llega el tiro, que sigue siendo informacion que no esta en ningun
+     * otro lado.
      */
     if (rumboApuntado !== null) {
       efectos.mostrarMira(pos2d, rumboApuntado, arma.arma.range);
@@ -759,10 +733,7 @@ app.on('update', (rawDt) => {
   debug.set('vida', player.health.toFixed(0));
   debug.set('control', `${mission.nextCheckpoint}/${mission001.checkpoints.length}`);
   debug.set('zombis', `${zombis.stats.vivos} vivos / ${zombis.stats.pensando} pensando / ${zombis.stats.total} puestos`);
-  debug.set(
-    'arma',
-    `${arma.equipada} ${arma.estado}`
-  );
+  debug.set('arma', arma.estado);
   debug.set('cam', `yaw ${camera.yaw.toFixed(0)} pitch ${camera.pitch.toFixed(0)}`);
 
   /*

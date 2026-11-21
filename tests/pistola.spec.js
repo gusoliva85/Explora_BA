@@ -2,16 +2,18 @@ import { test, expect } from '@playwright/test';
 
 /**
  * ===========================================================================
- * LA PISTOLA EN EL JUEGO DE VERDAD
+ * EL ARMA EN EL JUEGO DE VERDAD
  * ===========================================================================
  * Las pruebas unitarias cubren la balistica con numeros. Lo que no pueden
- * cubrir es el cableado: que el rayo use el escenario de verdad, que el
- * ruido llegue a los zombis de verdad, y que el HUD muestre lo que el arma
- * esta pensando.
+ * cubrir es el cableado: que el rayo use el escenario de verdad y que el
+ * ruido llegue a los zombis de verdad.
  *
  * Esa separacion ya costo una fase: el arco del cuchillo tenia pruebas
  * unitarias impecables y en el juego golpeaba para atras, porque nadie
  * habia probado las dos puntas juntas.
+ *
+ * Desde la 16.4 hay **un arma sola** (D-29), asi que ya no hace falta
+ * equiparla: viene puesta.
  */
 
 /** Deja correr N cuadros reales del juego. */
@@ -49,7 +51,6 @@ async function prepararTiro(page, distancia) {
       const rumbo = g.rumbo.rumboEntre(parado, q);
       g.player.teleport(parado.x, parado.z, rumbo);
       g.player.yaw = rumbo;
-      g.arma.cambiarA('pistol');
 
       // Se guarda para las llamadas siguientes de la misma prueba.
       globalThis.__tiro = { parado, rumbo, victima };
@@ -67,7 +68,7 @@ async function tirar(page) {
     const { parado, rumbo, victima } = globalThis.__tiro;
 
     const antes = victima.health.actual;
-    g.arma.atacar(parado, rumbo, g.zombis.enJuego);
+    g.arma.atacar();
 
     // Mantener la pose: el zombi empuja y la IA mueve al jugador.
     for (let i = 0; i < 6; i++) {
@@ -108,7 +109,7 @@ test.describe('disparar', () => {
       for (let i = 0; i < 300 && victima.health.vivo; i++) {
         g.player.entity.setPosition(parado.x, 0, parado.z);
         g.player.yaw = rumbo;
-        if (g.arma.puedeAtacar) g.arma.atacar(parado, rumbo, g.zombis.enJuego);
+        if (g.arma.puedeAtacar) g.arma.atacar();
         await esperar(1);
       }
       return { vivo: victima.health.vivo };
@@ -165,10 +166,9 @@ test.describe('disparar', () => {
       const rumbo = g.rumbo.rumboEntre(encontrado, q);
       g.player.teleport(encontrado.x, encontrado.z, rumbo);
       g.player.yaw = rumbo;
-      g.arma.cambiarA('pistol');
 
       const antes = victima.health.actual;
-      g.arma.atacar(encontrado, rumbo, g.zombis.enJuego);
+      g.arma.atacar();
       for (let i = 0; i < 6; i++) {
         g.player.entity.setPosition(encontrado.x, 0, encontrado.z);
         g.player.yaw = rumbo;
@@ -183,29 +183,23 @@ test.describe('disparar', () => {
 });
 
 /*
- * Aca habia dos pruebas de municion: que vaciar el cargador arrancara la
- * recarga sola, y que el HUD mostrara el contador de balas. Las dos se
- * fueron en la Fase 16.2 con la municion (D-29).
+ * ---------------------------------------------------------------------------
+ * ACA HABIA UN BLOQUE ENTERO SOBRE EL HUD, Y SE FUE EN TRES PASOS
+ * ---------------------------------------------------------------------------
+ * Empezo con tres pruebas: que vaciar el cargador arrancara la recarga
+ * sola, que el HUD mostrara el contador de balas, y que el boton grande
+ * dijera lo que hacia. Las dos primeras se fueron en la 16.2 con la
+ * municion; la tercera, en la 16.4 con el cambio de arma.
  *
- * Lo que sobrevive de la segunda es que el boton grande diga lo que hace,
- * y eso se prueba abajo.
+ * La tercera es la que vale la pena contar, porque **fue la prueba que
+ * agarro un error de verdad**: al sacar la municion, el nombre del arma
+ * dejo de actualizarse cuando el cambio no venia del boton, y lo agarro
+ * esto, no la consola. De ahi salio el criterio que quedo escrito en el
+ * controlador: un aviso que viaja colgado de otro desaparece cuando el otro
+ * se borra.
+ *
+ * Hoy el boton dice DISPARAR en el HTML y no hay nada que actualizar.
  */
-test.describe('el arma se lee en el HUD', () => {
-  test('el nombre del arma y el boton dicen cual es cual', async ({ page }) => {
-    await entrar(page);
-
-    await expect(page.locator('#arma-nombre')).toHaveText('CUCHILLO');
-    await expect(page.locator('#btn-attack')).toHaveText('ATACAR');
-
-    await page.evaluate(() => globalThis.game.arma.cambiarA('pistol'));
-    await expect(page.locator('#arma-nombre')).toHaveText('PISTOLA');
-    // El boton grande dice lo que hace AHORA: con la pistola, disparar.
-    await expect(page.locator('#btn-attack')).toHaveText('DISPARAR');
-
-    await page.evaluate(() => globalThis.game.arma.cambiarA('knife'));
-    await expect(page.locator('#btn-attack')).toHaveText('ATACAR');
-  });
-});
 
 test.describe('el ruido es la mecanica de la fase', () => {
   test('disparar atrae a los zombis que no te habian visto', async ({ page }) => {
@@ -250,10 +244,9 @@ test.describe('el ruido es la mecanica de la fase', () => {
       const alertadosAntes = antes.filter((e) => e !== 'IDLE').length;
 
       // El disparo, por la via normal del arma.
-      g.arma.cambiarA('pistol');
       const rumbo = g.rumbo.rumboHacia(0, 1);
       g.player.yaw = rumbo;
-      g.arma.atacar(pos, rumbo, g.zombis.enJuego);
+      g.arma.atacar();
       for (let i = 0; i < 8; i++) {
         g.player.entity.setPosition(pos.x, 0, pos.z);
         await esperar(1);
@@ -283,59 +276,25 @@ test.describe('el ruido es la mecanica de la fase', () => {
     ).toBe(3);
   });
 
-  test('matar con el cuchillo al lado de otros NO los despierta', async ({ page }) => {
-    /*
-     * La otra mitad de la regla, y la que le da sentido al cuchillo: si el
-     * cuerpo a cuerpo hiciera el mismo ruido que el disparo, la pistola
-     * seria siempre mejor y no habria ninguna decision que tomar.
-     */
-    await entrar(page);
-
-    const r = await page.evaluate(async (cuadrosSrc) => {
-      const esperar = eval(cuadrosSrc);
-      const g = globalThis.game;
-
-      const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
-      g.player.teleport(zona.x, zona.z + 18);
-      await esperar(30);
-
-      const testigos = g.zombis.enJuego.filter((z) => z.vivo).slice(0, 3);
-      if (testigos.length < 3) return { pocos: testigos.length };
-
-      const pos = { x: g.player.position.x, z: g.player.position.z };
-      const lejos = g.balance.ZOMBIE_STANDARD.sightRange + 3;
-      testigos.forEach((z, i) => {
-        z.entity.setPosition(pos.x + (i - 1) * 4, 0, pos.z - lejos);
-        z.ai.origen = { x: z.posicion.x, z: z.posicion.z };
-        z.ai.estado = 'IDLE';
-        z.ai.ultimoVisto = null;
-        z.ai.rumbo = g.rumbo.rumboHacia(0, -1);
-      });
-      await esperar(5);
-
-      g.arma.cambiarA('knife');
-      const rumbo = g.rumbo.rumboHacia(0, 1);
-      g.player.yaw = rumbo;
-      g.arma.atacar(pos, rumbo, g.zombis.enJuego);
-      for (let i = 0; i < 8; i++) {
-        g.player.entity.setPosition(pos.x, 0, pos.z);
-        await esperar(1);
-      }
-
-      return {
-        despues: testigos.map((z) => z.ai.estado),
-        radioCuchillo: g.arma.armas.knife.noiseRadius,
-        radioPistola: g.arma.armas.pistol.noiseRadius
-      };
-    }, CUADROS);
-
-    test.skip(r.pocos !== undefined, `solo habia ${r.pocos} zombis`);
-
-    expect(
-      r.despues.filter((e) => e !== 'IDLE').length,
-      `el cuchillo desperto a alguien a 19 m. Estados: ${r.despues}`
-    ).toBe(0);
-    // Y que quede escrito por que: el cuchillo es el arma silenciosa.
-    expect(r.radioCuchillo).toBeLessThan(r.radioPistola / 5);
-  });
+  /*
+   * -------------------------------------------------------------------------
+   * ACA ESTABA LA OTRA MITAD DE LA REGLA, Y SE FUE CON EL CUCHILLO
+   * -------------------------------------------------------------------------
+   * "Matar con el cuchillo al lado de otros NO los despierta": tres zombis
+   * en IDLE a diecinueve metros, un cuchillazo, y los tres seguian
+   * durmiendo. Era la prueba que le daba sentido al cuchillo —si el cuerpo
+   * a cuerpo hiciera el mismo ruido que el disparo, la pistola seria
+   * siempre mejor y no habria ninguna decision que tomar— y se fue con el
+   * arma en la 16.4 (D-29).
+   *
+   * **Y con ella se fue la decision que probaba.** Conviene decirlo
+   * derecho, porque es el costo real de la poda y no un detalle de
+   * pruebas: hoy no hay forma silenciosa de matar. La unica eleccion que le
+   * queda al jugador es *donde pararse y cuanto tiempo*, y lo que la hace
+   * una eleccion es que el tiro siempre suena.
+   *
+   * Lo que sostiene esa mecanica ahora es la prueba de arriba —el disparo
+   * trae a los que no te vieron— y la unitaria que fija que el estruendo
+   * llegue mas lejos que la vista del zombi.
+   */
 });

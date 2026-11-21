@@ -2,115 +2,45 @@ import { test, expect } from '@playwright/test';
 
 /**
  * ===========================================================================
- * EL GOLPE VA PARA ADELANTE, EN EL JUEGO DE VERDAD
+ * TODO APUNTA PARA ADELANTE, EN EL JUEGO DE VERDAD
  * ===========================================================================
- * Las pruebas unitarias del arma se quedan cortas por construccion: le
- * pasan un rumbo a mano y comprueban el arco alrededor de ese rumbo. En el
- * juego el rumbo no se escribe, lo produce el jugador al caminar, y era
- * justo ese cruce el que estaba invertido: el cuchillo golpeaba a la
- * espalda del personaje.
+ * Las pruebas unitarias se quedan cortas por construccion: le pasan un
+ * rumbo a mano y miden alrededor de ese rumbo. En el juego el rumbo no se
+ * escribe, lo produce el jugador al caminar, y era justo ese cruce el que
+ * estaba invertido.
  *
- * Por eso esta prueba vive en el navegador. Es la unica que ve a la vez el
- * `yaw` real del jugador, el arco que se dibuja y el frente del modelo que
- * mira el usuario.
+ * Por eso estas pruebas viven en el navegador. Son las unicas que ven a la
+ * vez el `yaw` real, las transformaciones ya aplicadas y el frente del
+ * modelo que mira el usuario.
+ *
+ * ---------------------------------------------------------------------------
+ * ACA HABIA CUATRO PRUEBAS MAS, Y ERAN LAS QUE LE DABAN NOMBRE AL ARCHIVO
+ * ---------------------------------------------------------------------------
+ * Una por tecla —W, S, A, D— caminando en esa direccion y midiendo que el
+ * arco del cuchillo barriera hacia donde el personaje miraba. Se fueron con
+ * el arco en la Fase 16.4 (D-29).
+ *
+ * Lo que enseñaron queda, porque es metodo y no cuchillo:
+ *
+ * - Se medía **la geometria de la malla**, no la rotacion de la entidad. La
+ *   primera version comparaba `arco.forward`, y se comprobo dandole vuelta
+ *   a la malla a proposito: la prueba seguia pasando. Un sector dibujado
+ *   hacia atras dentro de una entidad bien rotada se ve igual de mal.
+ * - Se atacaba **por la via normal del juego**, no tocando el efecto a
+ *   mano.
+ * - Eran **las cuatro teclas**, porque un error de signo puede acertar por
+ *   casualidad en un eje y fallar en el otro.
+ *
+ * Lo que sigue midiendo el mismo cruce, y por eso el archivo no murio, son
+ * las dos pruebas de abajo: los brazos y la caminata del zombi.
  */
 
-/** Camina en una direccion hasta que el personaje se oriente. */
-async function caminarHacia(page, tecla, ms = 900) {
-  await page.keyboard.down(tecla);
-  await page.waitForTimeout(ms);
-  await page.keyboard.up(tecla);
-  // Un instante mas: el giro del personaje es suavizado, no instantaneo.
-  await page.waitForTimeout(250);
-}
-
-test.describe('direccion del ataque', () => {
+test.describe('direccion de lo que se ve en pantalla', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
     await page.locator('#btn-start').click();
     await expect(page.locator('#screen-hud')).toBeVisible();
   });
-
-  /*
-   * Las cuatro teclas, porque un error de signo puede acertar por
-   * casualidad en un eje y fallar en el otro.
-   */
-  for (const tecla of ['KeyW', 'KeyS', 'KeyA', 'KeyD']) {
-    test(`caminando con ${tecla}, el arco apunta a donde mira el personaje`, async ({
-      page
-    }) => {
-      await caminarHacia(page, tecla);
-
-      const r = await page.evaluate(() => {
-        const g = globalThis.game;
-        const pc = g.pc;
-        const p = g.player.position;
-
-        // Atacar por la via normal del juego, no tocando el arco a mano.
-        g.arma.atacar({ x: p.x, z: p.z }, g.player.yaw, g.zombis.enJuego);
-
-        /*
-         * Se mide la GEOMETRIA del arco, no la rotacion de su entidad.
-         *
-         * La primera version de esta prueba comparaba
-         * `efectos.arco.forward`, que sale de los angulos de la entidad y
-         * no sabe nada de los vertices. Se comprobo dandole vuelta a la
-         * malla a proposito: la prueba seguia pasando. Un sector de disco
-         * dibujado hacia atras dentro de una entidad bien rotada se ve
-         * exactamente igual de mal, asi que hay que mirar los triangulos.
-         *
-         * El centro de masa de los vertices cae sobre el eje del sector,
-         * asi que la direccion del origen del arco a ese centro es hacia
-         * donde barre el arco de verdad.
-         */
-        const mi = g.efectos.arco.render.meshInstances[0];
-        const vertices = [];
-        mi.mesh.getPositions(vertices);
-
-        let cx = 0;
-        let cz = 0;
-        const n = vertices.length / 3;
-        for (let i = 0; i < n; i++) {
-          cx += vertices[i * 3];
-          cz += vertices[i * 3 + 2];
-        }
-        const centroLocal = new pc.Vec3(cx / n, 0, cz / n);
-
-        const tm = g.efectos.arco.getWorldTransform();
-        const centroMundo = tm.transformPoint(centroLocal, new pc.Vec3());
-        const origenArco = g.efectos.arco.getPosition();
-
-        let ax = centroMundo.x - origenArco.x;
-        let az = centroMundo.z - origenArco.z;
-        const largo = Math.hypot(ax, az) || 1;
-        ax /= largo;
-        az /= largo;
-
-        const frenteJugador = g.player.entity.forward;
-        return {
-          jugador: { x: frenteJugador.x, z: frenteJugador.z },
-          arco: { x: ax, z: az },
-          arcoVisible: g.efectos.arco.enabled
-        };
-      });
-
-      expect(r.arcoVisible).toBe(true);
-
-      /*
-       * `forward` de PlayCanvas es el -Z de la entidad llevado al mundo:
-       * para el personaje es exactamente la direccion a la que apunta el
-       * modelo que se ve en pantalla. Del lado del arco se usa su malla.
-       *
-       * Se compara por producto escalar y no componente a componente
-       * porque lo que importa es el SENTIDO. Con el error que habia, este
-       * numero valia -1: el arco apuntaba justo al reves.
-       */
-      const escalar = r.jugador.x * r.arco.x + r.jugador.z * r.arco.z;
-      expect(escalar, `el arco apunta al reves (escalar ${escalar.toFixed(2)})`).toBeGreaterThan(
-        0.98
-      );
-    });
-  }
 
   test('los brazos apuntan hacia ADELANTE, no a la espalda', async ({ page }) => {
     /*
@@ -153,7 +83,6 @@ test.describe('direccion del ataque', () => {
         return (f.x * d.x + f.z * d.z) / largo;
       };
 
-      g.arma.cambiarA('pistol');
       g.gus.gesto('disparar');
       await esperar(3);
       const gus = haciaAdelante(g.player.entity, g.gus.manoD);

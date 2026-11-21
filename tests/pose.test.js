@@ -165,28 +165,17 @@ describe('quieto no es inmovil', () => {
   });
 });
 
-describe('el cuchillazo es un golpe, no un saludo', () => {
-  it('sale rapido y vuelve despacio', () => {
-    /*
-     * La asimetría ES el gesto. Un ida y vuelta simétrico se ve como
-     * saludar.
-     */
-    const salida = poseDe(Pose.ATACAR, 0.25);
-    const mitadVuelta = poseDe(Pose.ATACAR, 0.6);
-    // En la primera cuarta parte ya llegó al extremo.
-    expect(Math.abs(salida.brazoD)).toBeGreaterThan(Math.abs(mitadVuelta.brazoD));
-  });
-
-  it('el brazo derecho llega mucho mas lejos que en reposo', () => {
-    const quieto = poseDe(Pose.QUIETO, 0);
-    const golpe = poseDe(Pose.ATACAR, 0.25);
-    expect(Math.abs(golpe.brazoD)).toBeGreaterThan(Math.abs(quieto.brazoD) * 10);
-  });
-
-  it('el torso acompaña: no es solo un brazo suelto', () => {
-    expect(Math.abs(poseDe(Pose.ATACAR, 0.25).torsoGiro)).toBeGreaterThan(10);
-  });
-});
+/*
+ * Aca habia un bloque entero, "el cuchillazo es un golpe, no un saludo":
+ * que el brazo saliera en la primera cuarta parte y volviera en las tres
+ * restantes, que llegara diez veces mas lejos que en reposo, y que el torso
+ * acompañara en vez de ser un brazo suelto.
+ *
+ * Se fue con `Pose.ATACAR` en la Fase 16.4 (D-29). Lo que enseñaba —que **la
+ * asimetria ES el gesto**, y que un ida y vuelta simetrico se lee como
+ * saludar— quedo escrito en `pose.js`, porque es lo que hace que `DISPARAR`
+ * funcione: el culatazo es fuerte al principio y se estabiliza despues.
+ */
 
 describe('disparar tiene retroceso', () => {
   it('el brazo retrocede al principio y se estabiliza', () => {
@@ -208,11 +197,6 @@ describe('disparar tiene retroceso', () => {
     expect(apuntaAdelante(p.brazoD), `brazoD en ${p.brazoD}`).toBe(true);
     // Y bien extendido: casi horizontal.
     expect(Math.abs(direccionDelMiembro(p.brazoD).z)).toBeGreaterThan(0.85);
-  });
-
-  it('el cuchillazo tambien sale para adelante', () => {
-    const p = poseDe(Pose.ATACAR, 0.25);
-    expect(apuntaAdelante(p.brazoD), `brazoD en ${p.brazoD}`).toBe(true);
   });
 
 });
@@ -296,27 +280,34 @@ describe('el animador', () => {
     expect(a.fase).toBe(faseAntes);
   });
 
+  /*
+   * Estas dos probaban el Animador con `Pose.ATACAR` de ejemplo, y pasaron
+   * a `DISPARAR` en la 16.4. No es un reemplazo cosmetico: lo que miden es
+   * el mecanismo de gestos, no el cuchillazo, y el mecanismo sigue entero.
+   * Si hubieran muerto con la pose, el Animador se quedaba sin la prueba de
+   * que un gesto no se interrumpe y de que dos seguidos no se fusionan.
+   */
   it('un gesto se reproduce entero y despues vuelve', () => {
     const a = new Animador();
     a.pedir(Pose.CORRER);
-    a.pedir(Pose.ATACAR);
-    expect(a.estado).toBe(Pose.ATACAR);
+    a.pedir(Pose.DISPARAR);
+    expect(a.estado).toBe(Pose.DISPARAR);
 
     // A mitad del gesto, sigue siendo el gesto aunque se pida otra cosa.
-    a.update(GESTOS[Pose.ATACAR] / 2);
+    a.update(GESTOS[Pose.DISPARAR] / 2);
     a.pedir(Pose.QUIETO);
-    expect(a.estado, 'un ciclo interrumpio el cuchillazo').toBe(Pose.ATACAR);
+    expect(a.estado, 'un ciclo interrumpio el disparo').toBe(Pose.DISPARAR);
 
-    a.update(GESTOS[Pose.ATACAR]);
+    a.update(GESTOS[Pose.DISPARAR]);
     expect(a.estado).toBe(Pose.QUIETO);
   });
 
-  it('dos ataques seguidos son dos golpes, no uno largo', () => {
+  it('dos tiros seguidos son dos culatazos, no uno largo', () => {
     const a = new Animador();
-    a.pedir(Pose.ATACAR);
-    a.update(GESTOS[Pose.ATACAR] * 0.6);
+    a.pedir(Pose.DISPARAR);
+    a.update(GESTOS[Pose.DISPARAR] * 0.6);
     expect(a.fase).toBeGreaterThan(0.4);
-    a.pedir(Pose.ATACAR);
+    a.pedir(Pose.DISPARAR);
     expect(a.fase).toBe(0);
   });
 
