@@ -105,17 +105,21 @@ test('se puede escapar de un zombi', async ({ page }) => {
    * persiguiendo es mas lento que Gus.** Si alguna vez deja de serlo, el
    * juego pasa de "decidir si pelear" a "pelear siempre".
    *
-   * La prueba comparaba contra las dos velocidades del jugador, y la
-   * interesante era la lenta: el margen mas chico, el que se rompe
-   * primero. Caminar se fue en la 16.5 (D-30), asi que ahora hay un solo
-   * margen y conviene mirarlo con numero: 6,0 contra 2,9 es mas del doble.
+   * -------------------------------------------------------------------------
+   * EL MARGEN ERA DEL DOBLE Y AHORA ES DE 0,8 m/s
+   * -------------------------------------------------------------------------
+   * Esta prueba dejo escrito, en la 16.5, que 6,0 contra 2,9 era **mucho y
+   * no poco**: huir habia dejado de costar, cualquier movimiento alcanzaba
+   * para sacarse uno de encima, y terminaba asi — *"si en la 19A los
+   * tramos se sienten faciles de atravesar sin pelear, el numero a mirar
+   * es este"*.
    *
-   * **Y eso es mucho, no poco, y hay que tenerlo a la vista.** Escapar
-   * dejo de costar: antes, huir caminando dejaba al zombi a medio metro
-   * por segundo de distancia y correr era la decision. Hoy cualquier
-   * movimiento basta. Es coherente con el juego nuevo —la decision es
-   * donde pararse, no como moverse— pero si en la 19A los tramos se
-   * sienten faciles de atravesar sin pelear, el numero a mirar es este.
+   * Gus los atraveso sin pelear, y el numero a mirar era ese. 5,2 contra
+   * 6,0 (19B.2).
+   *
+   * Lo que no cambia es la regla, y por eso la prueba sigue: **menor,
+   * siempre.** Lo que cambia es el techo del margen, que ahora tambien se
+   * vigila: si volviera a crecer, el juego volveria a cruzarse caminando.
    */
   const info = await page.evaluate(() => {
     const { PLAYER, ZOMBIE_STANDARD } = globalThis.game.balance;
@@ -123,8 +127,16 @@ test('se puede escapar de un zombi', async ({ page }) => {
   });
 
   expect(info.perseguir).toBeLessThan(info.jugador);
-  // El margen, escrito: hoy el jugador va al doble que el que lo persigue.
-  expect(info.jugador / info.perseguir).toBeGreaterThan(1.5);
+  /*
+   * Y el margen, por los dos lados.
+   *
+   * El piso: tiene que quedar ventaja de verdad, no un empate que haga
+   * imposible despegarse. El techo: si la ventaja vuelve a ser del doble,
+   * el barrio se cruza caminando.
+   */
+  const ventaja = info.jugador - info.perseguir;
+  expect(ventaja).toBeGreaterThan(0.3);
+  expect(info.jugador / info.perseguir).toBeLessThan(1.5);
 });
 
 /* =========================================================================

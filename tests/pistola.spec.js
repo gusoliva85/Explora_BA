@@ -58,9 +58,28 @@ async function prepararTiro(page, distancia) {
 
       const zona = g.mission.mission.zonas.find((z) => z.tipo === 'zombis');
       g.player.teleport(zona.x - eje.x * 18, zona.z - eje.z * 18);
-      await esperar(30);
 
-      const victima = g.zombis.enJuego.find((z) => z.vivo);
+      /*
+       * Se espera POR CONDICION a que haya un zombi, no por cuadros.
+       *
+       * Eran 30 cuadros fijos y alcanzaban de casualidad. En la 19B.3 los
+       * zombis dejaron de encenderse mientras el jugador los este MIRANDO:
+       * aparecer en medio de la calle vacia que estas mirando rompe el
+       * juego mas de lo que lo llena. La prueba teletransporta al jugador
+       * justo a la boca de la cuadra, con los puestos a la vista, asi que
+       * cae de lleno en la valvula de escape de esa regla —los dos
+       * segundos tras los cuales se enciende igual— y 30 cuadros caian
+       * exactamente encima de ese limite.
+       *
+       * Es la regla de siempre en este proyecto, otra vez: **el navegador
+       * de las pruebas corre a cuatro cuadros por segundo, asi que nada se
+       * espera por tiempo; se espera porque pasó.**
+       */
+      let victima = null;
+      for (let i = 0; i < 400 && !victima; i++) {
+        await esperar(1);
+        victima = g.zombis.enJuego.find((z) => z.vivo);
+      }
       if (!victima) return { sinZombis: true };
 
       const q = victima.posicion;

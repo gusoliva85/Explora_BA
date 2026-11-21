@@ -210,13 +210,34 @@ const zonas = TRAZADO.slice(1).map((hasta, i) => {
      * Cuántos pone esta cuadra: la mitad de lo que pide el tramo, porque un
      * tramo son dos cuadras.
      *
-     * **Es la perilla principal del juego** (19A.11). Con la esclusa, la
-     * puerta no abre hasta que no quede uno vivo, así que lo que pone el
-     * tramo entero por 1,6 s —lo que cuesta matar uno (D-31)— es el piso
-     * del tiempo que el jugador pasa ahí: de 5 a 16 segundos de combate
-     * puro por tramo, sin contar moverse ni esperar a estar encarado.
+     * ---------------------------------------------------------------------
+     * ERAN DE 4 A 10 POR TRAMO, Y AHORA SON DE 16 A 22
+     * ---------------------------------------------------------------------
+     * **Es la perilla principal del juego** (19A.11), y la movió Gus
+     * jugándolo: con cinco por tramo se podía cruzar el barrio parado.
+     * Gus pidió quince o veinte como piso, y la razón que dio es de
+     * diseño y no de dificultad: *"te tienen que obligar a moverte, no
+     * tenés que estar parado todo el tiempo"*.
+     *
+     * Con el combate automático (D-28) disparar es quedarse quieto, así
+     * que el único contrapeso posible es **que quedarse quieto cueste**.
+     * Cinco zombis lentos no cuestan nada; dieciséis que aceleran al
+     * verte convierten cada parada en una decisión de cuántos segundos.
+     *
+     *   14 + peso·8, con la curva de 0,25 a 0,95 → de 16 a 22 por tramo.
+     *
+     * El piso es alto a propósito: el tramo flojo del principio lo sigue
+     * siendo por la **curva de llegada** —en el primero los zombis están
+     * repartidos en doscientos metros y se los encuentra de a dos—, no
+     * por el total. Un tramo con cuatro zombis no enseña a moverse: se
+     * cruza caminando y después el segundo sorprende.
+     *
+     * Lo que esto cuesta en memoria es casi nada, y conviene saber por
+     * qué: un puesto son **dos números y un tramo**, no un zombi. Las
+     * entidades son `PERF.maxActiveZombies + 6` y no cambian con este
+     * número. Pasar de 58 puestos a 156 son 98 objetos de tres campos.
      */
-    cantidad: Math.max(2, Math.round((peso * 11) / CUADRAS_POR_TRAMO)),
+    cantidad: Math.round((14 + peso * 8) / CUADRAS_POR_TRAMO),
     nota: `Tramo ${tramo + 1} de ${TRAMOS}, cuadra ${i + 1}: ${hasta.calle ?? ''}`
   };
 });

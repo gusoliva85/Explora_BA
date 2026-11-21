@@ -4,6 +4,46 @@ import { Zombie } from './zombie.js';
 import { EV } from '../core/events.js';
 
 /**
+ * Altura a la que se comprueba si el jugador ve un puesto (19B.3).
+ *
+ * Es la del pecho, la misma a la que mira un zombi: un auto tapa, un cordon
+ * no. No se usa la de la camara —doce metros— a proposito, porque desde ahi
+ * no tapa nada y la regla no existiria.
+ */
+const ALTURA_VISTA = 1.5;
+
+/**
+ * Hasta donde molesta ver aparecer a uno.
+ *
+ * -------------------------------------------------------------------------
+ * LA REGLA SOLO VALE DE CERCA, Y ESO LO DIJO UNA CAPTURA
+ * -------------------------------------------------------------------------
+ * La primera version no miraba la distancia: bastaba con que hubiera linea
+ * de vista. Y una captura del arranque mostro **el contador en 16 y la
+ * calle vacia**, que es peor que el problema que venia a arreglar.
+ *
+ * El motivo es geometrico y obvio una vez visto: *una cuadra es una recta
+ * de doscientos metros*. Desde la vereda se ve entera, asi que la regla
+ * bloqueaba todo y el tramo tardaba dos segundos en existir.
+ *
+ * A treinta metros, uno que aparece se lee como alguien que acaba de salir
+ * de un zaguan —no se estaba mirando ese punto, se estaba mirando la
+ * calle—. A quince, en el medio del asfalto vacio, se lee como un error
+ * del juego. La molestia es de cerca; la regla, tambien.
+ */
+const DISTANCIA_POP = 30;
+
+/**
+ * Cuanto se posterga como mucho un zombi por estar a la vista.
+ *
+ * Es la valvula de escape de la regla de arriba, y existe para que una
+ * partida no se pueda trabar. Dos segundos es tiempo de sobra para que el
+ * jugador mueva la camara medio metro, y lo bastante corto para que si de
+ * verdad no hay donde esconderlo, el juego siga.
+ */
+const ESPERA_A_CIEGAS = 2.0;
+
+/**
  * ===========================================================================
  * APARICION DE ZOMBIS
  * ===========================================================================
@@ -246,6 +286,7 @@ export class SpawnManager {
     for (const z of this.reserva) z.desactivar();
     this.enJuego.length = 0;
     this.puestosUsados = new Set();
+    this.esperandoLugar = 0;
     if (this.mission) this.rng = createRng(this.mission.seed ^ 0x5a5a);
     this.stats.vivos = 0;
     this.stats.pensando = 0;
@@ -255,7 +296,7 @@ export class SpawnManager {
    * Enciende los zombis cuyo puesto esta cerca del jugador y apaga los que
    * quedaron lejos.
    */
-  #gestionarPoblacion(jugador) {
+  #gestionarPoblacion(jugador, dt) {
     const corte = PERF.zombieCullDistance;
 
     // Apagar los que se fueron de rango y ya no estan persiguiendo.
@@ -275,7 +316,31 @@ export class SpawnManager {
       const d = Math.hypot(p.x - jugador.x, p.z - jugador.z);
       // Un zombi que te esta persiguiendo no se apaga aunque te alejes: se
       // apagaria justo cuando mas importa que siga ahi.
-      if (d > corte * 1.4 && !z.ai.persiguiendo) {
+      /*
+       * 🐛 Y EL CADAVER QUE RESUCITABA AL ALEJARTE (19B.1)
+       * ---------------------------------------------------------------------
+       * El hermano exacto del de abajo, y aparecio recien cuando los zombis
+       * se volvieron rapidos y hubo que matar y correr.
+       *
+       * Un zombi muerto **sigue `activo` seis segundos**: es el cadaver en
+       * el piso. Si en esos seis segundos el jugador se alejaba mas de 77
+       * metros, caia por esta rama —esta lejos y no persigue, porque esta
+       * muerto— y **se le liberaba el puesto**. O sea que volvia a contar
+       * como vivo y volvia a aparecer entero mas tarde.
+       *
+       * Con cinco zombis lentos por tramo no se notaba: matabas parado y
+       * los veias desarmarse. Con dieciseis que corren a 5,2, matar y salir
+       * corriendo es LA forma de jugar, asi que pasaba todo el tiempo — y
+       * con la esclusa (D-37) significa que **el contador no baja nunca y
+       * el tramo no se puede limpiar.**
+       *
+       * Lo encontro una medicion, no el ojo: ciento veinte vueltas matando
+       * todo lo que se encendia y el tramo seguia con ocho vivos.
+       *
+       * La condicion, entonces, es `z.vivo` y no `z.activo`: lo que vuelve
+       * es el que se apago, nunca el que murio.
+       */
+      if (z.vivo && d > corte * 1.4 && !z.ai.persiguiendo) {
         /*
          * 🐛 EL ZOMBI QUE DESAPARECIA SIN MORIR (19A.0)
          * -------------------------------------------------------------------
@@ -304,6 +369,38 @@ export class SpawnManager {
 
     if (this.enJuego.length >= PERF.maxActiveZombies) return;
 
+    /*
+     * -------------------------------------------------------------------------
+     * APARECEN DONDE NO LOS ESTAS MIRANDO (19B.3)
+     * -------------------------------------------------------------------------
+     * Con 16 a 22 zombis por tramo en vez de 5, el encendido deja de ser
+     * invisible: antes entraban de a uno cada tanto, ahora entran de a
+     * varios en la misma cuadra, y **un zombi que se materializa en medio
+     * de la calle vacia que estas mirando rompe el juego mas de lo que lo
+     * llena**.
+     *
+     * La regla: si el puesto esta **cerca y a la vista**, no se enciende
+     * todavia. Detras de un auto, detras de una pared, cruzando la
+     * esquina, a tus espaldas, o simplemente lejos: ahi si. Es barato —un
+     * rayo por candidato cercano, y solo mientras falte cupo— y usa la
+     * misma vista que ya usa el zombi para verte a vos.
+     *
+     * LA SALVEDAD, QUE NO ES OPCIONAL. Un puesto que no se enciende nunca
+     * **es un zombi que no se puede matar**, y con la esclusa (D-37) eso
+     * traba la partida para siempre: `vivosEnTramo` cuenta los puestos sin
+     * usar como vivos, asi que la puerta esperaria a alguien que no existe.
+     *
+     * Por eso la vista solo pospone, no prohibe: pasados `ESPERA_A_CIEGAS`
+     * segundos sin poder encender a nadie, se enciende igual. Un jugador
+     * parado en una cuadra despejada mirando el unico puesto que queda es
+     * raro, pero posible, y el juego tiene que seguir.
+     */
+    const seVe = (p) =>
+      this.world.hasLineOfSight(jugador.x, jugador.z, p.x, p.z, ALTURA_VISTA);
+
+    this.esperandoLugar = (this.esperandoLugar ?? 0) + dt;
+    const aCiegas = this.esperandoLugar < ESPERA_A_CIEGAS;
+
     // Encender los puestos cercanos que todavia no estan ocupados.
     for (let i = 0; i < this.puestos.length; i++) {
       if (this.enJuego.length >= PERF.maxActiveZombies) break;
@@ -315,6 +412,7 @@ export class SpawnManager {
       // Tampoco encima del jugador: un zombi que aparece de la nada a tres
       // metros no es tension, es una trampa.
       if (d < 12) continue;
+      if (aCiegas && d < DISTANCIA_POP && seVe(puesto)) continue;
 
       const libre = this.reserva.find((z) => !z.activo);
       if (!libre) break;
@@ -324,6 +422,8 @@ export class SpawnManager {
       libre.tramo = puesto.tramo;
       this.puestosUsados.add(i);
       this.enJuego.push(libre);
+      // Entro uno: la espera vuelve a cero.
+      this.esperandoLugar = 0;
     }
   }
 
@@ -337,7 +437,7 @@ export class SpawnManager {
     if (!this.mission) return;
     if (!this.puestosUsados) this.puestosUsados = new Set();
 
-    this.#gestionarPoblacion(jugador);
+    this.#gestionarPoblacion(jugador, dt);
 
     let vivos = 0;
     let pensando = 0;

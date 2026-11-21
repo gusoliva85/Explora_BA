@@ -84,6 +84,15 @@ export class ZombieAI {
     this.rumbo = 0;
 
     this.tiempoEnEstado = 0;
+    /**
+     * Cuánto aceleró, de 0 a 1. **La agresión al verte** (19B.2).
+     *
+     * 0 es caminando y 1 es a `chaseSpeed`. Sube mientras persigue y baja
+     * al perderte. No es un estado aparte a propósito: la máquina ya tiene
+     * seis y CHASE con y sin impulso no son dos decisiones distintas, es
+     * la misma decisión con un número que sube.
+     */
+    this.impulso = 0;
     this.esperaAtaque = 0;
     this.restanteAturdido = 0;
     /** Hacia donde gira cuando esquiva. Se mantiene para no oscilar. */
@@ -110,6 +119,22 @@ export class ZombieAI {
 
   morir() {
     this.#cambiarA(EstadoZombi.DEAD);
+  }
+
+  /**
+   * La velocidad de persecución **ahora mismo**, con la rampa aplicada.
+   *
+   * Arranca caminando y llega a `chaseSpeed` en `chaseRampUp` segundos.
+   * Expuesta aparte porque es lo que se prueba con números: que el primer
+   * cuadro sea lento, que el último sea el máximo, y que nunca pase de
+   * ahí —si pasara, el zombi correría más que el jugador y escaparse
+   * dejaría de ser posible, que es la única promesa que el juego le hace
+   * al que corre.
+   */
+  get velocidadPersecucion() {
+    const rampa = this.cfg.chaseRampUp ?? 0;
+    const t = rampa > 0 ? Math.min(1, Math.max(0, this.impulso)) : 1;
+    return this.cfg.walkSpeed + (this.cfg.chaseSpeed - this.cfg.walkSpeed) * t;
   }
 
   /** Lo interrumpe: deja de atacar y se queda quieto un momento. */
@@ -349,12 +374,29 @@ export class ZombieAI {
           this.#cambiarA(EstadoZombi.ATTACK);
           break;
         }
+        /*
+         * APURA LA MARCHA (19B.2).
+         *
+         * El impulso sube mientras te ve. El primer segundo es el aviso:
+         * desde la cámara cenital, que un zombi te detectó sólo se nota
+         * porque cambia de velocidad.
+         */
+        const rampa = this.cfg.chaseRampUp ?? 0;
+        this.impulso = rampa > 0 ? Math.min(1, this.impulso + dt / rampa) : 1;
         objetivo = jugador;
-        velocidad = this.cfg.chaseSpeed;
+        velocidad = this.velocidadPersecucion;
         break;
       }
 
       case EstadoZombi.SEARCH: {
+        /*
+         * Y al perderte se calma, en el doble de tiempo que tardó en
+         * acelerar. Más lento a propósito: un zombi que se apaga de golpe
+         * al romper la línea de vista convierte cada auto en un botón de
+         * apagado, que es exactamente lo que SEARCH vino a impedir.
+         */
+        const rampaBaja = (this.cfg.chaseRampUp ?? 0) * 2;
+        if (rampaBaja > 0) this.impulso = Math.max(0, this.impulso - dt / rampaBaja);
         const destino = this.ultimoVisto ?? this.origen;
         const d = Math.hypot(destino.x - pos.x, destino.z - pos.z);
         if (d < 1.5 || this.tiempoEnEstado > this.cfg.searchDuration) {

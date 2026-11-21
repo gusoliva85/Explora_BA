@@ -1,7 +1,7 @@
 # Documento 03 — Plan de trabajo
 
 **Proyecto:** Explorar BA — supervivencia zombi en Buenos Aires para navegador móvil
-**Actualizado:** 20 de noviembre de 2026
+**Actualizado:** 21 de noviembre de 2026
 
 > 📖 **El porqué de cada cosa está en [`04_bitacora.md`](04_bitacora.md).**
 > Este documento es sólo el plan: qué está hecho, qué falta y qué sigue.
@@ -28,15 +28,18 @@
 
 De Av. Independencia 3250 a Billinghurst 250. Dieciséis cuadras, 1.600 m,
 siete esclusas, y Gus pelea solo. **Las fases 16, 17, 18 y la 19A están
-hechas en código.**
+hechas en código, y el 21/11 Gus lo jugó y pidió cinco cosas** (19B.0 a
+19B.3): sacar el botón, el HUD en una línea, que el arma se vea desde
+arriba, y —la grande— **muchos más zombis y que apuren la marcha al
+verte**. Las cinco están hechas.
 
 **Lo que no se puede hacer sin un teléfono en la mano**, por orden:
 
 | Qué | De qué fase | La pregunta concreta |
 |---|---|---|
+| **El ritmo de la horda** | 19B.1 | Recién subió de 5 a 16-22 por tramo y el zombi corre a 5,2 contra 6,0. **¿Te obliga a moverte, o te mata?** Es la perilla principal |
 | **La cadencia** | 17.9 | *¿Dudás antes de pararte?* Si nunca dudás, muy rápida; si nunca te parás, muy lenta |
-| **Cuántos zombis por tramo** | 19A.11 | Hoy de 2 a 5 por cuadra. **Es la perilla principal**: define cuánto dura una cuadra |
-| **Borrar el botón DISPARAR** | 17 | Redundante desde la 17.5; se dejó para comparar las dos formas jugando |
+| **De dónde aparecen** | 19B.3 | Ahora esperan a no estar a la vista si están a menos de 30 m. ¿Se nota que aparecen, o se nota que llegan? |
 | **El joystick a la derecha** | 16.7 | ¿Cae bajo el pulgar sin recolocar la mano? |
 | **La brújula de reojo** | 18.14 | ¿Se lee **sin mirarla**, corriendo? |
 | **La puerta desde lejos** | 19A.3 | ¿Se ve cerrada a cincuenta metros, o se descubre al chocarla? |
@@ -61,7 +64,7 @@ cartas se enchufan sin tocar nada de la esclusa.
 | 🔄 | **17 — Combate automático** | **Hecha en código.** Falta jugarla en el teléfono: la cadencia (17.9) no se puede ajustar de otra manera |
 | 🔄 | 18 — El recorrido real | **Hecha en código.** Falta jugarla |
 | 🔄 | 19A — **La esclusa** | **Hecha en código.** Falta el ritmo (19A.11), que se ajusta jugando |
-| ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
+| 🔄 | 19B — **Lo que pidió Gus jugando**, y después las cartas | 19B.0 a 19B.3 hechas el 21/11. Las cartas tienen la lista desde el 8/11 |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
 | ⬜ | 11 — Audio | Pendiente |
@@ -1248,6 +1251,26 @@ de tres cajas tiradas en el piso.
 - [x] La brújula apunta al zombi que falta cuando la puerta frena
 - [ ] Se puede terminar la misión limpiando los siete tramos
 - [ ] Una cuadra no se siente larga, medido en el teléfono
+
+### 19B.0 a 19B.3 — Lo que pidió Gus después de jugarlo
+
+**21 de noviembre de 2026.** Gus recorrió el barrio entero con el juego ya
+cerrado de punta a punta y trajo cinco cosas. No son correcciones de
+errores: son lo que sólo se ve jugando.
+
+- [x] **19B.0 Fuera el botón DISPARAR.** ✅ *21/11 — y con él `bindAimButton`, el apuntado a mano, la mira del piso y cinco pruebas. **D-28 se cumple entero**: no queda un botón de acción en pantalla*
+- [x] **19B.0 bis El HUD en una sola línea.** ✅ *21/11 — objetivo | brújula | esclusa. Tres pastillas apiladas tapaban el tercio superior, que es por donde vienen los zombis*
+- [x] **19B.0 ter El arma se ve desde arriba.** ✅ *21/11 — era una pistola de 26 cm modelada de perfil y desde la cámara cenital se leía como un cuchillo. Ahora el lomo es la pieza clara y larga: 0,273 de separación contra el asfalto*
+- [x] **19B.1 Muchos más zombis.** ✅ *21/11 — de 4-10 por tramo a **16-22**. Y el tope de activos de 12 a 22, que pasa a ser lo que de verdad manda*
+- [x] **19B.2 Y que apuren la marcha al verte.** ✅ *21/11 — `chaseSpeed` de 2,9 a **5,2** contra los 6,0 del jugador, con una rampa de un segundo. Escaparse se puede siempre, pero cuesta*
+- [x] **19B.3 No aparecen delante de tus ojos.** ✅ *21/11 — a menos de 30 m esperan a no estar en línea de vista, con válvula de escape de 2 s para que la esclusa no se trabe*
+- [x] 🐛 **El cadáver que resucitaba al alejarte.** ✅ *21/11 — un muerto sigue activo 6 s, y si te ibas en ese rato se le liberaba el puesto. Con la horda nueva, matar y correr es LA forma de jugar, así que pasaba siempre*
+
+**Lo que queda de esto es de teléfono:** si la horda obliga a moverte o
+directamente te mata. Son los dos números más sensibles del juego y los dos
+se acaban de mover juntos.
+
+---
 
 ### 19B — Las cartas · **la especificación ya llegó**
 

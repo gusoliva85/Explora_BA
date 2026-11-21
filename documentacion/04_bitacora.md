@@ -6711,6 +6711,132 @@ nada que esto no diga.
 
 ---
 
+## 19B.0 a 19B.3 — Gus lo jugó, y la calle se llenó
+
+**21 de noviembre de 2026.**
+
+Cinco pedidos después de recorrer el barrio entero. Tres son de interfaz y
+dos son el juego.
+
+### Las tres de interfaz
+
+**El botón DISPARAR se fue.** Era redundante desde la 17.5 y se había
+dejado una fase de más a propósito, para poder comparar las dos formas
+jugando. Gus comparó. Con esto **D-28 se cumple entero**: no queda un solo
+botón de acción en pantalla.
+
+**El HUD arriba es una línea.** Eran tres pastillas apiladas y tapaban el
+tercio superior entero, que es justo por donde vienen los zombis.
+
+**Y el arma se ve.** Gus escribió *"sigue disparando, pero con un
+cuchillo"* y tenía razón en lo que veía: era una pistola de 26 cm modelada
+de perfil, y desde una cámara cenital de una pistola de perfil se ve el
+canto. Ahora la pieza clara y larga es el lomo de la corredera, que es lo
+único que la cámara mira de frente.
+
+> Las tres son la misma lección y conviene decirla junta: **lo que está
+> bien en el código puede estar mal en la pantalla, y la pantalla es lo
+> único que el jugador tiene.** Va la tercera vez en tres fases: el
+> joystick dibujado donde no se escuchaba, la puerta abierta que seguía
+> tapando, y ahora un arma correcta que desde arriba parecía otra cosa.
+
+### Y las dos que son el juego
+
+Gus lo dijo mejor de lo que yo lo tenía escrito:
+
+> *"Este juego te tiene que obligar a moverte, no tenés que estar parado
+> todo el tiempo. [...] Cuando te ven, tienen que ser un poco agresivos,
+> tienen que apresurar la marcha."*
+
+Eso no es dificultad: es **el contrapeso que le faltaba a D-28**. Si
+disparar es quedarse quieto, el juego sólo tiene una decisión si quedarse
+quieto cuesta algo. Con cinco zombis a 2,9 m/s no costaba nada, y el barrio
+se cruzaba parado.
+
+Así que se movieron los dos números juntos, porque por separado ninguno
+alcanza:
+
+| | Antes | Ahora |
+|---|---|---|
+| Por tramo | 4 a 10 | **16 a 22** |
+| Velocidad persiguiendo | 2,9 | **5,2** (el jugador va a 6,0) |
+| Tope de activos | 12 | 22 |
+
+**Veinte zombis lentos se esquivan igual que cinco.** Lo que obliga a
+moverse es que aceleren. Y acelerar de golpe tampoco sirve: desde arriba,
+que un zombi te detectó **sólo se nota porque cambia de velocidad**, así
+que hay una rampa de un segundo. Ese segundo es a la vez el aviso y la
+ventana para salir corriendo.
+
+> **La regla que no se puede aflojar: el zombi nunca corre más que vos.**
+> 5,2 contra 6,0 deja 0,8 m/s de ventaja — sacarse de encima a uno que está
+> a diez metros lleva doce segundos y medio de correr sin parar, y mientras
+> corrés no disparás. Que escaparse se pueda siempre es lo que hace que
+> morir sea culpa del jugador; si el zombi fuera más rápido, pelear sería
+> obligatorio, y pelear es pararse.
+
+Esta prueba ya se había escrito a sí misma. En la 16.5 quedó anotado que el
+margen del doble era *"mucho y no poco"*, y terminaba: *"si en la 19A los
+tramos se sienten fáciles de atravesar sin pelear, el número a mirar es
+éste"*. Era ése.
+
+### Lo que cuesta, que es menos de lo que parece
+
+Un puesto **no es un zombi**: son dos números y un tramo. Pasar de 58 a 156
+puestos son 98 objetos de tres campos. Las entidades son `maxActiveZombies
++ 6` y no dependen del mapa.
+
+Medido con `tools/medir-memoria.mjs`: la reserva pasó de 18 a 28 entidades,
+756 entidades y 364 mallas, el **14 % de la escena** — el mundo sigue siendo
+el 84 %. 228 llamadas de dibujo, las mismas de antes, porque los zombis van
+en un grupo de lote dinámico.
+
+### No aparecen delante de tus ojos
+
+Con cinco entraban de a uno cada tanto y no se veía. Con dieciséis entran
+de a varios en la misma cuadra, y **uno que se materializa en el asfalto
+vacío que estás mirando rompe más de lo que llena**.
+
+Ahora, si el puesto está **cerca y a la vista**, espera. Detrás de un auto,
+cruzando la esquina, a tus espaldas, o simplemente lejos: ahí aparece.
+
+Lo de "cerca" lo dijo una captura. La primera versión no miraba distancia y
+mostró **el contador en 16 y la calle completamente vacía**, que es peor que
+el problema original. El motivo es geométrico y obvio una vez visto: *una
+cuadra es una recta de doscientos metros*, se ve entera desde la vereda, así
+que la regla bloqueaba todo. A treinta metros uno que aparece se lee como
+alguien que salió de un zaguán; a quince, en el medio del asfalto, se lee
+como un error.
+
+Y tiene válvula de escape, que no es opcional: **un puesto que no se
+enciende nunca es un zombi que no se puede matar**, y con la esclusa eso
+traba la partida para siempre. A los dos segundos se enciende igual.
+
+### 🐛 El cadáver que resucitaba al alejarte
+
+Lo encontró una medición, no el ojo: ciento veinte vueltas matando todo lo
+que se encendía en el primer tramo, y el tramo seguía con ocho vivos.
+
+Un zombi muerto **sigue activo seis segundos**: es el cadáver en el piso.
+Si en esos seis segundos el jugador se alejaba más de 77 metros, caía por
+la rama de descarte —*está lejos y no persigue*, porque está muerto— y **se
+le liberaba el puesto**. Volvía a contar como vivo y volvía a aparecer
+entero.
+
+Es el hermano exacto del error de la 19A.0, y apareció recién ahora porque
+antes no pasaba nunca: con cinco zombis lentos matabas parado y los veías
+desarmarse. Con dieciséis que corren a 5,2, **matar y salir corriendo es LA
+forma de jugar**.
+
+> La condición era `z.activo` y tenía que ser `z.vivo`. Vuelve el que se
+> apagó, nunca el que murió.
+
+Con el arreglo, el tramo pasa de no limpiarse jamás a limpiarse en 23
+vueltas. Y midiendo el recorrido sin matar: **doce zombis encima a la vez**,
+contra cinco antes.
+
+---
+
 ## 19A.3 a 19A.10 — La esclusa, y el juego cierra de punta a punta
 
 **21 de noviembre de 2026.**

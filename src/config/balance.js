@@ -257,7 +257,40 @@ export const ZOMBIE_STANDARD = {
    */
   maxHealth: 100,
   walkSpeed: 1.3,
-  chaseSpeed: 2.9,
+  /**
+   * La velocidad de persecución: **un poco menos que la tuya** (6,0).
+   *
+   * -------------------------------------------------------------------------
+   * ERA 2,9, O SEA MENOS DE LA MITAD
+   * -------------------------------------------------------------------------
+   * Con ese número el zombi no era una amenaza sino un obstáculo: te
+   * alejabas caminando en línea recta y no pasaba nada. Y con el combate
+   * automático (D-28) eso rompe el juego entero, porque disparar es
+   * quedarse quieto y quedarse quieto no costaba nada.
+   *
+   * 5,2 contra 6,0 es la diferencia exacta que pidió Gus: *"el zombie va
+   * un poco más lento que vos, por lo que te da"*. Escaparse se puede
+   * **siempre**, pero cuesta 0,8 m/s de ventaja — o sea que sacarse uno de
+   * encima a diez metros lleva doce segundos y medio de correr sin parar.
+   * Y mientras corrés no disparás.
+   *
+   * Que se pueda escapar siempre no es un detalle de balance: es lo que
+   * hace que la muerte sea culpa del jugador. Si el zombi corriera más que
+   * vos, la única respuesta sería pelear, y pelear es pararse.
+   */
+  chaseSpeed: 5.2,
+  /**
+   * Cuánto tarda en llegar a esa velocidad desde que te ve.
+   *
+   * No arranca a 5,2: arranca caminando y **apura la marcha** durante este
+   * tiempo. Es lo que pidió Gus —*"cuando te ven, tienen que ser un poco
+   * agresivos, tienen que apresurar la marcha"*— y lo que lo vuelve legible
+   * desde arriba: la cámara es cenital y la única forma de ver que un zombi
+   * te detectó es **que cambie de velocidad**. Un zombi que pasa de 1,3 a
+   * 5,2 en un cuadro parece un error de red; uno que acelera en un segundo
+   * se entiende, y ese segundo es además el aviso para salir corriendo.
+   */
+  chaseRampUp: 1.0,
   /** Radio de deteccion si hay linea de vision. */
   sightRange: 16,
   /** Angulo total del cono de vision, en grados. */
@@ -416,8 +449,27 @@ export const NOISE = {
 export const PERF = {
   /** Techo de simulacion por frame: evita saltos gigantes al volver de un alt-tab. */
   maxDeltaTime: 1 / 15,
-  /** Cuantos zombis pueden estar activos (IA corriendo) a la vez. */
-  maxActiveZombies: 12,
+  /**
+   * Cuantos zombis pueden estar activos (IA corriendo) a la vez.
+   *
+   * -------------------------------------------------------------------------
+   * ERA 12, Y DESDE LA 19B.1 ES EL TOPE QUE DE VERDAD MANDA
+   * -------------------------------------------------------------------------
+   * Con 4 a 10 zombis por tramo repartidos en doscientos metros, nunca se
+   * llegaba a doce cerca: el tope era teorico y lo que limitaba era el
+   * mapa. Con 16 a 22 por tramo pasa a ser lo que decide **cuantos se te
+   * pueden juntar encima**, que es justo lo que tiene que decidir.
+   *
+   * 22 es un tramo entero del peor momento, y la cuenta que lo sostiene es
+   * la del corte: con 55 m de radio entran unos 110 m de calle, o sea poco
+   * mas de una cuadra. Si el tope fuera menor, **los que sobran esperarian
+   * apagados y la puerta tardaria en abrir sin que se vea por que**.
+   *
+   * Lo que cuesta: la reserva son `tope + 6` entidades creadas una vez al
+   * cargar, de 12+6=18 a 22+6=28. Diez entidades mas en un grupo de lote
+   * dinamico, y la IA de las que esten dentro del corte.
+   */
+  maxActiveZombies: 22,
   /** Mas alla de esta distancia el zombi deja de actualizar IA. */
   zombieCullDistance: 55,
   /** Tope de resolucion en moviles. Evita renderizar a 3x en pantallas densas. */
