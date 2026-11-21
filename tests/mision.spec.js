@@ -304,6 +304,7 @@ test.describe('perder y reintentar', () => {
         trasReaparecer: g.stats.tiempo,
         muertes: g.stats.muertes,
         vida: g.player.health,
+        vidaLlena: g.balance.PLAYER.maxHealth,
         controles: g.mission.nextCheckpoint
       };
     });
@@ -311,8 +312,9 @@ test.describe('perder y reintentar', () => {
     expect(r.alMorir).toBeCloseTo(120, 0);
     expect(r.trasReaparecer, 'el reloj se reinicio al morir').toBeGreaterThanOrEqual(120);
     expect(r.muertes).toBe(1);
-    // Reaparece entero y conservando los controles ya tomados.
-    expect(r.vida).toBe(100);
+    // Reaparece ENTERO y conservando los controles ya tomados. El numero se
+    // lee del balance: lo que importa es "lleno", no cuanto es lleno.
+    expect(r.vida).toBe(r.vidaLlena);
     expect(r.controles).toBe(1);
   });
 

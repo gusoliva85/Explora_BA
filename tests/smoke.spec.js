@@ -33,7 +33,17 @@ test('el juego arranca, se juega y no tira errores', async ({ page }) => {
   // El HUD aparece y la pantalla de arranque se va.
   await expect(page.locator('#screen-hud')).toBeVisible();
   await expect(page.locator('#screen-boot')).toBeHidden();
-  await expect(page.locator('#health-text')).toHaveText('100');
+  /*
+   * La vida se LEE del balance, no se escribe a mano.
+   *
+   * Decia `'100'`, y la Fase 17.1 la subio a 120 (D-31): tres pruebas
+   * distintas se rompieron a la vez por el mismo motivo, en tres archivos.
+   * Ninguna estaba midiendo el numero 100: las tres median que el HUD
+   * arranque con la vida llena, que el reaparecer cure del todo, y que el
+   * checkpoint devuelva entero.
+   */
+  const vidaLlena = await page.evaluate(() => globalThis.game.balance.PLAYER.maxHealth);
+  await expect(page.locator('#health-text')).toHaveText(String(vidaLlena));
 
   // El mundo se construyo con una cantidad razonable de geometria.
   const worldStats = await page.evaluate(() => globalThis.game.builder.stats);
@@ -196,11 +206,17 @@ test('morir lleva a la pantalla de derrota y se reanuda en el ultimo control', a
 
   const pos = await page.evaluate(() => {
     const p = globalThis.game.player.position;
-    return { x: p.x, z: p.z, health: globalThis.game.player.health };
+    return {
+      x: p.x,
+      z: p.z,
+      health: globalThis.game.player.health,
+      vidaLlena: globalThis.game.balance.PLAYER.maxHealth
+    };
   });
   // Reaparece en el control, no en el origen.
   expect(pos.z).toBeLessThan(-50);
-  expect(pos.health).toBe(100);
+  // Y entero: lo que se prueba es que cure del todo, no que cure a 120.
+  expect(pos.health).toBe(pos.vidaLlena);
 });
 
 test('la pausa congela la simulacion', async ({ page }) => {

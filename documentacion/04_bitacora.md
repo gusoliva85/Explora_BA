@@ -4855,6 +4855,111 @@ tiene que existir antes de que el botón pueda desaparecer.
 
 ---
 
+## 17.1 — Las estadísticas nuevas, y tres pruebas que tenían el mismo número a mano
+
+**20 de noviembre de 2026.** Primera tarea de la Fase 17.
+
+Los números de D-31, que los fijó Gus y no se discuten:
+
+| | Antes | Ahora | La cuenta |
+|---|---|---|---|
+| Vida de Gus | 100 | **120** | 10 × 12 = 120 → **12 mordidas** |
+| Daño del arma | 34 | **25** | 25 × 4 = 100 → **4 tiros** |
+| Vida del zombi | 60 | **100** | |
+| Mordida del zombi | 12 | **10** | |
+
+### Lo que de verdad cambió no es la vida: es el tiempo expuesto
+
+Matar un zombi pasó de **0,8 s** a **1,6 s** de estar parado al lado suyo
+—dos tiros a cuatro, con la cadencia en 0,4 s—. El doble. Y matar a Gus pasó
+de 8 mordidas a 12.
+
+Las dos cosas van para el mismo lado y no es casualidad: **la pelea se hace
+más larga y más perdonadora a la vez**. Con el combate automático, quedarse
+quieto es *la* decisión del jugador, y una decisión sólo existe si se puede
+tomar mal sin perder la partida en el acto. Con ocho mordidas, pararse al
+lado de dos zombis era una sentencia, y nadie elige una sentencia: todos
+corren. Con doce hay lugar para equivocarse, ver qué pasó y volver a
+intentar.
+
+El tiempo expuesto quedó escrito como prueba, aunque no sea una prueba de
+regresión, porque es **el número que define el ritmo del juego** y la 17.9
+lo va a tocar:
+
+```js
+const tiros = ZOMBIE_STANDARD.maxHealth / P.damage;
+expect(tiros * P.cooldown).toBeCloseTo(1.6, 2);
+```
+
+### Las cuentas ahora son exactas, y antes eran "alcanza o sobra"
+
+La prueba vieja decía:
+
+```js
+expect(P.damage * 2).toBeGreaterThanOrEqual(ZOMBIE_STANDARD.maxHealth);
+```
+
+O sea: dos tiros alcanzan **o sobran**. Con 34 de daño y 60 de vida,
+sobraban 8 puntos en cada muerte.
+
+La nueva pide que dé **exacto**: `expect(P.damage * 4).toBe(100)`. No es
+rigor por rigor. En la 19B las cartas de ataque multiplican el daño, y el
+texto de una carta promete *"+20% de daño"*. Si el último tiro de cada zombi
+viene desperdiciando daño, ese +20% **no se nota hasta que acumulás
+suficiente como para quitar un tiro entero**, y la carta miente. Con la
+cuenta exacta, cada punto de daño que una carta agrega es tiempo que el
+jugador no pasa expuesto.
+
+### Y la mitad de D-31 que no estaba medida en ningún lado
+
+Las doce mordidas. Había pruebas del daño del arma contra la vida del zombi
+desde la Fase 6, y **ninguna** del daño del zombi contra la vida de Gus. El
+número existía en el balance y nadie lo cruzaba con nada.
+
+Es el lado del balance que decide cuánto se puede equivocar el jugador, y
+con el combate automático es **la única decisión que toma**. Ahora está
+fijado igual que el otro.
+
+### Tres pruebas que se rompieron por el mismo motivo, en tres archivos
+
+Al subir la vida de 100 a 120 fallaron tres pruebas que no tienen nada que
+ver entre sí: el HUD arrancando lleno, reaparecer en un checkpoint, y el
+reloj que no se reinicia al morir.
+
+Las tres tenían escrito `100`. Y **ninguna estaba midiendo el número 100**:
+
+| Prueba | Qué mide de verdad |
+|---|---|
+| `smoke.spec.js:35` | Que el HUD arranque con la vida **llena** |
+| `smoke.spec.js:203` | Que reaparecer en un control cure **del todo** |
+| `mision.spec.js:315` | Que morir devuelva **entero**, conservando controles |
+
+Las tres ahora leen `globalThis.game.balance.PLAYER.maxHealth`. No es
+prolijidad: es que **una constante escrita a mano en una prueba convierte un
+cambio de balance en un falso error**, y después de tres falsos errores
+seguidos la reacción natural es cambiar el número sin leer qué se estaba
+probando.
+
+> **La regla:** una prueba que afirma un número del balance tiene que
+> **pedírselo al balance**, salvo que el número *sea* lo que prueba. La
+> unitaria de las cuatro balas sí escribe el 4, porque el 4 es la regla; la
+> de smoke no escribe el 120, porque lo que prueba es "lleno".
+
+Es la misma familia que la regla de los rumbos —*"los ángulos no se escriben
+como números, se le piden al convenio del proyecto"*— que ya había costado
+una fase entera cuando el cuchillo golpeaba para atrás.
+
+### Lo que la 17.1 deja planteado para la 17.2
+
+La 17.2 produce el estado *quieto*, y la trampa está en qué se mide:
+**la entrada del jugador, no la velocidad del cuerpo**. Gus frena por
+inercia en 0,18 s; si esperáramos la velocidad, cada parada sumaría esa
+demora encima del retardo de 0,15 y daría casi un tercio de segundo entre
+soltar y disparar. En un juego donde ahora hacen falta 1,6 s por zombi, un
+tercio de segundo de duda por parada es mucho.
+
+---
+
 ## 8/11 — Para qué sirven las cartas. Yo las había leído como quince aumentos sueltos
 
 Gus explicó el 8/11 cuál es la gracia de los power-ups, y no era lo que yo

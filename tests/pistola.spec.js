@@ -86,7 +86,7 @@ async function tirar(page) {
 }
 
 test.describe('disparar', () => {
-  test('a diez metros acierta, y dos tiros matan', async ({ page }) => {
+  test('a diez metros acierta, y cuatro tiros matan', async ({ page }) => {
     const errores = [];
     page.on('pageerror', (e) => errores.push(e.message));
     page.on('console', (m) => {
@@ -100,7 +100,10 @@ test.describe('disparar', () => {
     const uno = await tirar(page);
     expect(uno.vidaDespues, 'el primer tiro no hizo daño').toBeLessThan(uno.vidaAntes);
 
-    // El segundo lo tiene que matar: es el balance declarado.
+    // El cuarto lo tiene que matar: es el balance declarado (D-31). Eran
+    // dos hasta la Fase 17.1. El bucle no cuenta tiros —cuenta hasta que
+    // muere— asi que el numero vive en la unitaria y aca se prueba el
+    // cableado: que el daño llegue de verdad al zombi del juego.
     const muerto = await page.evaluate(async (cuadrosSrc) => {
       const esperar = eval(cuadrosSrc);
       const g = globalThis.game;

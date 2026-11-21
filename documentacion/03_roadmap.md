@@ -24,38 +24,43 @@
 
 ## ▶️ La tarea que sigue
 
-### **17.1 — Quedarse quieto es la orden** · la primera del combate automático
+### **17.2 — Definir "quieto"** · la entrada de todo lo demás
 
-> ✅ **La Fase 16 está cerrada.** Ocho tareas, del 8 al 20 de noviembre. El
-> juego quedó sin ítems, sin munición, sin bazooka, sin cuchillo, sin cambio
-> de arma, sin caminar, sin interactuar y con **un solo botón**, que también
-> se va acá. El detalle está en la bitácora.
+**Qué se hace.** Producir el estado *quieto*, que es lo único que el resto
+de la fase necesita como entrada. **No dispara todavía**: esta tarea sólo
+dice si Gus está quieto o no, y lo muestra en el diagnóstico.
 
-**Qué se hace.** Detectar que Gus está quieto y avisarlo, que es lo único
-que el resto de la fase necesita como entrada. **No dispara todavía**: esta
-tarea sólo produce el estado.
-
-**La definición, que ya está decidida:** joystick en cero, con **0,15 s de
-retardo**. El retardo no es un detalle de implementación, es la regla: sin
-él, cada microcorrección del pulgar apagaría el combate, y el jugador no
-entendería por qué dejó de disparar.
+**La definición ya está decidida y escrita más abajo**, en la Fase 17. En
+una línea: **quieto es el joystick en cero, con 0,15 s de retardo.**
 
 | Archivo | Qué pasa |
 |---|---|
-| `src/player/playerController.js` | un `quieto` que mira la entrada, no la velocidad. **Son cosas distintas**: Gus sigue frenando por inercia después de soltar |
-| `src/config/balance.js` | el retardo de 0,15 s, con nombre |
-| pruebas | unitarias del retardo: que no se apague con un toque, que se apague al soltar |
+| `src/player/playerController.js` | un `quieto` que mira **la entrada**, no la velocidad, y el contador del retardo |
+| `src/config/balance.js` | el retardo, con nombre y con el porqué |
+| `src/main.js` | al diagnóstico (`F1`), para poder verlo jugando |
+| pruebas | unitarias: que un roce no lo apague, que soltar lo encienda tras el retardo, y que volver a tocar dentro del retardo lo reinicie |
 
-**Lo que hay que mirar con cuidado, y es la trampa de la tarea.** "Quieto"
-puede medirse de dos maneras —entrada en cero, o velocidad bajo un umbral—
-y se parecen mucho hasta que no se parecen. Con la velocidad, chocar contra
-una pared te deja "quieto" peleando aunque tengas el pulgar clavado; y
-soltar en plena carrera tarda medio segundo en contar. **Es la entrada**: la
-intención del jugador, no el estado del cuerpo.
+**La trampa de la tarea, y es la decisión entera.** "Quieto" se puede medir
+de dos maneras que se parecen mucho hasta que no se parecen:
 
-**Cómo se sabe que está lista:** el diagnóstico (`F1`) muestra quieto/en
-movimiento, el retardo se ve al soltar, y una corrección chica del pulgar no
-lo apaga. Probado en el teléfono, que es donde el pulgar tiembla.
+| | Qué mide | Qué sale mal |
+|---|---|---|
+| **La entrada** (elegida) | La intención del jugador | Nada que importe |
+| La velocidad | El estado del cuerpo | Chocar contra una pared te deja "quieto" con el pulgar clavado; y soltar en plena carrera tarda 0,18 s en contar |
+
+Gus frena por inercia en 0,18 s. Con la velocidad, cada parada agregaría esa
+demora **encima** del retardo de 0,15: casi un tercio de segundo entre
+soltar y disparar, en un juego donde doce mordidas te matan. Se sentiría
+como que el personaje duda.
+
+**Lo que hay que mirar con cuidado.** El retardo tiene que **reiniciarse**
+al volver a tocar, no sólo pausarse: soltar y retocar dentro de los 0,15 s
+no cuenta como haber estado quieto. Si sólo se pausara, un jugador que mueve
+el pulgar a tirones acumularía quietud que nunca tuvo.
+
+**Cómo se sabe que está lista:** el diagnóstico muestra quieto/moviéndose,
+el retardo se ve al soltar, y una corrección chica del pulgar no lo apaga.
+**Probado en el teléfono**, que es donde el pulgar tiembla de verdad.
 
 ---
 
@@ -1112,8 +1117,8 @@ uno recuerda — es el que quedó guardado en el lugar equivocado.
 y los números de D-31. Es el corazón del cambio: si esto no se siente bien
 jugándolo, no sirve nada de lo que viene después.
 
-- [ ] **17.1 Las estadísticas nuevas.** Gus 120/25, zombi normal 100/10. Con una prueba que fije las cuentas: 4 tiros y 12 golpes, en números, no a ojo
-- [ ] **17.2 Definir "quieto".** El umbral y la demora. Gus frena en 0,18 s por inercia: hay que decidir si eso cuenta. Propuesta a probar: quieto cuando el joystick está en cero por 0,15 s o más
+- [x] **17.1 Las estadísticas nuevas.** Gus 120/25, zombi normal 100/10. Con una prueba que fije las cuentas: 4 tiros y 12 golpes, en números, no a ojo ✅ *20/11/2026 — y las cuentas quedaron fijadas con `toBe`, no con "alcanza o sobra"*
+- [ ] **17.2 Definir "quieto".** El umbral y la demora. Gus frena en 0,18 s por inercia: hay que decidir si eso cuenta. Propuesta a probar: quieto cuando el joystick está en cero por 0,15 s o más ⬅️ *la que sigue*
 - [ ] **17.3 Buscar el más cercano.** Con `objetivoAutomatico()` rescatado. **Con línea de vista** (D-36): lo único que impide el tiro es una barrera física, y vale para los dos lados
 - [ ] **17.3 bis Sacar la dispersión** (D-36). `spreadDegrees` a 0 y el apuntado asistido afuera: el tiro no falla por azar
 - [ ] **17.3 ter Rayo y proyectil, las dos cosas.** ⚠️ **Se decide y se escribe acá, no en la 19B.** Hoy el disparo es un rayo instantáneo. Después de lo que explicó Gus el 8/11 —que la gracia del juego es la **multiplicación de proyectiles** (D-44)— esto deja de ser una duda: **tiene que haber proyectiles que viajen**, porque es el eje principal de progresión de toda la partida. Lo único que queda por decidir es si el tiro apuntado sigue siendo rayo.
@@ -1156,7 +1161,7 @@ Si jugándolo se siente lento, lo que baja es el retardo, no la regla.
 
 **Criterio de salida**
 
-- [ ] Se mata un zombi normal con exactamente 4 tiros, y un zombi mata a Gus con exactamente 12 golpes
+- [x] Se mata un zombi normal con exactamente 4 tiros, y un zombi mata a Gus con exactamente 12 golpes — *fijado con `toBe` en `pistola.test.js`; las dos cuentas dan exactas*
 - [ ] Un zombi herido sigue herido después de alejarse media cuadra y volver
 - [ ] Al quedarse quieto, el blanco elegido es siempre el más cercano *en ese momento*
 - [ ] Al matar un zombi estando quieto, pasa al siguiente sin que el jugador toque nada

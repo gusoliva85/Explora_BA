@@ -24,8 +24,8 @@ angosto pero lo esquiva.
 > [`documentacion/03_roadmap.md`](documentacion/03_roadmap.md), fases 16 a 20.
 >
 > 📌 **Este archivo va atrás de la poda, y conviene saber cuánto.** Está al
-> día hasta la tarea **16.7** en lo que toca al arma, al movimiento y a los
-> botones: hay **un arma sola**, no se cambia, no hay cuerpo a cuerpo, **Gus
+> día hasta la tarea **17.1** en lo que toca al arma, al movimiento, a los
+> botones y al balance: hay **un arma sola**, no se cambia, no hay cuerpo a cuerpo, **Gus
 > se mueve a una sola velocidad** (6 m/s, corriendo) y queda **un solo botón
 > de acción**, DISPARAR. Lo que sigue describiendo abajo y **ya no
 > existe** son la munición y la recarga (se fueron en la 16.2), la bazooka
@@ -202,9 +202,9 @@ se escuchaba a veintidós.
 
 Desde la 16.4 hay **una sola arma**, así que esa elección ya no existe:
 
-| | Alcance | Se escucha a |
-|---|---|---|
-| El arma | 28 m | **22 m** |
+| | Alcance | Daño | Se escucha a |
+|---|---|---|---|
+| El arma | 28 m | 25 (**4 tiros** por zombi) | **22 m** |
 
 Y eso es a propósito, no una pérdida accidental. **No hay forma silenciosa de
 matar.** Lo único que el jugador elige ahora es *dónde pararse y cuánto

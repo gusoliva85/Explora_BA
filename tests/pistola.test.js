@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { WeaponController, EstadoArma } from '../src/combat/weaponController.js';
 import { blancoDelRayo, dispersar, rumboAsistido } from '../src/combat/ballistics.js';
-import { WEAPONS, ZOMBIE_STANDARD } from '../src/config/balance.js';
+import { WEAPONS, ZOMBIE_STANDARD, PLAYER } from '../src/config/balance.js';
 import { rumboHacia, dirDeRumbo } from '../src/core/rumbo.js';
 
 /**
@@ -359,12 +359,50 @@ describe('ruido', () => {
    ========================================================================= */
 
 describe('la pistola de punta a punta', () => {
-  it('dos tiros matan a un zombi estandar, y uno no', () => {
-    // Leido del balance real, no copiado. Es el criterio del combate: si
-    // alguien sube la vida del zombi o baja el daño, esto lo avisa antes
-    // de que se note jugando.
-    expect(P.damage * 2).toBeGreaterThanOrEqual(ZOMBIE_STANDARD.maxHealth);
-    expect(P.damage).toBeLessThan(ZOMBIE_STANDARD.maxHealth);
+  it('cuatro tiros matan a un zombi estandar, y tres no', () => {
+    /*
+     * Decía "dos tiros" hasta la Fase 17.1, cuando entraron los números de
+     * D-31: el arma pasó de 34 a 25 de daño y el zombi de 60 a 100 de
+     * vida. **La prueba no murió, cambió el número**, porque lo que fija
+     * sigue siendo lo mismo: cuántas veces hay que apretar para matar, que
+     * es la unidad de tiempo del combate entero.
+     *
+     * Y ahora es más estricta que antes. La versión vieja pedía
+     * "alcanza o sobra" (`toBeGreaterThanOrEqual`); ésta pide que **dé
+     * exacto**: 25 × 4 = 100, ni uno de más. Con un tiro que sobrara, el
+     * cuarto desperdiciaría daño y la quinta carta de ataque de la 19B
+     * valdría menos de lo que dice su texto.
+     */
+    expect(P.damage * 4).toBe(ZOMBIE_STANDARD.maxHealth);
+    // Y tres no alcanzan: si alcanzaran, el combate duraría 25% menos sin
+    // que nadie lo hubiera decidido.
+    expect(P.damage * 3).toBeLessThan(ZOMBIE_STANDARD.maxHealth);
+  });
+
+  it('doce mordidas matan a Gus, y once no', () => {
+    /*
+     * La otra mitad de D-31, que no estaba medida en ningún lado. Es el
+     * número que decide cuánto se puede equivocar el jugador al elegir
+     * dónde pararse, y con el combate automático esa es **la única
+     * decisión que toma**.
+     */
+    expect(ZOMBIE_STANDARD.attackDamage * 12).toBe(PLAYER.maxHealth);
+    expect(ZOMBIE_STANDARD.attackDamage * 11).toBeLessThan(PLAYER.maxHealth);
+  });
+
+  it('el tiempo expuesto por zombi es el triple que antes, y esta a la vista', () => {
+    /*
+     * No es una prueba de regresión: es un número que conviene tener
+     * escrito donde se lee, porque es el que define el ritmo del juego.
+     *
+     * Antes: 2 tiros × 0,4 s = 0,8 s quieto al lado de un zombi.
+     * Ahora:  4 tiros × 0,4 s = 1,6 s.
+     *
+     * Si en la 17.9 la cadencia se toca, este número se mueve con ella, y
+     * es el que hay que mirar jugando: cuánto dura estar expuesto.
+     */
+    const tiros = ZOMBIE_STANDARD.maxHealth / P.damage;
+    expect(tiros * P.cooldown).toBeCloseTo(1.6, 2);
   });
 
   it('avisa el trazado acierte o falle', () => {

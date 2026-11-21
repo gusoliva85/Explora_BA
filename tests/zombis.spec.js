@@ -137,7 +137,7 @@ test('se puede escapar de un zombi', async ({ page }) => {
 
    Lo que probaba —que el jugador pueda matar a un zombi en el juego de
    verdad, con el cableado completo y sin un error en consola— no se perdio:
-   lo cubre `pistola.spec.js`, con dos tiros a diez metros. Lo que si dejo
+   lo cubre `pistola.spec.js`, con cuatro tiros a diez metros. Lo que si dejo
    escrito, y vale para cualquier reemplazo, es el metodo: **el rumbo se le
    pide al convenio del juego, nunca se escribe a mano.** Aca decia
    `player.yaw = 180` con un comentario que afirmaba "mirando hacia -Z", y

@@ -29,7 +29,26 @@ export const UNITS = {
 };
 
 export const PLAYER = {
-  maxHealth: 100,
+  /**
+   * La vida de Gus. **120, y el número lo fijó Gus** (D-31).
+   *
+   * Era 100. Subió junto con la baja del daño del zombi, y las dos cosas
+   * apuntan al mismo lado: **doce golpes para matarte** en vez de ocho.
+   *
+   * ---------------------------------------------------------------------
+   * POR QUE MAS MARGEN, SI EL JUEGO SE SUPONE QUE ES MAS DURO
+   * ---------------------------------------------------------------------
+   * Porque el jugador deja de apretar botones. Con el combate automático
+   * (D-28), quedarse quieto para pelear es **la** decisión, y una decisión
+   * sólo existe si se puede tomar mal sin perder la partida en el acto.
+   * Con ocho golpes, pararse al lado de dos zombis era una sentencia, y
+   * nadie elige una sentencia: todos corren. Con doce hay lugar para
+   * equivocarse, ver qué pasó y volver a intentar.
+   *
+   * No hay curación en el juego, así que esto es todo lo que hay para toda
+   * la partida salvo lo que den las cartas (D-31, D-32).
+   */
+  maxHealth: 120,
   /**
    * La velocidad. **Una sola** (D-30).
    *
@@ -165,7 +184,16 @@ export const CAMERA = {
 };
 
 export const ZOMBIE_STANDARD = {
-  maxHealth: 60,
+  /**
+   * Vida del zombi normal. **100, fijado por Gus** (D-31).
+   *
+   * Era 60, y con el arma en 34 morían en dos tiros. Ahora son **cuatro**,
+   * y eso es lo que de verdad cambia: el tiempo que hay que quedarse
+   * quieto al lado de un zombi pasa de 0,4 s a 1,2 s. El triple de
+   * exposición por cada muerte es lo que hace que *dónde pararse* sea una
+   * pregunta y no un trámite.
+   */
+  maxHealth: 100,
   walkSpeed: 1.3,
   chaseSpeed: 2.9,
   /** Radio de deteccion si hay linea de vision. */
@@ -175,7 +203,8 @@ export const ZOMBIE_STANDARD = {
   /** Radio al que detecta sin necesidad de verte (lo escucha/huele). */
   hearRange: 4,
   attackRange: 1.5,
-  attackDamage: 12,
+  /** Daño por mordida. 10, de D-31: doce mordidas matan a Gus. */
+  attackDamage: 10,
   /** Segundos entre ataques. */
   attackCooldown: 1.4,
   /** Segundos que sigue buscando en el ultimo lugar conocido antes de calmarse. */
@@ -210,7 +239,16 @@ export const ZOMBIE_STANDARD = {
 export const WEAPONS = {
   pistol: {
     id: 'pistol',
-    damage: 34,
+    /**
+     * Daño por tiro. **25**, de D-31: cuatro tiros matan a un zombi normal.
+     *
+     * Era 34, que mataba en dos. El número no se eligió por el arma sino
+     * por la cuenta: 25 × 4 = 100, que es la vida del zombi, **exacto**.
+     * Esa exactitud es deliberada y está fijada con pruebas: si alguien
+     * sube la vida del zombi a 101, hacen falta cinco tiros y la pelea dura
+     * un 25% más sin que nadie lo haya decidido.
+     */
+    damage: 25,
     range: 28,
     cooldown: 0.4,
     windup: 0.05,
