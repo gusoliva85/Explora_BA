@@ -1476,7 +1476,7 @@ como máximo absoluto** (D-45). Ese número es el presupuesto de toda la fase.
 
 #### Las tareas
 
-- [ ] **19B.1 El sistema.** Una capa de modificadores sobre `balance.js`, que no se toca. Tiene que soportar, desde el principio: **sumas aditivas sobre la base**, **exclusión mutua** (los elementos de Mago), **límite por clase**, y **no repetir** lo ya tomado
+- [x] **19B.1 El sistema.** ✅ *22/11/2026 — `src/cartas/catalogo.js` (las 23, dato puro) y `src/cartas/modificadores.js` (la cuenta). 29 pruebas* Las cuatro reglas están: aditivo, exclusión mutua, límite por clase y no repetir. Y una quinta que no estaba pedida y apareció probando: **los ejes se suman en el orden del catálogo, no en el que se tomaron**, porque en coma flotante sumar no es asociativo y el mazo entero al revés daba 27,500000000000004 contra 27,499999999999996. Aflojar la prueba a "casi igual" habría obligado a elegir cuánto es casi
 - [ ] **19B.2 Las tres cartas.** Al abrirse la puerta, el juego se detiene y saca tres del pool que corresponde a la clase. Elegir una la aplica y sigue
 - [ ] **19B.3 Críticos.** Probabilidad y multiplicador. Base 0 %, y las cartas lo suben
 - [ ] **19B.4 Estados sobre el zombi** — fuego, hielo, veneno, rayo: daño en el tiempo, congelación y tinte de color. **Sólo si hay un personaje Mago**, así que puede esperar a la Fase 15
@@ -1495,15 +1495,15 @@ como máximo absoluto** (D-45). Ese número es el presupuesto de toda la fase.
 
 - [ ] Al llegar a un control aparecen tres cartas y el juego espera
 - [ ] Elegir una la aplica al instante y sin que el jugador toque nada más
-- [ ] Las quince cartas de Guerrero conviven en cualquier orden, y el resultado no depende del orden en que se tomaron (D-44)
-- [ ] Tomar tres cartas del eje del conteo da **exactamente 4 proyectiles por ráfaga**, verificado con una prueba de la fórmula de D-44
+- [x] Las quince cartas de Guerrero conviven en cualquier orden, y el resultado no depende del orden en que se tomaron (D-44) — *y EXACTAMENTE, no "casi": ver 19B.1*
+- [x] Tomar tres cartas del eje del conteo da **4 carriles y 8 proyectiles**, verificado con la fórmula de D-44 — ⚠️ *el criterio decía "exactamente 4 proyectiles" y la cuenta da 4 **carriles**: 1+1+2 carriles por 1+1 repeticiones son 8. Queda corregido acá, que es justo el tipo de confusión que la fórmula existe para evitar*
 - [ ] El peor caso —8 proyectiles, rebote y Muerte Nova sobre una cuadra llena— se mide y entra en el presupuesto de la Fase 13
-- [ ] Ninguna carta se repite en la misma partida, verificado con una prueba
+- [x] Ninguna carta se repite en la misma partida, verificado con una prueba — *con una excepción decidida: el elemento REEMPLAZADO vuelve al mazo, porque si no, cambiar de elemento costaría perder para siempre el que dejaste*
 - [ ] Una carta elegida se nota **jugando**, sin mirar números
-- [ ] Morir devuelve las estadísticas estándar, verificado con una prueba
+- [x] Morir devuelve las estadísticas estándar, verificado con una prueba — *`reiniciar()` vacía las tomadas; falta engancharlo al reinicio de la misión, que es la 19B.8*
 - [ ] Se ve en todo momento qué mejoras se llevan puestas
 - [ ] Las tres cartas se leen y se eligen con un pulgar en el teléfono
-- [ ] Ningún valor de `balance.js` quedó modificado en disco
+- [x] Ningún valor de `balance.js` quedó modificado en disco — *se toma el mazo entero y se compara la tabla antes y después*
 
 ---
 
