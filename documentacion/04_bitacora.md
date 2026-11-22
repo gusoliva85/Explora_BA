@@ -6792,6 +6792,39 @@ navegador de las pruebas, que renderiza por software, infla esa parte
 tres mil por ciento y no sirve para medirla: por eso los milisegundos de
 arriba se leen **en relación a su propia base**, nunca en absoluto.
 
+### Y el "salto al costado" no existía
+
+Gus reportó dos síntomas juntos: *"el personaje como que tiene un salto a
+algo al costado **y** se traba todo el juego"*. Hacía falta separarlos,
+porque un tirón de cuadro y un desplazamiento que el jugador no pidió no
+se arreglan en el mismo lugar.
+
+`tools/medir-cruce.mjs` cruza los siete controles con el joystick y mide
+las dos cosas por separado. Después del arreglo:
+
+| | antes | después |
+|---|---|---|
+| El cuadro del cruce | ~7× la base | **1,0×** |
+| El salto más grande | — | **0,40 m, en los siete** |
+
+0,40 m es exactamente lo que da la velocidad en un cuadro: 6 m/s sobre 15.
+O sea que **no hay ningún salto**: lo que Gus vio fue el tirón, y un tirón
+de un segundo en una cámara que además está girando en la esquina se lee
+como que el personaje se corrió solo.
+
+Queda un pico de 4,5 a 6,7 veces la base **en el medio de la cuadra**, que
+es la cuadra siguiente construyéndose. Son los 60 ms de JavaScript
+medidos, y ahora caen donde el jugador no está peleando.
+
+> Y la sonda se equivocó dos veces antes de medir bien, las dos creyendo
+> que un punto de destino alcanza para describir un camino: primero
+> caminó treinta metros derecho pasando el control —y en cuatro de los
+> siete la ruta dobla, así que se chocaba contra la valla que cierra la
+> calle de enfrente, y el informe decía "clavado 467 cuadros"—; después
+> fue derecho al vértice siguiente, que es la diagonal de la manzana, y se
+> metió adentro de un edificio. **Una sonda que no conoce el trazado no
+> distingue un error de un acierto.**
+
 ### Un tercio puesto, dos tercios emboscada
 
 > *"Están constantemente lejos y lo único que hacés es, cuando los tenés a
