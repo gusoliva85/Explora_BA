@@ -6711,6 +6711,66 @@ nada que esto no diga.
 
 ---
 
+## 18.13 — La prueba que seguía en verde y había dejado de mirar
+
+**22 de noviembre de 2026.**
+
+De las dos pruebas que pedía la 18.13, `mision.spec.js` ya se había
+reescrito sola: la esclusa y el control en la puerta la obligaron. La
+interesante es la otra.
+
+`recorrido.spec.js` tenía una prueba llamada *"ningún puesto de aparición
+queda encerrado ni adentro de una pared"* que recorría `zombis.puestos` y
+comprobaba dos cosas de cada uno. **Siguió en verde después de la 19B.6**,
+y ahí estaba el problema: desde ese día dos tercios de los puestos son
+emboscadas y **no tienen coordenadas** hasta que el jugador llega.
+
+Lo que pasa con un puesto sin coordenadas es que nada falla:
+
+```
+collision.query(undefined, undefined, r)   →  conjunto vacío
+NaN > media                                →  false
+```
+
+O sea que se saltaban en silencio. La prueba decía comprobar 156 puestos y
+comprobaba 52.
+
+> **Es la peor forma de verde que existe**, peor que una prueba que falta:
+> una que falta se ve en la lista, y ésta ocupaba el lugar de la que hacía
+> falta.
+
+### Ahora son dos, porque son dos preguntas
+
+**Los fijos** se recorren como lista, igual que antes, pero el salteo
+**se cuenta** y el reparto se afirma: entre el 20 % y el 50 % de los
+puestos tienen que ser fijos. Si mañana alguien convierte los fijos en
+emboscadas sin querer, la cuenta falla en vez de dar verde con cero
+comprobaciones.
+
+**Las emboscadas no se pueden contestar con una lista: hay que hacerlas
+ocurrir.** La prueba camina las dos cuadras del primer tramo con el
+joystick, anota cada aparición y comprueba tres cosas sobre el lugar donde
+salió:
+
+| Qué | Por qué |
+|---|---|
+| **De frente, nunca a la espalda** | La regla que pidió Gus y la única que la 19B.6 no afloja: la cámara va detrás, así que lo que sale atrás no está lejos en pantalla — no está en pantalla |
+| **En la calle, no adentro de algo** | Acá vale más que en los fijos: la emboscada elige su lugar *en caliente*, con la cuadra ya construida, así que el error posible no es de datos sino de geometría en vivo |
+| **Cerca, a menos de 30 m** | Si salen lejos vuelven a ser lo de antes, y lo de antes era *quedarse quieto y disparar* |
+
+Y el límite de "en la calle" es la **línea municipal (8 m)**, no media
+calzada (5). La diferencia es el sentido entero de la 19B.6: una emboscada
+sale del carril de los autos (±3,6) o de un zaguán (±5,8), que están fuera
+de media calzada a propósito. Medir contra 5 las marcaría todas como error;
+medir contra 8 pregunta lo que importa, que es si alguna terminó adentro de
+la manzana.
+
+Primera corrida: 156 puestos, 52 fijos y 104 emboscadas, 11 salidas
+observadas en el primer tramo, ninguna a la espalda, ninguna adentro de
+nada.
+
+---
+
 ## 18.6 — El corredor pintado, y dos cosas que decidió una captura
 
 **22 de noviembre de 2026.**

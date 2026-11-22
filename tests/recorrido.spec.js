@@ -405,9 +405,27 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
  * abiertas y cualquier rincon comunicaba con la calle. Ahora hay treinta y
  * seis cortes, y un puesto del otro lado de uno es una celda.
  */
-test('ningun puesto de aparicion queda encerrado ni adentro de una pared', async ({
-  page
-}) => {
+/*
+ * ===========================================================================
+ * DE DONDE SALEN LOS ZOMBIS — y son DOS preguntas, no una (18.13, 19B.6)
+ * ===========================================================================
+ * Hasta la 19B.6 todos los puestos eran un par de coordenadas calculadas al
+ * empezar la mision, y una sola prueba los recorria.
+ *
+ * Ahora son dos clases y **sólo una tiene coordenadas**: un tercio está
+ * puesto en el mapa y dos tercios son emboscadas, que no tienen lugar hasta
+ * que el jugador llega y se lo buscan al lado de un auto o en un zaguán.
+ *
+ * Esa prueba única siguió en verde después del cambio, y ahí estaba el
+ * problema: `collision.query(undefined, undefined, r)` no devuelve nada y
+ * `NaN > media` es `false`, así que **las emboscadas se saltaban en
+ * silencio**. La prueba decía comprobar los puestos y comprobaba un tercio.
+ *
+ * Son dos pruebas porque son dos preguntas, y la segunda no se puede
+ * contestar con una lista: hay que hacer que las emboscadas ocurran.
+ */
+
+test('ningun puesto FIJO queda encerrado ni adentro de una pared', async ({ page }) => {
   await page.goto('/');
   await page.locator('#btn-start').click();
   await expect(page.locator('#screen-hud')).toBeVisible();
@@ -440,9 +458,22 @@ test('ningun puesto de aparicion queda encerrado ni adentro de una pared', async
 
     const dentroDeAlgo = [];
     const fueraDeLaRuta = [];
+    const sinPosicion = [];
     const media = globalThis.game.balance.UNITS.streetWidth / 2;
 
     for (const p of zombis.puestos) {
+      /*
+       * Las emboscadas se saltan **y se cuentan**.
+       *
+       * Contarlas es lo que impide que este salteo crezca en silencio: si
+       * mañana alguien convierte los fijos en emboscadas sin querer, la
+       * cuenta de abajo falla en vez de dar verde con cero comprobaciones.
+       */
+      if (p.emboscada || p.x === undefined) {
+        sinPosicion.push(1);
+        continue;
+      }
+
       // 1. Nadie adentro de una caja solida.
       for (const b of collision.query(p.x, p.z, radio)) {
         const nx = Math.max(b.minX, Math.min(p.x, b.maxX));
@@ -465,11 +496,26 @@ test('ningun puesto de aparicion queda encerrado ni adentro de una pared', async
       if (d > media) fueraDeLaRuta.push({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), d: +d.toFixed(1) });
     }
 
-    return { total: zombis.puestos.length, dentroDeAlgo, fueraDeLaRuta };
+    return {
+      total: zombis.puestos.length,
+      fijos: zombis.puestos.length - sinPosicion.length,
+      emboscadas: sinPosicion.length,
+      dentroDeAlgo,
+      fueraDeLaRuta
+    };
   });
 
-  console.log(`[puestos] ${informe.total} puestos de aparicion`);
-  expect(informe.total).toBeGreaterThan(0);
+  console.log(
+    `[puestos] ${informe.total}: ${informe.fijos} fijos y ${informe.emboscadas} emboscadas`
+  );
+
+  // El reparto de la 19B.6: un tercio puesto, dos tercios emboscada.
+  expect(informe.fijos, 'no quedo ningun puesto fijo que comprobar').toBeGreaterThan(0);
+  expect(informe.emboscadas, 'no hay emboscadas: el reparto se rompio').toBeGreaterThan(0);
+  expect(informe.fijos + informe.emboscadas).toBe(informe.total);
+  expect(informe.fijos / informe.total).toBeGreaterThan(0.2);
+  expect(informe.fijos / informe.total).toBeLessThan(0.5);
+
   expect(
     informe.dentroDeAlgo,
     `hay zombis naciendo adentro de una pared: ${JSON.stringify(informe.dentroDeAlgo)}`
@@ -479,6 +525,149 @@ test('ningun puesto de aparicion queda encerrado ni adentro de una pared', async
     `hay zombis fuera del corredor de la ruta: ${JSON.stringify(informe.fueraDeLaRuta)}`
   ).toEqual([]);
 });
+
+test('las emboscadas salen de la calle, de frente y sin encimarse (19B.6)', async ({
+  page
+}) => {
+  test.setTimeout(180000);
+  await page.goto('/');
+  await page.locator('#btn-start').click();
+  await expect(page.locator('#screen-hud')).toBeVisible();
+  await page.waitForFunction(() => globalThis.game?.zombis?.puestos?.length > 0, null, {
+    timeout: 30000
+  });
+
+  const informe = await page.evaluate(async () => {
+    const g = globalThis.game;
+    const esperar = () => new Promise((r) => requestAnimationFrame(r));
+    g.input.sample = () => {};
+
+    const m = g.mission.mission;
+    const media = g.balance.UNITS.streetWidth / 2;
+    const radio = g.balance.ZOMBIE_STANDARD.collisionRadius;
+
+    const aLaRuta = (x, z) => {
+      let min = Infinity;
+      for (let i = 0; i < m.route.length - 1; i++) {
+        const a = m.route[i];
+        const b = m.route[i + 1];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const l2 = dx * dx + dz * dz || 1;
+        let t = ((x - a.x) * dx + (z - a.z) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        min = Math.min(min, Math.hypot(x - (a.x + dx * t), z - (a.z + dz * t)));
+      }
+      return min;
+    };
+
+    const vistos = new Set();
+    const salidas = [];
+
+    const anotar = () => {
+      const p = g.player.position;
+      const ad = g.rumbo.dirDeRumbo(g.camera.yaw);
+      for (const z of g.zombis.enJuego) {
+        if (z.puestoId === undefined || vistos.has(z.puestoId)) continue;
+        vistos.add(z.puestoId);
+        if (!g.zombis.puestos[z.puestoId]?.emboscada) continue;
+
+        const q = z.posicion;
+        const dx = q.x - p.x;
+        const dz = q.z - p.z;
+        const d = Math.hypot(dx, dz) || 1;
+
+        let dentro = null;
+        for (const b of g.collision.query(q.x, q.z, radio)) {
+          const nx = Math.max(b.minX, Math.min(q.x, b.maxX));
+          const nz = Math.max(b.minZ, Math.min(q.z, b.maxZ));
+          if (Math.hypot(q.x - nx, q.z - nz) < radio) {
+            dentro = b.tag;
+            break;
+          }
+        }
+
+        salidas.push({
+          d: +d.toFixed(1),
+          frente: +(((dx / d) * ad.x + (dz / d) * ad.z)).toFixed(2),
+          aLaRuta: +aLaRuta(q.x, q.z).toFixed(1),
+          dentroDe: dentro
+        });
+      }
+    };
+
+    // Caminar las dos cuadras del primer tramo, que es donde viven.
+    for (let paso = 0; paso <= 50; paso++) {
+      const t = paso / 50;
+      const i = Math.min(Math.floor(t * 2), 1);
+      const u = t * 2 - i;
+      const a = m.route[i];
+      const b = m.route[i + 1];
+      const meta = { x: a.x + (b.x - a.x) * u, z: a.z + (b.z - a.z) * u };
+
+      for (let k = 0; k < 6; k++) {
+        const p = g.player.position;
+        const dx = meta.x - p.x;
+        const dz = meta.z - p.z;
+        const d = Math.hypot(dx, dz) || 1;
+        const ad = g.rumbo.dirDeRumbo(g.camera.yaw);
+        g.input.move.x = (dx / d) * -ad.z + (dz / d) * ad.x;
+        g.input.move.y = (dx / d) * ad.x + (dz / d) * ad.z;
+        await esperar();
+        anotar();
+      }
+    }
+    g.input.move.x = 0;
+    g.input.move.y = 0;
+    return { salidas };
+  });
+
+  const { salidas } = informe;
+  console.log(`[emboscadas] ${salidas.length} salidas observadas`);
+
+  expect(salidas.length, 'no salio ni una emboscada en el primer tramo').toBeGreaterThan(3);
+
+  /*
+   * 1. NUNCA A LAS ESPALDAS. Es la regla que Gus pidió y la única que la
+   *    19B.6 no afloja nunca: la cámara es cenital y va detrás del
+   *    jugador, así que lo que aparece atrás no está lejos en pantalla —
+   *    no está en pantalla.
+   */
+  const atras = salidas.filter((s) => s.frente < 0);
+  expect(atras, `salieron emboscadas a la espalda: ${JSON.stringify(atras)}`).toEqual([]);
+
+  /*
+   * 2. Y en la calle, no adentro de una pared. Acá es donde esto vale más
+   *    que la prueba de los fijos: la emboscada elige su lugar **en
+   *    caliente**, con la cuadra ya construida, así que el error posible
+   *    no es de datos sino de geometría en vivo.
+   */
+  const enPared = salidas.filter((s) => s.dentroDe);
+  expect(enPared, `emboscadas adentro de algo: ${JSON.stringify(enPared)}`).toEqual([]);
+
+  /*
+   * El límite acá es la LÍNEA MUNICIPAL (8 m), no media calzada (5).
+   *
+   * Y la diferencia es el sentido entero de la 19B.6: una emboscada sale
+   * **del carril de los autos (±3,6) o de un zaguán (±5,8)**, que están
+   * fuera de media calzada a propósito. Medir contra 5 las marcaría todas
+   * como error; medir contra 8 pregunta lo que importa, que es si alguna
+   * terminó adentro de la manzana.
+   */
+  const afuera = salidas.filter((s) => s.aLaRuta > LINEA_MUNICIPAL);
+  expect(afuera, `emboscadas fuera de la vereda: ${JSON.stringify(afuera)}`).toEqual([]);
+
+  // 3. Cerca, que es todo el punto: si salen lejos vuelven a ser lo de antes.
+  const lejos = salidas.filter((s) => s.d > 30);
+  expect(lejos, `emboscadas demasiado lejos: ${JSON.stringify(lejos)}`).toEqual([]);
+});
+
+/**
+ * Media calzada (5) más la vereda (3). Se escribe acá porque el `evaluate`
+ * corre en el navegador y estas comprobaciones corren en Node: no comparten
+ * alcance, así que el valor no se puede pasar por cierre.
+ */
+const LINEA_MUNICIPAL = 8;
 
 /*
  * ===========================================================================
