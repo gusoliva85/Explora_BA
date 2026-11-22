@@ -6711,6 +6711,79 @@ nada que esto no diga.
 
 ---
 
+## 18.6 — El corredor pintado, y dos cosas que decidió una captura
+
+**22 de noviembre de 2026.**
+
+La ruta marcada en el piso: una franja gastada sobre la calzada a lo largo
+de las dieciséis cuadras, y tres galones en cada uno de los giros.
+
+### No es una flecha de videojuego: es pintura del operativo
+
+D-43 dice que el ejército está sellando la ciudad, y de ese mismo operativo
+salen las siete puertas y las treinta y seis vallas. **Esto es lo tercero
+que dejaron**: el corredor de evacuación pintado a las apuradas sobre el
+asfalto.
+
+Por eso el color es el mismo ámbar de los controles y no un verde de
+tutorial. En este juego el ámbar ya significa *por acá se va* —el cartel de
+la esclusa es rojo justamente porque significa lo contrario— y una cuarta
+familia de color no agregaría información: agregaría ruido.
+
+### Por qué hace falta si ya está la brújula
+
+Porque contestan preguntas distintas, y las dos se hacen corriendo.
+
+La brújula (D-38) dice **dónde está el próximo control**: una flecha en una
+esquina de la pantalla y un número de metros. Hay que mirarla.
+
+La franja dice **por dónde se va**, y no hay que mirarla: está en el piso,
+debajo del personaje, en el lugar donde ya se está mirando. Es la
+diferencia entre saber el rumbo y no tener que pensarlo.
+
+### Las dos correcciones, y las dos las dijo una captura
+
+**La franja arrancó en 0,55 m de ancho y se leía como carril exclusivo de
+colectivo.** El número estaba bien en metros y mal en pantalla, que es
+donde importa: lo que decide cómo se lee algo no es su ancho absoluto sino
+la proporción contra lo que tiene al lado, y al lado está el eje
+discontinuo, que mide 0,14. Con 0,34 —dos ejes y medio— se ve de lejos y
+sigue siendo una marca. Y el relleno pasó a ser mitad pintura, mitad hueco:
+con 3,2 pintados y 1,6 de hueco la franja se leía continua, y una línea
+continua es una división de carril, no una marca que alguien pintó rápido.
+
+**Y los galones iban antes del cruce.** La idea era que se leyeran
+viniendo. La captura mostró el problema: a diez metros del cruce está la
+puerta de la esclusa, y alrededor el disco ámbar del control. Tres flechas
+del mismo color encima de los dos no son tres flechas, son una mancha.
+
+Puestas después del cruce no compiten con nada, y hay una razón de juego
+además de una de dibujo: **antes del cruce el giro todavía no se puede
+hacer**, porque la puerta no abre hasta que el tramo esté limpio. Una
+indicación que llega antes de que la acción sea posible se olvida.
+
+### Y una consecuencia de la 19B.7 que apareció acá
+
+Con manzanas en los cuatro cuadrantes de cada cruce, la cámara —que se tira
+hacia adelante cuando algo se le interpone— se achicaba **justo al doblar**,
+que es el peor momento para ver menos. Antes esos cuadrantes estaban vacíos
+y no pasaba.
+
+La perilla que lo compensa es la altura: la esquina es **baja**, de siete a
+diez metros contra los once a veintidós de la hilera. Y eso es además como
+son las esquinas de Boedo —la casa vieja de dos plantas con el local
+abajo—, así que las dos razones coinciden, que es la mejor señal de que el
+número está bien.
+
+### Lo que cuesta
+
+De 3.005 a 3.093 entidades y de 228 a 243 llamadas de dibujo, contando
+también las manzanas de esquina de la 19B.7. La franja son unas veinte
+piezas planas por cuadra, que entran al mismo grupo de agrupado que el
+resto de la cuadra y se van con ella.
+
+---
+
 ## 19B.4 a 19B.7 — Cinco cosas que sólo se ven jugando, y dos que no se ven mirando
 
 **22 de noviembre de 2026.**

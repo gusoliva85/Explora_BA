@@ -342,8 +342,29 @@ export class WorldBuilder {
     pos,
     size,
     rgb,
-    { collide = false, tag = 'static', acabado, sombra = false, plano = false, material } = {}
+    {
+      collide = false,
+      tag = 'static',
+      acabado,
+      sombra = false,
+      plano = false,
+      material,
+      /**
+       * Grados alrededor del eje vertical. **Sólo gira la malla.**
+       *
+       * La colisión de este mundo son rectángulos alineados a los ejes
+       * (`Box2D`), así que una caja girada no se puede colisionar sin
+       * mentir sobre su forma. Por eso `rot` y `collide` no van juntos: lo
+       * que necesita girar acá es pintura en el piso, que no choca con
+       * nada. Si alguna vez hace falta un volumen girado, el lugar donde
+       * discutirlo es `CollisionWorld`, no acá.
+       */
+      rot = 0
+    } = {}
   ) {
+    if (rot && collide) {
+      throw new Error('addBox: una caja girada no puede colisionar (ver Box2D)');
+    }
     const e = new pc.Entity(name);
     e.addComponent('render', {
       type: 'box',
@@ -355,6 +376,7 @@ export class WorldBuilder {
     });
     e.setLocalScale(size.x, size.y, size.z);
     e.setPosition(pos.x, pos.y, pos.z);
+    if (rot) e.setEulerAngles(0, rot, 0);
     this.#padre.addChild(e);
     this.stats.piezas++;
 
@@ -534,6 +556,8 @@ export class WorldBuilder {
     if (i === 0) this.#manzanasDeEsquina(mission, 0);
     this.#manzanasDeEsquina(mission, i + 1);
 
+    this.#marcarLaRuta(mission, i, a, b);
+
     /*
      * Lo colocado a mano, al final: va despues de lo generado para que
      * pueda pisarlo.
@@ -681,6 +705,55 @@ export class WorldBuilder {
   }
 
   /**
+   * El corredor pintado sobre la calzada, y las flechas de cada giro
+   * (18.6, D-43).
+   *
+   * ---------------------------------------------------------------------------
+   * POR QUÉ SIGUE HACIENDO FALTA SI YA ESTÁ LA BRÚJULA
+   * ---------------------------------------------------------------------------
+   * Porque contestan cosas distintas, y las dos hacen falta corriendo.
+   *
+   * La brújula (D-38) dice **dónde está el próximo control**: una flecha en
+   * una esquina de la pantalla y un número de metros. Hay que mirarla.
+   *
+   * Esto dice **por dónde se va**, y no hay que mirarlo: está en el piso,
+   * debajo del personaje, en el lugar donde ya se está mirando. Es la
+   * diferencia entre saber el rumbo y no tener que pensarlo.
+   *
+   * Y cambia de forma justo donde el rumbo deja de ser obvio: en los cinco
+   * giros, la franja se convierte en tres flechas.
+   */
+  #marcarLaRuta(mission, i, a, b) {
+    const largo = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+    const avance = { x: (b.x - a.x) / largo, z: (b.z - a.z) / largo };
+
+    calle.corredor(this, { a, b, avance, index: i, color: COLORS.corredor });
+
+    /*
+     * Y la flecha, sólo si ahí se dobla.
+     *
+     * En una cuadra recta la franja ya lo dice todo, y una flecha que
+     * apunta derecho sólo enseña que las flechas no significan nada. Lo que
+     * hace que importen es que **aparezcan exactamente donde hay que
+     * decidir**, que son cinco veces en 1.600 metros.
+     */
+    const siguiente = mission.route[i + 2];
+    if (!siguiente) return;
+    const lg = Math.hypot(siguiente.x - b.x, siguiente.z - b.z) || 1;
+    const hacia = { x: (siguiente.x - b.x) / lg, z: (siguiente.z - b.z) / lg };
+    // Producto escalar: 1 es derecho, 0 es giro de noventa grados.
+    if (avance.x * hacia.x + avance.z * hacia.z > 0.9) return;
+
+    calle.flechaDeGiro(this, {
+      punto: b,
+      desde: avance,
+      hacia,
+      nombre: String(i + 1),
+      color: COLORS.corredor
+    });
+  }
+
+  /**
    * Las cuatro manzanas que rodean un cruce (19B.7).
    *
    * ---------------------------------------------------------------------------
@@ -751,13 +824,27 @@ export class WorldBuilder {
         if (ocupado) continue;
 
         const cfg = mission.blocks[Math.min(i, mission.blocks.length - 1)];
-        const [hMin, hMax] = cfg.buildingHeight;
+        const [hMin] = cfg.buildingHeight;
         /*
-         * La altura sale del indice, no del azar: la esquina tiene que ser
-         * igual en cada visita, y el generador con semilla de esta cuadra
-         * ya se consumio en otra cosa.
+         * LA ESQUINA ES BAJA, y por dos razones que coinciden.
+         *
+         * La de barrio: en Boedo la esquina es casi siempre la casa vieja
+         * de dos plantas con el local en la planta baja, mas baja que la
+         * hilera que tiene al lado. Es lo que hace que una esquina se
+         * reconozca como esquina.
+         *
+         * Y la de camara: la camara se tira hacia adelante cuando algo se
+         * le interpone (ver `cameraController`), asi que una torre en cada
+         * uno de los cuatro cuadrantes la achicaria **justo donde hay que
+         * doblar**, que es el peor momento para ver menos. Antes esos
+         * cuadrantes estaban vacios y no pasaba; ahora hay edificio, y la
+         * altura es la perilla que lo compensa.
+         *
+         * Sale del indice y no del azar: la esquina tiene que ser igual en
+         * cada visita, y el generador con semilla de esta cuadra ya se
+         * consumio en otra cosa.
          */
-        const alto = hMin + ((i * 7 + (sx + 2) * 3 + (sz + 2)) % Math.max(1, hMax - hMin));
+        const alto = Math.min(hMin, 7) + ((i * 7 + (sx + 2) * 3 + (sz + 2)) % 3);
 
         this.addBox(
           `Esquina_${i}_${sx}_${sz}`,

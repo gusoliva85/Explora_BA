@@ -128,6 +128,16 @@ export const COLORS = {
 
   // --- Mision ---------------------------------------------------------------
   checkpoint: [0.95, 0.72, 0.15],
+  /**
+   * El corredor pintado en el piso (18.6).
+   *
+   * Es **el mismo ámbar del control**, un poco apagado porque es pintura
+   * vieja sobre asfalto y no una luz. Que sea el mismo no es ahorro: en
+   * este juego el ámbar ya significa *por acá se va* —el cartel de la
+   * esclusa es rojo justamente porque significa lo contrario— y una cuarta
+   * familia de color no agregaría información, agregaría ruido.
+   */
+  corredor: [0.6, 0.46, 0.15],
   /*
    * La meta: el verde mas saturado del juego, por encima de todo decorado.
    * Subio de 0,63 a 0,83 de saturacion por el mismo motivo que bajaron los

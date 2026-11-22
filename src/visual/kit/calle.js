@@ -392,4 +392,161 @@ export function esquina(ctx, { punto, nombre }) {
  * Media calzada: es lo que ocupa la bocacalle. Si no se recorta, la vereda de
  * una calle le pasa por encima a la de la otra en el cruce.
  */
+/**
+ * ===========================================================================
+ * EL CORREDOR PINTADO — marcar la ruta en el piso (18.6, D-43)
+ * ===========================================================================
+ * Una franja gastada sobre la calzada a lo largo de toda la ruta, y un
+ * galon de flechas en cada esquina donde hay que doblar.
+ *
+ * ---------------------------------------------------------------------------
+ * NO ES UNA FLECHA DE VIDEOJUEGO: ES PINTURA DEL OPERATIVO
+ * ---------------------------------------------------------------------------
+ * D-43 dice que el ejercito esta sellando la ciudad, y de ese mismo
+ * operativo salen las siete puertas y las treinta y seis vallas. **Esto es
+ * lo tercero que dejaron**: el corredor de evacuacion pintado a las
+ * apuradas sobre el asfalto.
+ *
+ * Por eso el color es el mismo ambar de los controles y no un verde de
+ * tutorial. Ambar ya significa *por aca se va* en este juego —el cartel de
+ * la esclusa es rojo porque significa lo contrario— y una cuarta familia
+ * de color no agregaria informacion, agregaria ruido.
+ *
+ * ---------------------------------------------------------------------------
+ * NO VA EN EL EJE DE LA CALLE
+ * ---------------------------------------------------------------------------
+ * Ahi esta la linea discontinua, y dos rayas pisadas se leen como una sola
+ * raya sucia. La franja va **corrida un metro y medio hacia la derecha**,
+ * sobre el carril por el que se camina, que ademas es donde la camara la
+ * tiene mas tiempo en pantalla.
+ *
+ * Y se dibuja a 0.014 de altura: dos milimetros por encima del eje, para
+ * que donde se crucen gane esta. Es la unica de las dos que el jugador
+ * necesita.
+ */
+export const CORREDOR = {
+  /**
+   * Ancho de la franja. **0,34 m, y la primera version tenia 0,55.**
+   *
+   * Con 0,55 la captura mostro otra cosa: una banda amarilla gruesa que se
+   * leia como **carril exclusivo de colectivo**, no como una marca de paso.
+   * El numero estaba bien en metros y mal en pantalla, que es donde
+   * importa: lo que decide como se lee no es el ancho absoluto sino la
+   * proporcion contra lo que tiene al lado, y al lado esta el eje
+   * discontinuo, que mide 0,14.
+   *
+   * 0,34 son dos ejes y medio: se ve de lejos y sigue siendo una marca.
+   */
+  ancho: 0.34,
+  /** Cuanto se corre del eje, hacia el lado por el que se avanza. */
+  corrimiento: 1.6,
+  /**
+   * Largo de cada tramo pintado y hueco entre tramos.
+   *
+   * Mas hueco que pintura, tambien de la misma captura: con 3,2 pintados y
+   * 1,6 de hueco la franja se leia continua, y una linea continua es una
+   * division de carril. Lo que esto tiene que parecer es **una marca que
+   * alguien pinto rapido**, que es lo que D-43 dice que paso.
+   */
+  tramo: 2.4,
+  hueco: 2.4,
+  altura: 0.014
+};
+
+/**
+ * La franja del corredor sobre una cuadra.
+ *
+ * `avance` es el versor del sentido en que se recorre la cuadra: la franja
+ * se corre hacia su derecha, no hacia un lado fijo del mundo. Sin eso, en
+ * las cuadras que se recorren al reves la pintura quedaria del lado
+ * contrario al que camina el jugador.
+ */
+export function corredor(ctx, { a, b, avance, index, color }) {
+  const largo = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+  const ux = (b.x - a.x) / largo;
+  const uz = (b.z - a.z) / largo;
+  // La derecha del sentido de avance.
+  const dx = -avance.z;
+  const dz = avance.x;
+  const alongX = Math.abs(ux) > Math.abs(uz);
+
+  const paso = CORREDOR.tramo + CORREDOR.hueco;
+  for (let d = paso * 0.5; d < largo - paso * 0.5; d += paso) {
+    const x = a.x + ux * d + dx * CORREDOR.corrimiento;
+    const z = a.z + uz * d + dz * CORREDOR.corrimiento;
+    ctx.addBox(
+      `Corredor_${index}_${d.toFixed(0)}`,
+      { x, y: CORREDOR.altura, z },
+      alongX
+        ? { x: CORREDOR.tramo, y: 0.02, z: CORREDOR.ancho }
+        : { x: CORREDOR.ancho, y: 0.02, z: CORREDOR.tramo },
+      color,
+      { plano: true }
+    );
+  }
+}
+
+/**
+ * El galon de la esquina: tres flechas que apuntan hacia donde se dobla.
+ *
+ * ---------------------------------------------------------------------------
+ * TRES Y NO UNA, Y APUNTANDO AL NUEVO SENTIDO
+ * ---------------------------------------------------------------------------
+ * Una flecha sola en el medio del cruce se lee tarde: cuando el jugador la
+ * tiene debajo ya esta en la esquina. Tres escalonadas **antes** del cruce
+ * se leen viniendo, que es cuando sirven.
+ *
+ * Cada una son dos barras en V. No es un modelo ni una textura: dos cajas
+ * planas giradas cuarenta y cinco grados, que desde una camara a 48 grados
+ * es todo lo que hace falta para que se lea una punta de flecha.
+ */
+export function flechaDeGiro(ctx, { punto, desde, hacia, nombre, color }) {
+  // `hacia` es el versor del sentido NUEVO: la flecha apunta ahi.
+  const px = -hacia.z;
+  const pz = hacia.x;
+  const brazo = 1.5;
+
+  for (let n = 0; n < 3; n++) {
+    /*
+     * VAN DESPUES DEL CRUCE, SOBRE LA CALLE NUEVA.
+     *
+     * La primera version las escalonaba **antes**, sobre la calle de
+     * entrada, para que se leyeran viniendo. Una captura mostro por que no
+     * sirve: a diez metros del cruce esta **la puerta de la esclusa**, y a
+     * su alrededor el disco ambar del control. Las flechas caian encima de
+     * los dos, del mismo color, y lo que se veia era una mancha.
+     *
+     * Puestas despues del cruce no compiten con nada y contestan la
+     * pregunta en el momento en que aparece: el jugador llega a la
+     * esquina, mira, y las flechas ya estan en la calle por la que sigue.
+     *
+     * Y hay una razon de juego ademas de una de dibujo: antes del cruce el
+     * giro **todavia no se puede hacer**, porque la puerta esta cerrada
+     * hasta que el tramo este limpio. Una indicacion que llega antes de
+     * que la accion sea posible se olvida.
+     */
+    const adelante = 5 + n * 4;
+    const cx = punto.x + hacia.x * adelante;
+    const cz = punto.z + hacia.z * adelante;
+
+    for (const lado of [-1, 1]) {
+      /*
+       * Cada brazo de la V: se lo corre medio brazo hacia atras del
+       * sentido nuevo y medio hacia su costado, y se lo gira 45 grados
+       * para que las dos barras se junten en la punta.
+       */
+      const mx = cx - hacia.x * (brazo * 0.25) + px * lado * (brazo * 0.25);
+      const mz = cz - hacia.z * (brazo * 0.25) + pz * lado * (brazo * 0.25);
+      const rot = (Math.atan2(hacia.x, hacia.z) * 180) / Math.PI + lado * 45;
+      ctx.addBox(
+        `Flecha_${nombre}_${n}_${lado}`,
+        { x: mx, y: CORREDOR.altura, z: mz },
+        { x: CORREDOR.ancho, y: 0.02, z: brazo },
+        color,
+        { plano: true, rot }
+      );
+    }
+  }
+}
+
 export const RECORTE_EN_ESQUINA = UNITS.streetWidth / 2;
