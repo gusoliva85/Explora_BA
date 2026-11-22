@@ -134,18 +134,25 @@ describe('la promesa del que corre', () => {
     expect(ZOMBIE_STANDARD.chaseSpeed).toBeLessThan(PLAYER.speed);
   });
 
-  it('pero por poco: la ventaja es de menos de un metro por segundo', () => {
+  it('y la ventaja alcanza para darse vuelta y disparar', () => {
     /*
-     * El margen escrito, porque es el que define cuánto cuesta huir. Con
-     * 0,8 m/s, sacarse de encima a uno que está a diez metros lleva doce
-     * segundos y medio de correr sin parar — y mientras corrés no disparás.
+     * El margen, por los dos lados, y los dos bordes los encontró Gus
+     * jugando:
      *
-     * Si alguna vez el juego se siente fácil de atravesar sin pelear, el
-     * número a mirar es éste; si se siente injusto, también.
+     *  - **Muy chico** y el bucle del juego se rompe. Con 5,2 escribió
+     *    *"me alcanzan y no puedo darme vuelta para disparar"*. Como
+     *    disparar es frenar (D-28), si la ventaja no abre el hueco en el
+     *    que se frena, no queda más que correr hasta morir.
+     *  - **Muy grande** y el barrio se cruza caminando, que es lo que
+     *    pasaba con 2,9.
+     *
+     * 1,6 m/s abre diez metros en algo más de seis segundos. Matar a uno
+     * cuesta 1,6 s (D-31), así que entra una muerte por hueco, que es la
+     * unidad de decisión que el juego quiere.
      */
     const ventaja = PLAYER.speed - ZOMBIE_STANDARD.chaseSpeed;
-    expect(ventaja).toBeGreaterThan(0.3);
-    expect(ventaja).toBeLessThan(1.5);
+    expect(ventaja).toBeGreaterThan(1.2);
+    expect(ventaja).toBeLessThan(2.5);
   });
 });
 

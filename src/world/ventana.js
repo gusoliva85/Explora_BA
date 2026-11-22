@@ -86,29 +86,32 @@ export class VentanaDeMundo {
    * @param {object} opt
    * @param {number} opt.cuadrasPorTramo
    * @param {number} opt.totalCuadras
-   * @param {number} [opt.porCuadro] cuantas cuadras se construyen por cuadro
    */
   constructor(opt) {
     this.cuadrasPorTramo = opt.cuadrasPorTramo;
     this.totalCuadras = opt.totalCuadras;
 
     /*
-     * Cuantas cuadras se construyen por cuadro. **Una.**
+     * No hay `porCuadro`, y que no lo haya es la correccion de la 19B.4.
      *
-     * Construir una cuadra cuesta unos cuantos milisegundos: varias juntas
-     * en el mismo cuadro son un tiron, y un tiron en el momento exacto en
-     * que se cruza una puerta es el peor lugar posible para tenerlo, porque
-     * es cuando el jugador viene de pelear.
-     *
-     * Repartirlas tiene su propio riesgo, y esta anotado donde importa:
-     * ver `pendientes`.
+     * Habia uno, con valor 1 por omision y la posibilidad de pedir mas.
+     * Poder pedir mas **era el error**: una cuadra por cuadro no es una
+     * preferencia que se pueda aflojar, es el unico ritmo al que esto no
+     * se traba. Ahora lo garantiza la forma de `siguienteTarea`, que
+     * devuelve una tarea y no una lista.
      */
-    this.porCuadro = opt.porCuadro ?? 1;
 
     /** @type {Set<number>} las que estan construidas */
     this.enPie = new Set();
     /** @type {number[]} las que faltan construir, en orden de urgencia */
     this.pendientes = [];
+    /**
+     * @type {number[]} las que faltan soltar.
+     *
+     * Esta cola es la 19B.4 y existe por un error que Gus sintio jugando:
+     * *"cuando pasas la puerta se traba todo el juego"*. Ver `siguienteTarea`.
+     */
+    this.porSoltar = [];
     this.tramo = 0;
   }
 
@@ -128,12 +131,16 @@ export class VentanaDeMundo {
     const construir = quiero.filter((i) => !this.enPie.has(i));
 
     /*
-     * Soltar es inmediato; construir se reparte.
+     * LAS DOS SE REPARTEN, Y SOLTAR VA PRIMERO.
      *
-     * El orden importa y es este a proposito: primero se libera y despues
-     * se construye, asi el pico de memoria es el de la ventana y no el de
-     * la ventana mas lo que sobra.
+     * Soltar era inmediato, y ahi estaba el tiron (19B.4). El orden —
+     * primero liberar y despues construir— sigue siendo el de siempre, y
+     * sigue siendo por lo mismo: asi el pico de memoria es el de la
+     * ventana, y no el de la ventana mas lo que sobra.
+     *
+     * Lo que cambia es que ahora liberar tambien hace cola.
      */
+    this.porSoltar = soltar;
     this.pendientes = construir;
     return { construir, soltar };
   }
@@ -158,20 +165,52 @@ export class VentanaDeMundo {
    *
    * @returns {number[]} indices a construir ahora
    */
-  siguienteLote() {
-    const lote = this.pendientes.splice(0, this.porCuadro);
-    for (const i of lote) this.enPie.add(i);
-    return lote;
+  /**
+   * UNA sola unidad de trabajo para este cuadro: soltar una cuadra, o
+   * construir una. Nunca las dos, nunca varias.
+   *
+   * ---------------------------------------------------------------------------
+   * 🐛 EL JUEGO QUE SE TRABABA AL CRUZAR LA PUERTA (19B.4)
+   * ---------------------------------------------------------------------------
+   * Gus lo describio asi: *"cuando pasas la puerta, se traba todo el
+   * juego"*. Y era cierto y medible — dos cuadros seguidos de **851 ms y
+   * 1546 ms** contra una base de 200, justo despues de tomar el control.
+   *
+   * El motivo es que todo el trabajo caia junto en ese instante. La
+   * ventana ya repartia la CONSTRUCCION de a una cuadra por cuadro, que es
+   * la mitad cara... pero **soltar era inmediato y sin tope**: al cambiar
+   * de tramo se destruian dos cuadras enteras —entidades, mallas, grupo de
+   * lote y cajas de colision— en el mismo cuadro en que empezaba a
+   * construirse la primera nueva.
+   *
+   * Y el lugar donde pasaba era el peor posible. No es un tiron en
+   * cualquier parte: es **el tiron en el momento exacto en que se cruza la
+   * esclusa**, o sea cuando el jugador viene de pelear y tiene zombis
+   * encima.
+   *
+   * La leccion general, que vale para cualquier cosa que se reparta entre
+   * cuadros: **repartir la mitad no sirve de nada si la otra mitad sigue
+   * cayendo junta, y encima en el mismo cuadro.**
+   *
+   * @returns {{tipo:'soltar'|'construir', indice:number}|null}
+   */
+  siguienteTarea() {
+    if (this.porSoltar.length > 0) {
+      const indice = this.porSoltar.shift();
+      this.enPie.delete(indice);
+      return { tipo: 'soltar', indice };
+    }
+    if (this.pendientes.length > 0) {
+      const indice = this.pendientes.shift();
+      this.enPie.add(indice);
+      return { tipo: 'construir', indice };
+    }
+    return null;
   }
 
-  /** Marca una cuadra como soltada. */
-  soltada(indice) {
-    this.enPie.delete(indice);
-  }
-
-  /** ¿Queda algo por construir? */
+  /** ¿Queda algo por hacer? */
   get completa() {
-    return this.pendientes.length === 0;
+    return this.pendientes.length === 0 && this.porSoltar.length === 0;
   }
 
   /** En que tramo cae una cuadra. */

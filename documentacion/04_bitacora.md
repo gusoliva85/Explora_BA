@@ -6711,6 +6711,229 @@ nada que esto no diga.
 
 ---
 
+## 19B.4 a 19B.7 — Cinco cosas que sólo se ven jugando, y dos que no se ven mirando
+
+**22 de noviembre de 2026.**
+
+Gus jugó la horda del día anterior y volvió con cinco. Tres son
+correcciones de lo que acabábamos de hacer, una es un error de diseño que
+estaba desde la Fase 3, y la quinta es un bug que **hacía la partida
+imposible de terminar** y que no encontró el ojo sino una medición.
+
+### 4,4 y no 5,2: el número que decide si el juego existe
+
+> *"Con esta velocidad me alcanzan y no puedo darme vuelta para disparar,
+> no me da tiempo."*
+
+Esto no es dificultad. Con el combate automático (D-28), **disparar es
+frenar**, así que el juego entero es un ciclo: *correr, abrir hueco,
+frenar, disparar, correr*. Si la ventaja de velocidad no alcanza para
+abrir el hueco en el que se frena, **el paso de frenar desaparece** y lo
+único que queda es correr hasta morir.
+
+El día anterior el número había subido de 2,9 a 5,2 por el problema
+opuesto —el barrio se cruzaba parado— y se pasó de largo. 4,4 contra los
+6,0 del jugador deja 1,6 m/s: diez metros de ventaja se abren en poco más
+de seis segundos, y matar a uno cuesta 1,6 s. O sea **una muerte por
+hueco**, que es la unidad de decisión que el juego quiere.
+
+> Los dos bordes los encontró Gus jugando, con un día de diferencia. Vale
+> anotarlos juntos porque entre ellos está todo el rango útil: **2,9 es
+> cruzar caminando y 5,2 es no poder parar nunca.**
+
+### El control estaba del otro lado de la puerta
+
+> *"Los checkpoints no los estás dejando en la puerta que coordinamos para
+> que se abra, sino que están del otro lado."*
+
+Literal. La hoja se planta **diez metros antes del cruce** —porque una
+puerta atravesada en una esquina cierra cuatro calles en vez de una— y el
+control estaba **en el cruce**. El jugador limpiaba el tramo, veía abrirse
+la puerta, pasaba, y el juego se enteraba diez metros más tarde.
+
+No es cosmético: el control mueve el tramo, la ventana del mundo y el
+punto de reaparición. Que ocurra tarde desalinea esas tres cosas de la
+única que el jugador ve.
+
+**Y ahora se toma cruzando un plano, no entrando a un círculo.** El motivo
+es bonito: contra una puerta cerrada el jugador *puede apoyarse*, así que
+con un radio de 5 estaría dentro del círculo sin haber cruzado nada y el
+control se tomaría con el tramo sucio. El plano es imposible de pasar con
+la hoja puesta, porque la hoja ocupa ese plano.
+
+De paso salió gratis la **19A.9**, que estaba pendiente desde la 19A: se
+reaparece ocho metros pasando la puerta, del lado de adentro. Antes no se
+podía escribir porque no existía un punto llamado "la puerta".
+
+### 🐛 El juego que se trababa al cruzar
+
+> *"Cuando pasás la puerta se traba todo el juego."*
+
+Medido: dos cuadros seguidos de **851 ms y 1546 ms** contra una base de
+200, justo después de tomar el control.
+
+La ventana del mundo ya repartía la **construcción** de a una cuadra por
+cuadro. Lo que no repartía era **soltar**: al cambiar de tramo destruía las
+cuadras sobrantes enteras —entidades, mallas, grupo de lote y cajas de
+colisión— en el mismo cuadro en que empezaba a construir la primera nueva.
+
+> **Repartir la mitad no sirve de nada si la otra mitad sigue cayendo
+> junta, y encima en el mismo cuadro.**
+
+Ahora la ventana devuelve **una tarea**, no una lista: soltar una cuadra, o
+construir una. Y se fue la opción `porCuadro`, que permitía pedir más de
+una: poder pedir más *era* el error, no una preferencia.
+
+Y midiendo el costo real apareció algo que conviene tener escrito, porque
+cambia dónde hay que optimizar: **construir una cuadra cuesta 60 ms de
+JavaScript y agrupar sus mallas cuesta 0,1 ms.** Lo que pesa es la subida
+de los buffers en el cuadro siguiente, que es trabajo del motor. El
+navegador de las pruebas, que renderiza por software, infla esa parte
+tres mil por ciento y no sirve para medirla: por eso los milisegundos de
+arriba se leen **en relación a su propia base**, nunca en absoluto.
+
+### Un tercio puesto, dos tercios emboscada
+
+> *"Están constantemente lejos y lo único que hacés es, cuando los tenés a
+> un rango de distancia, te quedás quieto, disparás y listo."*
+
+Con todos repartidos por la calle, el juego se resolvía de una sola
+manera, y era la peor. Así que ahora un tercio está puesto en el mapa —son
+los que se ven de lejos y le dan forma a la cuadra— y **dos tercios no
+tienen lugar hasta que hacen falta**: salen de atrás de un auto o de un
+zaguán, cerca, cuando llegás.
+
+Medido en el tramo 0: los de emboscada aparecen a **17 m de media**, los
+fijos a 52.
+
+No hace falta saber dónde está cada auto ni cada puerta. Las dos cosas
+están donde están *por construcción*: los autos abandonados se generan a
+±3,6 m del eje y la línea municipal está a ±5,8. Son dos carriles, y el
+resto lo decide la línea de vista.
+
+**Y nunca a las espaldas.** Gus:
+
+> *"No quiero que entren zombis que estén por detrás de uno porque uno no
+> los puede ver en base a cómo está la cámara."*
+
+Esa no es una condición de ritmo sino de cámara, y por eso es la única que
+no se afloja nunca: la cámara es cenital y va **detrás** del jugador, así
+que lo que queda a sus espaldas no está lejos en pantalla — **no está en
+pantalla**. Un zombi que se enciende ahí no es difícil, es invisible, y lo
+único que el jugador percibe es que lo muerden de la nada.
+
+### La emboscada tiene válvula, y no es opcional
+
+Una emboscada pide tres cosas a la vez —cerca, adelante y tapada— y puede
+no encontrar ninguna. Eso está bien: espera.
+
+Lo que no puede pasar es que espere para siempre, y la primera versión lo
+hacía: **el tramo 0 se quedaba con seis vivos después de trescientas
+vueltas.** Con la esclusa eso no es una molestia, es una partida imposible:
+el contador dice "quedan 6" y no hay seis en ningún lado.
+
+Dos arreglos, y el segundo es el interesante:
+
+1. **La exigencia se afloja sola.** A los 3 s sin poder encender a nadie se
+   perdona lo de tapada; a los 7 s, la distancia. *Adelante* no se perdona
+   nunca.
+2. **Una emboscada pertenece a su tramo, no a su cuadra.** Atada a la
+   cuadra, la que nacía en la primera cuadra de un tramo no podía aparecer
+   nunca más una vez que el jugador pasaba a la segunda — y el jugador
+   termina el tramo **parado contra la puerta**, que está al final de la
+   segunda. Quedaban muertas de hambre justo cuando el contador las estaba
+   esperando.
+
+Lo segundo además es mejor juego: la última pelea de cada tramo ocurre en
+la puerta.
+
+### 🐛 Y el que dejabas atrás no volvía nunca
+
+Misma familia que los dos anteriores, y la tercera vez que aparece: **un
+zombi vivo del que te alejás se apaga y libera su puesto** —correcto, lo
+arregló la 19A.0— **pero el puesto conservaba su posición original**, cien
+o doscientos metros atrás. La ventana de encendido son 55 m. O sea que no
+volvía a entrar en rango jamás.
+
+Mientras el jugador cruzaba el tramo de punta a punta no se notaba, porque
+pasaba cerca de todo. Se volvió fatal cuando el tramo pasa a terminar con
+el jugador parado contra una puerta que no abre hasta que no quede uno
+vivo.
+
+El arreglo es convertirlo en emboscada: pierde el lugar donde estaba y
+vuelve por donde está el jugador. Que además es lo que hace un zombi al
+que le escapaste — **te siguió**.
+
+> Van tres bugs seguidos de la misma forma: **el puesto y el zombi no son
+> la misma cosa, y cada vez que se los confunde la puerta deja de abrir.**
+
+### 🐛 Y dos más que encontró la misma medición
+
+Que el contador llegue a cero es **la condición que no se puede romper**:
+si no llega, la puerta no abre y la partida no se termina. Así que la
+medición no preguntó "¿funcionan las emboscadas?" sino "¿se puede limpiar
+el tramo?". Dio uno vivo, y el diagnóstico de ese uno destapó dos cosas
+distintas.
+
+**El cupo contaba cadáveres.** `enJuego: 22, tope: 22` — y los veintidós
+eran cuerpos en el piso. Un muerto sigue activo seis segundos, así que una
+pelea grande **llena el cupo de cadáveres** y los que faltan no pueden
+entrar hasta que se desarmen. Contar vivos sale gratis: un cadáver no
+piensa, su IA está en `DEAD`, y lo único que cuesta es dibujarlo, que ya
+se estaba pagando.
+
+**Y un puesto fijo a 177 metros que nunca llegó a aparecer.** Si el
+jugador pasa de largo con el cupo lleno, ese puesto queda a sus espaldas y
+la ventana de encendido son 55 m: no vuelve a entrar en rango jamás.
+Ahora, *lejos **y** atrás*, se convierte en emboscada y viene a buscarlo.
+
+> Las dos condiciones van juntas a propósito. **Lejos y adelante es lo
+> normal** —todavía no llegaste— y ahí no hay nada que arreglar: el tercio
+> de zombis puestos en el mapa existe justamente para que se los vea venir
+> de lejos.
+
+Con los dos arreglos, el tramo pasa de quedarse con uno para siempre a
+limpiarse en **una vuelta**, con los dieciséis apareciendo y ninguno por
+detrás.
+
+### Los edificios de esquina, o: no era una barricada, era ciudad
+
+> *"Cuando vas caminando también tenés espacios libres en los costados que
+> parece como que podés pasar. Entiendo que son calles, que está bien
+> diseñado, pero tendrás que poner una barricada o algo."*
+
+Esto no se miró: se midió. Desde cuarenta y ocho puntos de cada cuadra se
+intentó caminar hacia los dos costados con el mismo `moveCircle` que mueve
+al jugador. Resultado: **76 fugas, de hasta 40 metros fuera del
+recorrido**, y todas a diez metros de una esquina.
+
+La causa estaba escrita a la vista en `#buildFacadeRow`: la hilera de
+fachadas arranca a `fullWidth/2 + 2` —**diez metros**— de cada punta, para
+no meter un edificio adentro de la bocacalle. Es correcto. Lo que nadie
+ponía es lo que va en esos diez metros: **el edificio de esquina**. Cuatro
+agujeros por cruce, dos puntas por dos lados, dieciséis cuadras.
+
+Y la solución no es la barricada que pidió Gus, por una razón de lectura:
+una valla más sería el cartel de obra número treinta y siete en una ciudad
+que ya está llena de ellos. **Lo que faltaba era ciudad.**
+
+Dónde van es pura geometría del cruce y no del trazado: dos calles de 16 m
+que se cortan dejan el cuadrado central libre y **cuatro cuadrantes** que
+empiezan a 8 m del centro en los dos ejes. Ahí va la manzana, se llame
+como se llame la calle y sea cual sea el brazo abierto.
+
+Quedaron **3 fugas de las 76**, las tres en el cuadrante donde está la casa
+de Sergio. Esa manzana no se construye a propósito: ahí está la meta del
+juego entero, y taparla con relleno genérico sería peor que el agujero.
+
+> Y una nota sobre la medición, porque la primera versión se equivocó: a
+> cuatro metros de una esquina, "perpendicular a esta cuadra" es **la otra
+> calle del recorrido**, que está abierta a propósito. Contarlas daba 33
+> fugas falsas. Una prueba de geometría tiene que saber dónde termina la
+> geometría que mide.
+
+---
+
 ## 19B.0 a 19B.3 — Gus lo jugó, y la calle se llenó
 
 **21 de noviembre de 2026.**

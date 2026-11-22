@@ -136,7 +136,7 @@ export class MissionManager {
     if (this.completed) return null;
     const cp = this.mission.checkpoints[this.nextCheckpoint];
     if (cp) {
-      const p = this.mission.route[cp.atRouteIndex];
+      const p = puntoDeControl(this.mission, cp);
       return { x: p.x, z: p.z, label: cp.label };
     }
     const g = this.mission.route[this.mission.goal.atRouteIndex];
@@ -158,10 +158,11 @@ export class MissionManager {
     // Control intermedio. Se exige en orden: no se saltea ninguno.
     const cp = this.mission.checkpoints[this.nextCheckpoint];
     if (cp) {
-      const p = this.mission.route[cp.atRouteIndex];
-      if (within(playerPos, p, cp.radius)) {
+      const p = puntoDeControl(this.mission, cp);
+      if (cruzoElControl(playerPos, cp, this.mission)) {
         this.nextCheckpoint++;
-        this.respawn = { x: p.x, z: p.z, yaw: 0 };
+        const r = cp.reaparecer ?? { x: p.x, z: p.z, yaw: 0 };
+        this.respawn = { x: r.x, z: r.z, yaw: r.yaw ?? 0 };
         // La POSICION va en el evento. Sin ella, quien quiera soltar algo
         // en el control tendria que volver a buscar el punto por su cuenta,
         // y seria la segunda copia de una cuenta que ya esta hecha aca.
@@ -183,6 +184,42 @@ export class MissionManager {
       this.bus.emit(EV.MISSION_COMPLETE, {});
     }
   }
+}
+
+/**
+ * Dónde está un control: **en su puerta** si la tiene (19B.5), y si no en
+ * el vértice de la ruta.
+ *
+ * El respaldo no es decorativo: las pruebas arman misiones a mano con
+ * controles sin puerta, y la brújula tiene que poder apuntar igual.
+ */
+export function puntoDeControl(mission, cp) {
+  if (cp.plano) return { x: cp.plano.x, z: cp.plano.z };
+  return mission.route[cp.atRouteIndex];
+}
+
+/**
+ * ¿El jugador cruzó el control?
+ *
+ * Con puerta, la pregunta es **si pasó del otro lado de la hoja**: por
+ * delante del plano y dentro de su ancho. Sin puerta, el círculo de
+ * siempre.
+ *
+ * Por qué un plano y no un círculo: contra una puerta cerrada el jugador
+ * puede apoyarse, así que estaría dentro de cualquier círculo razonable
+ * sin haber cruzado nada. El plano es imposible de pasar con la hoja
+ * puesta, porque la hoja ocupa ese plano.
+ */
+export function cruzoElControl(pos, cp, mission) {
+  // Sin puerta, el circulo de siempre. Lo usan las misiones de prueba.
+  if (!cp.plano) return within(pos, mission.route[cp.atRouteIndex], cp.radius);
+  const { x, z, dirX, dirZ, medioAncho } = cp.plano;
+  const dx = pos.x - x;
+  const dz = pos.z - z;
+  // Cuánto avanzó en la dirección de entrada, y cuánto se corrió de costado.
+  const adelante = dx * dirX + dz * dirZ;
+  const costado = Math.abs(dx * -dirZ + dz * dirX);
+  return adelante >= 0 && costado <= medioAncho;
 }
 
 /**

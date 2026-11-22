@@ -445,7 +445,15 @@ export class WorldBuilder {
     this.#buildDesvios(mission, rng);
 
     for (const cp of mission.checkpoints) {
-      const p = mission.route[cp.atRouteIndex];
+      /*
+       * La marca va EN LA PUERTA, no en la esquina (19B.5).
+       *
+       * Estaba en el vertice de la ruta, diez metros mas alla de la hoja, y
+       * eso le decia al jugador que el control estaba del otro lado de algo
+       * que todavia no habia cruzado. Ahora el circulo y la hoja son el
+       * mismo lugar, que es lo que el control es.
+       */
+      const p = cp.plano ?? mission.route[cp.atRouteIndex];
       markers.push(this.#addMarker(`Control_${cp.atRouteIndex}`, p, cp.radius, COLORS.checkpoint));
     }
     const goalPoint = mission.route[mission.goal.atRouteIndex];
@@ -512,6 +520,19 @@ export class WorldBuilder {
      * borraria la mitad de la otra.
      */
     if (esquinas.b) this.#buildEsquina(mission, i + 1, rng);
+
+    /*
+     * LOS EDIFICIOS DE ESQUINA (19B.7).
+     *
+     * Van aca y no en `#buildEsquina` porque hacen falta tambien en las
+     * dos puntas del recorrido, que no son cruces y no tienen esquina.
+     *
+     * El reparto es el mismo de siempre —cada cuadra se ocupa del vertice
+     * de su FINAL— mas el vertice inicial, que es de la primera cuadra
+     * porque nadie mas lo toca.
+     */
+    if (i === 0) this.#manzanasDeEsquina(mission, 0);
+    this.#manzanasDeEsquina(mission, i + 1);
 
     /*
      * Lo colocado a mano, al final: va despues de lo generado para que
@@ -657,6 +678,96 @@ export class WorldBuilder {
 
     this.#buildVehiculos(a, b, alongX, length, road, rng, index);
     this.#buildFaroles(a, b, alongX, length, road, index);
+  }
+
+  /**
+   * Las cuatro manzanas que rodean un cruce (19B.7).
+   *
+   * ---------------------------------------------------------------------------
+   * EL AGUJERO QUE TAPAN, Y POR QUE NADIE LO VEIA
+   * ---------------------------------------------------------------------------
+   * `#buildFacadeRow` arranca la hilera a diez metros de cada punta de la
+   * cuadra, para no meter un edificio adentro de la bocacalle. Es correcto
+   * y tiene que seguir siendo asi.
+   *
+   * Lo que nadie ponia es lo que va en esos diez metros: **el edificio de
+   * esquina**. Resultado: cuatro agujeros por cruce —dos puntas, dos
+   * lados— por los que el jugador salia caminando del recorrido. Medido:
+   * 76 fugas de hasta 40 metros. Lo dijo Gus jugando y lo confirmo
+   * `moveCircle`, que es el mismo que lo mueve a el.
+   *
+   * ---------------------------------------------------------------------------
+   * DONDE VAN, EXACTAMENTE
+   * ---------------------------------------------------------------------------
+   * En un cruce se cortan dos calles, cada una de 16 m de ancho total
+   * (calzada 10 + dos veredas de 3). Eso deja el cuadrado central de 16x16
+   * libre —el cruce— y **cuatro cuadrantes** que empiezan a 8 m del centro
+   * en los dos ejes. Ahi va la manzana.
+   *
+   * Por eso no hace falta saber que calles son del recorrido y cuales no:
+   * los cuadrantes **nunca** son calle, sean cuales sean los brazos
+   * abiertos. Es geometria del cruce, no del trazado.
+   *
+   * Y por eso tampoco es "una barricada", que es lo que pidio Gus: una
+   * valla mas seria otro cartel de obra en una ciudad que ya tiene treinta
+   * y seis. Lo que faltaba era ciudad.
+   */
+  #manzanasDeEsquina(mission, i) {
+    const p = mission.route[i];
+    if (!p) return;
+
+    const media = UNITS.streetWidth / 2 + UNITS.sidewalkWidth; // 8
+    const fondo = 12;
+    const centro = media + fondo / 2;
+
+    for (const sx of [-1, 1]) {
+      for (const sz of [-1, 1]) {
+        const cx = p.x + sx * centro;
+        const cz = p.z + sz * centro;
+        const minX = cx - fondo / 2;
+        const minZ = cz - fondo / 2;
+        const maxX = cx + fondo / 2;
+        const maxZ = cz + fondo / 2;
+
+        // La boca de un pasaje manda: ahi la pared se abre a proposito.
+        if (this.tapaHueco(minX, minZ, maxX, maxZ)) continue;
+
+        /*
+         * Y lo puesto a mano tambien manda.
+         *
+         * La casa de Sergio (D-41) cae justo en un cuadrante del ultimo
+         * cruce, y es **el objetivo del juego entero**: una manzana
+         * generica encima seria tapar la meta con relleno. La regla
+         * general —no construir sobre lo colocado a mano— evita tener que
+         * acordarse de este caso y de los que vengan.
+         */
+        let ocupado = false;
+        for (const item of mission.props ?? []) {
+          if (item.x > minX && item.x < maxX && item.z > minZ && item.z < maxZ) {
+            ocupado = true;
+            break;
+          }
+        }
+        if (ocupado) continue;
+
+        const cfg = mission.blocks[Math.min(i, mission.blocks.length - 1)];
+        const [hMin, hMax] = cfg.buildingHeight;
+        /*
+         * La altura sale del indice, no del azar: la esquina tiene que ser
+         * igual en cada visita, y el generador con semilla de esta cuadra
+         * ya se consumio en otra cosa.
+         */
+        const alto = hMin + ((i * 7 + (sx + 2) * 3 + (sz + 2)) % Math.max(1, hMax - hMin));
+
+        this.addBox(
+          `Esquina_${i}_${sx}_${sz}`,
+          { x: cx, y: alto / 2, z: cz },
+          { x: fondo, y: alto, z: fondo },
+          COLORS.facade[(i + (sx + 2) + (sz + 2) * 2) % COLORS.facade.length],
+          { collide: true, tag: 'building', acabado: ACABADO.revoque, sombra: true }
+        );
+      }
+    }
   }
 
   /** Plancha de vereda en cada esquina, con senda peatonal y semaforo. */

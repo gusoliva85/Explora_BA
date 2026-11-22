@@ -62,6 +62,19 @@ describe('que cuadras pide cada tramo', () => {
   });
 });
 
+/**
+ * Corre la ventana hasta que no le quede trabajo, de a una tarea por vuelta
+ * —que es exactamente como la corre el juego, un cuadro por tarea.
+ */
+const terminar = (v) => {
+  let tarea;
+  let vueltas = 0;
+  while ((tarea = v.siguienteTarea())) {
+    if (++vueltas > 500) throw new Error('la ventana no termina nunca');
+  }
+  return tarea;
+};
+
 describe('el avance tramo a tramo', () => {
   const nueva = () => new VentanaDeMundo(REAL);
 
@@ -75,7 +88,7 @@ describe('el avance tramo a tramo', () => {
   it('al pasar de tramo suelta lo que quedo atras y pide lo nuevo', () => {
     const v = nueva();
     v.irAlTramo(0);
-    while (!v.completa) v.siguienteLote();
+    terminar(v);
 
     const { construir, soltar } = v.irAlTramo(1);
     // Del [0,1,2] al [1,2,3,4]: se va la 0, vienen la 3 y la 4.
@@ -90,9 +103,8 @@ describe('el avance tramo a tramo', () => {
      */
     const v = nueva();
     for (let t = 0; t < 8; t++) {
-      const { soltar } = v.irAlTramo(t);
-      for (const i of soltar) v.soltada(i);
-      while (!v.completa) v.siguienteLote();
+      v.irAlTramo(t);
+      terminar(v);
       expect(v.enPie.size, `tramo ${t}`).toBeLessThanOrEqual(4);
     }
   });
@@ -100,9 +112,8 @@ describe('el avance tramo a tramo', () => {
   it('recorrido entero: las cuadras del tramo estan SIEMPRE antes de pisarlas', () => {
     const v = nueva();
     for (let t = 0; t < 8; t++) {
-      const { soltar } = v.irAlTramo(t);
-      for (const i of soltar) v.soltada(i);
-      while (!v.completa) v.siguienteLote();
+      v.irAlTramo(t);
+      terminar(v);
       expect(v.enPie.has(t * 2), `tramo ${t}, cuadra ${t * 2}`).toBe(true);
       expect(v.enPie.has(t * 2 + 1), `tramo ${t}, cuadra ${t * 2 + 1}`).toBe(true);
     }
@@ -111,35 +122,65 @@ describe('el avance tramo a tramo', () => {
   it('al final del recorrido no quedan cuadras sueltas por construir', () => {
     const v = nueva();
     for (let t = 0; t < 8; t++) {
-      const { soltar } = v.irAlTramo(t);
-      for (const i of soltar) v.soltada(i);
-      while (!v.completa) v.siguienteLote();
+      v.irAlTramo(t);
+      terminar(v);
     }
     expect([...v.enPie].sort((a, b) => a - b)).toEqual([13, 14, 15]);
   });
 });
 
-describe('la construccion repartida', () => {
-  it('por omision construye una cuadra por cuadro', () => {
+describe('el trabajo repartido', () => {
+  it('una cuadra por cuadro, y ni una mas', () => {
     /*
-     * Varias juntas en el mismo cuadro son un tiron, y el momento en que la
+     * Varias juntas en el mismo cuadro son un tirón, y el momento en que la
      * ventana se mueve es el peor para tenerlo: es justo cuando el jugador
      * cruza una puerta, o sea cuando viene de pelear.
+     *
+     * Antes había una opción `porCuadro` para pedir más de una. Se fue en
+     * la 19B.4: **poder pedir más era el error**, no una preferencia.
      */
     const v = new VentanaDeMundo(REAL);
     v.irAlTramo(0);
-    expect(v.siguienteLote()).toEqual([0]);
-    expect(v.siguienteLote()).toEqual([1]);
-    expect(v.siguienteLote()).toEqual([2]);
-    expect(v.siguienteLote()).toEqual([]);
+    expect(v.siguienteTarea()).toEqual({ tipo: 'construir', indice: 0 });
+    expect(v.siguienteTarea()).toEqual({ tipo: 'construir', indice: 1 });
+    expect(v.siguienteTarea()).toEqual({ tipo: 'construir', indice: 2 });
+    expect(v.siguienteTarea()).toBeNull();
     expect(v.completa).toBe(true);
   });
 
-  it('se puede pedir mas de una por cuadro', () => {
-    const v = new VentanaDeMundo({ ...REAL, porCuadro: 2 });
+  it('soltar tambien hace cola, y va PRIMERO', () => {
+    /*
+     * 🐛 El juego que se trababa al cruzar la puerta (19B.4).
+     *
+     * Soltar era inmediato y sin tope: al cambiar de tramo se destruían las
+     * cuadras sobrantes enteras —entidades, mallas, grupo de lote y cajas de
+     * colisión— **en el mismo cuadro** en que empezaba a construirse la
+     * primera nueva. Medido: 851 ms y 1546 ms contra una base de 200.
+     *
+     * Va primero por lo de siempre: así el pico de memoria es el de la
+     * ventana y no el de la ventana más lo que sobra.
+     */
+    const v = new VentanaDeMundo(REAL);
     v.irAlTramo(0);
-    expect(v.siguienteLote()).toEqual([0, 1]);
-    expect(v.siguienteLote()).toEqual([2]);
+    terminar(v);
+
+    v.irAlTramo(1);
+    // Del [0,1,2] al [1,2,3,4]: primero se suelta la 0, sola.
+    expect(v.siguienteTarea()).toEqual({ tipo: 'soltar', indice: 0 });
+    expect(v.siguienteTarea()).toEqual({ tipo: 'construir', indice: 3 });
+    expect(v.siguienteTarea()).toEqual({ tipo: 'construir', indice: 4 });
+    expect(v.siguienteTarea()).toBeNull();
+  });
+
+  it('una cuadra soltada sale de las que estan en pie', () => {
+    const v = new VentanaDeMundo(REAL);
+    v.irAlTramo(0);
+    terminar(v);
+    expect(v.enPie.has(0)).toBe(true);
+
+    v.irAlTramo(1);
+    v.siguienteTarea();
+    expect(v.enPie.has(0)).toBe(false);
   });
 
   it('cruzar dos puertas seguidas sin terminar de construir no pierde ninguna', () => {
@@ -153,11 +194,10 @@ describe('la construccion repartida', () => {
      */
     const v = new VentanaDeMundo(REAL);
     v.irAlTramo(0);
-    v.siguienteLote(); // solo la 0
+    v.siguienteTarea(); // solo la 0
 
-    const { soltar } = v.irAlTramo(1);
-    for (const i of soltar) v.soltada(i);
-    while (!v.completa) v.siguienteLote();
+    v.irAlTramo(1);
+    terminar(v);
 
     // Las cuatro de la ventana del tramo 1, sin que falte la 1 ni la 2.
     expect([...v.enPie].sort((a, b) => a - b)).toEqual([1, 2, 3, 4]);
@@ -166,7 +206,7 @@ describe('la construccion repartida', () => {
   it('pedir el mismo tramo dos veces no construye nada de nuevo', () => {
     const v = new VentanaDeMundo(REAL);
     v.irAlTramo(0);
-    while (!v.completa) v.siguienteLote();
+    terminar(v);
     const otra = v.irAlTramo(0);
     expect(otra.construir).toEqual([]);
     expect(otra.soltar).toEqual([]);

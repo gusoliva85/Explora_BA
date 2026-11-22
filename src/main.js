@@ -232,11 +232,22 @@ const ventana = new VentanaDeMundo({
   totalCuadras: CUADRAS_TOTAL
 });
 
-/** Levanta la ventana inicial de una, sin repartir: es el arranque. */
+/**
+ * Levanta la ventana inicial de una, sin repartir: es el arranque.
+ *
+ * Acá repartir no sirve de nada —el jugador está mirando una pantalla de
+ * carga, no el juego— y encima haría falta construir igual antes de
+ * empezar. Es el único lugar donde se vacía la cola de un saque.
+ */
 function ventanaInicial() {
   ventana.irAlTramo(0);
   const cuadras = [];
-  while (!ventana.completa) cuadras.push(...ventana.siguienteLote());
+  let tarea;
+  while ((tarea = ventana.siguienteTarea())) {
+    // Al arrancar no hay nada construido, así que no puede haber nada que
+    // soltar; si alguna vez lo hubiera, se ignora y la cuadra no entra.
+    if (tarea.tipo === 'construir') cuadras.push(tarea.indice);
+  }
   return cuadras;
 }
 
@@ -536,15 +547,16 @@ function startMission({ fromCheckpoint = false } = {}) {
    * ventana se quedaria donde estaba y el jugador apareceria mirando dos
    * cuadras que todavia no estan.
    */
-  if (mission.nextCheckpoint !== ventana.tramo) {
-    const { soltar } = ventana.irAlTramo(mission.nextCheckpoint);
-    for (const i of soltar) {
-      builder.liberarCuadra(i);
-      ventana.soltada(i);
-    }
-  }
-  while (!ventana.completa) {
-    for (const i of ventana.siguienteLote()) builder.construirCuadra(mission001, i);
+  if (mission.nextCheckpoint !== ventana.tramo) ventana.irAlTramo(mission.nextCheckpoint);
+  /*
+   * Y acá sí se vacía la cola entera de un saque, por lo mismo que en el
+   * arranque: reaparecer es un salto, el jugador está en una pantalla de
+   * carga, y tiene que encontrar el mundo puesto al volver.
+   */
+  let tarea;
+  while ((tarea = ventana.siguienteTarea())) {
+    if (tarea.tipo === 'soltar') builder.liberarCuadra(tarea.indice);
+    else builder.construirCuadra(mission001, tarea.indice);
   }
 
   hud.setHealth(player.health);
@@ -839,14 +851,19 @@ document.addEventListener('visibilitychange', () => {
  * y viene de pelear.
  */
 function actualizarVentana() {
-  if (mission.nextCheckpoint !== ventana.tramo) {
-    const { soltar } = ventana.irAlTramo(mission.nextCheckpoint);
-    for (const i of soltar) {
-      builder.liberarCuadra(i);
-      ventana.soltada(i);
-    }
-  }
-  for (const i of ventana.siguienteLote()) builder.construirCuadra(mission001, i);
+  if (mission.nextCheckpoint !== ventana.tramo) ventana.irAlTramo(mission.nextCheckpoint);
+
+  /*
+   * UNA sola tarea por cuadro (19B.4).
+   *
+   * Antes esto soltaba todas las cuadras sobrantes de una y además
+   * construía: dos cuadros de más de un segundo justo al cruzar la
+   * esclusa. El porqué entero está en `siguienteTarea`.
+   */
+  const tarea = ventana.siguienteTarea();
+  if (!tarea) return;
+  if (tarea.tipo === 'soltar') builder.liberarCuadra(tarea.indice);
+  else builder.construirCuadra(mission001, tarea.indice);
 }
 
 /**
@@ -1015,6 +1032,13 @@ app.on('update', (rawDt) => {
     });
 
     const p = player.position;
+    /*
+     * El rumbo de la camara va al gestor de zombis, y no es decorativo:
+     * es lo que define "adelante" para decidir **donde puede aparecer uno
+     * y donde no** (19B.6). La camara es cenital y va detrás del jugador,
+     * asi que lo que queda a sus espaldas no está lejos en pantalla: no
+     * está en pantalla.
+     */
     zombis.update(dt, { x: p.x, z: p.z }, player.health > 0, (daño, zombi) => {
       const golpeo = player.applyDamage(daño, 'zombi');
       if (golpeo) {
@@ -1022,7 +1046,7 @@ app.on('update', (rawDt) => {
         // sentirse igual que un golpe de cuarenta.
         camera.sacudir(0.18 + (daño / 100) * 0.5, 0.32);
       }
-    });
+    }, camera.yaw);
   }
 
   // La camara se actualiza siempre: en pausa y en los resultados la escena

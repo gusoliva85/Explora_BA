@@ -268,17 +268,32 @@ export const ZOMBIE_STANDARD = {
    * automático (D-28) eso rompe el juego entero, porque disparar es
    * quedarse quieto y quedarse quieto no costaba nada.
    *
-   * 5,2 contra 6,0 es la diferencia exacta que pidió Gus: *"el zombie va
-   * un poco más lento que vos, por lo que te da"*. Escaparse se puede
-   * **siempre**, pero cuesta 0,8 m/s de ventaja — o sea que sacarse uno de
-   * encima a diez metros lleva doce segundos y medio de correr sin parar.
-   * Y mientras corrés no disparás.
+   * -------------------------------------------------------------------------
+   * FUE 5,2 UNA TARDE, Y ERA DEMASIADO
+   * -------------------------------------------------------------------------
+   * La 19B.2 lo subió de 2,9 a 5,2 porque con 2,9 el barrio se cruzaba
+   * parado. Gus lo jugó y encontró el otro borde: *"con esta velocidad me
+   * alcanzan y no puedo darme vuelta para disparar, no me da tiempo"*.
+   *
+   * Y eso no es que sea difícil: es que **rompe el bucle del juego**. Con
+   * el combate automático (D-28) disparar es frenar, así que el juego
+   * entero es *correr, ganar distancia, frenar, disparar, correr*. Si la
+   * ventaja no alcanza para abrir el hueco en el que se frena, el paso de
+   * "frenar" desaparece y lo único que queda es correr hasta morir.
+   *
+   * 4,4 contra 6,0 deja **1,6 m/s**, o sea el doble de aire que 5,2: diez
+   * metros de ventaja se abren en seis segundos y pico en vez de en doce y
+   * medio. Alcanza para darse vuelta y matar a uno, que es exactamente lo
+   * que Gus pidió poder hacer.
+   *
+   * Y sigue siendo muy superior a los 2,9 de antes: pararse en cualquier
+   * lado sigue costando caro, que era lo que la 19B.2 vino a arreglar.
    *
    * Que se pueda escapar siempre no es un detalle de balance: es lo que
    * hace que la muerte sea culpa del jugador. Si el zombi corriera más que
    * vos, la única respuesta sería pelear, y pelear es pararse.
    */
-  chaseSpeed: 5.2,
+  chaseSpeed: 4.4,
   /**
    * Cuánto tarda en llegar a esa velocidad desde que te ve.
    *

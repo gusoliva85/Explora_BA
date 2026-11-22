@@ -1,5 +1,6 @@
 import { trazadoOrtogonal, puertas, CUADRA, CUADRAS_POR_TRAMO } from './recorrido.js';
 import { UNITS } from './balance.js';
+import { rumboHacia } from '../core/rumbo.js';
 
 /**
  * ===========================================================================
@@ -63,19 +64,115 @@ const route = TRAZADO.map((p) => ({
 }));
 
 /**
+ * ===========================================================================
+ * DÓNDE SE PLANTA UNA PUERTA — y es UNA cuenta, no dos
+ * ===========================================================================
+ * Diez metros antes del cruce, sobre la calle por la que venís.
+ *
+ * **No va en la esquina.** Dos de los siete controles caen en esquinas con
+ * giro, y una puerta atravesada en un cruce cierra cuatro calles en vez de
+ * una: el jugador no entiende cuál de las cuatro le importa.
+ *
+ * Esta cuenta la usan tres cosas —la hoja, el control y el punto de
+ * reaparición— y hasta la 19B.5 **sólo la hacía la hoja**. Ahí estaba el
+ * problema que encontró Gus: el control se quedó donde estaba, en la
+ * esquina, o sea del otro lado de la puerta.
+ */
+const RETIRO_PUERTA = 10;
+const ANCHO_PUERTA = 16;
+
+/** El versor de la calle por la que se LLEGA a esa esquina. */
+function entradaDe(p) {
+  /*
+   * Se busca por número de cuadra y no con `indexOf`.
+   *
+   * `puertas()` llama a `trazadoOrtogonal()` por su cuenta, así que
+   * devuelve **otros objetos** con los mismos valores: `indexOf` da −1 y
+   * todo lo que venga después lee `undefined`. Es la trampa clásica de
+   * comparar por identidad lo que viene de dos llamadas distintas.
+   */
+  const idx = TRAZADO.findIndex((t) => t.cuadra === p.cuadra);
+  const ant = TRAZADO[idx - 1];
+  const ex = p.x - ant.x;
+  const ez = p.z - ant.z;
+  const largo = Math.hypot(ex, ez) || 1;
+  return { x: ex / largo, z: ez / largo };
+}
+
+/** Dónde queda la hoja de la puerta del control `p`. */
+function puntoDePuerta(p) {
+  const e = entradaDe(p);
+  return { x: p.x - e.x * RETIRO_PUERTA, z: p.z - e.z * RETIRO_PUERTA, entrada: e };
+}
+
+/**
  * Los siete controles: uno por puerta, cada dos cuadras (D-46).
  *
- * Eran dos y ahora son siete, y la diferencia no es de cantidad: cada uno
- * es **una esclusa** que no abre hasta que no quede un zombi vivo en el
- * tramo (D-37), y que se cierra a tus espaldas. La 19A les pone la puerta;
- * acá son todavía el punto de guardado de siempre.
+ * ---------------------------------------------------------------------------
+ * EL CONTROL **ES** LA PUERTA, Y HASTA LA 19B.5 NO LO ERA
+ * ---------------------------------------------------------------------------
+ * Lo encontró Gus jugando: *"los checkpoints no los estás dejando en la
+ * puerta que coordinamos para que se abra, sino que están del otro lado de
+ * la puerta"*.
+ *
+ * Y era literal. La hoja va diez metros antes del cruce y el control
+ * estaba **en el cruce**: se tomaba diez metros después de haberla
+ * cruzado. El jugador limpiaba el tramo, veía abrirse la puerta, pasaba...
+ * y el juego se enteraba más tarde.
+ *
+ * No es un detalle de posición. El control es lo que mueve el tramo, la
+ * ventana del mundo y el punto de reaparición: que ocurra tarde desalinea
+ * esas tres cosas de la única que el jugador ve, que es la puerta.
+ *
+ * ---------------------------------------------------------------------------
+ * Y SE TOMA CRUZANDO UN PLANO, NO ENTRANDO A UN CÍRCULO
+ * ---------------------------------------------------------------------------
+ * Un círculo alrededor de la puerta no sirve, y el motivo es bonito: el
+ * jugador **puede apoyarse contra la puerta cerrada**. Con radio 5 estaría
+ * dentro del círculo sin haber cruzado nada, y el control se tomaría con
+ * el tramo todavía sucio y la puerta todavía puesta.
+ *
+ * La condición, entonces, es haber pasado del otro lado del plano de la
+ * hoja. Es imposible de cumplir sin que la puerta haya abierto, porque la
+ * hoja ocupa exactamente ese plano.
  */
-const checkpoints = PUERTAS.map((p) => ({
-  atRouteIndex: p.cuadra,
-  radius: 5,
-  label: `Control ${p.puerta}: ${p.dir}`,
-  puerta: p.puerta
-}));
+const checkpoints = PUERTAS.map((p) => {
+  const { x, z, entrada } = puntoDePuerta(p);
+  return {
+    atRouteIndex: p.cuadra,
+    radius: 5,
+    label: `Control ${p.puerta}: ${p.dir}`,
+    puerta: p.puerta,
+
+    /** El plano de la hoja: dónde está y hacia dónde se lo cruza. */
+    plano: {
+      x,
+      z,
+      dirX: entrada.x,
+      dirZ: entrada.z,
+      /*
+       * El ancho que cuenta como "la puerta": el de la hoja. Son 16 m, o
+       * sea calzada más las dos veredas y un poco. Más afuera no se puede
+       * estar, porque están los edificios.
+       */
+      medioAncho: ANCHO_PUERTA / 2
+    },
+
+    /**
+     * Dónde reaparece el que muere en el tramo siguiente: **del lado de
+     * adentro de la puerta** (19A.9).
+     *
+     * Ocho metros pasándola. No *en* la hoja, porque una puerta sellada
+     * tiene su chapa justo ahí y se reaparecería adentro; y no en el
+     * cruce, porque la cuadra de atrás ya puede no existir en memoria.
+     */
+    reaparecer: {
+      x: x + entrada.x * 8,
+      z: z + entrada.z * 8,
+      yaw: rumboHacia(entrada.x, entrada.z)
+    }
+  };
+});
 
 /**
  * Los textos de objetivo, uno por tramo, en voseo (18.5).
@@ -516,31 +613,16 @@ const casa = (() => {
  * motivo: **en una esquina, las dos calles comparten el cruce.**
  */
 const esclusas = PUERTAS.map((p) => {
-  /*
-   * Se busca por número de cuadra y no con `indexOf`.
-   *
-   * `puertas()` llama a `trazadoOrtogonal()` por su cuenta, así que
-   * devuelve **otros objetos** con los mismos valores: `indexOf` da −1 y
-   * todo lo que venga después lee `undefined`. Es la trampa clásica de
-   * comparar por identidad lo que viene de dos llamadas distintas.
-   */
-  const idx = TRAZADO.findIndex((t) => t.cuadra === p.cuadra);
-  const ant = TRAZADO[idx - 1];
-  const ex = p.x - ant.x;
-  const ez = p.z - ant.z;
-  const largo = Math.hypot(ex, ez) || 1;
-  const entrada = { x: ex / largo, z: ez / largo };
-
-  const RETIRO_PUERTA = 10;
-  const ANCHO_PUERTA = 16;
+  // La misma cuenta que usa el control: ver `puntoDePuerta`.
+  const { x, z, entrada } = puntoDePuerta(p);
   const alongX = Math.abs(entrada.x) > Math.abs(entrada.z);
 
   return {
     tipo: 'puertaEsclusa',
     tramo: p.puerta - 1,
     control: p.puerta,
-    x: p.x - entrada.x * RETIRO_PUERTA,
-    z: p.z - entrada.z * RETIRO_PUERTA,
+    x,
+    z,
     /*
      * La hoja corre a lo largo de su eje X local, así que la puerta se gira
      * para quedar ATRAVESADA en la calle por la que viene el jugador.
