@@ -7,7 +7,7 @@ import { rumboHacia } from '../src/core/rumbo.js';
 
 /**
  * ===========================================================================
- * LA HORDA (19B.1 y 19B.2)
+ * LA HORDA (19C.1 y 19C.2)
  * ===========================================================================
  * Dos cambios que vienen juntos porque por separado no funcionan.
  *

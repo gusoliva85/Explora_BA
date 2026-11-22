@@ -187,7 +187,7 @@ export class MissionManager {
 }
 
 /**
- * Dónde está un control: **en su puerta** si la tiene (19B.5), y si no en
+ * Dónde está un control: **en su puerta** si la tiene (19C.5), y si no en
  * el vértice de la ruta.
  *
  * El respaldo no es decorativo: las pruebas arman misiones a mano con

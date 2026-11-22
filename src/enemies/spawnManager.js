@@ -5,7 +5,7 @@ import { Zombie } from './zombie.js';
 import { EV } from '../core/events.js';
 
 /**
- * Altura a la que se comprueba si el jugador ve un puesto (19B.3).
+ * Altura a la que se comprueba si el jugador ve un puesto (19C.3).
  *
  * Es la del pecho, la misma a la que mira un zombi: un auto tapa, un cordon
  * no. No se usa la de la camara —doce metros— a proposito, porque desde ahi
@@ -36,7 +36,7 @@ const DISTANCIA_POP = 30;
 
 /**
  * ===========================================================================
- * LAS EMBOSCADAS (19B.6)
+ * LAS EMBOSCADAS (19C.6)
  * ===========================================================================
  * Un tercio de los zombis esta puesto en el mapa desde el principio. Los
  * otros dos tercios **no tienen lugar hasta que haga falta**: salen de
@@ -281,7 +281,7 @@ export class SpawnManager {
       const cuantos = zona.cantidad ?? Math.max(1, Math.round(zona.peso * 5));
 
       /*
-       * UN TERCIO PUESTO, DOS TERCIOS EMBOSCADA (19B.6).
+       * UN TERCIO PUESTO, DOS TERCIOS EMBOSCADA (19C.6).
        *
        * Los fijos son los que se ven de lejos y dan la forma de la cuadra.
        * Los otros no tienen lugar todavia: se lo buscan cuando el jugador
@@ -548,7 +548,7 @@ export class SpawnManager {
        * Los puestos se RECALCULAN, no se reusan.
        *
        * Un puesto fijo del que el jugador se alejo quedo convertido en
-       * emboscada y sin su lugar original (19B.6). Reusar la lista
+       * emboscada y sin su lugar original (19C.6). Reusar la lista
        * arrastraria esas conversiones a la partida siguiente: cada
        * reintento tendria menos zombis puestos en el mapa que el anterior,
        * **y el mapa cambiaria sin que nadie lo haya decidido**.
@@ -595,7 +595,7 @@ export class SpawnManager {
       // Un zombi que te esta persiguiendo no se apaga aunque te alejes: se
       // apagaria justo cuando mas importa que siga ahi.
       /*
-       * 🐛 Y EL CADAVER QUE RESUCITABA AL ALEJARTE (19B.1)
+       * 🐛 Y EL CADAVER QUE RESUCITABA AL ALEJARTE (19C.1)
        * ---------------------------------------------------------------------
        * El hermano exacto del de abajo, y aparecio recien cuando los zombis
        * se volvieron rapidos y hubo que matar y correr.
@@ -642,7 +642,7 @@ export class SpawnManager {
         if (z.puestoId !== undefined) {
           this.puestosUsados.delete(z.puestoId);
           /*
-           * Y DESDE ACA ES UNA EMBOSCADA (19B.6).
+           * Y DESDE ACA ES UNA EMBOSCADA (19C.6).
            *
            * El puesto conservaba su posicion original. Para un zombi del
            * que te alejaste cien metros eso significa que **no vuelve a
@@ -692,7 +692,7 @@ export class SpawnManager {
 
     /*
      * -------------------------------------------------------------------------
-     * APARECEN DONDE NO LOS ESTAS MIRANDO (19B.3)
+     * APARECEN DONDE NO LOS ESTAS MIRANDO (19C.3)
      * -------------------------------------------------------------------------
      * Con 16 a 22 zombis por tramo en vez de 5, el encendido deja de ser
      * invisible: antes entraban de a uno cada tanto, ahora entran de a
@@ -746,7 +746,7 @@ export class SpawnManager {
       const puesto = this.puestos[i];
 
       /*
-       * LA EMBOSCADA SE UBICA ACA, no al empezar la mision (19B.6).
+       * LA EMBOSCADA SE UBICA ACA, no al empezar la mision (19C.6).
        *
        * Hasta que no encuentra un lugar no se enciende, y mientras tanto
        * sigue contando como vivo para la esclusa, asi que el tramo no se
@@ -794,7 +794,7 @@ export class SpawnManager {
       if (d < (puesto.emboscada ? EMBOSCADA_MIN : 12)) continue;
 
       /*
-       * NUNCA A LAS ESPALDAS (19B.6). Vale para los dos tipos: el de la
+       * NUNCA A LAS ESPALDAS (19C.6). Vale para los dos tipos: el de la
        * emboscada ya lo comprobo al elegir lugar, y el fijo lo comprueba
        * aca. Ver `DELANTE_MINIMO`.
        */

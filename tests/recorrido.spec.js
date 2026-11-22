@@ -407,9 +407,9 @@ test('la ruta completa es transitable con todos los obstaculos puestos', async (
  */
 /*
  * ===========================================================================
- * DE DONDE SALEN LOS ZOMBIS — y son DOS preguntas, no una (18.13, 19B.6)
+ * DE DONDE SALEN LOS ZOMBIS — y son DOS preguntas, no una (18.13, 19C.6)
  * ===========================================================================
- * Hasta la 19B.6 todos los puestos eran un par de coordenadas calculadas al
+ * Hasta la 19C.6 todos los puestos eran un par de coordenadas calculadas al
  * empezar la mision, y una sola prueba los recorria.
  *
  * Ahora son dos clases y **sólo una tiene coordenadas**: un tercio está
@@ -509,7 +509,7 @@ test('ningun puesto FIJO queda encerrado ni adentro de una pared', async ({ page
     `[puestos] ${informe.total}: ${informe.fijos} fijos y ${informe.emboscadas} emboscadas`
   );
 
-  // El reparto de la 19B.6: un tercio puesto, dos tercios emboscada.
+  // El reparto de la 19C.6: un tercio puesto, dos tercios emboscada.
   expect(informe.fijos, 'no quedo ningun puesto fijo que comprobar').toBeGreaterThan(0);
   expect(informe.emboscadas, 'no hay emboscadas: el reparto se rompio').toBeGreaterThan(0);
   expect(informe.fijos + informe.emboscadas).toBe(informe.total);
@@ -526,7 +526,7 @@ test('ningun puesto FIJO queda encerrado ni adentro de una pared', async ({ page
   ).toEqual([]);
 });
 
-test('las emboscadas salen de la calle, de frente y sin encimarse (19B.6)', async ({
+test('las emboscadas salen de la calle, de frente y sin encimarse (19C.6)', async ({
   page
 }) => {
   test.setTimeout(180000);
@@ -629,7 +629,7 @@ test('las emboscadas salen de la calle, de frente y sin encimarse (19B.6)', asyn
 
   /*
    * 1. NUNCA A LAS ESPALDAS. Es la regla que Gus pidió y la única que la
-   *    19B.6 no afloja nunca: la cámara es cenital y va detrás del
+   *    19C.6 no afloja nunca: la cámara es cenital y va detrás del
    *    jugador, así que lo que aparece atrás no está lejos en pantalla —
    *    no está en pantalla.
    */
@@ -648,7 +648,7 @@ test('las emboscadas salen de la calle, de frente y sin encimarse (19B.6)', asyn
   /*
    * El límite acá es la LÍNEA MUNICIPAL (8 m), no media calzada (5).
    *
-   * Y la diferencia es el sentido entero de la 19B.6: una emboscada sale
+   * Y la diferencia es el sentido entero de la 19C.6: una emboscada sale
    * **del carril de los autos (±3,6) o de un zaguán (±5,8)**, que están
    * fuera de media calzada a propósito. Medir contra 5 las marcaría todas
    * como error; medir contra 8 pregunta lo que importa, que es si alguna

@@ -115,7 +115,7 @@ test('se puede escapar de un zombi', async ({ page }) => {
    * es este"*.
    *
    * Gus los atraveso sin pelear, y el numero a mirar era ese. 5,2 contra
-   * 6,0 (19B.2).
+   * 6,0 (19C.2).
    *
    * Lo que no cambia es la regla, y por eso la prueba sigue: **menor,
    * siempre.** Lo que cambia es el techo del margen, que ahora tambien se

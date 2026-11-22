@@ -74,7 +74,7 @@ const route = TRAZADO.map((p) => ({
  * una: el jugador no entiende cuál de las cuatro le importa.
  *
  * Esta cuenta la usan tres cosas —la hoja, el control y el punto de
- * reaparición— y hasta la 19B.5 **sólo la hacía la hoja**. Ahí estaba el
+ * reaparición— y hasta la 19C.5 **sólo la hacía la hoja**. Ahí estaba el
  * problema que encontró Gus: el control se quedó donde estaba, en la
  * esquina, o sea del otro lado de la puerta.
  */
@@ -109,7 +109,7 @@ function puntoDePuerta(p) {
  * Los siete controles: uno por puerta, cada dos cuadras (D-46).
  *
  * ---------------------------------------------------------------------------
- * EL CONTROL **ES** LA PUERTA, Y HASTA LA 19B.5 NO LO ERA
+ * EL CONTROL **ES** LA PUERTA, Y HASTA LA 19C.5 NO LO ERA
  * ---------------------------------------------------------------------------
  * Lo encontró Gus jugando: *"los checkpoints no los estás dejando en la
  * puerta que coordinamos para que se abra, sino que están del otro lado de

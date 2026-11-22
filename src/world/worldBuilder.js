@@ -468,7 +468,7 @@ export class WorldBuilder {
 
     for (const cp of mission.checkpoints) {
       /*
-       * La marca va EN LA PUERTA, no en la esquina (19B.5).
+       * La marca va EN LA PUERTA, no en la esquina (19C.5).
        *
        * Estaba en el vertice de la ruta, diez metros mas alla de la hoja, y
        * eso le decia al jugador que el control estaba del otro lado de algo
@@ -544,7 +544,7 @@ export class WorldBuilder {
     if (esquinas.b) this.#buildEsquina(mission, i + 1, rng);
 
     /*
-     * LOS EDIFICIOS DE ESQUINA (19B.7).
+     * LOS EDIFICIOS DE ESQUINA (19C.7).
      *
      * Van aca y no en `#buildEsquina` porque hacen falta tambien en las
      * dos puntas del recorrido, que no son cruces y no tienen esquina.
@@ -754,7 +754,7 @@ export class WorldBuilder {
   }
 
   /**
-   * Las cuatro manzanas que rodean un cruce (19B.7).
+   * Las cuatro manzanas que rodean un cruce (19C.7).
    *
    * ---------------------------------------------------------------------------
    * EL AGUJERO QUE TAPAN, Y POR QUE NADIE LO VEIA

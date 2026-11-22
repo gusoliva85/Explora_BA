@@ -6721,7 +6721,7 @@ interesante es la otra.
 
 `recorrido.spec.js` tenía una prueba llamada *"ningún puesto de aparición
 queda encerrado ni adentro de una pared"* que recorría `zombis.puestos` y
-comprobaba dos cosas de cada uno. **Siguió en verde después de la 19B.6**,
+comprobaba dos cosas de cada uno. **Siguió en verde después de la 19C.6**,
 y ahí estaba el problema: desde ese día dos tercios de los puestos son
 emboscadas y **no tienen coordenadas** hasta que el jugador llega.
 
@@ -6754,12 +6754,12 @@ salió:
 
 | Qué | Por qué |
 |---|---|
-| **De frente, nunca a la espalda** | La regla que pidió Gus y la única que la 19B.6 no afloja: la cámara va detrás, así que lo que sale atrás no está lejos en pantalla — no está en pantalla |
+| **De frente, nunca a la espalda** | La regla que pidió Gus y la única que la 19C.6 no afloja: la cámara va detrás, así que lo que sale atrás no está lejos en pantalla — no está en pantalla |
 | **En la calle, no adentro de algo** | Acá vale más que en los fijos: la emboscada elige su lugar *en caliente*, con la cuadra ya construida, así que el error posible no es de datos sino de geometría en vivo |
 | **Cerca, a menos de 30 m** | Si salen lejos vuelven a ser lo de antes, y lo de antes era *quedarse quieto y disparar* |
 
 Y el límite de "en la calle" es la **línea municipal (8 m)**, no media
-calzada (5). La diferencia es el sentido entero de la 19B.6: una emboscada
+calzada (5). La diferencia es el sentido entero de la 19C.6: una emboscada
 sale del carril de los autos (±3,6) o de un zaguán (±5,8), que están fuera
 de media calzada a propósito. Medir contra 5 las marcaría todas como error;
 medir contra 8 pregunta lo que importa, que es si alguna terminó adentro de
@@ -6822,7 +6822,7 @@ además de una de dibujo: **antes del cruce el giro todavía no se puede
 hacer**, porque la puerta no abre hasta que el tramo esté limpio. Una
 indicación que llega antes de que la acción sea posible se olvida.
 
-### Y una consecuencia de la 19B.7 que apareció acá
+### Y una consecuencia de la 19C.7 que apareció acá
 
 Con manzanas en los cuatro cuadrantes de cada cruce, la cámara —que se tira
 hacia adelante cuando algo se le interpone— se achicaba **justo al doblar**,
@@ -6838,13 +6838,13 @@ número está bien.
 ### Lo que cuesta
 
 De 3.005 a 3.093 entidades y de 228 a 243 llamadas de dibujo, contando
-también las manzanas de esquina de la 19B.7. La franja son unas veinte
+también las manzanas de esquina de la 19C.7. La franja son unas veinte
 piezas planas por cuadra, que entran al mismo grupo de agrupado que el
 resto de la cuadra y se van con ella.
 
 ---
 
-## 19B.4 a 19B.7 — Cinco cosas que sólo se ven jugando, y dos que no se ven mirando
+## 19C.4 a 19C.7 — Cinco cosas que sólo se ven jugando, y dos que no se ven mirando
 
 **22 de noviembre de 2026.**
 
@@ -7100,7 +7100,7 @@ juego entero, y taparla con relleno genérico sería peor que el agujero.
 
 ---
 
-## 19B.0 a 19B.3 — Gus lo jugó, y la calle se llenó
+## 19C.0 a 19C.3 — Gus lo jugó, y la calle se llenó
 
 **21 de noviembre de 2026.**
 

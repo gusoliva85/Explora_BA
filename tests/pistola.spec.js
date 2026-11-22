@@ -62,7 +62,7 @@ async function prepararTiro(page, distancia) {
       /*
        * Se espera POR CONDICION a que haya un zombi, no por cuadros.
        *
-       * Eran 30 cuadros fijos y alcanzaban de casualidad. En la 19B.3 los
+       * Eran 30 cuadros fijos y alcanzaban de casualidad. En la 19C.3 los
        * zombis dejaron de encenderse mientras el jugador los este MIRANDO:
        * aparecer en medio de la calle vacia que estas mirando rompe el
        * juego mas de lo que lo llena. La prueba teletransporta al jugador

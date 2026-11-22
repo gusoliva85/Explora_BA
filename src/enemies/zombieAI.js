@@ -85,7 +85,7 @@ export class ZombieAI {
 
     this.tiempoEnEstado = 0;
     /**
-     * Cuánto aceleró, de 0 a 1. **La agresión al verte** (19B.2).
+     * Cuánto aceleró, de 0 a 1. **La agresión al verte** (19C.2).
      *
      * 0 es caminando y 1 es a `chaseSpeed`. Sube mientras persigue y baja
      * al perderte. No es un estado aparte a propósito: la máquina ya tiene
@@ -375,7 +375,7 @@ export class ZombieAI {
           break;
         }
         /*
-         * APURA LA MARCHA (19B.2).
+         * APURA LA MARCHA (19C.2).
          *
          * El impulso sube mientras te ve. El primer segundo es el aviso:
          * desde la cámara cenital, que un zombi te detectó sólo se nota

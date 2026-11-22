@@ -271,7 +271,7 @@ export const ZOMBIE_STANDARD = {
    * -------------------------------------------------------------------------
    * FUE 5,2 UNA TARDE, Y ERA DEMASIADO
    * -------------------------------------------------------------------------
-   * La 19B.2 lo subió de 2,9 a 5,2 porque con 2,9 el barrio se cruzaba
+   * La 19C.2 lo subió de 2,9 a 5,2 porque con 2,9 el barrio se cruzaba
    * parado. Gus lo jugó y encontró el otro borde: *"con esta velocidad me
    * alcanzan y no puedo darme vuelta para disparar, no me da tiempo"*.
    *
@@ -287,7 +287,7 @@ export const ZOMBIE_STANDARD = {
    * que Gus pidió poder hacer.
    *
    * Y sigue siendo muy superior a los 2,9 de antes: pararse en cualquier
-   * lado sigue costando caro, que era lo que la 19B.2 vino a arreglar.
+   * lado sigue costando caro, que era lo que la 19C.2 vino a arreglar.
    *
    * Que se pueda escapar siempre no es un detalle de balance: es lo que
    * hace que la muerte sea culpa del jugador. Si el zombi corriera más que
@@ -468,7 +468,7 @@ export const PERF = {
    * Cuantos zombis pueden estar activos (IA corriendo) a la vez.
    *
    * -------------------------------------------------------------------------
-   * ERA 12, Y DESDE LA 19B.1 ES EL TOPE QUE DE VERDAD MANDA
+   * ERA 12, Y DESDE LA 19C.1 ES EL TOPE QUE DE VERDAD MANDA
    * -------------------------------------------------------------------------
    * Con 4 a 10 zombis por tramo repartidos en doscientos metros, nunca se
    * llegaba a doce cerca: el tope era teorico y lo que limitaba era el

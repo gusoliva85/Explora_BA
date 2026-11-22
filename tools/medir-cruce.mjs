@@ -13,7 +13,7 @@
  *   - si se quedó clavado con el joystick a fondo.
  *
  * ---------------------------------------------------------------------------
- * POR QUÉ EXISTE (19B.4)
+ * POR QUÉ EXISTE (19C.4)
  * ---------------------------------------------------------------------------
  * Gus: *"cuando las pasás, que terminás de hacer el checkpoint, se traba
  * todo el juego. El personaje como que tiene un salto a algo al costado."*

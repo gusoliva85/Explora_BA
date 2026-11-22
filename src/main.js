@@ -854,7 +854,7 @@ function actualizarVentana() {
   if (mission.nextCheckpoint !== ventana.tramo) ventana.irAlTramo(mission.nextCheckpoint);
 
   /*
-   * UNA sola tarea por cuadro (19B.4).
+   * UNA sola tarea por cuadro (19C.4).
    *
    * Antes esto soltaba todas las cuadras sobrantes de una y además
    * construía: dos cuadros de más de un segundo justo al cruzar la
@@ -1035,7 +1035,7 @@ app.on('update', (rawDt) => {
     /*
      * El rumbo de la camara va al gestor de zombis, y no es decorativo:
      * es lo que define "adelante" para decidir **donde puede aparecer uno
-     * y donde no** (19B.6). La camara es cenital y va detrás del jugador,
+     * y donde no** (19C.6). La camara es cenital y va detrás del jugador,
      * asi que lo que queda a sus espaldas no está lejos en pantalla: no
      * está en pantalla.
      */

@@ -92,7 +92,7 @@ export class VentanaDeMundo {
     this.totalCuadras = opt.totalCuadras;
 
     /*
-     * No hay `porCuadro`, y que no lo haya es la correccion de la 19B.4.
+     * No hay `porCuadro`, y que no lo haya es la correccion de la 19C.4.
      *
      * Habia uno, con valor 1 por omision y la posibilidad de pedir mas.
      * Poder pedir mas **era el error**: una cuadra por cuadro no es una
@@ -108,7 +108,7 @@ export class VentanaDeMundo {
     /**
      * @type {number[]} las que faltan soltar.
      *
-     * Esta cola es la 19B.4 y existe por un error que Gus sintio jugando:
+     * Esta cola es la 19C.4 y existe por un error que Gus sintio jugando:
      * *"cuando pasas la puerta se traba todo el juego"*. Ver `siguienteTarea`.
      */
     this.porSoltar = [];
@@ -133,7 +133,7 @@ export class VentanaDeMundo {
     /*
      * LAS DOS SE REPARTEN, Y SOLTAR VA PRIMERO.
      *
-     * Soltar era inmediato, y ahi estaba el tiron (19B.4). El orden —
+     * Soltar era inmediato, y ahi estaba el tiron (19C.4). El orden —
      * primero liberar y despues construir— sigue siendo el de siempre, y
      * sigue siendo por lo mismo: asi el pico de memoria es el de la
      * ventana, y no el de la ventana mas lo que sobra.
@@ -170,7 +170,7 @@ export class VentanaDeMundo {
    * construir una. Nunca las dos, nunca varias.
    *
    * ---------------------------------------------------------------------------
-   * 🐛 EL JUEGO QUE SE TRABABA AL CRUZAR LA PUERTA (19B.4)
+   * 🐛 EL JUEGO QUE SE TRABABA AL CRUZAR LA PUERTA (19C.4)
    * ---------------------------------------------------------------------------
    * Gus lo describio asi: *"cuando pasas la puerta, se traba todo el
    * juego"*. Y era cierto y medible — dos cuadros seguidos de **851 ms y

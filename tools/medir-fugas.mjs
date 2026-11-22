@@ -10,7 +10,7 @@
  * dónde llega. Todo lo que pase de la línea municipal es una fuga.
  *
  * ---------------------------------------------------------------------------
- * POR QUÉ EXISTE (19B.7)
+ * POR QUÉ EXISTE (19C.7)
  * ---------------------------------------------------------------------------
  * Gus lo dijo jugando: *"cuando vas caminando también tenés espacios libres
  * en los costados que parece como que podés pasar"*. Una captura no podía

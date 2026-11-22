@@ -4,7 +4,7 @@ import { mission001 } from '../src/config/mission001.js';
 
 /**
  * ===========================================================================
- * EL CONTROL ES LA PUERTA (19B.5)
+ * EL CONTROL ES LA PUERTA (19C.5)
  * ===========================================================================
  * Lo encontró Gus jugando: *"los checkpoints no los estás dejando en la
  * puerta que coordinamos para que se abra, sino que están del otro lado"*.

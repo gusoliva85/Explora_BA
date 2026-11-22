@@ -137,7 +137,7 @@ describe('el trabajo repartido', () => {
      * cruza una puerta, o sea cuando viene de pelear.
      *
      * Antes había una opción `porCuadro` para pedir más de una. Se fue en
-     * la 19B.4: **poder pedir más era el error**, no una preferencia.
+     * la 19C.4: **poder pedir más era el error**, no una preferencia.
      */
     const v = new VentanaDeMundo(REAL);
     v.irAlTramo(0);
@@ -150,7 +150,7 @@ describe('el trabajo repartido', () => {
 
   it('soltar tambien hace cola, y va PRIMERO', () => {
     /*
-     * 🐛 El juego que se trababa al cruzar la puerta (19B.4).
+     * 🐛 El juego que se trababa al cruzar la puerta (19C.4).
      *
      * Soltar era inmediato y sin tope: al cambiar de tramo se destruían las
      * cuadras sobrantes enteras —entidades, mallas, grupo de lote y cajas de

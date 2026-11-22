@@ -37,10 +37,10 @@ verte**. Las cinco están hechas.
 
 | Qué | De qué fase | La pregunta concreta |
 |---|---|---|
-| **El ritmo de la horda** | 19B.1 | 16-22 por tramo, y el que persigue corre a **4,4** contra 6,0 (bajó de 5,2 el 22/11). ¿Alcanza el hueco para darse vuelta y disparar? |
-| **La emboscada** | 19B.6 | Dos tercios salen de atrás de un auto o de un zaguán, a ~17 m. ¿Asusta, o es injusto? |
+| **El ritmo de la horda** | 19C.1 | 16-22 por tramo, y el que persigue corre a **4,4** contra 6,0 (bajó de 5,2 el 22/11). ¿Alcanza el hueco para darse vuelta y disparar? |
+| **La emboscada** | 19C.6 | Dos tercios salen de atrás de un auto o de un zaguán, a ~17 m. ¿Asusta, o es injusto? |
 | **La cadencia** | 17.9 | *¿Dudás antes de pararte?* Si nunca dudás, muy rápida; si nunca te parás, muy lenta |
-| **De dónde aparecen** | 19B.3 | Ahora esperan a no estar a la vista si están a menos de 30 m. ¿Se nota que aparecen, o se nota que llegan? |
+| **De dónde aparecen** | 19C.3 | Ahora esperan a no estar a la vista si están a menos de 30 m. ¿Se nota que aparecen, o se nota que llegan? |
 | **El joystick a la derecha** | 16.7 | ¿Cae bajo el pulgar sin recolocar la mano? |
 | **La brújula de reojo** | 18.14 | ¿Se lee **sin mirarla**, corriendo? |
 | **La puerta desde lejos** | 19A.3 | ¿Se ve cerrada a cincuenta metros, o se descubre al chocarla? |
@@ -65,7 +65,8 @@ cartas se enchufan sin tocar nada de la esclusa.
 | 🔄 | **17 — Combate automático** | **Hecha en código.** Falta jugarla en el teléfono: la cadencia (17.9) no se puede ajustar de otra manera |
 | 🔄 | 18 — El recorrido real | **Hecha en código.** Falta jugarla |
 | 🔄 | 19A — **La esclusa** | **Hecha en código.** Falta el ritmo (19A.11), que se ajusta jugando |
-| 🔄 | 19B — **Lo que pidió Gus jugando**, y después las cartas | 19B.0 a 19B.3 hechas el 21/11. Las cartas tienen la lista desde el 8/11 |
+| ✅ | 19C — **Lo que pidió Gus jugando** | **Cerrada el 22/11.** Doce tareas en dos tandas, y cuatro bugs que trababan la partida |
+| ⬜ | 19B — Las cartas de power-up | Desbloqueada: la lista llegó el 8/11, con los números |
 | ⬜ | 20 — Los assets del banco | Depende de la 16; absorbe 6 tareas de la 12R |
 | ⬜ | 10 — Interfaz completa | Pendiente |
 | ⬜ | 11 — Audio | Pendiente |
@@ -1253,36 +1254,45 @@ de tres cajas tiradas en el piso.
 - [ ] Se puede terminar la misión limpiando los siete tramos
 - [ ] Una cuadra no se siente larga, medido en el teléfono
 
-### 19B.0 a 19B.3 — Lo que pidió Gus después de jugarlo
+### 19C — Lo que pidió Gus jugando · **cerrada**
+
+> ⚠️ **Esto era "19B.0 a 19B.7" y se renumeró el 22/11.** Había dos cosas
+> distintas con el mismo número: estas tareas, que salieron de que Gus
+> jugara, y las catorce de las cartas, que están especificadas desde el
+> 8/11 y **ya se llamaban 19B.1 a 19B.14 en su propia especificación**.
+> Las cartas se quedan con el número que ya tenían escrito; lo que salió
+> de jugar pasa a 19C.
+
+#### 19C.0 a 19C.3 — Lo que pidió Gus después de jugarlo
 
 **21 de noviembre de 2026.** Gus recorrió el barrio entero con el juego ya
 cerrado de punta a punta y trajo cinco cosas. No son correcciones de
 errores: son lo que sólo se ve jugando.
 
-- [x] **19B.0 Fuera el botón DISPARAR.** ✅ *21/11 — y con él `bindAimButton`, el apuntado a mano, la mira del piso y cinco pruebas. **D-28 se cumple entero**: no queda un botón de acción en pantalla*
-- [x] **19B.0 bis El HUD en una sola línea.** ✅ *21/11 — objetivo | brújula | esclusa. Tres pastillas apiladas tapaban el tercio superior, que es por donde vienen los zombis*
-- [x] **19B.0 ter El arma se ve desde arriba.** ✅ *21/11 — era una pistola de 26 cm modelada de perfil y desde la cámara cenital se leía como un cuchillo. Ahora el lomo es la pieza clara y larga: 0,273 de separación contra el asfalto*
-- [x] **19B.1 Muchos más zombis.** ✅ *21/11 — de 4-10 por tramo a **16-22**. Y el tope de activos de 12 a 22, que pasa a ser lo que de verdad manda*
-- [x] **19B.2 Y que apuren la marcha al verte.** ✅ *21/11 — `chaseSpeed` de 2,9 a **5,2** contra los 6,0 del jugador, con una rampa de un segundo. Escaparse se puede siempre, pero cuesta*
-- [x] **19B.3 No aparecen delante de tus ojos.** ✅ *21/11 — a menos de 30 m esperan a no estar en línea de vista, con válvula de escape de 2 s para que la esclusa no se trabe*
+- [x] **19C.0 Fuera el botón DISPARAR.** ✅ *21/11 — y con él `bindAimButton`, el apuntado a mano, la mira del piso y cinco pruebas. **D-28 se cumple entero**: no queda un botón de acción en pantalla*
+- [x] **19C.0 bis El HUD en una sola línea.** ✅ *21/11 — objetivo | brújula | esclusa. Tres pastillas apiladas tapaban el tercio superior, que es por donde vienen los zombis*
+- [x] **19C.0 ter El arma se ve desde arriba.** ✅ *21/11 — era una pistola de 26 cm modelada de perfil y desde la cámara cenital se leía como un cuchillo. Ahora el lomo es la pieza clara y larga: 0,273 de separación contra el asfalto*
+- [x] **19C.1 Muchos más zombis.** ✅ *21/11 — de 4-10 por tramo a **16-22**. Y el tope de activos de 12 a 22, que pasa a ser lo que de verdad manda*
+- [x] **19C.2 Y que apuren la marcha al verte.** ✅ *21/11 — `chaseSpeed` de 2,9 a **5,2** contra los 6,0 del jugador, con una rampa de un segundo. Escaparse se puede siempre, pero cuesta*
+- [x] **19C.3 No aparecen delante de tus ojos.** ✅ *21/11 — a menos de 30 m esperan a no estar en línea de vista, con válvula de escape de 2 s para que la esclusa no se trabe*
 - [x] 🐛 **El cadáver que resucitaba al alejarte.** ✅ *21/11 — un muerto sigue activo 6 s, y si te ibas en ese rato se le liberaba el puesto. Con la horda nueva, matar y correr es LA forma de jugar, así que pasaba siempre*
 
 ---
 
-### 19B.4 a 19B.7 — La segunda vuelta de Gus
+#### 19C.4 a 19C.7 — La segunda vuelta de Gus
 
 **22 de noviembre de 2026.** Jugó la horda y trajo cinco cosas más. Cuatro
 son correcciones de lo del 21 y una es un bug de verdad.
 
-- [x] **19B.2 bis Más lento.** ✅ *22/11 — `chaseSpeed` de 5,2 a **4,4**. Gus: "me alcanzan y no puedo darme vuelta para disparar". Con el combate automático eso rompe el bucle: si la ventaja no abre el hueco en el que se frena, el paso de frenar desaparece*
-- [x] **19B.4 El juego que se trababa al cruzar la puerta.** ✅ *22/11 — la ventana soltaba todas las cuadras sobrantes **y** construía en el mismo cuadro. Ahora una tarea por cuadro, y soltar también hace cola*
-- [x] **19B.5 El control **es** la puerta.** ✅ *22/11 — estaba en la esquina, diez metros más allá de la hoja. Y se toma cruzando el plano, no entrando a un círculo: contra una puerta cerrada uno puede apoyarse*
-- [x] **19A.9 Reaparecer del lado de adentro.** ✅ *22/11 — ocho metros pasando la hoja. Sale gratis con la 19B.5: antes no había un punto "la puerta" al que referirse*
-- [x] **19B.6 Un tercio puesto, dos tercios emboscada.** ✅ *22/11 — salen de atrás de un auto o de un zaguán, a ~17 m de media contra 52 de los fijos. **Y nunca a las espaldas**, que es una regla de cámara y no de gusto*
+- [x] **19C.2 bis Más lento.** ✅ *22/11 — `chaseSpeed` de 5,2 a **4,4**. Gus: "me alcanzan y no puedo darme vuelta para disparar". Con el combate automático eso rompe el bucle: si la ventaja no abre el hueco en el que se frena, el paso de frenar desaparece*
+- [x] **19C.4 El juego que se trababa al cruzar la puerta.** ✅ *22/11 — la ventana soltaba todas las cuadras sobrantes **y** construía en el mismo cuadro. Ahora una tarea por cuadro, y soltar también hace cola*
+- [x] **19C.5 El control **es** la puerta.** ✅ *22/11 — estaba en la esquina, diez metros más allá de la hoja. Y se toma cruzando el plano, no entrando a un círculo: contra una puerta cerrada uno puede apoyarse*
+- [x] **19A.9 Reaparecer del lado de adentro.** ✅ *22/11 — ocho metros pasando la hoja. Sale gratis con la 19C.5: antes no había un punto "la puerta" al que referirse*
+- [x] **19C.6 Un tercio puesto, dos tercios emboscada.** ✅ *22/11 — salen de atrás de un auto o de un zaguán, a ~17 m de media contra 52 de los fijos. **Y nunca a las espaldas**, que es una regla de cámara y no de gusto*
 - [x] 🐛 **El que dejabas atrás no volvía nunca.** ✅ *22/11 — un vivo del que te alejás libera su puesto, pero conservaba la posición original a cien metros. Con la esclusa, la puerta no abría jamás*
 - [x] 🐛 **El cupo contaba cadáveres.** ✅ *22/11 — un muerto sigue activo 6 s, así que una pelea grande llenaba el tope con cuerpos y el que faltaba no podía entrar. `enJuego: 22, tope: 22`, los 22 cadáveres*
 - [x] 🐛 **Y un fijo a 177 m que nunca apareció.** ✅ *22/11 — si pasás de largo con el cupo lleno queda a tus espaldas, y la ventana son 55 m. Lejos **y atrás** ahora se vuelve emboscada*
-- [x] **19B.7 Los edificios de esquina.** ✅ *22/11 — la hilera de fachadas arranca a 10 m de cada punta para no invadir la bocacalle, y ahí no había nada. **76 fugas de hasta 40 m**, medidas con el mismo `moveCircle` que mueve al jugador. Quedan 3, las tres junto a la casa de Sergio*
+- [x] **19C.7 Los edificios de esquina.** ✅ *22/11 — la hilera de fachadas arranca a 10 m de cada punta para no invadir la bocacalle, y ahí no había nada. **76 fugas de hasta 40 m**, medidas con el mismo `moveCircle` que mueve al jugador. Quedan 3, las tres junto a la casa de Sergio*
 
 **Lo que queda de esto es de teléfono:** si la horda obliga a moverte o
 directamente te mata. Son los dos números más sensibles del juego y los dos
